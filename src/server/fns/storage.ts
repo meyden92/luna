@@ -1,10 +1,31 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import { env } from '@/libs/env';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
 
 const proxyImageSchema = z.object({ imageUrl: z.string().min(1) });
-const ALLOWED_PROXY_DOMAINS = ['deliver.lunashare.app', 'deliver-dev.lunashare.app', 'replicate.delivery', 'pbxt.replicate.delivery'];
+
+// Hosts the image proxy is allowed to fetch from. The deployment's own CDN is
+// derived from CDN_URL and Replicate's delivery hosts back the AI generation
+// flow; PROXY_ALLOWED_DOMAINS (comma-separated) adds any extras. Resolved
+// lazily so importing this module never touches the environment.
+const REPLICATE_DELIVERY_HOSTS = ['replicate.delivery', 'pbxt.replicate.delivery'];
+
+let allowedProxyHosts: Set<string> | undefined;
+
+function getAllowedProxyHosts(): Set<string> {
+  if (allowedProxyHosts) return allowedProxyHosts;
+  const hosts = new Set(REPLICATE_DELIVERY_HOSTS);
+  // CDN_URL is validated as a URL by the env schema.
+  hosts.add(new URL(env.CDN_URL).hostname);
+  for (const entry of env.PROXY_ALLOWED_DOMAINS?.split(',') ?? []) {
+    const host = entry.trim();
+    if (host) hosts.add(host);
+  }
+  allowedProxyHosts = hosts;
+  return hosts;
+}
 
 export const proxyImage = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'user' }))
@@ -17,7 +38,7 @@ export const proxyImage = createServerFn({ method: 'POST' })
       throw new Error('Invalid URL format');
     }
     if (!['http:', 'https:'].includes(valid.protocol)) throw new Error('Invalid URL protocol');
-    if (!ALLOWED_PROXY_DOMAINS.includes(valid.hostname)) throw new Error('Domain not allowed');
+    if (!getAllowedProxyHosts().has(valid.hostname)) throw new Error('Domain not allowed');
 
     const response = await fetch(valid.toString(), {
       method: 'GET',

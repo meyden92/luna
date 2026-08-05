@@ -91,9 +91,14 @@ domains into the image — which is why deployment URLs must not be added there.
 document's own origin. Set it only when the app is served from a different
 origin than its auth API.
 
-> Note: `src/server/fns/storage.ts` has an `ALLOWED_PROXY_DOMAINS` allowlist that
-> still names the upstream project's CDN. Add your own CDN host there if you rely
-> on image proxying.
+The image proxy's allowlist is derived from `CDN_URL` (plus Replicate's delivery
+hosts, for AI generation), so it needs no configuration in a normal setup. Set
+`PROXY_ALLOWED_DOMAINS` to a comma-separated host list only if you proxy images
+from somewhere else:
+
+```bash
+PROXY_ALLOWED_DOMAINS=images.example.com,static.example.org
+```
 
 ## Deployment
 

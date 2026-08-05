@@ -25,6 +25,7 @@ services:
       # Resolved at runtime, so the same image works on any domain.
       - CDN_URL=${CDN_URL}
       - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-}
+      - PROXY_ALLOWED_DOMAINS=${PROXY_ALLOWED_DOMAINS:-}
 
       - REPLICATE_API_TOKEN=${REPLICATE_API_TOKEN:-}
       - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID:-}

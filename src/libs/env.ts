@@ -36,6 +36,9 @@ const envSchema = z.object({
   BUILD_COMMIT: z.string().optional(),
   BUILD_TIME: z.string().optional(),
   PUBLIC_BASE_URL: z.url().optional(),
+  // Extra hosts the image proxy may fetch from, comma-separated. The CDN_URL
+  // host and Replicate's delivery hosts are always allowed.
+  PROXY_ALLOWED_DOMAINS: z.string().optional(),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
 

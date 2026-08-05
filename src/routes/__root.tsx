@@ -10,6 +10,7 @@ import { MainContent } from '@/components/layout/MainContent';
 import { ThemeProvider } from '@/components/layout/theme-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { queryKeys } from '@/libs/query-keys';
+import { getRuntimeConfig, runtimeConfigScript } from '@/libs/runtime-config';
 import { themeLoader } from '@/libs/theme-loader';
 import { cn } from '@/libs/utils';
 import type { RootRouteContext } from '@/route-context';
@@ -58,6 +59,10 @@ export const Route = createRootRouteWithContext<RootRouteContext>()({
 function RootComponent() {
   const { queryClient, initialTheme } = Route.useRouteContext();
 
+  // Resolves from process.env during SSR and from the injected snapshot in the
+  // browser, so both renders produce identical markup.
+  const runtimeConfig = getRuntimeConfig();
+
   useEffect(() => {
     themeLoader.applySavedTheme();
   }, []);
@@ -69,6 +74,12 @@ function RootComponent() {
       suppressHydrationWarning
     >
       <head>
+        {/* Must precede <Scripts /> so the snapshot exists before any module
+            initialises against it. */}
+        <script
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: serialised config, escaped in runtimeConfigScript
+          dangerouslySetInnerHTML={{ __html: runtimeConfigScript(runtimeConfig) }}
+        />
         <HeadContent />
       </head>
       <body className="antialiased h-full font-sans">

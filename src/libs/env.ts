@@ -9,6 +9,9 @@ function isBase64Encoded32ByteKey(value: string): boolean {
 // Server-only module. Do NOT import from client components.
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
+  // Public base URL of the CDN. Read at runtime and handed to the browser via
+  // the snapshot in libs/runtime-config, so one image serves any domain.
+  CDN_URL: z.url(),
   AWS_REGION: z.string().min(1),
   AWS_ENDPOINT: z.string().min(1),
   AWS_ACCESS_KEY_ID: z.string().min(1),

@@ -12,10 +12,10 @@ import { type MetadataScrubReport, scrubMetadataIfNeeded } from '@/libs/metadata
 import { checkModerationGate, createModerationCase, type FileHashes } from '@/libs/moderation/hash-gate';
 import prisma from '@/libs/prismadb';
 import { UnauthorizedError } from '@/libs/rbac/guards';
+import { getCdnUrl } from '@/libs/runtime-config';
 import { s3Client } from '@/libs/S3Helper';
 import { ensureStorageQuotaAvailable, StorageQuotaExceededError, storageQuotaExceededPayload } from '@/libs/storage-quota';
 
-const cdnUrl = import.meta.env.VITE_PUBLIC_CDN_URL;
 const MULTIPART_OVERHEAD_BYTES = 1024 * 1024;
 let inFlightSharexUploads = 0;
 
@@ -314,8 +314,8 @@ async function handleWithUploadSlot(request: Request): Promise<Response> {
   return new Response(
     JSON.stringify({
       data: {
-        link: `${cdnUrl}/${user.id}/${dbResult.url}`,
-        thumbnail: `${cdnUrl}/${user.id}/${dbResult.url}`,
+        link: `${getCdnUrl()}/${user.id}/${dbResult.url}`,
+        thumbnail: `${getCdnUrl()}/${user.id}/${dbResult.url}`,
       },
     }),
     { status: 200, headers: { 'Content-Type': 'application/json' } },

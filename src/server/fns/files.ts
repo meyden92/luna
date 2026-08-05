@@ -1,6 +1,7 @@
 import type { Prisma } from '@db/client';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import { getCdnUrl } from '@/libs/runtime-config';
 import { deleteFilesSchema, editFileSchema, moveFilesToFolderSchema } from '@/schemas/file-schema';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
@@ -236,7 +237,7 @@ const MAX_DOWNLOAD_BYTES = 200 * 1024 * 1024;
 
 function getAllowedDownloadHosts(): Set<string> {
   const hosts = new Set<string>(['replicate.delivery', 'pbxt.replicate.delivery']);
-  const cdn = import.meta.env.VITE_PUBLIC_CDN_URL;
+  const cdn = getCdnUrl();
   if (cdn) {
     try {
       hosts.add(new URL(cdn).hostname);

@@ -20,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import { queryKeys } from '@/libs/query-keys';
+import { getCdnUrl } from '@/libs/runtime-config';
 import { formatSize } from '@/libs/utils';
 import { listDeletedFiles, permanentlyDeleteFiles, restoreDeletedFiles } from '@/server/fns/admin/deleted-files';
 
@@ -54,7 +55,7 @@ const canPreviewFile = (contentType: string) =>
   contentType === 'application/json' ||
   contentType === 'application/xml';
 
-const getFilePreviewUrl = (file: DeletedFile) => `${import.meta.env.VITE_PUBLIC_CDN_URL}/${file.ownerId}/${file.url}`;
+const getFilePreviewUrl = (file: DeletedFile) => `${getCdnUrl()}/${file.ownerId}/${file.url}`;
 
 function TextFileContent({ fileUrl }: { fileUrl: string }) {
   const [content, setContent] = useState<string>('Loading...');

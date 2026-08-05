@@ -5,6 +5,7 @@ import type Replicate from 'replicate';
 import type { Prediction } from 'replicate';
 import { writeCreateAuditLog } from '@/libs/audit/transaction-audit';
 import prisma from '@/libs/prismadb';
+import { getCdnUrl } from '@/libs/runtime-config';
 import { s3Client } from '@/libs/S3Helper';
 import { ensureStorageQuotaAvailable, StorageQuotaExceededError } from '@/libs/storage-quota';
 import { getCDNImage } from '@/libs/utils';
@@ -346,7 +347,7 @@ async function checkImageCache(hash: string, userId: string, signal?: AbortSigna
   const cacheKey = `cache/${hash}.png`;
   try {
     await s3Client.send(new HeadObjectCommand({ Bucket: env.AWS_BUCKET_NAME, Key: cacheKey }));
-    return { url: `${import.meta.env.VITE_PUBLIC_CDN_URL}/${cacheKey}`, hasOwnerRow: false };
+    return { url: `${getCdnUrl()}/${cacheKey}`, hasOwnerRow: false };
   } catch {
     return null;
   }
@@ -398,7 +399,7 @@ async function uploadImageToCache(
     signal?.removeEventListener('abort', abortUpload);
   }
 
-  const url = `${import.meta.env.VITE_PUBLIC_CDN_URL}/${cacheKey}`;
+  const url = `${getCdnUrl()}/${cacheKey}`;
   throwIfAborted(signal);
   await upsertCachedImageRow({
     url,
@@ -416,7 +417,7 @@ async function checkMultipleImageCache(combinedHash: string, hashes: string[], s
   throwIfAborted(signal);
   const cacheKey = `cache/multi_${combinedHash}.json`;
   try {
-    const response = await fetch(`${import.meta.env.VITE_PUBLIC_CDN_URL}/${cacheKey}`, { signal });
+    const response = await fetch(`${getCdnUrl()}/${cacheKey}`, { signal });
     if (!response.ok) return null;
     const data = await response.json();
     const imageUrls = Array.isArray(data.imageUrls) ? data.imageUrls.filter((url: unknown): url is string => typeof url === 'string') : [];

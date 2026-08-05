@@ -2,6 +2,7 @@ import type { ClassValue } from 'clsx';
 import { clsx } from 'clsx';
 import { File, FileText, FolderArchive, Music, Video } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
+import { getCdnUrl } from '@/libs/runtime-config';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -51,9 +52,8 @@ export const isPreviewableFile = (filetype: string) => {
   return validImageExtensions.includes(filetype);
 };
 
-const cdnUrl = import.meta.env.VITE_PUBLIC_CDN_URL;
-
 export function getCDNImage(image: string | null | undefined, userId?: string, fallback?: string) {
+  const cdnUrl = getCdnUrl();
   if (userId && image) {
     return `${cdnUrl}/${userId}/${image}`;
   }
@@ -67,7 +67,7 @@ export function getCDNImage(image: string | null | undefined, userId?: string, f
 export function getTemplateImageUrl(path: string): string {
   if (!path) return '';
   if (path.startsWith('http')) return path;
-  return `${cdnUrl}/${path}`;
+  return `${getCdnUrl()}/${path}`;
 }
 
 export function getFileIcon(contentType: string) {

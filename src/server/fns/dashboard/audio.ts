@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start';
+import { getCdnUrl } from '@/libs/runtime-config';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
 
@@ -6,7 +7,7 @@ export const listMyAudioFiles = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'user' }))
   .handler(async ({ context }) => {
     const { default: prisma } = await import('@/libs/prismadb');
-    const cdn = import.meta.env.VITE_PUBLIC_CDN_URL;
+    const cdn = getCdnUrl();
     const userId = userIdFromCtx(context);
 
     const files = await prisma.file.findMany({

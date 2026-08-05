@@ -24,12 +24,10 @@ COPY --from=deps /app/.prisma ./.prisma
 COPY --from=deps /app/prisma ./prisma
 COPY . .
 
-ARG VITE_PUBLIC_CDN_URL
-ARG VITE_PUBLIC_SERVER_URL
+# No deployment URLs here on purpose: CDN_URL and PUBLIC_BASE_URL are read from
+# the environment at runtime, so this image is not tied to any one domain.
 ARG BUILD_COMMIT=unknown
 ARG BUILD_TIME=unknown
-ENV VITE_PUBLIC_CDN_URL=$VITE_PUBLIC_CDN_URL
-ENV VITE_PUBLIC_SERVER_URL=$VITE_PUBLIC_SERVER_URL
 ENV BUILD_COMMIT=$BUILD_COMMIT
 ENV BUILD_TIME=$BUILD_TIME
 ENV NITRO_PRESET=bun

@@ -67,6 +67,34 @@ bun run test:e2e           # auto-starts the dev server
 bun run test:e2e:ui        # interactive runner
 ```
 
+## Self-hosting
+
+The published image is **not** tied to any domain. Deployment URLs are resolved
+at runtime, not compiled into the bundle, so you can pull the image and point it
+at your own infrastructure with environment variables alone — no rebuild:
+
+```bash
+docker run -p 3000:3000 \
+  -e DATABASE_URL="mysql://user:pass@db:3306/lunashare" \
+  -e CDN_URL="https://cdn.yourdomain.com" \
+  -e BETTER_AUTH_SECRET="..." \
+  ghcr.io/meyden92/luna:latest
+```
+
+`CDN_URL` is read from the process environment on the server and handed to the
+browser as a snapshot injected into the document during SSR (see
+`src/libs/runtime-config.ts`). Anything reached through `import.meta.env` would
+instead be inlined as a string literal at build time and freeze one deployment's
+domains into the image — which is why deployment URLs must not be added there.
+
+`PUBLIC_BASE_URL` is optional: leave it unset and the auth client targets the
+document's own origin. Set it only when the app is served from a different
+origin than its auth API.
+
+> Note: `src/server/fns/storage.ts` has an `ALLOWED_PROXY_DOMAINS` allowlist that
+> still names the upstream project's CDN. Add your own CDN host there if you rely
+> on image proxying.
+
 ## Deployment
 
 The build targets Nitro's `bun` preset, producing a server that boots on

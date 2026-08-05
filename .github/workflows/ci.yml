@@ -83,9 +83,9 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # Deployment URLs are deliberately absent: they are runtime
+          # configuration, so this image stays domain-agnostic.
           build-args: |
-            VITE_PUBLIC_CDN_URL=${{ vars.VITE_PUBLIC_CDN_URL }}
-            VITE_PUBLIC_SERVER_URL=${{ vars.VITE_PUBLIC_SERVER_URL }}
             BUILD_COMMIT=${{ github.sha }}
             BUILD_TIME=${{ github.event.repository.updated_at }}
 

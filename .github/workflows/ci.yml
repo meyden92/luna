@@ -71,6 +71,10 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}
+          # latest=auto (the default) already appends `latest` on tag events,
+          # which duplicated the explicit entry below. Disabling it keeps the
+          # tag set exactly: the version tag plus latest.
+          flavor: latest=false
           tags: |
             type=ref,event=tag
             type=raw,value=latest

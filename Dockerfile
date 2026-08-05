@@ -11,7 +11,10 @@ RUN --mount=type=cache,id=bun,target=/root/.bun/install/cache \
 
 COPY prisma ./prisma
 COPY prisma.config.ts ./prisma.config.ts
-RUN bunx prisma generate
+# prisma.config.ts resolves DATABASE_URL eagerly and `prisma generate` would
+# fail without it. Generation only emits client code and never connects, so a
+# placeholder is sufficient here; the real URL is supplied at runtime.
+RUN DATABASE_URL="mysql://build:build@localhost:3306/build" bunx prisma generate
 
 # --- build ------------------------------------------------------------------
 FROM base AS builder

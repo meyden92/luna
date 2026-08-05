@@ -1,6 +1,6 @@
 import prisma from '@/libs/prismadb';
 
-const DEFAULT_MESSAGE = 'RBAC Prisma delegates are unavailable. Run `pnpm prisma generate` after applying the RBAC migration.';
+const DEFAULT_MESSAGE = 'RBAC Prisma delegates are unavailable. Run `bun run db:generate` after applying the RBAC migration.';
 
 type RbacPrisma = typeof prisma;
 

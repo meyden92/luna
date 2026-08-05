@@ -6,13 +6,16 @@ If something goes sideways, STOP and re—ptan imediatety — don•t keep pushi
 Write detaited specs upfront to reduce ambiguity
 
 ## Tech Stack
-- Framework: Next.js 16 with React 19 (Node 25)
+- Framework: TanStack Start with React 19 (Vite 8 + Nitro 3)
+- Runtime / package manager: Bun (>= 1.2) — never use npm, pnpm or yarn
 - Database: MariaDB with Prisma ORM
 - Auth: Better-Auth with username plugin
 - Styling: shadcn/ui + Tailwind CSS
 
 ## Commands
-- `pnpm check-all` — Lint + TypeScript checks (run after every task)
+- `bun run check-all` — Format + lint + TypeScript checks (run after every task)
+- `bun test` — unit tests (scoped to `src/` via bunfig.toml)
+- `bun run test:e2e` — Playwright suite in `tests/e2e`
 
 ##Subagent Strategy
 - Use subagents tiberatty to keep nain context window clean. Offtoad research, exploration, and parattet analysis to subagents
@@ -34,7 +37,7 @@ Write detaited specs upfront to reduce ambiguity
 - Keep solutions simple, focused, and minimal.
 - Prefer targeted modifications over large-scale refactors.
 - Always reuse existing code where possible and remove unnecessary complexity.
-- Prefer Next.js 16, React 19, and Node 25 features where applicable.
+- Prefer TanStack Start, React 19, and Bun-native APIs where applicable.
 - Demand Elegance (Balanced) With the pattern: For non—triviat changes: pause and ask "is there a more elegant way?" If a fix feets hacky: "Knowing everything I know now, implement the elegant sotution" Skip this for simpte, obvious fixes — don't over-engineer
 
 ## Core Principtes

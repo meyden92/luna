@@ -4,18 +4,20 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "preinstall": "pnpm dlx only-allow pnpm",
-    "auth:migrate": "pnpm dlx @better-auth/cli generate --config /src/libs/auth/auth.ts --output ./prisma/schema.prisma",
+    "preinstall": "bunx only-allow bun",
+    "auth:migrate": "bunx @better-auth/cli generate --config ./src/libs/auth/auth.ts --output ./prisma/schema.prisma",
     "dev": "vite dev",
     "build": "vite build",
-    "start": "node .output/server/index.mjs",
-    "dev:setup": "./scripts/dev-setup.sh",
-    "lint": "pnpm biome lint --diagnostic-level=warn",
-    "format": "pnpm biome check --write",
-    "update": "pnpm dlx taze major --interactive --install",
-    "check-types": "pnpm generate:routes && tsc --noEmit --pretty",
-    "check-all": "pnpm run format && pnpm run lint && pnpm run check-types",
+    "start": "bun .output/server/index.mjs",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "lint": "biome lint --diagnostic-level=warn",
+    "format": "biome check --write",
+    "update": "bunx taze major --interactive --install",
+    "check-types": "bun run generate:routes && tsc --noEmit --pretty",
+    "check-all": "bun run format && bun run lint && bun run check-types",
     "generate:routes": "tsr generate",
+    "test": "bun test",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
@@ -86,6 +88,7 @@
     "@tailwindcss/vite": "^4.3.2",
     "@tanstack/react-query-devtools": "^5.101.2",
     "@tanstack/router-cli": "^1.167.18",
+    "@types/bun": "^1.2.0",
     "@types/node": "^26.1.0",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.2.17",
@@ -106,11 +109,15 @@
     "os": false
   },
   "engines": {
-    "node": ">=24.0.0",
-    "pnpm": ">=10.0.0"
+    "bun": ">=1.2.0"
   },
   "author": "crysis992 (https://github.com/crysis992)",
   "trustedDependencies": [
-    "@biomejs/biome"
+    "@biomejs/biome",
+    "@prisma/client",
+    "@prisma/engines",
+    "esbuild",
+    "prisma",
+    "sharp"
   ]
 }

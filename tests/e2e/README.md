@@ -1,23 +1,23 @@
 # E2E Tests (Playwright)
 
-End-to-end tests for LunaShare. Run against the real Next.js app and a real MariaDB instance.
+End-to-end tests for LunaShare. Run against the real TanStack Start app and a real MariaDB instance.
 
 ## Quickstart
 
 ```bash
 # 1. one-time: download chromium
-pnpm test:e2e:install
+bun run test:e2e:install
 
 # 2. ensure DATABASE_URL and BETTER_AUTH_SECRET are exported (or in .env / .env.local)
 
-# 3. run all tests (auto-starts pnpm dev on :3000)
-pnpm test:e2e
+# 3. run all tests (auto-starts bun run dev on :3000)
+bun run test:e2e
 
 # 4. interactive runner
-pnpm test:e2e:ui
+bun run test:e2e:ui
 
 # 5. headed (watch the browser)
-pnpm test:e2e:headed
+bun run test:e2e:headed
 ```
 
 The HTML report is written to `playwright-report/index.html` after a run.
@@ -85,7 +85,7 @@ test('dashboard loads', async ({ authenticatedPage }) => {
 ## Required env vars
 
 - `DATABASE_URL` — MariaDB connection (same as the dev app uses).
-- `BETTER_AUTH_SECRET` — must match the value the running Next.js app uses; otherwise the signed cookie will be rejected by `auth.api.getSession`.
+- `BETTER_AUTH_SECRET` — must match the value the running app uses; otherwise the signed cookie will be rejected by `auth.api.getSession`.
 
 Optional:
 

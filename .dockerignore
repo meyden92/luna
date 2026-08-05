@@ -1,11 +1,11 @@
 # Dependencies
 node_modules
+bun-debug.log*
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
 # Production build
-.next
 out
 build
 .output

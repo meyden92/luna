@@ -9,8 +9,8 @@
     ".next": true,
     "package.json": true,
     "yarn.lock": true,
-    "pnpm-lock.yaml": true,
-    "pnpm-workspace.yaml": true,
+    "bun.lock": true,
+    "bunfig.toml": false,
     ".turbo": true
   },
   "editor.formatOnSave": true,
@@ -20,7 +20,7 @@
     "source.action.useSortedAttributes.biome": "explicit",
     "source.fixAll.biome": "explicit"
   },
-  "npm.packageManager": "pnpm",
+  "npm.packageManager": "bun",
   "files.watcherExclude": {
     "**/.git/objects/**": true,
     "**/.git/subtree-cache/**": true,

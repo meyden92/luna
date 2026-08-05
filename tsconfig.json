@@ -54,7 +54,6 @@
   "exclude": [
     "./out/**/*",
     "./node_modules/**/*",
-    "./.next/**/*",
     "./.output/**/*",
     "./.storybook/**/*",
     ".claude/**/*",

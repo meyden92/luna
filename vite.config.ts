@@ -29,7 +29,14 @@ export default defineConfig({
     tanstackStart(),
     // Register the cron TaskManager as a Nitro startup plugin (replaces the old
     // Next.js `instrumentation.ts`).
-    nitro({ plugins: ['./src/server/nitro/init-tasks.ts'] }),
+    //
+    // `preset: 'bun'` emits a server bundle that boots on Bun's HTTP server
+    // (`Bun.serve`) instead of node:http. Override with NITRO_PRESET when a
+    // deploy target needs something else (e.g. `node-server` for Node hosts).
+    nitro({
+      preset: process.env.NITRO_PRESET ?? 'bun',
+      plugins: ['./src/server/nitro/init-tasks.ts'],
+    }),
     viteReact(),
   ],
   // `better-auth` is excluded from the client pre-bundle (it pulls in the node-only

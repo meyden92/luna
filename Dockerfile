@@ -1,36 +1,25 @@
-FROM node:25-alpine AS base
-RUN npm install -g corepack --force && corepack enable
-
-FROM base AS deps
-RUN apk add --no-cache libc6-compat openssl
+FROM oven/bun:1-alpine AS base
 WORKDIR /app
 
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* pnpm-workspace.yaml* .npmrc* ./
-RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-    elif [ -f package-lock.json ]; then npm ci; \
-    elif [ -f pnpm-lock.yaml ]; then pnpm i --frozen-lockfile --ignore-scripts=false; \
-    else echo "Lockfile not found." && exit 1; \
-    fi
+# --- dependencies -----------------------------------------------------------
+FROM base AS deps
+RUN apk add --no-cache libc6-compat openssl vips-dev
+
+COPY package.json bun.lock ./
+RUN --mount=type=cache,id=bun,target=/root/.bun/install/cache \
+    bun install --frozen-lockfile
 
 COPY prisma ./prisma
+COPY prisma.config.ts ./prisma.config.ts
+RUN bunx prisma generate
 
-RUN set -e; \
-    for attempt in 1 2 3; do \
-      if [ -f pnpm-lock.yaml ]; then pnpm prisma generate && break; \
-      elif [ -f yarn.lock ]; then yarn prisma generate && break; \
-      elif [ -f package-lock.json ]; then npx prisma generate && break; \
-      else echo "Lockfile not found." && exit 1; \
-      fi; \
-      echo "Attempt $attempt failed, retrying in 5s..."; sleep 5; \
-    done
-
+# --- build ------------------------------------------------------------------
 FROM base AS builder
-WORKDIR /app
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/.prisma ./.prisma
-COPY . .
 COPY --from=deps /app/prisma ./prisma
+COPY . .
 
 ARG VITE_PUBLIC_CDN_URL
 ARG VITE_PUBLIC_SERVER_URL
@@ -40,16 +29,12 @@ ENV VITE_PUBLIC_CDN_URL=$VITE_PUBLIC_CDN_URL
 ENV VITE_PUBLIC_SERVER_URL=$VITE_PUBLIC_SERVER_URL
 ENV BUILD_COMMIT=$BUILD_COMMIT
 ENV BUILD_TIME=$BUILD_TIME
+ENV NITRO_PRESET=bun
 
-RUN \
-  if [ -f yarn.lock ]; then yarn run build; \
-  elif [ -f package-lock.json ]; then npm run build; \
-  elif [ -f pnpm-lock.yaml ]; then pnpm run build; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
+RUN bun run build
 
+# --- runtime ----------------------------------------------------------------
 FROM base AS runner
-WORKDIR /app
 
 ENV NODE_ENV=production
 
@@ -58,20 +43,22 @@ ARG BUILD_TIME=unknown
 ENV BUILD_COMMIT=$BUILD_COMMIT
 ENV BUILD_TIME=$BUILD_TIME
 
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nodejs-user
+# `sharp` and the Prisma MariaDB adapter load native code at runtime.
+RUN apk add --no-cache libc6-compat openssl vips
 
-COPY --from=builder --chown=nodejs-user:nodejs /app/.output ./.output
-COPY --from=builder --chown=nodejs-user:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nodejs-user:nodejs /app/.prisma ./.prisma
-COPY --from=builder --chown=nodejs-user:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nodejs-user:nodejs /app/package.json ./package.json
+# The oven/bun image ships a non-root `bun` user (uid 1000); reuse it rather
+# than creating another one.
+COPY --from=builder --chown=bun:bun /app/.output ./.output
+COPY --from=builder --chown=bun:bun /app/prisma ./prisma
+COPY --from=builder --chown=bun:bun /app/.prisma ./.prisma
+COPY --from=builder --chown=bun:bun /app/node_modules ./node_modules
+COPY --from=builder --chown=bun:bun /app/package.json ./package.json
 
-USER nodejs-user
+USER bun
 
 EXPOSE 3000
 
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 ENV TZ=UTC
-CMD ["node", ".output/server/index.mjs"]
+CMD ["bun", ".output/server/index.mjs"]

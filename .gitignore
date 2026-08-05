@@ -15,18 +15,12 @@ findings
 /playwright/.cache/
 tests/e2e/.auth/*.json
 
-# next.js
-/.next
+# typescript build output
 /out
-
-# next-sitemap
-public/robots.txt
-public/sitemap.xml
-public/sitemap-*.
 
 # cache
 .swc/
-.pnpm-store/
+.bun/
 
 # production
 /build
@@ -38,8 +32,8 @@ Thumbs.db
 .idea
 
 # debug
+bun-debug.log*
 npm-debug.log*
-pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .playwright-mcp/*
@@ -59,7 +53,6 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
 certificates
 # Sentry Config File
 .env.sentry-build-plugin
@@ -78,9 +71,6 @@ src/config/breadcrumb-config.ts
 
 # Git worktrees for parallel issue fixing
 .worktrees
-
-# Legacy Next.js app preserved during TanStack Start migration (Phase 0)
-_legacy_app/
 
 # TanStack Router auto-generated tree
 src/routeTree.gen.ts

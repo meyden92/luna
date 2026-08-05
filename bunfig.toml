@@ -1,0 +1,14 @@
+[install]
+# Fail fast instead of silently resolving a different version than bun.lock pins.
+exact = true
+
+[install.lockfile]
+# Keep the lockfile as text so it reviews cleanly in pull requests.
+save = true
+
+[test]
+# Scope `bun test` to src/. Bun's default glob also matches `*.spec.ts`, which
+# would otherwise pick up the Playwright suite in tests/e2e and run it under the
+# wrong runner. Playwright specs stay with `bun run test:e2e`.
+root = "src"
+coverage = false

@@ -9,7 +9,7 @@ services:
       - NODE_ENV=production
       - TZ=UTC
       - PORT=3000
-      - HOSTNAME=0.0.0.0
+      - HOST=0.0.0.0
 
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
       - BETTER_AUTH_URL=${BETTER_AUTH_URL}
@@ -32,7 +32,7 @@ services:
     networks:
       - lunashare-network
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      test: ["CMD", "bun", "-e", "process.exit((await fetch('http://localhost:3000/api/health')).ok ? 0 : 1)"]
       interval: 30s
       timeout: 10s
       retries: 3

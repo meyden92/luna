@@ -59,6 +59,7 @@ USER bun
 EXPOSE 3000
 
 ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
+# Nitro's bun preset reads HOST (via srvx), not the HOSTNAME the node preset used.
+ENV HOST="0.0.0.0"
 ENV TZ=UTC
 CMD ["bun", ".output/server/index.mjs"]

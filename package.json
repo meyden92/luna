@@ -7,7 +7,7 @@
     "preinstall": "bunx only-allow bun",
     "auth:migrate": "bunx @better-auth/cli generate --config ./src/libs/auth/auth.ts --output ./prisma/schema.prisma",
     "dev": "vite dev",
-    "build": "vite build",
+    "build": "NODE_ENV=production vite build",
     "start": "bun .output/server/index.mjs",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",

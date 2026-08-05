@@ -1,0 +1,64 @@
+{
+  "compilerOptions": {
+    /* Base Options: */
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "esnext",
+    "outDir": "out",
+    "sourceMap": true,
+    "allowJs": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "moduleDetection": "force",
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "isolatedModules": true,
+    "erasableSyntaxOnly": true,
+    /* Strictness */
+    "strict": true,
+    "alwaysStrict": true,
+    "strictNullChecks": true,
+    "checkJs": true,
+    "noImplicitOverride": true,
+    // "exactOptionalPropertyTypes": true,
+    /* Linting */
+    "noUncheckedIndexedAccess": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "allowUnusedLabels": false,
+    "noUncheckedSideEffectImports": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowUnreachableCode": false,
+    "verbatimModuleSyntax": true,
+    /* Bundled projects */
+    "lib": ["dom", "dom.iterable", "ESNext"],
+    "noEmit": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "incremental": true,
+    /* Path aliases */
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/public/*": ["./public/*"],
+      "@/components/*": ["./src/components/*"],
+      "@db/*": ["./.prisma/generated/client/*"]
+    }
+  },
+  "typeRoots": ["./node_modules/@types", "./src/types"],
+  "include": ["**/*.ts", "**/*.tsx", "./types/**/*.d.ts", "vite.config.ts", "playwright.config.ts", "tests/**/*.ts"],
+  "exclude": [
+    "./out/**/*",
+    "./node_modules/**/*",
+    "./.next/**/*",
+    "./.output/**/*",
+    "./.storybook/**/*",
+    ".claude/**/*",
+    "./test-results/**/*",
+    "./playwright-report/**/*"
+  ]
+}

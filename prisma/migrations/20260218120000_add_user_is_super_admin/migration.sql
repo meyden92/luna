@@ -1,0 +1,2 @@
+ALTER TABLE `user`
+  ADD COLUMN `isSuperAdmin` BOOLEAN NOT NULL DEFAULT false AFTER `role`;

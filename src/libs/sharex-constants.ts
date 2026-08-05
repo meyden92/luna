@@ -1,0 +1,3 @@
+export const DEFAULT_SHAREX_JPEG_QUALITY = 85;
+export const MIN_SHAREX_JPEG_QUALITY = 40;
+export const MAX_SHAREX_JPEG_QUALITY = 100;

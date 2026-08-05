@@ -1,0 +1,100 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
+  "vcs": { "enabled": false, "clientKind": "git", "useIgnoreFile": false },
+  "files": {
+    "ignoreUnknown": false,
+    "includes": [
+      "**",
+      "!!**/node_modules/**/*",
+      "!!**/out",
+      "!!**/.next",
+      "!!**/.output",
+      "!!**/.nitro",
+      "!!**/.tanstack",
+      "!**/*.d.ts",
+      "!!**/.agents",
+      "!!**/.prisma",
+      "!!**/.claude",
+      "!!**/playwright-report",
+      "!!**/test-results",
+      "!!**/tests/e2e/.auth"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 140,
+    "attributePosition": "multiline",
+    "bracketSpacing": true
+  },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "complexity": { "useArrowFunction": "off", "noStaticOnlyClass": "off" },
+      "a11y": "off",
+      "suspicious": { "noExplicitAny": "off", "noUnknownAtRules": "off" },
+      "correctness": {
+        "useUniqueElementIds": "off"
+      },
+      "performance": {
+        "noImgElement": "off",
+        "noBarrelFile": "error"
+      },
+      "style": {
+        "useBlockStatements": "off",
+        "noNonNullAssertion": "off",
+        "useNodejsImportProtocol": "off",
+        "noParameterAssign": "error",
+        "useAsConstAssertion": "error",
+        "useDefaultParameterLast": "error",
+        "useEnumInitializers": "error",
+        "useSelfClosingElements": "error",
+        "useSingleVarDeclarator": "error",
+        "noUnusedTemplateLiteral": "error",
+        "useNumberNamespace": "error",
+        "noInferrableTypes": "error",
+        "noUselessElse": "error"
+      }
+    },
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/out",
+      "!**/.next",
+      "!**/.output",
+      "!**/.nitro",
+      "!**/.tanstack",
+      "!**/.agents",
+      "!**/playwright-report",
+      "!**/test-results",
+      "!**/tests/e2e/.auth"
+    ]
+  },
+  "javascript": {
+    "formatter": {
+      "jsxQuoteStyle": "double",
+      "quoteProperties": "asNeeded",
+      "trailingCommas": "all",
+      "semicolons": "always",
+      "arrowParentheses": "always",
+      "bracketSameLine": false,
+      "quoteStyle": "single",
+      "attributePosition": "multiline",
+      "bracketSpacing": true
+    }
+  },
+  "css": {
+    "formatter": {
+      "enabled": true,
+      "indentWidth": 10
+    },
+    "parser": {
+      "tailwindDirectives": true
+    }
+  }
+}

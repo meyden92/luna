@@ -1,0 +1,114 @@
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from '@tanstack/react-router';
+import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
+import { Suspense, useEffect } from 'react';
+import { Toaster } from 'sonner';
+import Navigation from '@/components/landing/Navigation';
+import { ImpersonationBar } from '@/components/layout/ImpersonationBar';
+import { MainContent } from '@/components/layout/MainContent';
+import { ThemeProvider } from '@/components/layout/theme-provider';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { queryKeys } from '@/libs/query-keys';
+import { themeLoader } from '@/libs/theme-loader';
+import { cn } from '@/libs/utils';
+import type { RootRouteContext } from '@/route-context';
+import { getCurrentSession } from '@/server/fns/session';
+import { getInitialTheme } from '@/server/fns/theme';
+import '@/styles/globals.css';
+// @ts-expect-error - side-effect CSS import (no types ship with @fontsource)
+import '@fontsource-variable/geist';
+// @ts-expect-error - side-effect CSS import
+import '@fontsource-variable/geist-mono';
+import '@fontsource/instrument-serif/400.css';
+import '@fontsource/instrument-serif/400-italic.css';
+
+export const Route = createRootRouteWithContext<RootRouteContext>()({
+  // beforeLoad runs on EVERY navigation (and intent preload). Going through the
+  // query client means the SSR-fetched values hydrate into the client cache, so
+  // client-side navigations resolve from cache instead of blocking on two
+  // server-fn round trips per click.
+  beforeLoad: async ({ context }) => {
+    const [initialTheme, session] = await Promise.all([
+      context.queryClient.ensureQueryData({
+        queryKey: queryKeys.user.theme,
+        queryFn: () => getInitialTheme(),
+        // Only matters for the first SSR paint; next-themes owns it afterwards.
+        staleTime: Number.POSITIVE_INFINITY,
+      }),
+      context.queryClient.ensureQueryData({
+        queryKey: queryKeys.user.session,
+        queryFn: () => getCurrentSession(),
+        staleTime: 30_000,
+        revalidateIfStale: true,
+      }),
+    ]);
+    return { initialTheme, session };
+  },
+  head: () => ({
+    meta: [
+      { charSet: 'utf-8' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      { title: 'LunaShare' },
+      { name: 'description', content: 'Simple file sharing dashboard' },
+    ],
+    links: [{ rel: 'icon', href: '/favicon.ico' }],
+  }),
+  component: RootComponent,
+});
+
+function RootComponent() {
+  const { queryClient, initialTheme } = Route.useRouteContext();
+
+  useEffect(() => {
+    themeLoader.applySavedTheme();
+  }, []);
+
+  return (
+    <html
+      lang="en"
+      className={cn('h-full')}
+      suppressHydrationWarning
+    >
+      <head>
+        <HeadContent />
+      </head>
+      <body className="antialiased h-full font-sans">
+        <Suspense>
+          <QueryClientProvider client={queryClient}>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme={initialTheme === 'default' ? 'system' : initialTheme}
+              enableSystem
+              disableTransitionOnChange
+            >
+              <TooltipProvider delay={200}>
+                <a
+                  href="#main-content"
+                  className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  Skip to content
+                </a>
+                <div className="h-screen flex flex-col">
+                  <ImpersonationBar />
+                  <Navigation />
+                  <MainContent>
+                    <Outlet />
+                  </MainContent>
+                </div>
+                <Toaster toastOptions={{ duration: 6000 }} />
+              </TooltipProvider>
+            </ThemeProvider>
+            {(import.meta as any).env?.DEV ? (
+              <>
+                <TanStackRouterDevtools position="bottom-right" />
+                <ReactQueryDevtools initialIsOpen={false} />
+              </>
+            ) : null}
+          </QueryClientProvider>
+        </Suspense>
+        <Scripts />
+      </body>
+    </html>
+  );
+}

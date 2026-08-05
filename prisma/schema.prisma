@@ -1,0 +1,803 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../.prisma/generated/client"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id                           String    @id
+  email                        String    @unique
+  active                       Boolean   @default(false)
+  image                        String?   @db.Text
+  createdAt                    DateTime  @default(now())
+  updatedAt                    DateTime  @updatedAt
+  bio                          String?   @db.VarChar(150)
+  description                  String?   @db.Text
+  isProfilePublic              Boolean   @default(true)
+  receiveEmail                 Boolean   @default(true)
+  banExpires                   DateTime?
+  banReason                    String?   @db.Text
+  banned                       Boolean?
+  showAllFilesIncludesFoldered Boolean   @default(true)
+  emailVerified                Boolean   @default(false)
+  name                         String    @default("Mysterious User") @db.Text
+  role                         String?   @db.Text
+  isSuperAdmin                 Boolean   @default(false)
+  storageQuotaMiB              Int       @default(2048) @map("storage_quota_mib")
+  isDeleted                    Boolean   @default(false)
+  deletedAt                    DateTime?
+
+  File                File[]
+  Folder              Folder[]
+  CachedImage         CachedImage[]
+  accounts            Account[]
+  tokens              Token[]
+  sessions            Session[]
+  snippets            Snippet[]
+  auditLogs           AuditLog[]
+  tasks               Task[]
+  taskExecutions      TaskExecution[]
+  templates           Template[]
+  templateGenerations TemplateGeneration[]
+  aiGenerations       AiGeneration[]
+  imagePresets        ImagePreset[]
+  nicotineEntries     NicotineEntry[]
+  generationModels    GenerationModel[]
+  editingModels       EditingModel[]
+  formShares          FormShare[]
+  groupAssignments    UserGroupAssignment[] @relation("UserAssignments")
+  createdAssignments  UserGroupAssignment[] @relation("GroupAssignmentsCreatedBy")
+
+  @@index([id])
+  @@map("user")
+}
+
+model Session {
+  id             String   @id
+  expiresAt      DateTime
+  token          String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  ipAddress      String?  @db.Text
+  userAgent      String?  @db.Text
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedBy String?  @db.Text
+
+  @@unique([token])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String    @db.Text
+  providerId            String    @db.Text
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?   @db.Text
+  password              String?   @db.Text
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String   @db.Text
+  value      String   @db.Text
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier(length: 191)])
+  @@map("verification")
+}
+
+model Token {
+  id            String   @id @default(uuid())
+  name          String   @db.VarChar(100)
+  key           String   @unique @db.VarChar(64)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enabled       Boolean  @default(true)
+  compressImage Boolean  @default(false)
+  convertToJpeg Boolean  @default(false)
+  jpegQuality   Int      @default(85)
+  folderId      String?
+  stripMetadata Boolean  @default(false)
+  flowId        String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([key])
+  @@index([userId])
+  @@index([flowId])
+  @@map("token")
+}
+
+model File {
+  id               String    @id @default(uuid())
+  url              String
+  title            String    @db.Text
+  tags             String?   @db.Text
+  size             Int
+  private          Boolean   @default(false)
+  contentType      String
+  isDeleted        Boolean   @default(false)
+  deletedAt        DateTime?
+  sha256           String?   @db.VarChar(64)
+  md5              String?   @db.VarChar(32)
+  phash            String?   @db.VarChar(64)
+  scrubReport      Json?
+  moderationStatus String    @default("clear") @db.VarChar(32)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  ownerId          String
+  folderId         String?
+  owner            User      @relation(fields: [ownerId], references: [id])
+  folder           Folder?   @relation(fields: [folderId], references: [id])
+
+  metadata            FileMetadata?
+  templateGenerations TemplateGeneration[]
+  ocrResults          OCRResult[]
+
+  @@index([ownerId])
+  @@index([folderId])
+  @@index([sha256])
+  @@index([md5])
+  @@index([phash])
+  @@index([moderationStatus])
+  @@index([ownerId, isDeleted, createdAt, id])
+  @@index([ownerId, isDeleted, folderId, createdAt, id])
+  @@map("file")
+}
+
+model FileRendition {
+  id             String   @id @default(uuid())
+  sourceFileId   String
+  paramHash      String   @unique @db.VarChar(64)
+  params         Json
+  s3Key          String   @db.Text
+  contentType    String
+  size           Int
+  width          Int?
+  height         Int?
+  private        Boolean  @default(false)
+  lastAccessedAt DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([sourceFileId])
+  @@index([lastAccessedAt])
+  @@map("file_rendition")
+}
+
+model DenylistEntry {
+  id        String   @id @default(uuid())
+  hashType  String   @db.VarChar(16)
+  hash      String   @db.VarChar(128)
+  source    String   @default("private") @db.VarChar(64)
+  severity  String   @default("block") @db.VarChar(32)
+  notes     String?  @db.Text
+  addedBy   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([hashType, hash])
+  @@index([source])
+  @@index([addedBy])
+  @@map("denylist_entry")
+}
+
+model ModerationCase {
+  id             String    @id @default(uuid())
+  fileId         String
+  status         String    @default("quarantined") @db.VarChar(32)
+  matchType      String    @db.VarChar(32)
+  matchedEntryId String?
+  distance       Int?
+  uploaderId     String?
+  reviewerId     String?
+  resolution     String?   @db.Text
+  uploadMetadata Json?
+  createdAt      DateTime  @default(now())
+  resolvedAt     DateTime?
+  updatedAt      DateTime  @updatedAt
+
+  @@index([fileId])
+  @@index([status, createdAt])
+  @@index([uploaderId])
+  @@index([reviewerId])
+  @@map("moderation_case")
+}
+
+model Flow {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(120)
+  ownerId     String
+  enabled     Boolean  @default(true)
+  triggerType String   @db.VarChar(40)
+  graph       Json
+  version     Int      @default(1)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([ownerId, triggerType, enabled])
+  @@index([ownerId, isActive])
+  @@map("flow")
+}
+
+model FlowRun {
+  id          String    @id @default(uuid())
+  flowId      String
+  ownerId     String
+  status      String    @default("pending") @db.VarChar(32)
+  triggeredBy String    @db.VarChar(40)
+  items       Json?
+  logs        Json?
+  error       String?   @db.Text
+  duration    Int?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([flowId, startedAt])
+  @@index([ownerId, startedAt])
+  @@index([status])
+  @@map("flow_run")
+}
+
+model ViewEvent {
+  id           String   @id @default(uuid())
+  targetKind   String   @db.VarChar(32)
+  targetId     String
+  ownerId      String?
+  country      String?  @db.VarChar(2)
+  referrerHost String?  @db.VarChar(191)
+  deviceClass  String   @default("desktop") @db.VarChar(20)
+  visitorHash  String   @db.VarChar(64)
+  serverMs     Int?
+  createdAt    DateTime @default(now())
+
+  @@index([targetKind, targetId, createdAt])
+  @@index([ownerId, createdAt])
+  @@index([visitorHash])
+  @@map("view_event")
+}
+
+model ViewDailyRollup {
+  id                String   @id @default(uuid())
+  targetKind        String   @db.VarChar(32)
+  targetId          String
+  ownerId           String?
+  day               String   @db.VarChar(10)
+  views             Int      @default(0)
+  uniques           Int      @default(0)
+  referrerBreakdown Json?
+  countryBreakdown  Json?
+  deviceBreakdown   Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([targetKind, targetId, day])
+  @@index([ownerId, day])
+  @@map("view_daily_rollup")
+}
+
+model EgressEvent {
+  id           String   @id @default(uuid())
+  fileId       String?
+  ownerId      String
+  tokenId      String?
+  formShareId  String?
+  rendition    String   @default("original") @db.VarChar(32)
+  bytes        BigInt
+  wasEstimated Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  @@index([ownerId, createdAt])
+  @@index([fileId, createdAt])
+  @@index([tokenId, createdAt])
+  @@map("egress_event")
+}
+
+model EgressRollup {
+  id           String   @id @default(uuid())
+  ownerId      String
+  fileId       String?
+  tokenId      String?
+  rendition    String   @default("original") @db.VarChar(32)
+  period       String   @db.VarChar(7)
+  bytes        BigInt   @default(0)
+  requestCount Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([ownerId, period, fileId, tokenId, rendition])
+  @@index([ownerId, period])
+  @@index([fileId, period])
+  @@map("egress_rollup")
+}
+
+model Folder {
+  id        String    @id @default(uuid())
+  name      String    @db.Text
+  color     String?   @db.VarChar(7) // Hex color code
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  ownerId   String
+  owner     User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  files File[]
+
+  @@index([ownerId])
+  @@map("folder")
+}
+
+model CachedImage {
+  id             String   @id @default(uuid())
+  url            String // S3 URL
+  filename       String // Original filename
+  contentType    String // MIME type
+  size           Int // File size in bytes
+  hash           String // MD5 hash for deduplication
+  purpose        String // e.g., "image-edit", "image-generation", "upload"
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  lastAccessedAt DateTime @default(now()) // Track when cache was last used
+  ownerId        String
+  owner          User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, hash])
+  @@index([ownerId])
+  @@index([url])
+  @@index([purpose])
+  @@index([lastAccessedAt])
+  @@map("cached_image")
+}
+
+model FileMetadata {
+  id     String @id @default(uuid())
+  file   File   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  fileId String @unique
+
+  artist      String?
+  description String? @db.Text
+  genre       String?
+  lyrics      String? @db.Text
+  duration    Int? // e.g. seconds
+  width       Int?
+  height      Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@map("file_metadata")
+}
+
+model OCRResult {
+  id          String   @id @default(uuid())
+  fileId      String
+  file        File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  fileHash    String // MD5 hash of image for cache invalidation
+  text        String   @db.LongText // Full extracted text
+  words       Json // Word-level data with bounding boxes and confidence
+  lines       Json // Line-level data
+  confidence  Float // Overall confidence score (0-100)
+  statistics  Json // {totalWords, avgConfidence}
+  imageWidth  Int // Original image dimensions for bbox scaling
+  imageHeight Int
+  language    String   @default("eng+deu") // Languages used for OCR
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([fileId])
+  @@index([fileHash])
+  @@map("ocr_result")
+}
+
+model Snippet {
+  id        String    @id @default(uuid())
+  title     String?
+  content   String    @db.LongText
+  language  String?
+  isPublic  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+
+  author  User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId String
+
+  @@index([ownerId])
+  @@map("snippet")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  model     String // e.g. "User", "File", "Snippet"
+  action    String // e.g. "create", "update", "delete"
+  recordId  String // PK of the record touched
+  userId    String? // who triggered it (nullable for system)
+  timestamp DateTime @default(now())
+  before    Json? // snapshot before change
+  after     Json? // snapshot after change
+
+  // Enhanced tracking fields
+  metadata     Json? // Request context (IP, user agent, request ID, endpoint)
+  changeSet    String? // Group related changes in transactions
+  summary      String? @db.Text // Auto-generated human-readable summary
+  fieldChanges Json? // Structured field-level changes with paths
+
+  /// optional FK back to User if you like referential integrity
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([model, recordId])
+  @@index([changeSet])
+  @@index([timestamp])
+  @@map("audit_log")
+}
+
+model Task {
+  id              String    @id @default(uuid())
+  name            String    @unique
+  description     String    @db.Text
+  cronExpression  String
+  enabled         Boolean   @default(true)
+  taskFunction    String // Function name to execute
+  args            Json? // Arguments for task function
+  timeout         Int?      @default(120000) // Timeout in ms
+  retryCount      Int       @default(0)
+  maxRetries      Int       @default(3)
+  lastExecutionAt DateTime?
+  nextExecutionAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdBy       String?
+  createdByUser   User?     @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+
+  executions TaskExecution[]
+
+  @@index([enabled, nextExecutionAt])
+  @@map("task")
+}
+
+model TaskExecution {
+  id             String    @id @default(uuid())
+  taskId         String
+  task           Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  status         String // 'pending', 'running', 'success', 'failed', 'timeout'
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  duration       Int? // Duration in ms
+  result         Json? // Task output/return value
+  error          String?   @db.Text
+  logs           Json? // Structured logs array
+  triggeredBy    String // 'schedule', 'manual', 'api'
+  executedBy     String? // User ID if manually triggered
+  executedByUser User?     @relation(fields: [executedBy], references: [id], onDelete: SetNull)
+
+  @@index([taskId, startedAt])
+  @@index([status])
+  @@index([startedAt])
+  @@map("task_execution")
+}
+
+model Template {
+  id                      String        @id @default(uuid())
+  name                    String        @db.Text
+  description             String?       @db.Text
+  prompt                  String        @db.Text
+  inputImageCount         Int           @default(1) // Number of images user needs to upload
+  minImageCount           Int           @default(1) // Minimum number of images to generate
+  maxImageCount           Int           @default(4) // Maximum number of images to generate
+  variables               Json? // Array of variable definitions: [{name: string, label: string, type: 'text'|'number', required: boolean}]
+  previewImages           String?       @db.Text // JSON array of preview image URLs
+  editingModelId          String? // Foreign key to EditingModel
+  editingModel            EditingModel? @relation(fields: [editingModelId], references: [id], onDelete: SetNull)
+  editingModelFieldValues Json? // Admin-configured default values for editing model fields
+  isActive                Boolean       @default(true)
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+  createdBy               String
+  createdByUser           User          @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  // Relations
+  templateGenerations TemplateGeneration[]
+  globalVariables     TemplateGlobalVariable[]
+
+  @@index([isActive])
+  @@index([createdBy])
+  @@index([editingModelId])
+  @@map("template")
+}
+
+model GlobalVariable {
+  id           String   @id @default(uuid())
+  name         String   @unique // The variable name used in prompts (e.g. "clothing")
+  label        String // Display label (e.g. "Clothing Style")
+  type         String // "text", "number", "dropdown", "boolean"
+  description  String?  @db.Text
+  defaultValue String?  @db.Text
+  options      Json? // Array of options for dropdowns
+  required     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  templates TemplateGlobalVariable[]
+
+  @@map("global_variable")
+}
+
+model TemplateGlobalVariable {
+  id               String   @id @default(uuid())
+  templateId       String
+  globalVariableId String
+  addedOptions     Json? // Additional options specific to this template
+  required         Boolean? // Override global required status
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  template       Template       @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  globalVariable GlobalVariable @relation(fields: [globalVariableId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, globalVariableId])
+  @@index([templateId])
+  @@index([globalVariableId])
+  @@map("template_global_variable")
+}
+
+model TemplateGeneration {
+  id             String   @id @default(uuid())
+  templateId     String
+  userId         String
+  variableValues Json // The values used for each variable during generation
+  finalPrompt    String   @db.Text // The final prompt after variable substitution
+  customTitle    String?  @db.Text // Optional custom title provided by user
+  resultFileId   String? // Link to the generated File record (if saved)
+  status         String   @default("success") // "success", "failed"
+  errorMessage   String?  @db.Text // Error message if generation failed
+  createdAt      DateTime @default(now())
+
+  replicateId       String? @db.Text // ID from Replicate API
+  replicateStatus   String? @db.Text // Status from Replicate API
+  originalImageUrls Json? // URLs of the input images used for this generation
+
+  template   Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resultFile File?    @relation(fields: [resultFileId], references: [id], onDelete: SetNull)
+
+  @@index([templateId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([status])
+  @@map("template_generation")
+}
+
+// History of image-generation and image-edit runs. The row id is the
+// client-provided uuid so the gallery dedupes live items against DB rows by id.
+// Result image URLs live in `result` (Json) — no File FK, so removing a history
+// row never deletes the underlying generated File from the user's gallery.
+model AiGeneration {
+  id             String   @id // client-provided uuid (crypto.randomUUID())
+  kind           String // "generation" | "edit"
+  userId         String
+  modelId        String // GenerationModel.id or EditingModel.id
+  modelLabel     String
+  prompt         String?  @db.Text // image-generation only
+  inputImageUrls Json? // image-edit only — array of input CDN urls
+  status         String // "succeeded" | "failed"
+  errorMessage   String?  @db.Text
+  result         Json? // GenerationMutationResponse / MutationResponse (prediction objects stripped)
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, kind, createdAt])
+  @@map("ai_generation")
+}
+
+model ImagePreset {
+  id          String   @id @default(uuid())
+  userId      String
+  modelId     String // EditingModel.id / GenerationModel.id
+  name        String   @db.VarChar(100)
+  fieldValues Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, modelId])
+  @@map("image_preset")
+}
+
+model NicotineEntry {
+  id         String   @id @default(uuid())
+  kind       String   @db.VarChar(20)
+  note       String?  @db.Text
+  occurredAt DateTime @default(now()) @map("occurred_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  ownerId    String   @map("owner_id")
+  owner      User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, occurredAt])
+  @@index([ownerId, kind, occurredAt])
+  @@map("nicotine_entry")
+}
+
+model GenerationModel {
+  id            String   @id @default(uuid())
+  label         String // Display name e.g., "Flux Schnell"
+  description   String?  @db.Text
+  apiModelName  String // The actual API model name e.g., "black-forest-labs/flux-schnell"
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  createdBy     String
+  createdByUser User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  fields ModelField[]
+
+  @@index([isActive])
+  @@index([createdBy])
+  @@map("generation_model")
+}
+
+model ModelField {
+  id            String          @id @default(uuid())
+  modelId       String
+  model         GenerationModel @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  name          String // Field name (e.g., "prompt", "aspect_ratio")
+  label         String // Display label
+  type          String // "string", "number", "boolean", "enum"
+  description   String?         @db.Text
+  isRequired    Boolean         @default(false)
+  defaultValue  String?         @db.Text
+  minValue      String?
+  maxValue      String?
+  step          String?
+  enumOptions   String?         @db.Text
+  isReadonly    Boolean         @default(false)
+  isTextarea    Boolean         @default(false)
+  isSlider      Boolean         @default(false)
+  showCharCount Boolean         @default(false)
+  sortOrder     Int             @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([modelId])
+  @@map("model_field")
+}
+
+model FormShare {
+  id          String           @id @default(uuid())
+  title       String?          @db.Text
+  expiresAt   DateTime?
+  expiresInMs Int?
+  maxViews    Int?
+  viewCount   Int              @default(0)
+  isDeleted   Boolean          @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  ownerId     String
+  owner       User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  fields      FormShareField[]
+
+  @@index([ownerId])
+  @@index([expiresAt])
+  @@map("form_share")
+}
+
+model FormShareField {
+  id          String    @id @default(uuid())
+  formId      String
+  form        FormShare @relation(fields: [formId], references: [id], onDelete: Cascade)
+  label       String    @db.Text
+  value       String    @db.Text
+  type        String
+  isSensitive Boolean   @default(false)
+  sortOrder   Int       @default(0)
+
+  @@index([formId])
+  @@map("form_share_field")
+}
+
+model EditingModel {
+  id              String   @id @default(uuid())
+  label           String // Display name e.g., "Nano Banana"
+  description     String?  @db.Text
+  apiModelName    String // The actual API model name e.g., "google/nano-banana"
+  imageInputField String   @default("image_input") // Field name for the input image array (e.g. "image_input" or "image")
+  isActive        Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  createdBy       String
+  createdByUser   User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  fields    EditingModelField[]
+  templates Template[]
+
+  @@index([isActive])
+  @@index([createdBy])
+  @@map("editing_model")
+}
+
+model EditingModelField {
+  id            String       @id @default(uuid())
+  modelId       String
+  model         EditingModel @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  name          String // Field name (e.g., "prompt", "aspect_ratio")
+  label         String // Display label
+  type          String // "string", "number", "boolean", "enum"
+  description   String?      @db.Text
+  isRequired    Boolean      @default(false)
+  defaultValue  String?      @db.Text
+  minValue      String?
+  maxValue      String?
+  step          String?
+  enumOptions   String?      @db.Text
+  isReadonly    Boolean      @default(false)
+  isTextarea    Boolean      @default(false)
+  isSlider      Boolean      @default(false)
+  showCharCount Boolean      @default(false)
+  sortOrder     Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([modelId])
+  @@map("editing_model_field")
+}
+
+model RbacGroup {
+  id          String                @id @default(uuid())
+  key         String                @unique
+  name        String
+  description String?               @db.Text
+  isSystem    Boolean               @default(false)
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  assignments UserGroupAssignment[]
+
+  @@index([key])
+  @@map("rbac_group")
+}
+
+model UserGroupAssignment {
+  id              String    @id @default(uuid())
+  userId          String
+  groupId         String
+  createdByUserId String?
+  createdAt       DateTime  @default(now())
+  user            User      @relation("UserAssignments", fields: [userId], references: [id], onDelete: Cascade)
+  group           RbacGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdByUser   User?     @relation("GroupAssignmentsCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, groupId])
+  @@index([userId])
+  @@index([groupId])
+  @@index([createdByUserId])
+  @@map("user_group_assignment")
+}

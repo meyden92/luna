@@ -111,7 +111,7 @@
   "engines": {
     "bun": ">=1.2.0"
   },
-  "author": "crysis992 (https://github.com/crysis992)",
+  "author": "meyden92 (https://github.com/meyden92)",
   "trustedDependencies": [
     "@biomejs/biome",
     "@prisma/client",

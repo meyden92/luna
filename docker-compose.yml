@@ -1,6 +1,6 @@
 services:
   app:
-    image: ${LUNASHARE_IMAGE:-ghcr.io/crysis992/lunashare:latest}
+    image: ${LUNASHARE_IMAGE:-ghcr.io/meyden92/luna:latest}
     pull_policy: always
     container_name: lunashare-app
     ports:

@@ -16,9 +16,7 @@ import type { RootRouteContext } from '@/route-context';
 import { getCurrentSession } from '@/server/fns/session';
 import { getInitialTheme } from '@/server/fns/theme';
 import '@/styles/globals.css';
-// @ts-expect-error - side-effect CSS import (no types ship with @fontsource)
 import '@fontsource-variable/geist';
-// @ts-expect-error - side-effect CSS import
 import '@fontsource-variable/geist-mono';
 import '@fontsource/instrument-serif/400.css';
 import '@fontsource/instrument-serif/400-italic.css';

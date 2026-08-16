@@ -103,10 +103,3 @@ export async function convertVideoToAudio({ inputFile, outputFormat, preset, onP
 }
 
 export { downloadBlob };
-
-/**
- * Check if browser supports SharedArrayBuffer (required for FFmpeg.wasm)
- */
-export function isCrossOriginIsolated(): boolean {
-  return typeof crossOriginIsolated !== 'undefined' && crossOriginIsolated;
-}

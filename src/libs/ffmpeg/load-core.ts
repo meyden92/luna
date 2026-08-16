@@ -1,6 +1,10 @@
 import type { FFmpeg } from '@ffmpeg/ffmpeg';
 
-const FFMPEG_CORE_BASE_URL = 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd';
+// `@ffmpeg/ffmpeg` spawns its worker with `type: 'module'`, where `importScripts()`
+// is unavailable — the worker falls back to `await import(coreURL)` and reads
+// `.default`. Only the ESM core build has that export; the UMD build resolves to
+// `undefined` and the worker throws "failed to import ffmpeg-core.js".
+const FFMPEG_CORE_BASE_URL = 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/esm';
 
 type FFmpegLoader = {
   getFFmpeg: () => Promise<FFmpeg>;

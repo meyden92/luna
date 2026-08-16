@@ -21,6 +21,7 @@ tests/e2e/.auth/*.json
 # cache
 .swc/
 .bun/
+__pycache__/
 
 # production
 /build
@@ -79,3 +80,6 @@ src/routeTree.gen.ts
 .output/
 .nitro/
 .tanstack/
+
+# Agent skill context (personal, not shared with the team)
+.claude/skill-context/**/*.local.md

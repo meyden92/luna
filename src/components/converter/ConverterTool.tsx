@@ -1,8 +1,7 @@
-import { AlertTriangleIcon } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { convertVideoToAudio, isCrossOriginIsolated, terminateVideoConverter } from '@/libs/converter/video-converter';
+import { convertVideoToAudio, terminateVideoConverter } from '@/libs/converter/video-converter';
 import type { AudioFormat, ConversionPhase, ConversionStats, QualityPreset } from '@/types/converter';
 import { ConversionProgress } from './ConversionProgress';
 import { ConversionResult } from './ConversionResult';
@@ -10,7 +9,6 @@ import { ConversionSettings } from './ConversionSettings';
 import { FileUploadZone } from './FileUploadZone';
 
 export function ConverterTool() {
-  const [isSupported, setIsSupported] = useState<boolean | null>(null);
   const [phase, setPhase] = useState<ConversionPhase>('idle');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileFormat, setFileFormat] = useState<string>('');
@@ -24,10 +22,6 @@ export function ConverterTool() {
   const shouldCancelRef = useRef(false);
   const runningRef = useRef(false);
   const jobIdRef = useRef(0);
-
-  useEffect(() => {
-    setIsSupported(isCrossOriginIsolated());
-  }, []);
 
   const handleFileSelect = (file: File, format: string) => {
     setSelectedFile(file);
@@ -127,74 +121,53 @@ export function ConverterTool() {
             <CardDescription>Convert video files to audio format entirely in your browser</CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
-            {isSupported === null ? (
-              <div className="rounded-lg border border-border bg-muted/20 p-6 text-center">
-                <p className="text-sm text-muted-foreground">Checking browser support...</p>
+            {phase === 'idle' && (
+              <FileUploadZone
+                onFileSelect={handleFileSelect}
+                isLoading={false}
+              />
+            )}
+
+            {phase === 'file-selected' && selectedFile && (
+              <ConversionSettings
+                file={selectedFile}
+                fileFormat={fileFormat}
+                selectedFormat={selectedFormat}
+                selectedPreset={selectedPreset}
+                onFormatChange={setSelectedFormat}
+                onPresetChange={setSelectedPreset}
+                onConvert={handleConvert}
+                isLoading={false}
+              />
+            )}
+
+            {(phase === 'converting' || phase === 'cancelling') && (
+              <ConversionProgress
+                progress={progress}
+                status={conversionStatus}
+                onCancel={phase === 'converting' ? handleCancel : undefined}
+              />
+            )}
+
+            {phase === 'complete' && convertedBlob && stats && selectedFile && (
+              <ConversionResult
+                file={selectedFile}
+                stats={stats}
+                blob={convertedBlob}
+                onConvertAnother={handleReset}
+              />
+            )}
+
+            {phase === 'error' && (
+              <div className="text-center space-y-4">
+                <p className="text-sm text-muted-foreground">Something went wrong during conversion.</p>
+                <button
+                  onClick={handleReset}
+                  className="text-primary hover:underline text-sm font-medium"
+                >
+                  Try Again
+                </button>
               </div>
-            ) : !isSupported ? (
-              <div className="space-y-4 rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center">
-                <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-destructive/10">
-                  <AlertTriangleIcon className="size-6 text-destructive" />
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">In-browser conversion is not available here</p>
-                  <p className="text-sm text-muted-foreground">
-                    This tool needs a cross-origin-isolated page so FFmpeg can use SharedArrayBuffer. Open the converter over HTTPS with the
-                    required COOP and COEP headers enabled, then reload this page.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <>
-                {phase === 'idle' && (
-                  <FileUploadZone
-                    onFileSelect={handleFileSelect}
-                    isLoading={false}
-                  />
-                )}
-
-                {phase === 'file-selected' && selectedFile && (
-                  <ConversionSettings
-                    file={selectedFile}
-                    fileFormat={fileFormat}
-                    selectedFormat={selectedFormat}
-                    selectedPreset={selectedPreset}
-                    onFormatChange={setSelectedFormat}
-                    onPresetChange={setSelectedPreset}
-                    onConvert={handleConvert}
-                    isLoading={false}
-                  />
-                )}
-
-                {(phase === 'converting' || phase === 'cancelling') && (
-                  <ConversionProgress
-                    progress={progress}
-                    status={conversionStatus}
-                    onCancel={phase === 'converting' ? handleCancel : undefined}
-                  />
-                )}
-
-                {phase === 'complete' && convertedBlob && stats && selectedFile && (
-                  <ConversionResult
-                    file={selectedFile}
-                    stats={stats}
-                    blob={convertedBlob}
-                    onConvertAnother={handleReset}
-                  />
-                )}
-
-                {phase === 'error' && (
-                  <div className="text-center space-y-4">
-                    <p className="text-sm text-muted-foreground">Something went wrong during conversion.</p>
-                    <button
-                      onClick={handleReset}
-                      className="text-primary hover:underline text-sm font-medium"
-                    >
-                      Try Again
-                    </button>
-                  </div>
-                )}
-              </>
             )}
           </CardContent>
         </Card>

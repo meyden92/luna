@@ -13,6 +13,8 @@
     "db:migrate": "prisma migrate deploy",
     "db:push": "drizzle-kit push",
     "db:verify": "bun scripts/db/verify-schema.ts",
+    "db:verify-data": "bun scripts/db/verify-data.ts",
+    "db:rehearse": "bun run db:push && bun scripts/db/transform.ts && bun run db:verify && bun run db:verify-data",
     "lint": "biome lint --diagnostic-level=warn",
     "format": "biome check --write",
     "update": "bunx taze major --interactive --install",

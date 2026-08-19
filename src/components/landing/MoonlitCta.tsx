@@ -1,22 +1,12 @@
 import { Link } from '@tanstack/react-router';
 import { ArrowRight, ShieldCheck } from 'lucide-react';
+import { NightBandBackdrop } from '@/components/landing/NightBandBackdrop';
 
 export default function MoonlitCta() {
   return (
     <section className="relative mx-auto max-w-[1280px] px-9 py-[40px]">
       <div className="relative overflow-hidden rounded-[20px] border border-luna-line bg-luna-bg-2">
-        <img
-          src="/decor/night-band-light.webp"
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-70 dark:hidden"
-        />
-        <img
-          src="/decor/night-band.webp"
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 hidden h-full w-full object-cover opacity-50 dark:block"
-        />
+        <NightBandBackdrop />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-luna-bg-2 via-luna-bg-2/85 to-transparent" />
 
         <div className="relative grid items-center gap-8 p-[36px_28px] md:p-[52px_48px] lg:grid-cols-[1.05fr_0.95fr]">

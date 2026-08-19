@@ -2,6 +2,8 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 import { Loader2, LogIn } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { Brandmark } from '@/components/landing/Brandmark';
+import { NightBandBackdrop } from '@/components/landing/NightBandBackdrop';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/libs/auth/auth-client';
 
@@ -48,26 +50,43 @@ function LoginPage() {
     }
   };
 
+  // Split screen from lg up: sign-in on the left, brand panel on the right.
+  // Below lg the brand panel drops out and the sign-in column stays centred.
   return (
-    <div className="container relative flex flex-col items-center justify-center pt-20 lg:px-0">
-      <div className="mx-auto flex flex-col justify-center space-y-6 sm:w-[375px]">
-        <div className="flex flex-col items-center space-y-2 text-center">
-          <LogIn className="size-20 text-primary" />
-          <h1 className="text-2xl">
-            Welcome back to <span className="font-semibold">LunaShare</span>
-          </h1>
-          <p className="text-muted-foreground">Login to your account using Discord</p>
-        </div>
+    <div className="flex min-h-full">
+      <div className="flex w-full items-center justify-center px-6 py-16 lg:w-1/2">
+        <div className="w-full max-w-[375px] space-y-8">
+          <div className="flex flex-col items-center space-y-3 text-center lg:items-start lg:text-left">
+            <Brandmark size={44} />
+            <h1 className="font-serif text-[clamp(30px,3.2vw,42px)] font-normal leading-[1.05] tracking-[-0.02em] text-luna-ink">
+              Welcome back to <span className="italic text-luna-accent-2 dark:text-luna-accent">LunaShare</span>
+            </h1>
+            <p className="text-[14.5px] leading-[1.6] text-luna-ink-3">Login to your account using Discord</p>
+          </div>
 
-        <Button
-          onClick={loginWithDiscord}
-          disabled={isLoading}
-          className="w-full"
-          size="lg"
-        >
-          {isLoading ? <Loader2 className="mr-2 size-4 animate-spin" /> : <LogIn className="mr-2 size-4" />}
-          Login with Discord
-        </Button>
+          <Button
+            onClick={loginWithDiscord}
+            disabled={isLoading}
+            className="w-full"
+            size="lg"
+          >
+            {isLoading ? <Loader2 className="mr-2 size-4 animate-spin" /> : <LogIn className="mr-2 size-4" />}
+            Login with Discord
+          </Button>
+        </div>
+      </div>
+
+      <div className="relative hidden overflow-hidden border-l border-luna-line bg-luna-bg-2 lg:block lg:w-1/2">
+        <NightBandBackdrop />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-luna-bg-2 via-luna-bg-2/70 to-transparent" />
+
+        <div className="relative flex h-full flex-col justify-end gap-4 p-[52px_48px]">
+          <h2 className="font-serif text-[clamp(34px,3.6vw,52px)] font-normal leading-[1.02] tracking-[-0.02em] text-luna-ink">
+            Share simply,
+            <br />
+            <em className="italic text-luna-accent-2 dark:text-luna-accent">sleep easy</em>.
+          </h2>
+        </div>
       </div>
     </div>
   );

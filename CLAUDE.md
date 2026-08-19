@@ -115,6 +115,10 @@ When done: Create a Pull Request and change the label to "testing" and instruct 
 
 When the user reports a bug that is not relevant to the current implementation task, you should create a issue on github for it and not start on a fix.
 
+### Writing Issues or PRs, general Github rules
+
+NEVER reference Issues/PRs or whatever from other repositories, this creates a backlink on the referenced issue or PR. Never ever reference stuff outside of the repository we are working in!
+
 ## Agent skills
 
 ### Issue tracker

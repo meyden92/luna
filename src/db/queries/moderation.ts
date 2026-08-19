@@ -28,12 +28,14 @@ import { normaliseFileHashes, normaliseHash } from './files';
  *   which is why `scripts/db/transform-tables.ts` also lower-cases these columns
  *   for rows that already exist.
  * - Status columns (`file.moderation_status`, `moderation_case.status`) are
- *   compared case-insensitively with `ilike` instead. They are NOT in the
- *   transform's lower-cased set, so normalising the comparison value would be
- *   exactly the half-fix above: it cannot rescue a row already stored in another
- *   case. `ilike` restores the MariaDB behaviour on whatever is in the column.
- *   The literals below contain no LIKE metacharacters, so this stays an equality
- *   test.
+ *   normalised in the data too — both are in `LOWERCASED` in
+ *   `scripts/db/transform-tables.ts`, which was a no-op across all 4,230
+ *   production rows because they already read `clear`. `ilike` is kept on top of
+ *   that as the belt to the transform's braces: it restores the MariaDB
+ *   behaviour on whatever is actually in the column, so a row written in another
+ *   case by some future path still matches. The status literals are a closed
+ *   TypeScript union containing no LIKE metacharacters, so this stays an
+ *   equality test and needs no escaping.
  */
 
 export type HashType = 'sha256' | 'md5' | 'phash';

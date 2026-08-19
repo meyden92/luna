@@ -1,4 +1,4 @@
-import type { Column, SQL } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
 import { and, avg, count, desc, eq, gt, gte, ilike, inArray, isNotNull, isNull, lt, ne, notInArray, or, sql } from 'drizzle-orm';
 import { type AuditHandle, writeAuditLog } from '../audit';
 import { db } from '../client';
@@ -9,6 +9,7 @@ import { session, user } from '../schema/auth';
 import { task, taskExecution } from '../schema/automation';
 import { file, fileMetadata, fileRendition } from '../schema/files';
 import type { JsonValue } from '../schema/json';
+import { containsInsensitive, equalsInsensitive } from './like';
 import { ensureStorageQuotaAvailable } from './storage';
 
 /**
@@ -34,8 +35,11 @@ import { ensureStorageQuotaAvailable } from './storage';
  *
  * Several task functions reach into other domains (cached images, renditions,
  * analytics, template generations, file metadata). Those queries live here
- * rather than in the owning domain's module because they arrived with this
- * batch; they are candidates to move once those modules exist.
+ * rather than in the owning domain's module because the scheduled task that
+ * needs them lives here, and each is a maintenance read or bulk prune with no
+ * other caller — moving them would split one task's implementation across five
+ * modules to satisfy a filing rule. If a second caller ever appears, that is the
+ * signal to move the query to the owning module, not before.
  */
 
 /**
@@ -49,20 +53,6 @@ import { ensureStorageQuotaAvailable } from './storage';
  * UI, so the remedy is a case-insensitive *comparison*, not lower-casing on
  * write the way file hashes are handled.
  */
-function escapeLike(value: string): string {
-  return value.replace(/[\\%_]/g, (char) => `\\${char}`);
-}
-
-/** Case-insensitive equality — what `=` meant under the old collation. */
-function equalsInsensitive(column: Column, value: string): SQL {
-  return ilike(column, escapeLike(value));
-}
-
-/** Case-insensitive substring match — what Prisma's `contains:` meant. */
-function containsInsensitive(column: Column, value: string): SQL {
-  return ilike(column, `%${escapeLike(value)}%`);
-}
-
 // ---------------------------------------------------------------------------
 // Task definitions
 // ---------------------------------------------------------------------------
@@ -680,7 +670,7 @@ export async function createSyncedFile(
   userId?: string | null,
 ) {
   return db.transaction(async (tx) => {
-    await ensureStorageQuotaAvailable(tx, ownerId, size);
+    await ensureStorageQuotaAvailable(ownerId, size, tx);
     const [created] = await tx
       .insert(file)
       .values({ id: crypto.randomUUID(), ownerId, size, url, title, contentType, private: false, createdAt })

@@ -67,7 +67,7 @@ export type UploadedFile = typeof file.$inferSelect & {
  */
 export async function createUploadedFile(input: UploadedFileInput, userId: string | null, handle: AuditHandle = db): Promise<UploadedFile> {
   return handle.transaction(async (tx) => {
-    await ensureStorageQuotaAvailable(tx, input.ownerId, input.size);
+    await ensureStorageQuotaAvailable(input.ownerId, input.size, tx);
 
     const [created] = await tx
       .insert(file)

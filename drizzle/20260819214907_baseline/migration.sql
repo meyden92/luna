@@ -472,7 +472,7 @@ CREATE TABLE "file" (
 --> statement-breakpoint
 CREATE TABLE "file_metadata" (
 	"id" text PRIMARY KEY,
-	"file_id" text NOT NULL UNIQUE,
+	"file_id" text NOT NULL CONSTRAINT "file_metadata_fileId_key" UNIQUE,
 	"artist" text,
 	"description" text,
 	"genre" text,
@@ -487,7 +487,7 @@ CREATE TABLE "file_metadata" (
 CREATE TABLE "file_rendition" (
 	"id" text PRIMARY KEY,
 	"source_file_id" text NOT NULL,
-	"param_hash" varchar(64) NOT NULL UNIQUE,
+	"param_hash" varchar(64) NOT NULL CONSTRAINT "file_rendition_paramHash_key" UNIQUE,
 	"params" jsonb NOT NULL,
 	"s3_key" text NOT NULL,
 	"content_type" text NOT NULL,

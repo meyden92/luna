@@ -15,10 +15,13 @@ import { file } from '../schema/files';
  *
  * `User` and `Token` are audited; `Session`, `Account` and `Verification` are
  * not (issue #13) — session churn is not a deliberate act. Better-Auth writes
- * all five through its own adapter, which does not pass through `writeAuditLog`
- * at all, so a login can never produce audit noise. That was already true under
- * Prisma: the adapter was handed `prismabase`, the client without the audit
- * extension.
+ * all five through its own adapter, which never passes through `writeAuditLog`,
+ * so a login cannot produce audit noise. That was already true under Prisma:
+ * the adapter was handed `prismabase`, the client without the audit extension.
+ *
+ * The one write that adapter makes which IS deliberate action is registration,
+ * so `auditUserCreated` below is called from the `user.create.after` database
+ * hook. Everything else Better-Auth writes stays unaudited by design.
  */
 
 /**
@@ -293,4 +296,20 @@ export async function validateTokenKey(key: string, handle: AuditHandle = db): P
       ),
     );
   return row ? { ...row.token, user: row.user } : undefined;
+}
+
+/**
+ * Audits a user created by Better-Auth (issues #36, #13).
+ *
+ * Better-Auth's adapter writes through Drizzle directly and never reaches a
+ * query module, so registration would otherwise be the one `User` write with no
+ * audit row — and creating an account is deliberate action, which is exactly
+ * what #13 says to record. Called from the `user.create.after` database hook so
+ * the trail does not depend on remembering it at a call site.
+ *
+ * `userId` is the new user themselves: registration is self-service, and there
+ * is no acting admin to attribute it to.
+ */
+export async function auditUserCreated(created: { id: string } & Record<string, unknown>): Promise<void> {
+  await writeAuditLog(db, { model: 'User', action: 'create', after: created, userId: created.id });
 }

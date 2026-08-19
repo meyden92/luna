@@ -31,23 +31,18 @@ export function toSnakeCase(name: string): string {
     .toLowerCase();
 }
 
-/** `{ [sourceTable]: { [sourceColumn]: targetColumn } }`. */
-export type ColumnMap = Record<string, Record<string, string>>;
-
-export function buildColumnMap(tables: SourceTable[]): ColumnMap {
-  const map: ColumnMap = {};
-  for (const table of tables) {
-    if (EXCLUDED_TABLES.has(table.name)) continue;
-    map[table.name] = Object.fromEntries(table.columns.map((c) => [c.name, toSnakeCase(c.name)]));
-  }
-  return map;
-}
-
-/** Parses the DDL at `path` and returns both the tables and their column map. */
-export async function loadSource(path: string): Promise<{ tables: SourceTable[]; columnMap: ColumnMap }> {
+/**
+ * Parses the DDL at `path`.
+ *
+ * The mapping itself is `toSnakeCase` applied per column, which the transform
+ * and both verifications each call against the parsed source. An earlier version
+ * also materialised a `{ table: { sourceColumn: targetColumn } }` dictionary,
+ * but nothing ever read it — a second representation of the same rule is exactly
+ * the drift this module exists to prevent.
+ */
+export async function loadSource(path: string): Promise<{ tables: SourceTable[] }> {
   const ddl = await Bun.file(path).text();
-  const tables = parseMysqlDdl(ddl).filter((t) => !EXCLUDED_TABLES.has(t.name));
-  return { tables, columnMap: buildColumnMap(tables) };
+  return { tables: parseMysqlDdl(ddl).filter((t) => !EXCLUDED_TABLES.has(t.name)) };
 }
 
 /** Default location of the extracted source DDL (gitignored, see #24). */

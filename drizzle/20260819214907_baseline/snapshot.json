@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "6d865e8e-66ad-4dee-b582-3b806135f385",
+  "id": "a4d3b3f4-2501-46ff-bbde-df30b927646b",
   "prevIds": ["00000000-0000-0000-0000-000000000000"],
   "ddl": [
     {
@@ -8782,19 +8782,19 @@
       "entityType": "uniques"
     },
     {
-      "nameExplicit": false,
+      "nameExplicit": true,
       "columns": ["file_id"],
       "nullsNotDistinct": false,
-      "name": "file_metadata_file_id_key",
+      "name": "file_metadata_fileId_key",
       "schema": "public",
       "table": "file_metadata",
       "entityType": "uniques"
     },
     {
-      "nameExplicit": false,
+      "nameExplicit": true,
       "columns": ["param_hash"],
       "nullsNotDistinct": false,
-      "name": "file_rendition_param_hash_key",
+      "name": "file_rendition_paramHash_key",
       "schema": "public",
       "table": "file_rendition",
       "entityType": "uniques"

@@ -103,7 +103,10 @@ const ACTIONS: AuditAction[] = ['create', 'update', 'delete'];
  */
 const DELIBERATE_GAPS: Partial<Record<AuditedModel, Partial<Record<AuditAction, string>>>> = {
   User: {
-    create: 'accounts are created by Better-Auth through its own adapter, which never calls writeAuditLog',
+    // Registration IS audited, via auditUserCreated on Better-Auth's
+    // user.create.after hook — but it is unreachable from a query module, so
+    // this suite cannot drive it. Covered by the auth batch's own verification.
+    create: 'created by Better-Auth through its own adapter; audited from the user.create.after hook, not from a query module',
     delete: 'no hard delete exists; softDeleteUserAccount is an UPDATE and is audited as one',
   },
   TemplateGlobalVariable: { update: 'a link is replaced, never edited — updateTemplate deletes every link and recreates it' },

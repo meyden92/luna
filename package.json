@@ -5,7 +5,6 @@
   "private": true,
   "scripts": {
     "preinstall": "bunx only-allow bun",
-    "auth:generate": "bunx @better-auth/cli generate --config ./src/libs/auth/auth.ts --output ./auth-schema.ts",
     "dev": "vite dev",
     "build": "NODE_ENV=production vite build",
     "start": "bun .output/server/index.mjs",

@@ -109,6 +109,19 @@ async function main() {
          ON rc.constraint_name = tc.constraint_name
       WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_schema = 'public'`,
   );
+  const { rows: pgIndexes } = await client.query<{ table_name: string; index_name: string; columns: string }>(
+    `SELECT t.relname  AS table_name,
+            i.relname  AS index_name,
+            string_agg(a.attname, ',' ORDER BY k.ord) AS columns
+       FROM pg_class t
+       JOIN pg_index ix       ON ix.indrelid = t.oid
+       JOIN pg_class i        ON i.oid = ix.indexrelid
+       JOIN pg_namespace n    ON n.oid = t.relnamespace
+       JOIN LATERAL unnest(ix.indkey) WITH ORDINALITY AS k(attnum, ord) ON true
+       JOIN pg_attribute a    ON a.attrelid = t.oid AND a.attnum = k.attnum
+      WHERE n.nspname = 'public' AND t.relkind = 'r'
+      GROUP BY t.relname, i.relname`,
+  );
   await client.end();
 
   const columnsByTable = new Map<string, Map<string, (typeof pgColumns)[number]>>();
@@ -199,6 +212,34 @@ async function main() {
           table: table.name,
           kind: 'foreign key ON UPDATE',
           detail: `${column}: source ${fk.onUpdate.toUpperCase()}, applied ${match.update_rule}`,
+        });
+      }
+    }
+
+    // Indexes. #30 asks for every index reproduced with composites in their
+    // original column order, and that was the one criterion nothing verified --
+    // a declaration can name the right columns in the wrong order and no column
+    // or FK check would notice.
+    const appliedIndexes = pgIndexes.filter((i) => i.table_name === table.name);
+    for (const index of table.indexes) {
+      const expected = index.columns.map(toSnakeCase).join(',');
+      const match = appliedIndexes.find((i) => i.index_name === index.name);
+      if (!match) {
+        const sameColumns = appliedIndexes.find((i) => i.columns === expected);
+        problems.push({
+          table: table.name,
+          kind: 'index',
+          detail: sameColumns
+            ? `${index.name} (${expected}) is absent; an index with the same columns exists as ${sameColumns.index_name}`
+            : `${index.name} (${expected}) is absent`,
+        });
+        continue;
+      }
+      if (match.columns !== expected) {
+        problems.push({
+          table: table.name,
+          kind: 'index column order',
+          detail: `${index.name}: source (${expected}), applied (${match.columns})`,
         });
       }
     }

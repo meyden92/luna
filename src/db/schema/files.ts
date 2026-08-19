@@ -83,7 +83,7 @@ export const fileMetadata = pgTable('file_metadata', {
   id: text('id').primaryKey(),
   fileId: text('file_id')
     .notNull()
-    .unique()
+    .unique('file_metadata_fileId_key')
     .references(() => file.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
   artist: text('artist'),
   description: text('description'),
@@ -103,7 +103,7 @@ export const fileRendition = pgTable(
     // Dump has no FK constraint on this column despite the naming convention —
     // reproduced faithfully (see module report).
     sourceFileId: text('source_file_id').notNull(),
-    paramHash: varchar('param_hash', { length: 64 }).notNull().unique(),
+    paramHash: varchar('param_hash', { length: 64 }).notNull().unique('file_rendition_paramHash_key'),
     params: jsonb('params').$type<JsonValue>().notNull(),
     s3Key: text('s3_key').notNull(),
     contentType: text('content_type').notNull(),

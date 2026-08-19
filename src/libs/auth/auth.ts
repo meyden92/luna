@@ -1,7 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { admin as adminPlugin } from 'better-auth/plugins';
 import { tanstackStartCookies } from 'better-auth/tanstack-start';
-import { authDatabaseAdapter } from '@/db/queries/auth';
+import { auditUserCreated, authDatabaseAdapter } from '@/db/queries/auth';
 import { env } from '../env';
 import { ensureUserHasDefaultGroup } from '../rbac/default-group';
 
@@ -29,6 +29,10 @@ export const auth = betterAuth({
               error,
             });
           }
+          // Better-Auth's adapter writes through Drizzle directly, so this is
+          // the only place a registration can be audited (#36). writeAuditLog
+          // already swallows its own failures, so it cannot break signup.
+          await auditUserCreated(user);
         },
       },
     },

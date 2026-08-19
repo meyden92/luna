@@ -124,12 +124,3 @@ export async function deleteOwnedFolder(
 
   return { id, filesCount: detached };
 }
-
-/** Number of live folders an owner has. */
-export async function countOwnedFolders(ownerId: string, handle: AuditHandle = db) {
-  const [row] = await handle
-    .select({ total: count() })
-    .from(folder)
-    .where(and(eq(folder.ownerId, ownerId), eq(folder.isDeleted, false)));
-  return Number(row?.total ?? 0);
-}

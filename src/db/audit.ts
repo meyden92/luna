@@ -151,12 +151,15 @@ export async function writeAuditLog(
     before = null,
     after = null,
     userId,
+    changeSet,
   }: {
     model: AuditedModel;
     action: AuditAction;
     before?: AuditRecord | null;
     after?: AuditRecord | null;
     userId?: string | null;
+    /** Groups several rows changed together under one id; generated if absent. */
+    changeSet?: string;
   },
 ): Promise<void> {
   try {
@@ -177,7 +180,7 @@ export async function writeAuditLog(
       before: beforeSnapshot,
       after: afterSnapshot,
       metadata: metadata ? (JSON.parse(JSON.stringify(metadata)) as JsonValue) : null,
-      changeSet: MetadataCollector.generateChangeSetId(),
+      changeSet: changeSet ?? MetadataCollector.generateChangeSetId(),
       summary: Summarizer.generateActionSummary(model, action, diff.changes, recordId),
       fieldChanges: diff.hasChanges ? (JSON.parse(JSON.stringify(diff.changes)) as JsonValue) : null,
     };
@@ -207,7 +210,10 @@ export async function writeAuditLogs(
   records: { before?: AuditRecord | null; after?: AuditRecord | null }[],
   userId?: string | null,
 ): Promise<void> {
+  // One changeSet for the whole batch, which is what made a bulk update legible
+  // as a single action in the admin trail under the Prisma extension.
+  const changeSet = MetadataCollector.generateChangeSetId();
   for (const record of records) {
-    await writeAuditLog(handle, { model, action, ...record, userId });
+    await writeAuditLog(handle, { model, action, ...record, userId, changeSet });
   }
 }

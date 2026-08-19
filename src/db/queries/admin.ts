@@ -6,6 +6,7 @@ import { auditLog, cachedImage, rbacGroup, userGroupAssignment } from '../schema
 import { templateGeneration } from '../schema/ai';
 import { session, user } from '../schema/auth';
 import { file } from '../schema/files';
+import { containsInsensitive, equalsInsensitive, escapeLike } from './like';
 import { ensureGroupAssignment } from './rbac';
 
 /**
@@ -20,24 +21,6 @@ import { ensureGroupAssignment } from './rbac';
  * so a caller composes a write into its transaction by passing `tx` and
  * otherwise passes nothing (issue #15).
  */
-
-/**
- * Escapes LIKE metacharacters so `ilike` compares text rather than matching a
- * pattern the user accidentally supplied.
- */
-function escapeLike(value: string): string {
-  return value.replace(/[\\%_]/g, (char) => `\\${char}`);
-}
-
-/** Case-insensitive equality — what `=` meant under `utf8mb4_unicode_ci`. */
-function equalsInsensitive(column: Column, value: string): SQL {
-  return ilike(column, escapeLike(value));
-}
-
-/** Case-insensitive substring match — what Prisma's `contains:` meant. */
-function containsInsensitive(column: Column, value: string): SQL {
-  return ilike(column, `%${escapeLike(value)}%`);
-}
 
 /**
  * Case-insensitive ordering key.

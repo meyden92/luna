@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, inArray, isNotNull, isNull, lt, ne, or } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, isNotNull, isNull, lt, ne, or } from 'drizzle-orm';
 import { type AuditHandle, writeAuditLog, writeAuditLogs } from '../audit';
 import { db, type Tx } from '../client';
 import { cachedImage } from '../schema/admin';
@@ -16,14 +16,27 @@ import {
 } from '../schema/ai';
 import { file, fileMetadata } from '../schema/files';
 import type { JsonValue } from '../schema/json';
+import { equalsInsensitive } from './like';
 import { ensureStorageQuotaAvailable } from './storage';
 
 /**
  * Query module for AI generation, templates, model configuration and presets
  * (issues #15, #38). Same contract as the files and folders modules: call sites
- * import named functions, the `db` handle never leaves `src/db/`, the handle
- * comes last and defaults to this module's own `db`, and the audit call lives
- * inside the write function.
+ * import named functions, the `db` handle never leaves `src/db/`, and the audit
+ * call lives inside the write function.
+ *
+ * Two deliberate departures from the handle-last-with-default shape, both worth
+ * knowing before adding a function here:
+ *
+ *  - Reads that use the relational query API call it on the concrete `db`
+ *    handle, not on a `Db | Tx` union. The union widens jsonb columns back to
+ *    `unknown`, and TanStack Start then refuses to serialise the row.
+ *  - Writes that must be atomic across several statements open their own
+ *    `db.transaction` and take no handle. They are the transaction boundary
+ *    rather than a participant in someone else's, so accepting one would offer a
+ *    composability this module cannot honour.
+ *
+ * Functions that are neither take the handle last, defaulting to `db`.
  *
  * All ten models this module owns — `AiGeneration`, `TemplateGeneration`,
  * `Template`, `TemplateGlobalVariable`, `GlobalVariable`, `GenerationModel`,
@@ -406,11 +419,15 @@ export async function listGlobalVariablesWithUsage(handle: AuditHandle = db) {
  * uniqueness check case-insensitive and the application inherited that without
  * asking for it (issue #23). On Postgres `eq` would silently start accepting
  * `Style` alongside `style`, and the two would then be indistinguishable in a
- * prompt placeholder. The name is a closed identifier (`^[a-zA-Z0-9_]+$`), so
- * it carries no LIKE metacharacters to escape.
+ * prompt placeholder.
+ *
+ * The value IS escaped. The schema allows `^[a-zA-Z0-9_]+$`, and `_` is a
+ * single-character LIKE wildcard — unescaped, the name `user_id` matches an
+ * existing `userXid` and is wrongly reported as taken.
  */
 export async function globalVariableNameTaken(name: string, excludeId: string | null = null, handle: AuditHandle = db) {
-  const where = excludeId ? and(ilike(globalVariable.name, name), ne(globalVariable.id, excludeId)) : ilike(globalVariable.name, name);
+  const match = equalsInsensitive(globalVariable.name, name);
+  const where = excludeId ? and(match, ne(globalVariable.id, excludeId)) : match;
   const [row] = await handle.select({ id: globalVariable.id }).from(globalVariable).where(where).limit(1);
   return row !== undefined;
 }
@@ -1108,7 +1125,7 @@ export async function createGeneratedFile(
 ) {
   const { dimensions, ...fileValues } = values;
   return db.transaction(async (tx: Tx) => {
-    await ensureStorageQuotaAvailable(tx, values.ownerId, values.size);
+    await ensureStorageQuotaAvailable(values.ownerId, values.size, tx);
 
     const [row] = await tx
       .insert(file)

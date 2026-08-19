@@ -1,7 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { evaluateQuota, type StorageQuotaDetails } from '@/libs/storage-quota';
 import type { Tx } from '../client';
-import { db } from '../client';
 import { user } from '../schema/auth';
 import { storageUsage } from './files';
 
@@ -27,23 +26,21 @@ export async function lockUserStorageQuota(userId: string, tx: Tx): Promise<numb
   return row?.storageQuotaMiB ?? null;
 }
 
-/** An owner's quota without locking — for display, never for admission control. */
-export async function getUserStorageQuota(userId: string, handle: typeof db | Tx = db): Promise<number | null> {
-  const [row] = await handle.select({ storageQuotaMiB: user.storageQuotaMiB }).from(user).where(eq(user.id, userId));
-  return row?.storageQuotaMiB ?? null;
-}
-
 /**
  * Admission control for an upload. Must run inside a transaction: the quota read
  * takes a row lock so two concurrent uploads cannot both see the same free space
  * and both fit, and a lock outside a transaction is released immediately.
+ *
+ * The handle comes last, like every other query function, but deliberately has
+ * NO default: defaulting to `db` would run the read outside any transaction and
+ * silently defeat the row lock, which is the entire point of the function.
  *
  * It lives here rather than beside the quota constants because it reads the
  * database. `src/libs/storage-quota.ts` is imported by admin routes, so pulling
  * the data-access layer into it drags the whole database module into the client
  * bundle — which is exactly how the production build broke.
  */
-export async function ensureStorageQuotaAvailable(tx: Tx, userId: string, incomingBytes: number): Promise<StorageQuotaDetails> {
+export async function ensureStorageQuotaAvailable(userId: string, incomingBytes: number, tx: Tx): Promise<StorageQuotaDetails> {
   const quotaMiB = await lockUserStorageQuota(userId, tx);
   const { totalBytes: usedBytes } = await storageUsage(userId, tx);
   return evaluateQuota(quotaMiB, usedBytes, incomingBytes);

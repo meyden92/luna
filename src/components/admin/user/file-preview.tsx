@@ -1,10 +1,10 @@
-import type { File } from '@db/client';
 import { Download, ExternalLink, FileIcon } from 'lucide-react';
 import { useState } from 'react';
-
 import { Button } from '@/components/ui/button';
+import type { file } from '@/db/schema/files';
 import { formatSize, getCDNImage } from '@/libs/utils';
 
+type File = typeof file.$inferSelect;
 interface FilePreviewProps {
   file: File;
 }

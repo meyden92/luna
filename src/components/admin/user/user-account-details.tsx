@@ -1,10 +1,11 @@
-import type { User } from '@db/client';
 import { UserIcon } from 'lucide-react';
 import RbacUserGroupAssignment from '@/components/admin/rbac/RbacUserGroupAssignment';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import type { user } from '@/db/schema/auth';
 
+type User = typeof user.$inferSelect;
 interface UserAccountDetailsProps {
   user: User;
 }

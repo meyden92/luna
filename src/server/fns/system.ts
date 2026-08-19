@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import { listOwnerFileTags } from '@/db/queries/admin';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
 
@@ -20,12 +21,7 @@ export const getHealth = createServerFn({ method: 'GET' })
 export const listTags = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'user' }))
   .handler(async ({ context }) => {
-    const { default: prisma } = await import('@/libs/prismadb');
-    const userId = userIdFromCtx(context);
-    const rows = await prisma.file.findMany({
-      where: { ownerId: userId, isDeleted: false, tags: { not: null } },
-      select: { tags: true },
-    });
+    const rows = await listOwnerFileTags(userIdFromCtx(context));
 
     const all = new Set<string>();
     for (const row of rows) {

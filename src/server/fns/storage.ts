@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import { listOwnerCachedImages } from '@/db/queries/admin';
 import { storageUsage } from '@/db/queries/files';
 import { env } from '@/libs/env';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
@@ -69,21 +70,13 @@ export const listCachedImages = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'user' }))
   .validator(cacheImagesSchema)
   .handler(async ({ data, context }) => {
-    const { default: prisma } = await import('@/libs/prismadb');
-    const userId = userIdFromCtx(context);
-    const purpose = data.purpose ?? 'image-edit';
-    const skip = (data.page - 1) * data.limit;
-
-    const [images, totalCount] = await Promise.all([
-      prisma.cachedImage.findMany({
-        where: { ownerId: userId, purpose },
-        orderBy: { createdAt: 'desc' },
-        take: data.limit + 1,
-        skip,
-        select: { id: true, url: true, filename: true, contentType: true, size: true, hash: true, createdAt: true },
-      }),
-      prisma.cachedImage.count({ where: { ownerId: userId, purpose } }),
-    ]);
+    const { images, totalCount } = await listOwnerCachedImages({
+      ownerId: userIdFromCtx(context),
+      purpose: data.purpose ?? 'image-edit',
+      // One extra row is what tells the pager whether another page exists.
+      limit: data.limit + 1,
+      offset: (data.page - 1) * data.limit,
+    });
 
     const hasMore = images.length > data.limit;
     const responseImages = hasMore ? images.slice(0, data.limit) : images;

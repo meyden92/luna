@@ -1,4 +1,3 @@
-import type { EditingModelField } from '@db/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
@@ -26,11 +25,13 @@ import {
   useFormWatch,
 } from '@/components/ui/tanstack-form';
 import { Textarea } from '@/components/ui/textarea';
+import type { editingModelField } from '@/db/schema/ai';
 import { queryKeys } from '@/libs/query-keys';
 import { validateTemplateVariablesInPrompt } from '@/libs/template-variable-validation';
 import type { TemplateFormValues } from '@/schemas/template-schema';
 import { createAdminTemplate, updateAdminTemplate } from '@/server/fns/admin/templates';
 
+type EditingModelField = typeof editingModelField.$inferSelect;
 interface TemplateFormProps {
   initialData?: Partial<TemplateFormValues> & { id?: string };
   mode: 'create' | 'edit';

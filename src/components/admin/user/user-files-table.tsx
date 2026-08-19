@@ -1,4 +1,3 @@
-import type { File } from '@db/client';
 import { getRouteApi } from '@tanstack/react-router';
 import { format } from 'date-fns';
 import { ArrowUpDown, ChevronLeft, ChevronRight, Eye, Filter, Trash2 } from 'lucide-react';
@@ -8,12 +7,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import type { file } from '@/db/schema/files';
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import { useConfirmation } from '@/hooks/use-confirmation';
 import { formatSize } from '@/libs/utils';
 import { deleteAdminUserFile } from '@/server/fns/admin/users';
 import FilePreview from './file-preview';
 
+type File = typeof file.$inferSelect;
 const routeApi = getRouteApi('/_admin/admin/users/$userid/files');
 type UserFilesSearch = ReturnType<typeof routeApi.useSearch>;
 

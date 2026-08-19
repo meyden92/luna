@@ -3,6 +3,7 @@ import { Loader2, LogIn } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Brandmark } from '@/components/landing/Brandmark';
+import { NightBandBackdrop } from '@/components/landing/NightBandBackdrop';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/libs/auth/auth-client';
 
@@ -76,30 +77,15 @@ function LoginPage() {
       </div>
 
       <div className="relative hidden overflow-hidden border-l border-luna-line bg-luna-bg-2 lg:block lg:w-1/2">
-        <img
-          src="/decor/night-band-light.webp"
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-70 dark:hidden"
-        />
-        <img
-          src="/decor/night-band.webp"
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 hidden h-full w-full object-cover opacity-50 dark:block"
-        />
+        <NightBandBackdrop />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-luna-bg-2 via-luna-bg-2/70 to-transparent" />
 
         <div className="relative flex h-full flex-col justify-end gap-4 p-[52px_48px]">
-          <span className="font-mono text-[11px] tracking-[0.12em] text-luna-accent-2 dark:text-luna-accent">WELCOME BACK</span>
           <h2 className="font-serif text-[clamp(34px,3.6vw,52px)] font-normal leading-[1.02] tracking-[-0.02em] text-luna-ink">
             Share simply,
             <br />
             <em className="italic text-luna-accent-2 dark:text-luna-accent">sleep easy</em>.
           </h2>
-          <p className="max-w-[46ch] text-[14.5px] leading-[1.6] text-luna-ink-3">
-            Your files, sent quietly into the night — no ads, no tracking, no one peering over your shoulder.
-          </p>
         </div>
       </div>
     </div>

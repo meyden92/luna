@@ -1,10 +1,20 @@
-import type { Prisma } from '@db/client';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import {
+  createDenylistEntry,
+  findOpenModerationCase,
+  importDenylistEntries as importDenylistEntryRows,
+  listDenylistEntries as listDenylistEntryRows,
+  listModerationQueue as listModerationQueueRows,
+  listRescanCandidates,
+  quarantineFile,
+  resolveModerationCase as resolveModerationCaseRow,
+} from '@/db/queries/moderation';
 import { type FileHashes, findDenylistMatchForHashes } from '@/libs/moderation/hash-gate';
-import prisma from '@/libs/prismadb';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
+
+const RESCAN_PAGE_SIZE = 250;
 
 const denylistEntrySchema = z.object({
   hashType: z.enum(['sha256', 'md5', 'phash']),
@@ -36,41 +46,18 @@ const resolveModerationCaseSchema = z.object({
 
 export const listModerationQueue = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'admin' }))
-  .handler(async () => {
-    const cases = await prisma.moderationCase.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 100,
-    });
-    const files = await prisma.file.findMany({
-      where: { id: { in: cases.map((item) => item.fileId) } },
-      select: { id: true, title: true, ownerId: true, contentType: true, size: true, createdAt: true },
-    });
-    const filesById = new Map(files.map((file) => [file.id, file]));
-    return cases.map((item) => ({
-      ...item,
-      file: filesById.get(item.fileId) ?? null,
-    }));
-  });
+  .handler(async () => listModerationQueueRows());
 
 export const listDenylistEntries = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'admin' }))
-  .handler(async () => {
-    return prisma.denylistEntry.findMany({ orderBy: { createdAt: 'desc' }, take: 200 });
-  });
+  .handler(async () => listDenylistEntryRows());
 
 export const addDenylistEntry = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(denylistEntrySchema)
   .handler(async ({ data, context }) => {
-    return prisma.denylistEntry.create({
-      data: {
-        hashType: data.hashType,
-        hash: data.hash,
-        severity: data.severity,
-        notes: data.notes,
-        addedBy: userIdFromCtx(context),
-      },
-    });
+    const userId = userIdFromCtx(context);
+    return createDenylistEntry({ ...data, addedBy: userId }, userId);
   });
 
 export const importDenylistEntries = createServerFn({ method: 'POST' })
@@ -78,44 +65,16 @@ export const importDenylistEntries = createServerFn({ method: 'POST' })
   .validator(importDenylistSchema)
   .handler(async ({ data, context }) => {
     const userId = userIdFromCtx(context);
-    const result = await prisma.denylistEntry.createMany({
-      data: data.entries.map((entry) => ({
-        hashType: entry.hashType,
-        hash: entry.hash,
-        severity: entry.severity,
-        notes: entry.notes,
-        source: data.source,
-        addedBy: userId,
-      })),
-      skipDuplicates: true,
-    });
-    return { imported: result.count };
+    return importDenylistEntryRows({ source: data.source, entries: data.entries, addedBy: userId }, userId);
   });
 
 export const resolveModerationCase = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(resolveModerationCaseSchema)
   .handler(async ({ data, context }) => {
+    const userId = userIdFromCtx(context);
     const status = data.action === 'confirm' ? 'confirmed' : data.action === 'release' ? 'released' : 'escalated';
-    const moderationCase = await prisma.moderationCase.update({
-      where: { id: data.id },
-      data: {
-        status,
-        resolution: data.resolution,
-        reviewerId: userIdFromCtx(context),
-        resolvedAt: new Date(),
-      },
-    });
-
-    if (data.action === 'release') {
-      await prisma.file.update({ where: { id: moderationCase.fileId }, data: { moderationStatus: 'clear' } });
-    } else if (data.action === 'confirm') {
-      await prisma.file.update({
-        where: { id: moderationCase.fileId },
-        data: { isDeleted: true, deletedAt: new Date(), moderationStatus: 'confirmed' },
-      });
-    }
-
+    await resolveModerationCaseRow({ id: data.id, status, resolution: data.resolution, reviewerId: userId }, userId);
     return { success: true };
   });
 
@@ -128,17 +87,7 @@ export const rescanModerationHashes = createServerFn({ method: 'POST' })
     let cursor: string | undefined;
 
     for (;;) {
-      const files = await prisma.file.findMany({
-        where: {
-          isDeleted: false,
-          moderationStatus: { not: 'quarantined' },
-          OR: [{ sha256: { not: null } }, { md5: { not: null } }, { phash: { not: null } }],
-        },
-        select: { id: true, ownerId: true, sha256: true, md5: true, phash: true },
-        orderBy: { id: 'asc' },
-        take: 250,
-        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      });
+      const files = await listRescanCandidates({ cursor, limit: RESCAN_PAGE_SIZE });
       if (files.length === 0) break;
 
       for (const file of files) {
@@ -146,36 +95,25 @@ export const rescanModerationHashes = createServerFn({ method: 'POST' })
         if (!file.sha256 || !file.md5) continue;
         const match = await findDenylistMatchForHashes({ sha256: file.sha256, md5: file.md5, phash: file.phash } satisfies FileHashes);
         if (!match) continue;
+        if (await findOpenModerationCase(file.id)) continue;
 
-        const existing = await prisma.moderationCase.findFirst({
-          where: { fileId: file.id, status: 'quarantined' },
-          select: { id: true },
-        });
-        if (existing) continue;
-
-        await prisma.$transaction(async (tx) => {
-          await tx.file.update({
-            where: { id: file.id },
-            data: { private: true, moderationStatus: 'quarantined' },
-          });
-          await tx.moderationCase.create({
-            data: {
-              fileId: file.id,
-              status: 'quarantined',
-              matchType: match.matchType,
-              matchedEntryId: match.matchedEntryId,
-              distance: match.distance,
-              uploaderId: file.ownerId,
-              reviewerId,
-              uploadMetadata: { source: 'admin-rescan' } as Prisma.InputJsonValue,
-            },
-          });
-        });
+        await quarantineFile(
+          {
+            fileId: file.id,
+            matchType: match.matchType,
+            matchedEntryId: match.matchedEntryId,
+            distance: match.distance,
+            uploaderId: file.ownerId,
+            reviewerId,
+            uploadMetadata: { source: 'admin-rescan' },
+          },
+          reviewerId,
+        );
         matched += 1;
       }
 
       cursor = files.at(-1)?.id;
-      if (files.length < 250 || !cursor) break;
+      if (files.length < RESCAN_PAGE_SIZE || !cursor) break;
     }
 
     return { scanned, matched };

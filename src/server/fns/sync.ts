@@ -1,10 +1,9 @@
 import { DeleteObjectsCommand, HeadObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { createServerFn } from '@tanstack/react-start';
-import { writeCreateAuditLog } from '@/libs/audit/transaction-audit';
+import { softDeleteFiles } from '@/db/queries/files';
+import { createSyncedFile, listFilesForSync } from '@/db/queries/tasks';
 import { env } from '@/libs/env';
-import prisma from '@/libs/prismadb';
 import { fileS3Key, s3Client } from '@/libs/S3Helper';
-import { ensureStorageQuotaAvailableViaPrisma } from '@/libs/storage-quota';
 import { deleteDbOnlyFilesSchema, deleteS3OnlyFilesSchema, insertS3OnlyFilesToDbSchema } from '@/schemas/sync-schema';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
@@ -65,13 +64,7 @@ export const compareSync = createServerFn({ method: 'GET' })
     const syncedS3Keys = new Set<string>();
     let dbCursor: string | undefined;
     do {
-      const dbFiles = await prisma.file.findMany({
-        where: { ownerId: userId, isDeleted: false },
-        select: { id: true, url: true, title: true, size: true, contentType: true, createdAt: true },
-        orderBy: { id: 'asc' },
-        take: DB_COMPARE_PAGE_SIZE,
-        ...(dbCursor ? { cursor: { id: dbCursor }, skip: 1 } : {}),
-      });
+      const dbFiles = await listFilesForSync({ ownerId: userId, afterId: dbCursor, limit: DB_COMPARE_PAGE_SIZE });
 
       for (const f of dbFiles) {
         const key = fileS3Key(userId, f.url);
@@ -121,11 +114,9 @@ export const deleteDbOnlyFiles = createServerFn({ method: 'POST' })
   .validator(deleteDbOnlyFilesSchema)
   .handler(async ({ data, context }) => {
     if (data.fileIds.length === 0) return { deletedCount: 0 };
-    const result = await prisma.file.updateMany({
-      where: { id: { in: data.fileIds }, ownerId: userIdFromCtx(context) },
-      data: { isDeleted: true, deletedAt: new Date() },
-    });
-    return { deletedCount: result.count };
+    const userId = userIdFromCtx(context);
+    const deleted = await softDeleteFiles(data.fileIds, userId, userId);
+    return { deletedCount: deleted.length };
   });
 
 export const deleteS3OnlyFiles = createServerFn({ method: 'POST' })
@@ -154,21 +145,20 @@ export const insertS3OnlyFilesToDb = createServerFn({ method: 'POST' })
     for (const file of data.files) {
       try {
         const head = await s3Client.send(new HeadObjectCommand({ Bucket: env.AWS_BUCKET_NAME, Key: file.key }));
-        await prisma.$transaction(async (tx) => {
-          await ensureStorageQuotaAvailableViaPrisma(tx, data.targetUserId, file.size);
-          const createdFile = await tx.file.create({
-            data: {
-              ownerId: data.targetUserId,
-              size: file.size,
-              url: encodeURIComponent(file.fileName),
-              private: false,
-              title: file.fileName,
-              contentType: head.ContentType || 'application/octet-stream',
-              createdAt: file.lastModified,
-            },
-          });
-          await writeCreateAuditLog(tx, { model: 'File', record: createdFile, userId: adminId });
-        });
+        // Admission control and the insert it guards share one Drizzle
+        // transaction inside the query module, so the quota row lock is still
+        // held when the file row lands.
+        await createSyncedFile(
+          {
+            ownerId: data.targetUserId,
+            size: file.size,
+            url: encodeURIComponent(file.fileName),
+            title: file.fileName,
+            contentType: head.ContentType || 'application/octet-stream',
+            createdAt: file.lastModified,
+          },
+          adminId,
+        );
         insertedCount++;
       } catch (error) {
         errors.push(`Failed to create database entry for ${file.fileName}: ${error instanceof Error ? error.message : 'Unknown error'}`);

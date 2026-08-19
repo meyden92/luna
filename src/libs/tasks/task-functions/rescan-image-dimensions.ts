@@ -1,7 +1,7 @@
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import sharp from 'sharp';
+import { listImagesMissingDimensions, upsertFileDimensions } from '@/db/queries/tasks';
 import { isAbortError, throwIfAborted } from '@/libs/ai-generation-utils';
-import prisma from '@/libs/prismadb';
 import { s3Client } from '@/libs/S3Helper';
 import type { TaskFunction } from '@/types/tasks';
 import { env } from '../../env';
@@ -11,15 +11,7 @@ const BATCH_SIZE = 25;
 export const rescanImageDimensionsExecutor: TaskFunction = async (...args) => {
   const { signal } = args[args.length - 1];
   throwIfAborted(signal);
-  const files = await prisma.file.findMany({
-    where: {
-      contentType: { startsWith: 'image/' },
-      isDeleted: false,
-      OR: [{ metadata: null }, { metadata: { width: null } }],
-    },
-    select: { id: true, url: true, ownerId: true },
-    orderBy: { createdAt: 'asc' },
-  });
+  const files = await listImagesMissingDimensions();
 
   const results = { scanned: 0, updated: 0, failed: 0 };
 
@@ -43,11 +35,7 @@ export const rescanImageDimensionsExecutor: TaskFunction = async (...args) => {
           if (!width || !height) throw new Error('Could not determine image dimensions');
 
           throwIfAborted(signal);
-          await prisma.fileMetadata.upsert({
-            where: { fileId: file.id },
-            create: { fileId: file.id, width, height },
-            update: { width, height },
-          });
+          await upsertFileDimensions(file.id, width, height);
           results.updated++;
         } catch (error) {
           if (signal.aborted || isAbortError(error)) throw error;

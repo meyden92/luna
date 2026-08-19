@@ -1,6 +1,6 @@
 import { getRequestHeaders } from '@tanstack/react-start/server';
+import { getAccountStatus } from '@/db/queries/rbac';
 import { auth } from '@/libs/auth/auth';
-import prisma from '@/libs/prismadb';
 import { ForbiddenError, UnauthorizedError } from './errors';
 import { isUserAdmin } from './service';
 
@@ -16,12 +16,9 @@ export async function requireAuthenticatedUser(requestHeaders?: Headers) {
     throw new UnauthorizedError();
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { isDeleted: true, banned: true, banExpires: true },
-  });
-  const bannedNow = user?.banned === true && (user.banExpires === null || user.banExpires > new Date());
-  if (!user || user.isDeleted || bannedNow) {
+  const account = await getAccountStatus(session.user.id);
+  const bannedNow = account?.banned === true && (account.banExpires === null || account.banExpires > new Date());
+  if (!account || account.isDeleted || bannedNow) {
     throw new UnauthorizedError();
   }
 

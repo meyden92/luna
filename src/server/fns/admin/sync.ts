@@ -1,9 +1,10 @@
 import { ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import { listFilesForSync, softDeleteFilesAnyOwner } from '@/db/queries/tasks';
 import { env } from '@/libs/env';
-import prisma from '@/libs/prismadb';
 import { fileS3Key, s3Client } from '@/libs/S3Helper';
+import { userIdFromCtx as adminIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
 
 type S3Object = { Key: string; LastModified: Date; ETag: string; Size: number; StorageClass: string };
@@ -54,13 +55,7 @@ export const compareAdminSync = createServerFn({ method: 'GET' })
     const syncedS3Keys = new Set<string>();
     let dbCursor: string | undefined;
     do {
-      const dbFiles = await prisma.file.findMany({
-        where: { isDeleted: false },
-        select: { id: true, url: true, title: true, size: true, contentType: true, createdAt: true, ownerId: true },
-        orderBy: { id: 'asc' },
-        take: DB_COMPARE_PAGE_SIZE,
-        ...(dbCursor ? { cursor: { id: dbCursor }, skip: 1 } : {}),
-      });
+      const dbFiles = await listFilesForSync({ afterId: dbCursor, limit: DB_COMPARE_PAGE_SIZE });
 
       for (const f of dbFiles) {
         const key = fileS3Key(f.ownerId, f.url);
@@ -107,10 +102,7 @@ export const compareAdminSync = createServerFn({ method: 'GET' })
 export const deleteAdminDbOnlyFiles = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(z.object({ fileIds: z.array(z.string()).min(1) }))
-  .handler(async ({ data }) => {
-    const result = await prisma.file.updateMany({
-      where: { id: { in: data.fileIds } },
-      data: { isDeleted: true, deletedAt: new Date() },
-    });
-    return { deletedCount: result.count };
+  .handler(async ({ data, context }) => {
+    const deletedCount = await softDeleteFilesAnyOwner(data.fileIds, adminIdFromCtx(context));
+    return { deletedCount };
   });

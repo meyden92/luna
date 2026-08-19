@@ -1,6 +1,6 @@
 import Replicate from 'replicate';
+import { listStuckTemplateGenerations, markTemplateGenerationFailed } from '@/db/queries/tasks';
 import { firstReplicateOutput, isAbortError, throwIfAborted } from '@/libs/ai-generation-utils';
-import prisma from '@/libs/prismadb';
 import { processSuccessfulGeneration } from '@/libs/template-utils';
 import type { TaskFunction } from '@/types/tasks';
 import { env } from '../../env';
@@ -15,17 +15,8 @@ export const checkTemplateGenerationsExecutor: TaskFunction = async (...args) =>
   const { signal } = args[args.length - 1];
   throwIfAborted(signal);
   const staleStreamingCutoff = new Date(Date.now() - STREAMING_RECONCILE_AFTER_MS);
-  const processingGenerations = await prisma.templateGeneration.findMany({
-    where: {
-      status: 'processing',
-      replicateId: { not: null },
-      OR: [{ replicateStatus: null }, { replicateStatus: { not: 'streaming' } }, { createdAt: { lt: staleStreamingCutoff } }],
-    },
-    include: {
-      template: true,
-    },
-    take: 20, // Process in batches to avoid timeouts
-  });
+  // Batched to avoid timeouts.
+  const processingGenerations = await listStuckTemplateGenerations(staleStreamingCutoff, 20);
 
   if (processingGenerations.length === 0) {
     return { processed: 0 };
@@ -63,22 +54,18 @@ export const checkTemplateGenerationsExecutor: TaskFunction = async (...args) =>
         } else {
           // Handle empty output
           throwIfAborted(signal);
-          await prisma.templateGeneration.update({
-            where: { id: generation.id },
-            data: { status: 'failed', errorMessage: 'No output generated' },
-          });
+          // A scheduled task has no acting user, so the audit row is attributed
+          // to nobody rather than misattributed.
+          await markTemplateGenerationFailed(generation.id, { errorMessage: 'No output generated' }, null);
           results.failed++;
         }
       } else if (prediction.status === 'failed' || prediction.status === 'canceled') {
         throwIfAborted(signal);
-        await prisma.templateGeneration.update({
-          where: { id: generation.id },
-          data: {
-            status: 'failed',
-            errorMessage: String(prediction.error) || 'Generation failed',
-            replicateStatus: prediction.status,
-          },
-        });
+        await markTemplateGenerationFailed(
+          generation.id,
+          { errorMessage: String(prediction.error) || 'Generation failed', replicateStatus: prediction.status },
+          null,
+        );
         results.failed++;
       } else {
         results.stillProcessing++;

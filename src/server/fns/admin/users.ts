@@ -8,7 +8,6 @@ import { Summarizer } from '@/libs/audit/summarizer';
 import { env } from '@/libs/env';
 import prisma, { prismabase } from '@/libs/prismadb';
 import { ensureBaseGroups, ensureUserHasDefaultGroup, includeDefaultGroup } from '@/libs/rbac/default-group';
-import { getRbacPrisma } from '@/libs/rbac/prisma';
 import { ADMIN_GROUP_KEY, invalidateAuthorizationContext, USER_GROUP_KEY } from '@/libs/rbac/service';
 import { fileS3Key, s3Client } from '@/libs/S3Helper';
 import { MAX_STORAGE_QUOTA_MIB } from '@/libs/storage-quota';
@@ -452,7 +451,6 @@ export const getUserGroups = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(userIdParam)
   .handler(async ({ data }) => {
-    const rbacPrisma = getRbacPrisma(['rbacGroup', 'userGroupAssignment']);
     const user = await prisma.user.findUnique({
       where: { id: data.userId },
       select: { id: true, name: true, email: true },
@@ -462,7 +460,7 @@ export const getUserGroups = createServerFn({ method: 'GET' })
     await ensureBaseGroups();
     await ensureUserHasDefaultGroup(data.userId);
 
-    const baseGroups = await rbacPrisma.rbacGroup.findMany({
+    const baseGroups = await prisma.rbacGroup.findMany({
       where: { key: { in: [USER_GROUP_KEY, ADMIN_GROUP_KEY] } },
       select: { id: true, key: true, name: true, isSystem: true },
     });
@@ -474,7 +472,7 @@ export const getUserGroups = createServerFn({ method: 'GET' })
     });
 
     const baseGroupIds = baseGroups.map((g) => g.id);
-    const assignments = await rbacPrisma.userGroupAssignment.findMany({
+    const assignments = await prisma.userGroupAssignment.findMany({
       where: { userId: data.userId, groupId: { in: baseGroupIds } },
       select: { groupId: true },
     });

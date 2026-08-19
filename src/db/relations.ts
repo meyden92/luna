@@ -97,4 +97,11 @@ export const relations = defineRelations(schema, (r) => ({
   formShareField: {
     form: r.one.formShare({ from: r.formShareField.formId, to: r.formShare.id }),
   },
+
+  // Snippets — the public `/bin/$id` page shows who wrote the snippet.
+  // `optional: false` because `snippet.owner_id` is NOT NULL behind a foreign
+  // key, so the author always resolves and the page need not handle a null one.
+  snippet: {
+    author: r.one.user({ from: r.snippet.ownerId, to: r.user.id, optional: false }),
+  },
 }));

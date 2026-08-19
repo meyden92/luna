@@ -1,5 +1,7 @@
-import type { Prisma } from '@db/client';
-import prisma from '@/libs/prismadb';
+import { listOwnedActiveFiles, moveFilesToFolder, updateOwnedFile } from '@/db/queries/files';
+import { completeFlowRun, createFlowRun, getFlow, listTriggerableFlows } from '@/db/queries/flows';
+import { getOwnedFolder } from '@/db/queries/folders';
+import type { JsonValue } from '@/db/schema/json';
 import { fileS3Key, setObjectPrivacy } from '@/libs/S3Helper';
 import { type FlowGraph, type FlowNode, flowGraphSchema } from '@/schemas/flow-schema';
 
@@ -18,9 +20,7 @@ type FlowLog = {
 };
 
 export async function dispatchFlowTrigger(triggerType: string, ownerId: string, items: FlowItem[], tokenFlowId?: string | null) {
-  const flows = tokenFlowId
-    ? await prisma.flow.findMany({ where: { id: tokenFlowId, ownerId, enabled: true, isActive: true } })
-    : await prisma.flow.findMany({ where: { ownerId, triggerType, enabled: true, isActive: true } });
+  const flows = await listTriggerableFlows({ ownerId, triggerType, flowId: tokenFlowId });
 
   for (const flow of flows) {
     void runFlow(flow.id, items, triggerType).catch(() => undefined);
@@ -28,47 +28,33 @@ export async function dispatchFlowTrigger(triggerType: string, ownerId: string, 
 }
 
 export async function runFlow(flowId: string, items: FlowItem[], triggeredBy = 'manual') {
-  const flow = await prisma.flow.findUnique({ where: { id: flowId } });
+  const flow = await getFlow(flowId);
   if (!flow) throw new Error('Flow not found');
 
   const graph = flowGraphSchema.parse(flow.graph) as FlowGraph;
-  const run = await prisma.flowRun.create({
-    data: {
-      flowId,
-      ownerId: flow.ownerId,
-      status: 'running',
-      triggeredBy,
-      items: items as unknown as Prisma.InputJsonValue,
-      logs: [],
-    },
-  });
+  const run = await createFlowRun({ flowId, ownerId: flow.ownerId, triggeredBy, items: asJson(items) });
 
   const startedAt = Date.now();
   const logs: FlowLog[] = [];
   try {
     await executeGraph(graph, items, flow.ownerId, logs);
-
-    await prisma.flowRun.update({
-      where: { id: run.id },
-      data: {
-        status: 'success',
-        duration: Date.now() - startedAt,
-        completedAt: new Date(),
-        logs: logs as unknown as Prisma.InputJsonValue,
-      },
-    });
+    await completeFlowRun({ id: run.id, status: 'success', duration: Date.now() - startedAt, logs: asJson(logs) });
   } catch (error) {
-    await prisma.flowRun.update({
-      where: { id: run.id },
-      data: {
-        status: 'failed',
-        duration: Date.now() - startedAt,
-        completedAt: new Date(),
-        logs: logs as unknown as Prisma.InputJsonValue,
-        error: error instanceof Error ? error.message : 'Flow failed',
-      },
+    await completeFlowRun({
+      id: run.id,
+      status: 'failed',
+      duration: Date.now() - startedAt,
+      logs: asJson(logs),
+      error: error instanceof Error ? error.message : 'Flow failed',
     });
   }
+}
+
+// Items and logs are JSON by construction, but their optional properties are not
+// expressible as `JsonValue` (a jsonb column's type). Same cast the Prisma
+// version made to `Prisma.InputJsonValue`, kept to this one place.
+function asJson(value: FlowItem[] | FlowLog[]): JsonValue {
+  return value as unknown as JsonValue;
 }
 
 async function executeGraph(graph: FlowGraph, items: FlowItem[], ownerId: string, logs: FlowLog[]): Promise<void> {
@@ -152,12 +138,21 @@ function dedupeItems(items: FlowItem[]): FlowItem[] {
   return result;
 }
 
+function itemFileIds(items: FlowItem[]): string[] {
+  return items.map((item) => item.fileId).filter((id): id is string => Boolean(id));
+}
+
+/**
+ * A flow acts only on files its owner owns, so the owner is the actor recorded on
+ * every audited file write below. A run is fire-and-forget and outlives the
+ * request that triggered it, so there is no request context left to resolve.
+ */
 async function executeNode(node: FlowNode, items: FlowItem[], ownerId: string): Promise<{ items: FlowItem[]; log: FlowLog }> {
   if (node.type === 'tag') {
     for (const item of items) {
       if (!item.fileId) continue;
       const merged = mergeTags(item.tags, node.config.tags);
-      await prisma.file.updateMany({ where: { id: item.fileId, ownerId }, data: { tags: merged } });
+      await updateOwnedFile({ id: item.fileId, ownerId, values: { tags: merged } }, ownerId);
       item.tags = merged;
     }
     return {
@@ -167,11 +162,11 @@ async function executeNode(node: FlowNode, items: FlowItem[], ownerId: string): 
   }
 
   if (node.type === 'privacy') {
-    const files = await prisma.file.findMany({
-      where: { id: { in: items.map((item) => item.fileId).filter(Boolean) as string[] }, ownerId },
-    });
+    // Soft-deleted files are skipped: flipping the privacy of a file the owner
+    // has already deleted would republish it.
+    const files = await listOwnedActiveFiles(itemFileIds(items), ownerId);
     for (const file of files) {
-      await prisma.file.update({ where: { id: file.id }, data: { private: node.config.private } });
+      await updateOwnedFile({ id: file.id, ownerId, values: { private: node.config.private } }, ownerId);
       await setObjectPrivacy(fileS3Key(file.ownerId, file.url), node.config.private);
     }
     return {
@@ -181,17 +176,14 @@ async function executeNode(node: FlowNode, items: FlowItem[], ownerId: string): 
   }
 
   if (node.type === 'route-folder') {
-    const folder = await prisma.folder.findFirst({ where: { id: node.config.folderId, ownerId }, select: { id: true } });
+    const folder = await getOwnedFolder(node.config.folderId, ownerId);
     if (!folder) {
       return {
         items,
         log: { nodeId: node.id, nodeType: node.type, status: 'skipped', message: 'Target folder not found for this account.' },
       };
     }
-    await prisma.file.updateMany({
-      where: { id: { in: items.map((item) => item.fileId).filter(Boolean) as string[] }, ownerId },
-      data: { folderId: folder.id },
-    });
+    await moveFilesToFolder({ ids: itemFileIds(items), ownerId, folderId: folder.id }, ownerId);
     return { items, log: { nodeId: node.id, nodeType: node.type, status: 'success', message: 'Moved matching files.' } };
   }
 

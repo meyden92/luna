@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
-import type { Prisma } from '@db/client';
 import sharp from 'sharp';
-import prisma from '@/libs/prismadb';
+import { findExactDenylistMatch, listPhashDenylistEntries, quarantineFile } from '@/db/queries/moderation';
+import type { JsonValue } from '@/db/schema/json';
 
 export type FileHashes = {
   sha256: string;
@@ -14,6 +14,7 @@ export type ModerationGateResult =
   | { allowed: false; hashes: FileHashes; matchType: 'sha256' | 'md5' | 'phash'; matchedEntryId: string; distance: number | null };
 
 const PHASH_DISTANCE_THRESHOLD = 8;
+const PHASH_PAGE_SIZE = 500;
 
 export async function computeFileHashes(buffer: Buffer | Uint8Array, contentType: string): Promise<FileHashes> {
   const source = Buffer.from(buffer);
@@ -30,18 +31,16 @@ export async function checkModerationGate(buffer: Buffer | Uint8Array, contentTy
   return match ? { allowed: false, hashes, ...match } : { allowed: true, hashes };
 }
 
+/**
+ * The denylist gate. The exact half is case-normalised on both sides inside
+ * `findExactDenylistMatch` — see the query module for why one side is not
+ * enough. The perceptual half is a Hamming-distance scan and is unaffected by
+ * collation, so it stays a paged read plus in-process comparison.
+ */
 export async function findDenylistMatchForHashes(
   hashes: FileHashes,
 ): Promise<{ matchType: 'sha256' | 'md5' | 'phash'; matchedEntryId: string; distance: number | null } | null> {
-  const exact = await prisma.denylistEntry.findFirst({
-    where: {
-      OR: [
-        { hashType: 'sha256', hash: hashes.sha256 },
-        { hashType: 'md5', hash: hashes.md5 },
-      ],
-    },
-    select: { id: true, hashType: true },
-  });
+  const exact = await findExactDenylistMatch(hashes);
   if (exact?.hashType === 'sha256' || exact?.hashType === 'md5') {
     return { matchType: exact.hashType, matchedEntryId: exact.id, distance: null };
   }
@@ -50,13 +49,7 @@ export async function findDenylistMatchForHashes(
 
   let cursor: string | undefined;
   for (;;) {
-    const candidates = await prisma.denylistEntry.findMany({
-      where: { hashType: 'phash' },
-      select: { id: true, hash: true },
-      orderBy: { id: 'asc' },
-      take: 500,
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    });
+    const candidates = await listPhashDenylistEntries({ cursor, limit: PHASH_PAGE_SIZE });
     if (candidates.length === 0) break;
     for (const candidate of candidates) {
       const distance = hammingDistance(hashes.phash, candidate.hash);
@@ -65,7 +58,7 @@ export async function findDenylistMatchForHashes(
       }
     }
     cursor = candidates.at(-1)?.id;
-    if (candidates.length < 500 || !cursor) break;
+    if (candidates.length < PHASH_PAGE_SIZE || !cursor) break;
   }
 
   return null;
@@ -80,29 +73,20 @@ export async function createModerationCase({
   fileId: string;
   gate: Exclude<ModerationGateResult, { allowed: true }>;
   uploaderId: string;
-  uploadMetadata?: Prisma.InputJsonValue;
+  uploadMetadata?: JsonValue;
 }) {
-  await prisma.file.update({
-    where: { id: fileId },
-    data: {
-      private: true,
-      moderationStatus: 'quarantined',
-      sha256: gate.hashes.sha256,
-      md5: gate.hashes.md5,
-      phash: gate.hashes.phash,
-    },
-  });
-  return prisma.moderationCase.create({
-    data: {
+  return quarantineFile(
+    {
       fileId,
-      status: 'quarantined',
+      hashes: gate.hashes,
       matchType: gate.matchType,
       matchedEntryId: gate.matchedEntryId,
       distance: gate.distance,
       uploaderId,
       uploadMetadata,
     },
-  });
+    uploaderId,
+  );
 }
 
 export async function computePerceptualHash(buffer: Buffer): Promise<string | null> {

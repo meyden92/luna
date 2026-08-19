@@ -1,8 +1,8 @@
 import { createHmac } from 'node:crypto';
 import { getRequestHeaders } from '@tanstack/react-start/server';
+import { listOwnerDailyRollups, listTargetDailyRollups, recordView, utcDay } from '@/db/queries/analytics';
 import { deriveSigningKey } from '@/libs/crypto/signing-keys';
 import { env } from '@/libs/env';
-import prisma from '@/libs/prismadb';
 
 export type ViewTargetKind = 'file' | 'formShare' | 'album' | 'collect';
 
@@ -19,75 +19,26 @@ export async function recordViewEvent({
 }) {
   const headers = getRequestHeaders();
   const createdAt = new Date();
-  const day = createdAt.toISOString().slice(0, 10);
-  const visitorHash = hashVisitor(headers, day);
-  const country = normalizeCountry(headers.get('cf-ipcountry'));
-  const referrerHost = parseReferrerHost(headers.get('referer'));
-  const deviceClass = classifyDevice(headers.get('user-agent'));
+  // The UTC calendar day doubles as the visitor-hash salt, so it is computed
+  // once here and handed to the write — the bucket and the hash cannot disagree.
+  const day = utcDay(createdAt);
 
-  await prisma.$transaction(async (tx) => {
-    const existingVisitor = await tx.viewEvent.findFirst({
-      where: {
-        targetKind,
-        targetId,
-        visitorHash,
-        createdAt: { gte: new Date(`${day}T00:00:00.000Z`) },
-      },
-      select: { id: true },
-    });
-
-    await tx.viewEvent.create({
-      data: {
-        targetKind,
-        targetId,
-        ownerId,
-        country,
-        referrerHost,
-        deviceClass,
-        visitorHash,
-        serverMs,
-      },
-    });
-
-    const rollup = await tx.viewDailyRollup.findUnique({
-      where: { targetKind_targetId_day: { targetKind, targetId, day } },
-    });
-    if (!rollup) {
-      await tx.viewDailyRollup.create({
-        data: {
-          targetKind,
-          targetId,
-          ownerId,
-          day,
-          views: 1,
-          uniques: 1,
-          referrerBreakdown: referrerHost ? { [referrerHost]: 1 } : {},
-          countryBreakdown: country ? { [country]: 1 } : {},
-          deviceBreakdown: { [deviceClass]: 1 },
-        },
-      });
-      return;
-    }
-
-    await tx.viewDailyRollup.update({
-      where: { id: rollup.id },
-      data: {
-        views: { increment: 1 },
-        uniques: existingVisitor ? rollup.uniques : rollup.uniques + 1,
-        referrerBreakdown: incrementBreakdown(rollup.referrerBreakdown, referrerHost),
-        countryBreakdown: incrementBreakdown(rollup.countryBreakdown, country),
-        deviceBreakdown: incrementBreakdown(rollup.deviceBreakdown, deviceClass),
-      },
-    });
+  await recordView({
+    targetKind,
+    targetId,
+    ownerId: ownerId ?? null,
+    day,
+    createdAt,
+    visitorHash: hashVisitor(headers, day),
+    country: normalizeCountry(headers.get('cf-ipcountry')),
+    referrerHost: parseReferrerHost(headers.get('referer')),
+    deviceClass: classifyDevice(headers.get('user-agent')),
+    serverMs: serverMs ?? null,
   });
 }
 
 export async function getViewStats(targetKind: ViewTargetKind, targetId: string, ownerId: string) {
-  const rollups = await prisma.viewDailyRollup.findMany({
-    where: { targetKind, targetId, ownerId },
-    orderBy: { day: 'desc' },
-    take: 30,
-  });
+  const rollups = await listTargetDailyRollups({ targetKind, targetId, ownerId, limit: 30 });
 
   const views = rollups.reduce((sum, row) => sum + row.views, 0);
   const uniques = rollups.reduce((sum, row) => sum + row.uniques, 0);
@@ -102,11 +53,7 @@ export async function getViewStats(targetKind: ViewTargetKind, targetId: string,
 }
 
 export async function getOwnerViewSummary(ownerId: string) {
-  const rollups = await prisma.viewDailyRollup.findMany({
-    where: { ownerId },
-    orderBy: { day: 'desc' },
-    take: 500,
-  });
+  const rollups = await listOwnerDailyRollups(ownerId, 500);
 
   return {
     views: rollups.reduce((sum, row) => sum + row.views, 0),
@@ -154,13 +101,6 @@ function parseReferrerHost(referrer: string | null): string | null {
 function normalizeCountry(value: string | null): string | null {
   const country = value?.trim().toUpperCase();
   return country && /^[A-Z]{2}$/.test(country) ? country : null;
-}
-
-function incrementBreakdown(value: unknown, key: string | null): Record<string, number> {
-  const current = normalizeBreakdown(value);
-  if (!key) return current;
-  current[key] = (current[key] ?? 0) + 1;
-  return current;
 }
 
 function sumBreakdowns(values: unknown[]): Array<{ key: string; count: number }> {

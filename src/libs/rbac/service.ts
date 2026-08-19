@@ -1,43 +1,18 @@
-import prisma from '@/libs/prismadb';
-import { getRbacPrisma } from './prisma';
+import { ADMIN_GROUP_KEY, isUserAdmin, USER_GROUP_KEY } from '@/db/queries/rbac';
 
-export const USER_GROUP_KEY = 'user';
-export const ADMIN_GROUP_KEY = 'admin';
+/**
+ * The RBAC surface the application imports. The group keys and the admin check
+ * live in the query module (`src/db/queries/rbac.ts`) because they are database
+ * identity and the Drizzle handle stays inside `src/db/` (issue #15); they are
+ * surfaced here so call sites keep importing from where they always did.
+ */
+export { ADMIN_GROUP_KEY, isUserAdmin, USER_GROUP_KEY };
 
-function getPrisma() {
-  return getRbacPrisma(['userGroupAssignment']);
-}
-
-export async function isSuperAdminUser(userId: string): Promise<boolean> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { isSuperAdmin: true },
-  });
-
-  return Boolean(user?.isSuperAdmin);
-}
-
+/**
+ * Authorization is read straight from the database on every check, so there is
+ * nothing cached to invalidate. Kept as the seam the call sites already use, so
+ * introducing a cache later stays a one-file change.
+ */
 export function invalidateAuthorizationContext(userId?: string): void {
   void userId;
-}
-
-export async function isUserAdmin(userId: string): Promise<boolean> {
-  if (await isSuperAdminUser(userId)) {
-    return true;
-  }
-
-  const rbacPrisma = getPrisma();
-  const assignment = await rbacPrisma.userGroupAssignment.findFirst({
-    where: {
-      userId,
-      group: {
-        key: ADMIN_GROUP_KEY,
-      },
-    },
-    select: {
-      id: true,
-    },
-  });
-
-  return Boolean(assignment);
 }

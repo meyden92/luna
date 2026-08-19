@@ -30,8 +30,15 @@ export const LOWERCASED: Record<string, string[]> = {
   // The two sides of the moderation hash gate. It FAILS OPEN when a hash does
   // not match: no error, nothing in the logs, content simply stops being
   // blocked (#42). Reproduced on a live Postgres in #23.
-  file: ['sha256', 'md5', 'phash'],
+  file: ['sha256', 'md5', 'phash', 'moderationStatus'],
   denylist_entry: ['hash'],
+  // Moderation status is compared as a string and is collation-sensitive in the
+  // same way (#42). Production holds a single value, `clear`, already lower-case
+  // across all 4,230 rows -- so this is a no-op on history and a guarantee
+  // going forward, which is #23's stated preference: hashes and closed
+  // vocabularies have a canonical form, and making the data consistent is more
+  // robust than making every comparison forgiving.
+  moderation_case: ['status'],
   // Case-variant duplicate accounts become possible on Postgres otherwise (#36).
   user: ['email'],
   // Tightening the token lookup would silently break existing tokens, so this
@@ -46,4 +53,8 @@ export const LOWERCASED: Record<string, string[]> = {
  * equality across a case boundary today. Listed so the batches that own them
  * make a decision rather than inherit an oversight: `ocr_result.fileHash`,
  * `cached_image.hash`, `file_rendition.paramHash`, `view_event.visitorHash`.
+ *
+ * `view_event.visitorHash` was reviewed under #41 and deliberately left alone:
+ * it is only ever produced by `createHmac(...).digest('hex')` on both the write
+ * and the read side, so no case boundary exists for it.
  */

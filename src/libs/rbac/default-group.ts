@@ -1,12 +1,5 @@
-import { getRbacPrisma } from './prisma';
+import { ensureGroupAssignment, ensureSystemGroup, type GroupKey } from '@/db/queries/rbac';
 import { ADMIN_GROUP_KEY, invalidateAuthorizationContext, USER_GROUP_KEY } from './service';
-
-type GroupKey = typeof USER_GROUP_KEY | typeof ADMIN_GROUP_KEY;
-
-type GroupRecord = {
-  id: string;
-  key: GroupKey;
-};
 
 const GROUP_DEFINITIONS: ReadonlyArray<{ key: GroupKey; name: string; description: string }> = [
   {
@@ -21,61 +14,10 @@ const GROUP_DEFINITIONS: ReadonlyArray<{ key: GroupKey; name: string; descriptio
   },
 ];
 
-function isUniqueConstraintError(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && 'code' in error && (error as { code?: string }).code === 'P2002';
-}
-
-async function ensureGroup(key: GroupKey, name: string, description: string): Promise<GroupRecord> {
-  const rbacPrisma = getRbacPrisma(['rbacGroup']);
-
-  const existing = await rbacPrisma.rbacGroup.findUnique({
-    where: { key },
-    select: { id: true },
-  });
-
-  if (existing) {
-    await rbacPrisma.rbacGroup.update({
-      where: { id: existing.id },
-      data: {
-        isSystem: true,
-      },
-    });
-
-    return { id: existing.id, key };
-  }
-
-  try {
-    const created = await rbacPrisma.rbacGroup.create({
-      data: {
-        key,
-        name,
-        description,
-        isSystem: true,
-      },
-      select: { id: true },
-    });
-
-    return { id: created.id, key };
-  } catch (error) {
-    if (!isUniqueConstraintError(error)) {
-      throw error;
-    }
-
-    const concurrent = await rbacPrisma.rbacGroup.findUnique({
-      where: { key },
-      select: { id: true },
-    });
-
-    if (!concurrent) {
-      throw error;
-    }
-
-    return { id: concurrent.id, key };
-  }
-}
-
 export async function ensureBaseGroups(): Promise<{ userGroupId: string; adminGroupId: string }> {
-  const ensuredGroups = await Promise.all(GROUP_DEFINITIONS.map((entry) => ensureGroup(entry.key, entry.name, entry.description)));
+  const ensuredGroups = await Promise.all(
+    GROUP_DEFINITIONS.map(async (entry) => ({ key: entry.key, id: (await ensureSystemGroup(entry, null)).id })),
+  );
 
   const groupMap = new Map(ensuredGroups.map((group) => [group.key, group.id]));
 
@@ -93,23 +35,9 @@ export async function ensureBaseGroups(): Promise<{ userGroupId: string; adminGr
 }
 
 export async function ensureUserHasDefaultGroup(userId: string): Promise<void> {
-  const rbacPrisma = getRbacPrisma(['userGroupAssignment']);
   const { userGroupId } = await ensureBaseGroups();
 
-  await rbacPrisma.userGroupAssignment.upsert({
-    where: {
-      userId_groupId: {
-        userId,
-        groupId: userGroupId,
-      },
-    },
-    update: {},
-    create: {
-      userId,
-      groupId: userGroupId,
-      createdByUserId: null,
-    },
-  });
+  await ensureGroupAssignment({ userId, groupId: userGroupId }, null);
 
   invalidateAuthorizationContext(userId);
 }

@@ -1,6 +1,6 @@
-import type { Prisma } from '@db/client';
 import { parseCronExpression } from 'cron-schedule';
-import prisma from '@/libs/prismadb';
+import { createTask, deleteTask, getTaskByName, updateTaskDefinition } from '@/db/queries/tasks';
+import type { JsonValue } from '@/db/schema/json';
 import type { DatabaseTask, TaskFormData } from '@/types/tasks';
 import { DatabaseTaskLoader } from './db-loader';
 import { TaskExecutionService } from './execution-service';
@@ -24,54 +24,47 @@ export class TaskSyncService {
       throw new Error(`Invalid cron expression: ${data.cronExpression}`);
     }
 
-    try {
-      // Calculate next execution time
-      const cron = parseCronExpression(data.cronExpression);
-      const nextExecutionAt = data.enabled ? cron.getNextDate() : null;
-
-      const task = await prisma.task.create({
-        data: {
-          name: data.name,
-          description: data.description,
-          cronExpression: data.cronExpression,
-          taskFunction: data.taskFunction,
-          args: (data.args ?? undefined) as Prisma.InputJsonValue | undefined,
-          enabled: data.enabled ?? true,
-          timeout: data.timeout || 120000,
-          maxRetries: data.maxRetries ?? 3,
-          nextExecutionAt,
-          createdBy: createdBy || null,
-        },
-        include: {
-          executions: {
-            orderBy: {
-              startedAt: 'desc',
-            },
-            take: 5,
-          },
-        },
-      });
-
-      // If enabled, schedule the task in TaskManager
-      if (task.enabled) {
-        const taskManager = TaskManager.getInstance();
-        await taskManager.enableTask(task.id);
-      }
-
-      console.log(`✅ Created task '${task.name}' (${task.id})`);
-      return task;
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('Unique constraint')) {
-        throw new Error(`Task with name '${data.name}' already exists`);
-      }
-      throw error;
+    // The unique index on `name` is case-sensitive on Postgres where MariaDB's
+    // collation made it insensitive, so the clash is detected here rather than
+    // left to the constraint (issue #23).
+    if (await getTaskByName(data.name)) {
+      throw new Error(`Task with name '${data.name}' already exists`);
     }
+
+    // Calculate next execution time
+    const cron = parseCronExpression(data.cronExpression);
+    const nextExecutionAt = data.enabled ? cron.getNextDate() : null;
+
+    const task = await createTask(
+      {
+        name: data.name,
+        description: data.description,
+        cronExpression: data.cronExpression,
+        taskFunction: data.taskFunction,
+        args: (data.args ?? null) as JsonValue | null,
+        enabled: data.enabled ?? true,
+        timeout: data.timeout || 120000,
+        maxRetries: data.maxRetries ?? 3,
+        nextExecutionAt,
+        createdBy: createdBy || null,
+      },
+      createdBy,
+    );
+
+    // If enabled, schedule the task in TaskManager
+    if (task.enabled) {
+      const taskManager = TaskManager.getInstance();
+      await taskManager.enableTask(task.id);
+    }
+
+    console.log(`✅ Created task '${task.name}' (${task.id})`);
+    return task;
   }
 
   /**
    * Update an existing task
    */
-  static async updateTask(taskId: string, data: Partial<TaskFormData>): Promise<DatabaseTask> {
+  static async updateTask(taskId: string, data: Partial<TaskFormData>, updatedBy?: string | null): Promise<DatabaseTask> {
     const existingTask = await DatabaseTaskLoader.loadTask(taskId);
     if (!existingTask) {
       throw new Error(`Task ${taskId} not found`);
@@ -91,121 +84,100 @@ export class TaskSyncService {
       }
     }
 
-    const taskManager = TaskManager.getInstance();
-
-    try {
-      // Calculate next execution time if cron or enabled status changed
-      let nextExecutionAt = existingTask.nextExecutionAt;
-      const cronExpression = data.cronExpression || existingTask.cronExpression;
-      const enabled = data.enabled !== undefined ? data.enabled : existingTask.enabled;
-
-      if (data.cronExpression || (data.enabled !== undefined && data.enabled !== existingTask.enabled)) {
-        if (enabled) {
-          const cron = parseCronExpression(cronExpression);
-          nextExecutionAt = cron.getNextDate();
-        } else {
-          nextExecutionAt = null;
-        }
-      }
-
-      const updatedTask = await prisma.task.update({
-        where: { id: taskId },
-        data: {
-          ...(data.name && { name: data.name }),
-          ...(data.description && { description: data.description }),
-          ...(data.cronExpression && { cronExpression: data.cronExpression }),
-          ...(data.taskFunction && { taskFunction: data.taskFunction }),
-          ...(data.args !== undefined && { args: data.args as Prisma.InputJsonValue }),
-          ...(data.enabled !== undefined && { enabled: data.enabled }),
-          ...(data.timeout && { timeout: data.timeout }),
-          ...(data.maxRetries !== undefined && { maxRetries: data.maxRetries }),
-          nextExecutionAt,
-          updatedAt: new Date(),
-        },
-        include: {
-          executions: {
-            orderBy: {
-              startedAt: 'desc',
-            },
-            take: 5,
-          },
-        },
-      });
-
-      // Update task scheduling based on enabled status
-      if (data.enabled !== undefined) {
-        if (data.enabled) {
-          await taskManager.enableTask(taskId);
-        } else {
-          await taskManager.disableTask(taskId);
-        }
-      } else if (data.cronExpression || data.taskFunction) {
-        // If cron or function changed, restart the task if it was running
-        await taskManager.disableTask(taskId);
-        if (updatedTask.enabled) {
-          await taskManager.enableTask(taskId);
-        }
-      }
-
-      console.log(`✅ Updated task '${updatedTask.name}' (${taskId})`);
-      return updatedTask;
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('Unique constraint')) {
+    if (data.name && data.name !== existingTask.name) {
+      const clash = await getTaskByName(data.name);
+      if (clash && clash.id !== taskId) {
         throw new Error(`Task with name '${data.name}' already exists`);
       }
-      throw error;
     }
+
+    const taskManager = TaskManager.getInstance();
+
+    // Calculate next execution time if cron or enabled status changed
+    let nextExecutionAt = existingTask.nextExecutionAt;
+    const cronExpression = data.cronExpression || existingTask.cronExpression;
+    const enabled = data.enabled !== undefined ? data.enabled : existingTask.enabled;
+
+    if (data.cronExpression || (data.enabled !== undefined && data.enabled !== existingTask.enabled)) {
+      if (enabled) {
+        const cron = parseCronExpression(cronExpression);
+        nextExecutionAt = cron.getNextDate();
+      } else {
+        nextExecutionAt = null;
+      }
+    }
+
+    const updatedTask = await updateTaskDefinition(
+      taskId,
+      {
+        ...(data.name && { name: data.name }),
+        ...(data.description && { description: data.description }),
+        ...(data.cronExpression && { cronExpression: data.cronExpression }),
+        ...(data.taskFunction && { taskFunction: data.taskFunction }),
+        ...(data.args !== undefined && { args: data.args as JsonValue }),
+        ...(data.enabled !== undefined && { enabled: data.enabled }),
+        ...(data.timeout && { timeout: data.timeout }),
+        ...(data.maxRetries !== undefined && { maxRetries: data.maxRetries }),
+        nextExecutionAt,
+      },
+      updatedBy,
+    );
+    if (!updatedTask) {
+      throw new Error(`Task ${taskId} not found`);
+    }
+
+    // Update task scheduling based on enabled status
+    if (data.enabled !== undefined) {
+      if (data.enabled) {
+        await taskManager.enableTask(taskId);
+      } else {
+        await taskManager.disableTask(taskId);
+      }
+    } else if (data.cronExpression || data.taskFunction) {
+      // If cron or function changed, restart the task if it was running
+      await taskManager.disableTask(taskId);
+      if (updatedTask.enabled) {
+        await taskManager.enableTask(taskId);
+      }
+    }
+
+    console.log(`✅ Updated task '${updatedTask.name}' (${taskId})`);
+    return updatedTask;
   }
 
   /**
    * Delete a task
    */
-  static async deleteTask(taskId: string): Promise<void> {
-    const existingTask = await DatabaseTaskLoader.loadTask(taskId);
-    if (!existingTask) {
-      throw new Error(`Task ${taskId} not found`);
-    }
-
+  static async deleteTask(taskId: string, deletedBy?: string | null): Promise<void> {
     const taskManager = TaskManager.getInstance();
     // Stop the task if it's running
     await taskManager.disableTask(taskId);
 
     // Delete from database (executions will be deleted via CASCADE)
-    await prisma.task.delete({
-      where: { id: taskId },
-    });
+    const deleted = await deleteTask(taskId, deletedBy);
+    if (!deleted) {
+      throw new Error(`Task ${taskId} not found`);
+    }
 
-    console.log(`✅ Deleted task '${existingTask.name}' (${taskId})`);
+    console.log(`✅ Deleted task '${deleted.name}' (${taskId})`);
   }
 
   /**
    * Enable a task
    */
-  static async enableTask(taskId: string): Promise<DatabaseTask> {
-    const task = await prisma.task.update({
-      where: { id: taskId },
-      data: {
-        enabled: true,
-        updatedAt: new Date(),
-      },
-      include: {
-        executions: {
-          orderBy: {
-            startedAt: 'desc',
-          },
-          take: 5,
-        },
-      },
-    });
+  static async enableTask(taskId: string, enabledBy?: string | null): Promise<DatabaseTask> {
+    const existingTask = await DatabaseTaskLoader.loadTask(taskId);
+    if (!existingTask) {
+      throw new Error(`Task ${taskId} not found`);
+    }
 
-    // Calculate and update next execution time
-    const cron = parseCronExpression(task.cronExpression);
-    const nextExecutionAt = cron.getNextDate();
-
-    await prisma.task.update({
-      where: { id: taskId },
-      data: { nextExecutionAt },
-    });
+    // One audited write rather than two: the flag and the schedule it implies
+    // belong to the same decision.
+    const cron = parseCronExpression(existingTask.cronExpression);
+    const task = await updateTaskDefinition(taskId, { enabled: true, nextExecutionAt: cron.getNextDate() }, enabledBy);
+    if (!task) {
+      throw new Error(`Task ${taskId} not found`);
+    }
 
     // Schedule in TaskManager
     const taskManager = TaskManager.getInstance();
@@ -218,23 +190,11 @@ export class TaskSyncService {
   /**
    * Disable a task
    */
-  static async disableTask(taskId: string): Promise<DatabaseTask> {
-    const task = await prisma.task.update({
-      where: { id: taskId },
-      data: {
-        enabled: false,
-        nextExecutionAt: null,
-        updatedAt: new Date(),
-      },
-      include: {
-        executions: {
-          orderBy: {
-            startedAt: 'desc',
-          },
-          take: 5,
-        },
-      },
-    });
+  static async disableTask(taskId: string, disabledBy?: string | null): Promise<DatabaseTask> {
+    const task = await updateTaskDefinition(taskId, { enabled: false, nextExecutionAt: null }, disabledBy);
+    if (!task) {
+      throw new Error(`Task ${taskId} not found`);
+    }
 
     // Unschedule from TaskManager
     const taskManager = TaskManager.getInstance();
@@ -255,16 +215,20 @@ export class TaskSyncService {
   /**
    * Bulk enable/disable tasks
    */
-  static async bulkUpdateTasksEnabled(taskIds: string[], enabled: boolean): Promise<{ updated: number; failed: string[] }> {
+  static async bulkUpdateTasksEnabled(
+    taskIds: string[],
+    enabled: boolean,
+    updatedBy?: string | null,
+  ): Promise<{ updated: number; failed: string[] }> {
     const failed: string[] = [];
     let updated = 0;
 
     for (const taskId of taskIds) {
       try {
         if (enabled) {
-          await TaskSyncService.enableTask(taskId);
+          await TaskSyncService.enableTask(taskId, updatedBy);
         } else {
-          await TaskSyncService.disableTask(taskId);
+          await TaskSyncService.disableTask(taskId, updatedBy);
         }
         updated++;
       } catch (error) {
@@ -279,13 +243,13 @@ export class TaskSyncService {
   /**
    * Bulk delete tasks
    */
-  static async bulkDeleteTasks(taskIds: string[]): Promise<{ deleted: number; failed: string[] }> {
+  static async bulkDeleteTasks(taskIds: string[], deletedBy?: string | null): Promise<{ deleted: number; failed: string[] }> {
     const failed: string[] = [];
     let deleted = 0;
 
     for (const taskId of taskIds) {
       try {
-        await TaskSyncService.deleteTask(taskId);
+        await TaskSyncService.deleteTask(taskId, deletedBy);
         deleted++;
       } catch (error) {
         failed.push(taskId);

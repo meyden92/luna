@@ -1,8 +1,9 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import { getOwnedFormShareId } from '@/db/queries/analytics';
+import { getOwnedFile } from '@/db/queries/files';
 import { getOwnerViewSummary, getViewStats } from '@/libs/analytics/view-events';
 import { getEgressSummary } from '@/libs/egress/record';
-import prisma from '@/libs/prismadb';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
 
@@ -25,11 +26,9 @@ export const getTargetViewStats = createServerFn({ method: 'POST' })
   .handler(async ({ data, context }) => {
     const userId = userIdFromCtx(context);
     if (data.kind === 'file') {
-      const file = await prisma.file.findFirst({ where: { id: data.id, ownerId: userId }, select: { id: true } });
-      if (!file) throw new Error('File not found');
+      if (!(await getOwnedFile(data.id, userId))) throw new Error('File not found');
     } else {
-      const share = await prisma.formShare.findFirst({ where: { id: data.id, ownerId: userId }, select: { id: true } });
-      if (!share) throw new Error('Share not found');
+      if (!(await getOwnedFormShareId(data.id, userId))) throw new Error('Share not found');
     }
     return getViewStats(data.kind, data.id, userId);
   });

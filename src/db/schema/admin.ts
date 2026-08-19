@@ -1,6 +1,6 @@
 import { boolean, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
-
 import { user } from './auth';
+import type { JsonValue } from './json';
 
 /**
  * Admin, audit, and moderation domain (issue #30).
@@ -26,11 +26,11 @@ export const auditLog = pgTable(
     recordId: text('record_id').notNull(),
     userId: text('user_id').references(() => user.id, { onDelete: 'set null', onUpdate: 'cascade' }),
     timestamp: timestamp('timestamp', { withTimezone: true }).defaultNow().notNull(),
-    before: jsonb('before'),
-    after: jsonb('after'),
+    before: jsonb('before').$type<JsonValue>(),
+    after: jsonb('after').$type<JsonValue>(),
     changeSet: text('change_set'),
-    fieldChanges: jsonb('field_changes'),
-    metadata: jsonb('metadata'),
+    fieldChanges: jsonb('field_changes').$type<JsonValue>(),
+    metadata: jsonb('metadata').$type<JsonValue>(),
     summary: text('summary'),
   },
   (t) => [
@@ -147,7 +147,7 @@ export const moderationCase = pgTable(
     uploaderId: text('uploader_id'),
     reviewerId: text('reviewer_id'),
     resolution: text('resolution'),
-    uploadMetadata: jsonb('upload_metadata'),
+    uploadMetadata: jsonb('upload_metadata').$type<JsonValue>(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     resolvedAt: timestamp('resolved_at', { withTimezone: true }),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

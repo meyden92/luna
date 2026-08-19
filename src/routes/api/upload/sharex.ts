@@ -14,7 +14,7 @@ import prisma from '@/libs/prismadb';
 import { UnauthorizedError } from '@/libs/rbac/guards';
 import { getCdnUrl } from '@/libs/runtime-config';
 import { s3Client } from '@/libs/S3Helper';
-import { ensureStorageQuotaAvailable, StorageQuotaExceededError, storageQuotaExceededPayload } from '@/libs/storage-quota';
+import { ensureStorageQuotaAvailableViaPrisma, StorageQuotaExceededError, storageQuotaExceededPayload } from '@/libs/storage-quota';
 
 const MULTIPART_OVERHEAD_BYTES = 1024 * 1024;
 let inFlightSharexUploads = 0;
@@ -108,7 +108,7 @@ async function reserveFileRecord({
   scrubReport: MetadataScrubReport;
 }) {
   return prisma.$transaction(async (tx) => {
-    await ensureStorageQuotaAvailable(tx, userId, size);
+    await ensureStorageQuotaAvailableViaPrisma(tx, userId, size);
 
     const createdFile = await tx.file.create({
       data: {

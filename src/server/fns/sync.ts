@@ -4,7 +4,7 @@ import { writeCreateAuditLog } from '@/libs/audit/transaction-audit';
 import { env } from '@/libs/env';
 import prisma from '@/libs/prismadb';
 import { fileS3Key, s3Client } from '@/libs/S3Helper';
-import { ensureStorageQuotaAvailable } from '@/libs/storage-quota';
+import { ensureStorageQuotaAvailableViaPrisma } from '@/libs/storage-quota';
 import { deleteDbOnlyFilesSchema, deleteS3OnlyFilesSchema, insertS3OnlyFilesToDbSchema } from '@/schemas/sync-schema';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
@@ -155,7 +155,7 @@ export const insertS3OnlyFilesToDb = createServerFn({ method: 'POST' })
       try {
         const head = await s3Client.send(new HeadObjectCommand({ Bucket: env.AWS_BUCKET_NAME, Key: file.key }));
         await prisma.$transaction(async (tx) => {
-          await ensureStorageQuotaAvailable(tx, data.targetUserId, file.size);
+          await ensureStorageQuotaAvailableViaPrisma(tx, data.targetUserId, file.size);
           const createdFile = await tx.file.create({
             data: {
               ownerId: data.targetUserId,

@@ -1,6 +1,7 @@
 import { boolean, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 import { user } from './auth';
 import { file } from './files';
+import type { JsonValue } from './json';
 
 /**
  * AI generation domain (issue #30) — generation/editing model catalogs, their
@@ -116,7 +117,7 @@ export const globalVariable = pgTable('global_variable', {
   type: text('type').notNull(),
   description: text('description'),
   defaultValue: text('default_value'),
-  options: jsonb('options'),
+  options: jsonb('options').$type<JsonValue>(),
   required: boolean('required').default(false).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -131,7 +132,7 @@ export const template = pgTable(
     description: text('description'),
     prompt: text('prompt').notNull(),
     inputImageCount: integer('input_image_count').default(1).notNull(),
-    variables: jsonb('variables'),
+    variables: jsonb('variables').$type<JsonValue>(),
     previewImages: text('preview_images'),
     isActive: boolean('is_active').default(true).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
@@ -145,7 +146,7 @@ export const template = pgTable(
       onDelete: 'set null',
       onUpdate: 'cascade',
     }),
-    editingModelFieldValues: jsonb('editing_model_field_values'),
+    editingModelFieldValues: jsonb('editing_model_field_values').$type<JsonValue>(),
   },
   (t) => [
     index('template_isActive_idx').on(t.isActive),
@@ -165,7 +166,7 @@ export const templateGeneration = pgTable(
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-    variableValues: jsonb('variable_values').notNull(),
+    variableValues: jsonb('variable_values').$type<JsonValue>().notNull(),
     finalPrompt: text('final_prompt').notNull(),
     resultFileId: text('result_file_id').references(() => file.id, {
       onDelete: 'set null',
@@ -176,7 +177,7 @@ export const templateGeneration = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     replicateId: text('replicate_id'),
     replicateStatus: text('replicate_status'),
-    originalImageUrls: jsonb('original_image_urls'),
+    originalImageUrls: jsonb('original_image_urls').$type<JsonValue>(),
     customTitle: text('custom_title'),
   },
   (t) => [
@@ -200,7 +201,7 @@ export const templateGlobalVariable = pgTable(
     globalVariableId: text('global_variable_id')
       .notNull()
       .references(() => globalVariable.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-    addedOptions: jsonb('added_options'),
+    addedOptions: jsonb('added_options').$type<JsonValue>(),
     sortOrder: integer('sort_order').default(0).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -226,10 +227,10 @@ export const aiGeneration = pgTable(
     modelId: text('model_id').notNull(),
     modelLabel: text('model_label').notNull(),
     prompt: text('prompt'),
-    inputImageUrls: jsonb('input_image_urls'),
+    inputImageUrls: jsonb('input_image_urls').$type<JsonValue>(),
     status: text('status').notNull(),
     errorMessage: text('error_message'),
-    result: jsonb('result'),
+    result: jsonb('result').$type<JsonValue>(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [index('ai_generation_userId_kind_createdAt_idx').on(t.userId, t.kind, t.createdAt)],
@@ -246,7 +247,7 @@ export const imagePreset = pgTable(
     // Not a FK: points at either generation_model or editing_model depending on usage.
     modelId: text('model_id').notNull(),
     name: varchar('name', { length: 100 }).notNull(),
-    fieldValues: jsonb('field_values').notNull(),
+    fieldValues: jsonb('field_values').$type<JsonValue>().notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },

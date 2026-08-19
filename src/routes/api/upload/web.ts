@@ -12,7 +12,7 @@ import { checkModerationGate, createModerationCase, type FileHashes } from '@/li
 import prisma from '@/libs/prismadb';
 import { requireAuthenticatedUser } from '@/libs/rbac/guards';
 import { s3Client } from '@/libs/S3Helper';
-import { ensureStorageQuotaAvailable, StorageQuotaExceededError, storageQuotaExceededPayload } from '@/libs/storage-quota';
+import { ensureStorageQuotaAvailableViaPrisma, StorageQuotaExceededError, storageQuotaExceededPayload } from '@/libs/storage-quota';
 
 const MAX_WEB_UPLOAD_BYTES = 200 * 1024 * 1024;
 const MULTIPART_OVERHEAD_BYTES = 1024 * 1024;
@@ -105,7 +105,7 @@ async function reserveFileRecord({
   scrubReport: MetadataScrubReport;
 }) {
   return prisma.$transaction(async (tx) => {
-    await ensureStorageQuotaAvailable(tx, userId, size);
+    await ensureStorageQuotaAvailableViaPrisma(tx, userId, size);
 
     const createdFile = await tx.file.create({
       data: {

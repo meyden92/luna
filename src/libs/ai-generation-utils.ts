@@ -7,7 +7,7 @@ import { writeCreateAuditLog } from '@/libs/audit/transaction-audit';
 import prisma from '@/libs/prismadb';
 import { getCdnUrl } from '@/libs/runtime-config';
 import { s3Client } from '@/libs/S3Helper';
-import { ensureStorageQuotaAvailable, StorageQuotaExceededError } from '@/libs/storage-quota';
+import { ensureStorageQuotaAvailableViaPrisma, StorageQuotaExceededError } from '@/libs/storage-quota';
 import { getCDNImage } from '@/libs/utils';
 import { env } from './env';
 
@@ -282,7 +282,7 @@ export async function uploadGeneratedImageToS3({
   let dbResult: { id: string; url: string };
   try {
     dbResult = await prisma.$transaction(async (tx) => {
-      await ensureStorageQuotaAvailable(tx, userId, uploadBuffer.byteLength);
+      await ensureStorageQuotaAvailableViaPrisma(tx, userId, uploadBuffer.byteLength);
       const createdFile = await tx.file.create({
         data: {
           ownerId: userId,

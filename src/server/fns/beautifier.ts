@@ -4,7 +4,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { writeCreateAuditLog } from '@/libs/audit/transaction-audit';
 import { env } from '@/libs/env';
 import { fileS3Key, getPrivateSignedUrl, publicUploadAcl, s3Client } from '@/libs/S3Helper';
-import { ensureStorageQuotaAvailable } from '@/libs/storage-quota';
+import { ensureStorageQuotaAvailableViaPrisma } from '@/libs/storage-quota';
 import { getCDNImage } from '@/libs/utils';
 import { type BeautifierSourceFile, beautifierSourceFileQuerySchema, saveBeautifiedImageSchema } from '@/schemas/beautifier-schema';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
@@ -102,7 +102,7 @@ export const saveBeautifiedImage = createServerFn({ method: 'POST' })
 
     try {
       const createdFile = await prisma.$transaction(async (tx) => {
-        await ensureStorageQuotaAvailable(tx, userId, buffer.byteLength);
+        await ensureStorageQuotaAvailableViaPrisma(tx, userId, buffer.byteLength);
         const file = await tx.file.create({
           data: {
             ownerId: userId,

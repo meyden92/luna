@@ -4,6 +4,7 @@ import { MetadataCollector } from '@/libs/audit/metadata-collector';
 import { Summarizer } from '@/libs/audit/summarizer';
 import type { Db, Tx } from './client';
 import { auditLog } from './schema/admin';
+import type { JsonValue } from './schema/json';
 
 /**
  * Explicit audited writes (issue #13).
@@ -111,11 +112,11 @@ type AuditRecord = { id: string } & Record<string, unknown>;
 export type AuditHandle = Db | Tx;
 
 /** Deep-clones through JSON so jsonb receives plain data, minus redacted fields. */
-function snapshot(model: AuditedModel, record: AuditRecord | null): Record<string, unknown> | null {
+function snapshot(model: AuditedModel, record: AuditRecord | null): JsonValue {
   if (!record) return null;
   const redacted = REDACTED_FIELDS[model];
   const source = redacted ? Object.fromEntries(Object.entries(record).filter(([key]) => !redacted.includes(key))) : record;
-  return JSON.parse(JSON.stringify(source)) as Record<string, unknown>;
+  return JSON.parse(JSON.stringify(source)) as JsonValue;
 }
 
 async function currentUserId(): Promise<string | null> {
@@ -175,10 +176,10 @@ export async function writeAuditLog(
       userId: userId === undefined ? await currentUserId() : userId,
       before: beforeSnapshot,
       after: afterSnapshot,
-      metadata: metadata ? (JSON.parse(JSON.stringify(metadata)) as Record<string, unknown>) : null,
+      metadata: metadata ? (JSON.parse(JSON.stringify(metadata)) as JsonValue) : null,
       changeSet: MetadataCollector.generateChangeSetId(),
       summary: Summarizer.generateActionSummary(model, action, diff.changes, recordId),
-      fieldChanges: diff.hasChanges ? (JSON.parse(JSON.stringify(diff.changes)) as unknown) : null,
+      fieldChanges: diff.hasChanges ? (JSON.parse(JSON.stringify(diff.changes)) as JsonValue) : null,
     };
 
     await handle.transaction(async (savepoint) => {

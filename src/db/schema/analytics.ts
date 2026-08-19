@@ -1,4 +1,5 @@
 import { bigint, boolean, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
+import type { JsonValue } from './json';
 
 /**
  * Analytics domain: view tracking (`view_event`, `view_daily_rollup`) and
@@ -50,9 +51,9 @@ export const viewDailyRollup = pgTable(
     day: varchar('day', { length: 10 }).notNull(),
     views: integer('views').default(0).notNull(),
     uniques: integer('uniques').default(0).notNull(),
-    referrerBreakdown: jsonb('referrer_breakdown'),
-    countryBreakdown: jsonb('country_breakdown'),
-    deviceBreakdown: jsonb('device_breakdown'),
+    referrerBreakdown: jsonb('referrer_breakdown').$type<JsonValue>(),
+    countryBreakdown: jsonb('country_breakdown').$type<JsonValue>(),
+    deviceBreakdown: jsonb('device_breakdown').$type<JsonValue>(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     // Prisma applied @updatedAt at query level, not in the database — the
     // data-access layer owns this now (issue #23).

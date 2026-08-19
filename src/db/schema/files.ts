@@ -1,5 +1,6 @@
 import { boolean, doublePrecision, index, integer, jsonb, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { user } from './auth';
+import type { JsonValue } from './json';
 
 /**
  * Reference slice for the Prisma -> Drizzle + PostgreSQL migration (issue #17).
@@ -34,7 +35,7 @@ export const file = pgTable(
     sha256: varchar('sha256', { length: 64 }),
     md5: varchar('md5', { length: 32 }),
     phash: varchar('phash', { length: 64 }),
-    scrubReport: jsonb('scrub_report'),
+    scrubReport: jsonb('scrub_report').$type<JsonValue>(),
     moderationStatus: varchar('moderation_status', { length: 32 }).default('clear').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     // Prisma applied @updatedAt at query level, not in the database — the
@@ -103,7 +104,7 @@ export const fileRendition = pgTable(
     // reproduced faithfully (see module report).
     sourceFileId: text('source_file_id').notNull(),
     paramHash: varchar('param_hash', { length: 64 }).notNull().unique(),
-    params: jsonb('params').notNull(),
+    params: jsonb('params').$type<JsonValue>().notNull(),
     s3Key: text('s3_key').notNull(),
     contentType: text('content_type').notNull(),
     size: integer('size').notNull(),
@@ -127,10 +128,10 @@ export const ocrResult = pgTable(
       .references(() => file.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
     fileHash: text('file_hash').notNull(),
     text: text('text').notNull(),
-    words: jsonb('words').notNull(),
-    lines: jsonb('lines').notNull(),
+    words: jsonb('words').$type<JsonValue>().notNull(),
+    lines: jsonb('lines').$type<JsonValue>().notNull(),
     confidence: doublePrecision('confidence').notNull(),
-    statistics: jsonb('statistics').notNull(),
+    statistics: jsonb('statistics').$type<JsonValue>().notNull(),
     imageWidth: integer('image_width').notNull(),
     imageHeight: integer('image_height').notNull(),
     language: text('language').default('eng+deu').notNull(),

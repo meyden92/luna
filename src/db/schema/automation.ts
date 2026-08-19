@@ -1,6 +1,6 @@
 import { boolean, index, integer, jsonb, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
-
 import { user } from './auth';
+import type { JsonValue } from './json';
 
 /**
  * Scheduled tasks and flow automation (issue #30).
@@ -30,7 +30,7 @@ export const task = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
     createdBy: text('created_by').references(() => user.id, { onDelete: 'set null', onUpdate: 'cascade' }),
-    args: jsonb('args'),
+    args: jsonb('args').$type<JsonValue>(),
     lastExecutionAt: timestamp('last_execution_at', { withTimezone: true }),
     maxRetries: integer('max_retries').default(3).notNull(),
     nextExecutionAt: timestamp('next_execution_at', { withTimezone: true }),
@@ -56,9 +56,9 @@ export const taskExecution = pgTable(
     startedAt: timestamp('started_at', { withTimezone: true }).defaultNow().notNull(),
     completedAt: timestamp('completed_at', { withTimezone: true }),
     duration: integer('duration'),
-    result: jsonb('result'),
+    result: jsonb('result').$type<JsonValue>(),
     error: text('error'),
-    logs: jsonb('logs'),
+    logs: jsonb('logs').$type<JsonValue>(),
     triggeredBy: text('triggered_by').notNull(),
     executedBy: text('executed_by').references(() => user.id, { onDelete: 'set null', onUpdate: 'cascade' }),
   },
@@ -78,7 +78,7 @@ export const flow = pgTable(
     ownerId: text('owner_id').notNull(),
     enabled: boolean('enabled').default(true).notNull(),
     triggerType: varchar('trigger_type', { length: 40 }).notNull(),
-    graph: jsonb('graph').notNull(),
+    graph: jsonb('graph').$type<JsonValue>().notNull(),
     version: integer('version').default(1).notNull(),
     isActive: boolean('is_active').default(true).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
@@ -98,8 +98,8 @@ export const flowRun = pgTable(
     ownerId: text('owner_id').notNull(),
     status: varchar('status', { length: 32 }).default('pending').notNull(),
     triggeredBy: varchar('triggered_by', { length: 40 }).notNull(),
-    items: jsonb('items'),
-    logs: jsonb('logs'),
+    items: jsonb('items').$type<JsonValue>(),
+    logs: jsonb('logs').$type<JsonValue>(),
     error: text('error'),
     duration: integer('duration'),
     startedAt: timestamp('started_at', { withTimezone: true }).defaultNow().notNull(),

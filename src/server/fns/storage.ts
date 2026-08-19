@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import { storageUsage } from '@/db/queries/files';
 import { env } from '@/libs/env';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
@@ -106,12 +107,6 @@ export const listCachedImages = createServerFn({ method: 'GET' })
 export const getStorageUsage = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'user' }))
   .handler(async ({ context }): Promise<{ totalBytes: number; fileCount: number }> => {
-    const { default: prisma } = await import('@/libs/prismadb');
-    const userId = userIdFromCtx(context);
-    const aggregate = await prisma.file.aggregate({
-      where: { ownerId: userId, isDeleted: false },
-      _sum: { size: true },
-      _count: { _all: true },
-    });
-    return { totalBytes: aggregate._sum.size ?? 0, fileCount: aggregate._count._all };
+    const { totalBytes, fileCount } = await storageUsage(userIdFromCtx(context));
+    return { totalBytes, fileCount };
   });

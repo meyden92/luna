@@ -85,3 +85,6 @@ src/routeTree.gen.ts
 
 # Agent skill context (personal, not shared with the team)
 .claude/skill-context/**/*.local.md
+
+# Throwaway verification scripts — never committed.
+.scratch/

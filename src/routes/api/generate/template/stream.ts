@@ -1,8 +1,9 @@
 import crypto from 'node:crypto';
-import type { Prisma } from '@db/client';
 import { createFileRoute } from '@tanstack/react-router';
 import Replicate, { type Prediction } from 'replicate';
 import { UPLOAD_CONFIG } from '@/config/upload-config';
+import { getActiveTemplateForGeneration, markTemplateGenerationsFailed, upsertTemplateGeneration } from '@/db/queries/ai';
+import type { JsonValue } from '@/db/schema/json';
 import {
   createPredictionAbortRegistry,
   createSseWriter,
@@ -17,7 +18,6 @@ import {
 } from '@/libs/ai-generation-utils';
 import { checkScopedRateLimit, retryAfterSeconds } from '@/libs/api/rate-limit';
 import { env } from '@/libs/env';
-import prisma from '@/libs/prismadb';
 import { requireAuthenticatedUser } from '@/libs/rbac/guards';
 import type { TemplateVariable } from '@/types/template';
 
@@ -52,7 +52,7 @@ function parseGenerationIds(value: FormDataEntryValue | null, count: number): st
 
 type TemplateVariableOption = NonNullable<TemplateVariable['options']>[number];
 
-function cloneTemplateVariableOptions(value: Prisma.JsonValue | null): TemplateVariableOption[] {
+function cloneTemplateVariableOptions(value: JsonValue | null): TemplateVariableOption[] {
   if (!Array.isArray(value)) {
     return [];
   }
@@ -94,13 +94,7 @@ async function handle(request: Request): Promise<Response> {
       headers: { 'Content-Type': 'application/json' },
     });
 
-  const template = await prisma.template.findUnique({
-    where: { id: templateId, isActive: true },
-    include: {
-      editingModel: { include: { fields: { orderBy: { sortOrder: 'asc' } } } },
-      globalVariables: { include: { globalVariable: true } },
-    },
-  });
+  const template = await getActiveTemplateForGeneration(templateId);
   if (!template)
     return new Response(JSON.stringify({ error: 'Template not found or inactive' }), {
       status: 404,
@@ -206,36 +200,27 @@ async function handle(request: Request): Promise<Response> {
         ): Promise<string> => {
           throwIfAborted(abortSignal);
           const generationId = generationIds[index] ?? crypto.randomUUID();
-          await prisma.templateGeneration
-            .upsert({
-              where: { id: generationId },
-              update: {
-                templateId,
-                userId: user.id,
-                variableValues: variableValues as Prisma.InputJsonValue,
-                finalPrompt: data.finalPrompt,
-                status: data.status,
-                errorMessage: data.errorMessage ?? null,
-                replicateId: data.replicateId,
-                replicateStatus: data.replicateStatus,
-                originalImageUrls: imageUrls as Prisma.InputJsonValue,
-                resultFileId: data.resultFileId,
-              },
-              create: {
-                id: generationId,
-                templateId,
-                userId: user.id,
-                variableValues: variableValues as Prisma.InputJsonValue,
-                finalPrompt: data.finalPrompt,
-                status: data.status,
-                errorMessage: data.errorMessage,
-                replicateId: data.replicateId,
-                replicateStatus: data.replicateStatus,
-                originalImageUrls: imageUrls as Prisma.InputJsonValue,
-                resultFileId: data.resultFileId,
-              },
-            })
-            .catch((e: unknown) => console.error('[template] persist failed', e));
+          // One statement per progress step, never a transaction spanning the
+          // stream: this runs repeatedly over the minutes a prediction polls,
+          // and a transaction open that long would pin a connection for it.
+          await upsertTemplateGeneration(
+            {
+              id: generationId,
+              templateId,
+              userId: user.id,
+              variableValues: variableValues as JsonValue,
+              finalPrompt: data.finalPrompt,
+              status: data.status,
+              errorMessage: data.errorMessage ?? null,
+              // Omitted rather than nulled when absent, so a later progress
+              // write cannot erase the prediction id recorded earlier.
+              replicateId: data.replicateId,
+              replicateStatus: data.replicateStatus,
+              originalImageUrls: imageUrls as JsonValue,
+              resultFileId: data.resultFileId,
+            },
+            user.id,
+          ).catch((e: unknown) => console.error('[template] persist failed', e));
           return generationId;
         };
         const persistBatchFailure = async (errorMessage: string) => {
@@ -455,22 +440,17 @@ async function handle(request: Request): Promise<Response> {
         });
       } catch (error) {
         if (isAbortError(error) || abortSignal.aborted) {
-          await prisma.templateGeneration
-            .updateMany({
-              where: { id: { in: generationIds }, userId: user.id, status: 'processing' },
-              data: { status: 'failed', errorMessage: 'Generation was cancelled' },
-            })
-            .catch((e: unknown) => console.error('[template] persist cancellation failed', e));
+          await markTemplateGenerationsFailed(
+            { ids: generationIds, ownerId: user.id, errorMessage: 'Generation was cancelled' },
+            user.id,
+          ).catch((e: unknown) => console.error('[template] persist cancellation failed', e));
           return;
         }
         console.error('[template stream] error:', error);
         send({ status: 'failed', progress: 100, error: 'Generation failed' });
-        await prisma.templateGeneration
-          .updateMany({
-            where: { id: { in: generationIds }, userId: user.id, status: 'processing' },
-            data: { status: 'failed', errorMessage: 'Generation failed' },
-          })
-          .catch((e: unknown) => console.error('[template] persist failure failed', e));
+        await markTemplateGenerationsFailed({ ids: generationIds, ownerId: user.id, errorMessage: 'Generation failed' }, user.id).catch(
+          (e: unknown) => console.error('[template] persist failure failed', e),
+        );
       } finally {
         predictionAbort.cleanup();
         close();

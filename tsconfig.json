@@ -45,8 +45,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@/public/*": ["./public/*"],
-      "@/components/*": ["./src/components/*"],
-      "@db/*": ["./.prisma/generated/client/*"]
+      "@/components/*": ["./src/components/*"]
     }
   },
   "typeRoots": ["./node_modules/@types", "./src/types"],

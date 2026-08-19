@@ -1,18 +1,17 @@
 import { randomUUID } from 'node:crypto';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
-import type { Prisma } from '@db/client';
 import { createFileRoute } from '@tanstack/react-router';
+import { createUploadedFile, releaseUploadedFile } from '@/db/queries/uploads';
+import type { JsonValue } from '@/db/schema/json';
 import { checkScopedRateLimit, retryAfterSeconds } from '@/libs/api/rate-limit';
-import { writeCreateAuditLog } from '@/libs/audit/transaction-audit';
 import { env } from '@/libs/env';
 import { dispatchFlowTrigger } from '@/libs/flows/run-flow';
-import { type MetadataScrubReport, scrubMetadataIfNeeded } from '@/libs/metadata-scrubber';
-import { checkModerationGate, createModerationCase, type FileHashes } from '@/libs/moderation/hash-gate';
-import prisma from '@/libs/prismadb';
+import { scrubMetadataIfNeeded } from '@/libs/metadata-scrubber';
+import { checkModerationGate, createModerationCase } from '@/libs/moderation/hash-gate';
 import { requireAuthenticatedUser } from '@/libs/rbac/guards';
 import { s3Client } from '@/libs/S3Helper';
-import { ensureStorageQuotaAvailable, StorageQuotaExceededError, storageQuotaExceededPayload } from '@/libs/storage-quota';
+import { StorageQuotaExceededError, storageQuotaExceededPayload } from '@/libs/storage-quota';
 
 const MAX_WEB_UPLOAD_BYTES = 200 * 1024 * 1024;
 const MULTIPART_OVERHEAD_BYTES = 1024 * 1024;
@@ -66,70 +65,6 @@ async function deleteUploadedObject(key: string): Promise<void> {
   } catch {
     // Best-effort cleanup. The upload error should remain the surfaced failure.
   }
-}
-
-async function releaseReservedFile(id: string): Promise<void> {
-  try {
-    await prisma.file.delete({ where: { id } });
-  } catch {
-    await prisma.file
-      .update({
-        where: { id },
-        data: { isDeleted: true, deletedAt: new Date() },
-      })
-      .catch(() => undefined);
-  }
-}
-
-async function reserveFileRecord({
-  userId,
-  size,
-  fileName,
-  storedFileName,
-  contentType,
-  width,
-  height,
-  privateUpload,
-  hashes,
-  scrubReport,
-}: {
-  userId: string;
-  size: number;
-  fileName: string;
-  storedFileName: string;
-  contentType: string;
-  width?: number;
-  height?: number;
-  privateUpload: boolean;
-  hashes: FileHashes;
-  scrubReport: MetadataScrubReport;
-}) {
-  return prisma.$transaction(async (tx) => {
-    await ensureStorageQuotaAvailable(tx, userId, size);
-
-    const createdFile = await tx.file.create({
-      data: {
-        ownerId: userId,
-        size,
-        url: encodeURIComponent(storedFileName),
-        private: privateUpload,
-        tags: 'web-upload',
-        title: fileName,
-        contentType,
-        sha256: hashes.sha256,
-        md5: hashes.md5,
-        phash: hashes.phash,
-        scrubReport: scrubReport as unknown as Prisma.InputJsonValue,
-        moderationStatus: privateUpload ? 'quarantined' : 'clear',
-        ...(width && height ? { metadata: { create: { width, height } } } : {}),
-      },
-      include: { metadata: true },
-    });
-    const { metadata: _metadata, ...auditFile } = createdFile;
-    await writeCreateAuditLog(tx, { model: 'File', record: auditFile, userId });
-
-    return createdFile;
-  });
 }
 
 async function handle(request: Request): Promise<Response> {
@@ -188,20 +123,23 @@ async function handle(request: Request): Promise<Response> {
   const width = parsePositiveInteger(formData.get('width'));
   const height = parsePositiveInteger(formData.get('height'));
 
-  let dbResult: Awaited<ReturnType<typeof reserveFileRecord>>;
+  let dbResult: Awaited<ReturnType<typeof createUploadedFile>>;
   try {
-    dbResult = await reserveFileRecord({
+    dbResult = await createUploadedFile(
+      {
+        ownerId: userId,
+        size: uploadBuffer.byteLength,
+        url: encodeURIComponent(storedFileName),
+        title: fileName,
+        tags: 'web-upload',
+        contentType,
+        privateUpload: !moderationGate.allowed,
+        hashes: moderationGate.hashes,
+        scrubReport: scrubbed.report as unknown as JsonValue,
+        dimensions: width && height ? { width, height } : null,
+      },
       userId,
-      size: uploadBuffer.byteLength,
-      fileName,
-      storedFileName,
-      contentType,
-      width,
-      height,
-      privateUpload: !moderationGate.allowed,
-      hashes: moderationGate.hashes,
-      scrubReport: scrubbed.report,
-    });
+    );
   } catch (error) {
     if (error instanceof StorageQuotaExceededError) {
       return json(storageQuotaExceededPayload(error), error.status);
@@ -222,7 +160,7 @@ async function handle(request: Request): Promise<Response> {
       },
     }).done();
   } catch (error) {
-    await Promise.all([releaseReservedFile(dbResult.id), deleteUploadedObject(key)]);
+    await Promise.all([releaseUploadedFile(dbResult.id, userId), deleteUploadedObject(key)]);
     const message = error instanceof Error ? error.message : 'Upload failed';
     return json({ error: message, code: 'UPLOAD_FAILED' }, 500);
   }

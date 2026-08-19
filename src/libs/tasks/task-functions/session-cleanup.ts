@@ -1,22 +1,21 @@
+import { deleteExpiredSessions } from '@/db/queries/tasks';
 import { throwIfAborted } from '@/libs/ai-generation-utils';
-import prisma from '@/libs/prismadb';
 import type { TaskFunction } from '@/types/tasks';
 
+/**
+ * Bulk-deletes expired Better Auth sessions.
+ *
+ * `Session` is in `UNAUDITED_MODELS` (session and auth churn), so this writes no
+ * audit rows — the implicit Prisma extension would have attempted one per row.
+ */
 export const deleteExpiredSessionsExecutor: TaskFunction = async (...args) => {
   const { signal } = args[args.length - 1];
   throwIfAborted(signal);
   const now = new Date();
 
-  const result = await prisma.session.deleteMany({
-    where: {
-      expiresAt: {
-        lt: now,
-      },
-    },
-  });
+  const deletedCount = await deleteExpiredSessions(now);
 
   throwIfAborted(signal);
-  const deletedCount = result.count;
 
   return {
     summary: deletedCount > 0 ? `Deleted ${deletedCount} expired sessions` : 'No expired sessions found',

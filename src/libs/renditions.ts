@@ -1,12 +1,12 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
-import type { Prisma } from '@db/client';
 import sharp from 'sharp';
 import { z } from 'zod';
+import { createRendition, findRenditionByParamHash, touchRendition } from '@/db/queries/delivery';
+import type { JsonValue } from '@/db/schema/json';
 import { deriveSigningKey } from '@/libs/crypto/signing-keys';
 import { env } from '@/libs/env';
-import prisma from '@/libs/prismadb';
 import { fileS3Key, s3Client } from '@/libs/S3Helper';
 
 const formatSchema = z.enum(['avif', 'webp', 'jpeg', 'png']);
@@ -101,9 +101,9 @@ export async function getOrCreateRendition({
 }) {
   const canonical = canonicalRenditionParams(params);
   const paramHash = renditionParamHash(file.id, canonical);
-  const existing = await prisma.fileRendition.findUnique({ where: { paramHash } });
+  const existing = await findRenditionByParamHash(paramHash);
   if (existing) {
-    void prisma.fileRendition.update({ where: { id: existing.id }, data: { lastAccessedAt: new Date() } }).catch(() => undefined);
+    void touchRendition(existing.id).catch(() => undefined);
     return existing;
   }
 
@@ -129,18 +129,18 @@ export async function getOrCreateRendition({
     },
   }).done();
 
-  return prisma.fileRendition.create({
-    data: {
-      sourceFileId: file.id,
-      paramHash,
-      params: params as unknown as Prisma.InputJsonValue,
-      s3Key,
-      contentType: transformed.contentType,
-      size: transformed.buffer.byteLength,
-      width: transformed.width,
-      height: transformed.height,
-      private: file.private,
-    },
+  return createRendition({
+    sourceFileId: file.id,
+    paramHash,
+    // Optional params are `undefined` rather than absent; jsonb serialisation
+    // drops them, exactly as Prisma's InputJsonValue cast did.
+    params: params as unknown as JsonValue,
+    s3Key,
+    contentType: transformed.contentType,
+    size: transformed.buffer.byteLength,
+    width: transformed.width,
+    height: transformed.height,
+    private: file.private,
   });
 }
 

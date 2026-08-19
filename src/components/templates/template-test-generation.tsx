@@ -1,4 +1,3 @@
-import type { EditingModelField } from '@db/client';
 import { AlertCircle, ExternalLink, Loader2, Play, Upload, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -11,9 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { useFormWatch } from '@/components/ui/tanstack-form';
 import { UPLOAD_CONFIG } from '@/config/upload-config';
+import type { editingModelField } from '@/db/schema/ai';
 import { streamSSE } from '@/libs/sse';
 import type { TemplateVariable, TemplateVariableOption } from '@/types/template';
 
+type EditingModelField = typeof editingModelField.$inferSelect;
 interface TemplateTestGenerationProps {
   models: { id: string; label: string; fields: EditingModelField[] }[];
 }

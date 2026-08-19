@@ -1,4 +1,3 @@
-import type { User } from '@db/client';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import { Ban, Trash2 } from 'lucide-react';
 import { useState } from 'react';
@@ -8,11 +7,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import type { user } from '@/db/schema/auth';
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import { useConfirmation } from '@/hooks/use-confirmation';
 import { formatSize } from '@/libs/utils';
 import { deleteAdminUser, reactivateUser as reactivateUserFn, suspendUser as suspendUserFn } from '@/server/fns/admin/users';
 
+type User = typeof user.$inferSelect;
 interface UserDangerZoneProps {
   user: User;
   fileCount: number;

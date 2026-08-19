@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { endOfMonth, startOfMonth, subMonths } from 'date-fns';
 import { z } from 'zod';
+import { listOwnedFilesInRange } from '@/db/queries/files';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
 
@@ -27,16 +28,8 @@ export const getFilesInDateRange = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'user' }))
   .validator(dateRangeSchema)
   .handler(async ({ data, context }) => {
-    const { default: prisma } = await import('@/libs/prismadb');
     const range = resolveDateRange(data);
-    const files = await prisma.file.findMany({
-      where: {
-        ownerId: userIdFromCtx(context),
-        isDeleted: false,
-        createdAt: { gte: range.from, lte: range.to },
-      },
-      select: { id: true, title: true },
-    });
+    const files = await listOwnedFilesInRange({ ownerId: userIdFromCtx(context), from: range.from, to: range.to });
 
     return {
       range: { from: range.from.toISOString(), to: range.to.toISOString() },

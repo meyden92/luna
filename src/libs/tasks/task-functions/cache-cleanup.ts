@@ -1,5 +1,5 @@
 import { DeleteObjectsCommand } from '@aws-sdk/client-s3';
-import prisma from '@/libs/prismadb';
+import { deleteCachedImages, listExpiredCachedImages, listRetainedCachedImageUrls } from '@/db/queries/tasks';
 import { s3Client } from '@/libs/S3Helper';
 import { env } from '../../env';
 
@@ -20,21 +20,9 @@ export async function deleteExpiredCacheExecutor(): Promise<{
   try {
     console.log('🧹 Starting cache cleanup task...');
 
-    // Find expired cache entries (not accessed in the last 30 minutes)
-    const expiredCacheImages = await prisma.cachedImage.findMany({
-      where: {
-        lastAccessedAt: {
-          lt: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
-        },
-      },
-      take: 100, // Process in batches to avoid memory issues
-      select: {
-        id: true,
-        url: true,
-        lastAccessedAt: true,
-        createdAt: true,
-      },
-    });
+    // Find expired cache entries (not accessed in the last 30 minutes).
+    // Processed in batches to avoid memory issues.
+    const expiredCacheImages = await listExpiredCachedImages(new Date(Date.now() - 30 * 60 * 1000), 100);
 
     console.log(`📊 Found ${expiredCacheImages.length} expired cache entries`);
 
@@ -64,14 +52,7 @@ export async function deleteExpiredCacheExecutor(): Promise<{
 
     const expiredIds = expiredCacheImages.map((image) => image.id);
     const expiredUrls = [...new Set(expiredCacheImages.map((image) => image.url))];
-    const retainedRows = await prisma.cachedImage.findMany({
-      where: {
-        url: { in: expiredUrls },
-        id: { notIn: expiredIds },
-      },
-      select: { url: true },
-    });
-    const retainedUrls = new Set(retainedRows.map((image) => image.url));
+    const retainedUrls = await listRetainedCachedImageUrls(expiredUrls, expiredIds);
 
     // Prepare S3 delete operations. A cache object can be referenced by
     // multiple owner-scoped DB rows, so only delete objects with no retained row.
@@ -130,15 +111,7 @@ export async function deleteExpiredCacheExecutor(): Promise<{
     console.log('🗄️ Cleaning up database entries...');
 
     // Delete from database
-    const deletedResult = await prisma.cachedImage.deleteMany({
-      where: {
-        id: {
-          in: expiredIds,
-        },
-      },
-    });
-
-    const deletedCount = deletedResult.count;
+    const deletedCount = await deleteCachedImages(expiredIds);
     console.log(`✅ Deleted ${deletedCount} entries from database`);
 
     // Generate summary

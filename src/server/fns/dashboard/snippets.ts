@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { getRequestHeaders } from '@tanstack/react-start/server';
 import { z } from 'zod';
+import { getSnippetWithAuthor, listOwnedSnippetSummaries } from '@/db/queries/features';
 import { RATE_LIMITS } from '@/libs/api/rate-limit';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
@@ -11,11 +12,7 @@ export const getSnippetById = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'none', rateLimit: RATE_LIMITS.publicSnippetView }))
   .validator(idSchema)
   .handler(async ({ data }) => {
-    const { default: prisma } = await import('@/libs/prismadb');
-    const snippet = await prisma.snippet.findFirst({
-      where: { id: data.id, isDeleted: false },
-      include: { author: { select: { id: true, name: true, image: true } } },
-    });
+    const snippet = await getSnippetWithAuthor(data.id);
     if (!snippet) {
       return { status: 'not-found', snippet: null, viewerCanAccess: false, viewerIsOwner: false } as const;
     }
@@ -37,18 +34,4 @@ export const getSnippetById = createServerFn({ method: 'GET' })
 
 export const listMySnippets = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'user' }))
-  .handler(async ({ context }) => {
-    const { default: prisma } = await import('@/libs/prismadb');
-    return prisma.snippet.findMany({
-      where: { ownerId: userIdFromCtx(context), isDeleted: false },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        title: true,
-        content: true,
-        language: true,
-        isPublic: true,
-        createdAt: true,
-      },
-    });
-  });
+  .handler(async ({ context }) => listOwnedSnippetSummaries(userIdFromCtx(context)));

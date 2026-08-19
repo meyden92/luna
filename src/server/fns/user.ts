@@ -11,31 +11,29 @@ const SHAREX_UPLOAD_PATH = '/api/upload/sharex';
 export const getUserSettings = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'user' }))
   .handler(async ({ context }) => {
-    const { default: prisma } = await import('@/libs/prismadb');
-    const userId = userIdFromCtx(context);
-    const dbUser = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { showAllFilesIncludesFoldered: true },
-    });
-    if (!dbUser) throw new Error('User not found');
-    return dbUser;
+    const { getUserPreferences } = await import('@/db/queries/auth');
+    const preferences = await getUserPreferences(userIdFromCtx(context));
+    if (!preferences) throw new Error('User not found');
+    return preferences;
   });
 
 export const updateUserProfile = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'user' }))
   .validator(updateProfileSchema)
   .handler(async ({ data, context }) => {
-    const { default: prisma } = await import('@/libs/prismadb');
-    return prisma.user.update({
-      where: { id: userIdFromCtx(context) },
-      data: {
+    const { updateUserProfile: writeProfile } = await import('@/db/queries/auth');
+    const userId = userIdFromCtx(context);
+    return writeProfile(
+      userId,
+      {
         receiveEmail: data.receiveEmails,
         isProfilePublic: data.isProfilePublic,
         bio: data.bio,
         description: data.description,
         showAllFilesIncludesFoldered: data.showAllFilesIncludesFoldered,
       },
-    });
+      userId,
+    );
   });
 
 const themeSchema = z.object({ theme: z.enum(['default', 'light', 'dark']) });
@@ -73,12 +71,9 @@ export const getShareXConfig = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'user' }))
   .validator(sharexConfigSchema)
   .handler(async ({ data, context }) => {
-    const { default: prisma } = await import('@/libs/prismadb');
+    const { getTokenById } = await import('@/db/queries/auth');
     const { getPublicOrigin } = await import('@/libs/request-origin');
-    const tokenRecord = await prisma.token.findFirst({
-      where: { id: data.keyId },
-      select: { key: true, enabled: true, userId: true },
-    });
+    const tokenRecord = await getTokenById(data.keyId);
     if (!tokenRecord) throw new Error('Token not found');
     if (!tokenRecord.enabled) throw new Error('Token is not enabled');
     if (tokenRecord.userId !== userIdFromCtx(context)) throw new Error('Unauthorized');
@@ -101,26 +96,18 @@ export const getShareXConfig = createServerFn({ method: 'POST' })
 export const listTokens = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'user' }))
   .handler(async ({ context }) => {
-    const { default: prisma } = await import('@/libs/prismadb');
-    return prisma.token.findMany({
-      where: { userId: userIdFromCtx(context) },
-      orderBy: { createdAt: 'desc' },
-    });
+    const { listUserTokens } = await import('@/db/queries/auth');
+    return listUserTokens(userIdFromCtx(context));
   });
 
 export const createUserToken = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'user' }))
   .validator(createTokenSchema)
   .handler(async ({ data, context }) => {
-    const { default: prisma } = await import('@/libs/prismadb');
+    const { createUserToken: writeToken } = await import('@/db/queries/auth');
     const { generateToken } = await import('@/libs/token');
-    return prisma.token.create({
-      data: {
-        name: data.name,
-        key: generateToken(),
-        userId: userIdFromCtx(context),
-      },
-    });
+    const userId = userIdFromCtx(context);
+    return writeToken({ name: data.name, key: generateToken(), userId }, userId);
   });
 
 const tokenIdSchema = z.object({ id: z.string().min(1) });
@@ -129,13 +116,10 @@ export const deleteUserToken = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'user' }))
   .validator(tokenIdSchema)
   .handler(async ({ data, context }) => {
-    const { default: prisma } = await import('@/libs/prismadb');
-    const existing = await prisma.token.findFirst({
-      where: { id: data.id, userId: userIdFromCtx(context) },
-      select: { id: true },
-    });
-    if (!existing) throw new Error('Token not found');
-    await prisma.token.delete({ where: { id: existing.id } });
+    const { deleteOwnedToken } = await import('@/db/queries/auth');
+    const userId = userIdFromCtx(context);
+    const deleted = await deleteOwnedToken({ id: data.id, userId }, userId);
+    if (!deleted) throw new Error('Token not found');
     return { success: true };
   });
 
@@ -143,29 +127,29 @@ export const updateTokenSettings = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'user' }))
   .validator(updateTokenSettingsSchema)
   .handler(async ({ data, context }) => {
-    const { default: prisma } = await import('@/libs/prismadb');
-    const existing = await prisma.token.findFirst({
-      where: { id: data.tokenId, userId: userIdFromCtx(context) },
-      select: { id: true },
-    });
-    if (!existing) throw new Error('Token not found');
+    const [{ updateOwnedTokenSettings }, { getOwnedFlow }] = await Promise.all([import('@/db/queries/auth'), import('@/db/queries/flows')]);
+    const userId = userIdFromCtx(context);
+
     if (data.flowId) {
-      const flow = await prisma.flow.findFirst({
-        where: { id: data.flowId, ownerId: userIdFromCtx(context), isActive: true },
-        select: { id: true },
-      });
-      if (!flow) throw new Error('Flow not found');
+      const flow = await getOwnedFlow(data.flowId, userId);
+      if (!flow?.isActive) throw new Error('Flow not found');
     }
-    await prisma.token.update({
-      where: { id: existing.id },
-      data: {
-        compressImage: data.compressImage,
-        convertToJpeg: data.convertToJpeg,
-        jpegQuality: data.jpegQuality,
-        folderId: data.folderId,
-        stripMetadata: data.stripMetadata,
-        flowId: data.flowId,
+
+    const updated = await updateOwnedTokenSettings(
+      {
+        id: data.tokenId,
+        userId,
+        settings: {
+          compressImage: data.compressImage,
+          convertToJpeg: data.convertToJpeg,
+          jpegQuality: data.jpegQuality,
+          folderId: data.folderId,
+          stripMetadata: data.stripMetadata,
+          flowId: data.flowId,
+        },
       },
-    });
+      userId,
+    );
+    if (!updated) throw new Error('Token not found');
     return { success: true };
   });

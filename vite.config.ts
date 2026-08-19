@@ -7,19 +7,10 @@ import { defineConfig } from 'vite';
 
 // Native/node-only packages that must never be bundled into the client and stay
 // external in the SSR server build. Without the client exclusion Vite happily
-// pre-bundles `mariadb` for the client when something transitively imports
-// `@/libs/prismadb`, which then crashes the browser at runtime inside the mariadb
-// Node-version check (`process.versions.node.replace(...)`).
-const SERVER_ONLY_PACKAGES = [
-  'mariadb',
-  '@prisma/client',
-  '@prisma/adapter-mariadb',
-  '@aws-sdk/client-s3',
-  '@aws-sdk/lib-storage',
-  '@aws-sdk/s3-request-presigner',
-  'sharp',
-  'replicate',
-];
+// pre-bundles a database driver for the client when something transitively
+// imports `src/db/client`, which then crashes the browser at runtime inside the
+// driver's Node-version check (`process.versions.node.replace(...)`).
+const SERVER_ONLY_PACKAGES = ['pg', '@aws-sdk/client-s3', '@aws-sdk/lib-storage', '@aws-sdk/s3-request-presigner', 'sharp', 'replicate'];
 
 export default defineConfig({
   plugins: [
@@ -51,7 +42,6 @@ export default defineConfig({
     dedupe: ['react', 'react-dom'],
     alias: {
       '@': path.resolve(__dirname, 'src'),
-      '@db': path.resolve(__dirname, '.prisma/generated/client'),
     },
   },
   server: {

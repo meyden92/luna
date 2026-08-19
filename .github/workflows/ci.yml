@@ -15,9 +15,6 @@ jobs:
   quality:
     name: Lint, types & unit tests
     runs-on: ubuntu-latest
-    env:
-      # Prisma only needs a parseable URL to generate the client; it never connects.
-      DATABASE_URL: mysql://dummy:dummy@localhost:3306/dummy
     steps:
       - uses: actions/checkout@v5
 
@@ -28,25 +25,27 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Generate Prisma client
-        run: bunx prisma generate
-
+      # No code-generation step: the Drizzle schema is ordinary TypeScript, so
+      # nothing here needs a DATABASE_URL to produce a client (issue #46).
       - name: Lint
         run: bun run lint
 
       - name: Typecheck
         run: bun run check-types
 
-      # bunfig.toml scopes `bun test` to src/, which currently holds no unit
-      # tests. Skip rather than fail the job until the first one lands; the
-      # Playwright suite runs separately via `bun run test:e2e`.
+      # DATABASE_URL is deliberately unset here. The database-backed suites
+      # (audit coverage, collation, and the denylist fail-open regression) assert
+      # against a *seeded* database, not merely a schema — and the only seed is
+      # the production dump, which is gitignored and holds cleartext credentials
+      # (issue #27). They detect the missing URL and skip themselves rather than
+      # failing, so this job still catches everything that does not need a
+      # database. Run them locally against the dev Postgres, or as part of
+      # `bun run db:rehearse` — see docs/db-verification.md.
+      #
+      # bunfig.toml scopes `bun test` to src/; the Playwright suite runs
+      # separately via `bun run test:e2e`.
       - name: Unit tests
-        run: |
-          if find src -name '*.test.ts' -o -name '*.test.tsx' | grep -q .; then
-            bun test
-          else
-            echo "No unit tests in src/ yet — skipping."
-          fi
+        run: bun test
 
   build:
     name: Build & push image

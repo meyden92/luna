@@ -10,21 +10,10 @@ export const getProfileById = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'none', rateLimit: RATE_LIMITS.publicProfileView }))
   .validator(idSchema)
   .handler(async ({ data }) => {
-    const { default: prisma } = await import('@/libs/prismadb');
-    const user = await prisma.user.findUnique({
-      where: { id: data.id },
-      select: {
-        id: true,
-        name: true,
-        image: true,
-        bio: true,
-        description: true,
-        role: true,
-        isProfilePublic: true,
-        _count: { select: { File: { where: { isDeleted: false } } } },
-      },
-    });
-    if (!user) return null;
+    const { getPublicProfile } = await import('@/db/queries/auth');
+    const profile = await getPublicProfile(data.id);
+    if (!profile) return null;
+    const { fileCount, ...user } = profile;
 
     if (!user.isProfilePublic) {
       const [{ getOptionalAuthenticatedUser }, { isUserAdmin }] = await Promise.all([
@@ -36,5 +25,6 @@ export const getProfileById = createServerFn({ method: 'GET' })
       if (!canView) return null;
     }
 
-    return user;
+    // The profile page reads `_count.File`, so Prisma's count shape is kept.
+    return { ...user, _count: { File: fileCount } };
   });

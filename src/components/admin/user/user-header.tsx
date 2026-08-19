@@ -1,12 +1,13 @@
-import type { User } from '@db/client';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import { Loader2, Mail, UserCheck } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import type { user } from '@/db/schema/auth';
 import { authClient } from '@/libs/auth/auth-client';
 
+type User = typeof user.$inferSelect;
 interface UserHeaderProps {
   user: User;
 }

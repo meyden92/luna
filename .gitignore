@@ -1,6 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 .design-reference
+.private
 findings
 # dependencies
 /node_modules
@@ -84,3 +85,6 @@ src/routeTree.gen.ts
 
 # Agent skill context (personal, not shared with the team)
 .claude/skill-context/**/*.local.md
+
+# Throwaway verification scripts — never committed.
+.scratch/

@@ -1,8 +1,7 @@
-import type { Prisma } from '@db/client';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import { type ExecutionCursor, getTaskExecution, listTaskExecutions, mostActiveTasks, taskExecutionStats } from '@/db/queries/tasks';
 import { getNextExecutions, validateCronExpression } from '@/libs/cron-utils';
-import prisma from '@/libs/prismadb';
 import { DatabaseTaskLoader } from '@/libs/tasks/db-loader';
 import { TaskExecutionService } from '@/libs/tasks/execution-service';
 import { TaskSyncService } from '@/libs/tasks/sync-service';
@@ -10,7 +9,7 @@ import { getAvailableTaskFunctions } from '@/libs/tasks/task-functions';
 import { TaskManager } from '@/libs/tasks/task-manager';
 import { userIdFromCtx as adminIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
-import type { TaskFormData, TaskStatus } from '@/types/tasks';
+import type { TaskFormData } from '@/types/tasks';
 
 const taskSchema = z.object({
   name: z.string().min(1),
@@ -53,11 +52,6 @@ const cronPreviewSchema = z.object({
 const executionDirectionSchema = z.enum(['next', 'previous']);
 const EXECUTION_CURSOR_SEPARATOR = '|';
 
-type ExecutionCursor = {
-  startedAt: Date;
-  id: string;
-};
-
 function encodeExecutionCursor(execution: ExecutionCursor) {
   return `${execution.startedAt.toISOString()}${EXECUTION_CURSOR_SEPARATOR}${execution.id}`;
 }
@@ -73,30 +67,6 @@ function parseExecutionCursor(cursor?: string): ExecutionCursor | null {
   if (Number.isNaN(startedAt.getTime()) || !id) throw new Error('Invalid execution cursor');
 
   return { startedAt, id };
-}
-
-function getExecutionCursorFilter(cursor: ExecutionCursor, direction: 'next' | 'previous'): Prisma.TaskExecutionWhereInput {
-  if (direction === 'previous') {
-    return {
-      OR: [{ startedAt: { gt: cursor.startedAt } }, { startedAt: cursor.startedAt, id: { gt: cursor.id } }],
-    };
-  }
-
-  return {
-    OR: [{ startedAt: { lt: cursor.startedAt } }, { startedAt: cursor.startedAt, id: { lt: cursor.id } }],
-  };
-}
-
-function applyExecutionCursor(
-  where: Prisma.TaskExecutionWhereInput,
-  cursor: ExecutionCursor | null,
-  direction: 'next' | 'previous',
-): Prisma.TaskExecutionWhereInput {
-  return cursor ? { AND: [where, getExecutionCursorFilter(cursor, direction)] } : where;
-}
-
-function getExecutionOrderBy(direction: 'next' | 'previous'): Prisma.TaskExecutionOrderByWithRelationInput[] {
-  return direction === 'previous' ? [{ startedAt: 'asc' }, { id: 'asc' }] : [{ startedAt: 'desc' }, { id: 'desc' }];
 }
 
 function buildExecutionPage<T extends ExecutionCursor>(
@@ -168,14 +138,15 @@ export const createAdminTask = createServerFn({ method: 'POST' })
 export const bulkUpdateTasks = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(bulkOperationSchema)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const adminId = adminIdFromCtx(context);
     switch (data.operation) {
       case 'enable':
-        return TaskSyncService.bulkUpdateTasksEnabled(data.taskIds, true);
+        return TaskSyncService.bulkUpdateTasksEnabled(data.taskIds, true, adminId);
       case 'disable':
-        return TaskSyncService.bulkUpdateTasksEnabled(data.taskIds, false);
+        return TaskSyncService.bulkUpdateTasksEnabled(data.taskIds, false, adminId);
       case 'delete':
-        return TaskSyncService.bulkDeleteTasks(data.taskIds);
+        return TaskSyncService.bulkDeleteTasks(data.taskIds, adminId);
     }
   });
 
@@ -192,20 +163,20 @@ export const getAdminTask = createServerFn({ method: 'GET' })
 export const updateAdminTask = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(updateTaskSchema)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     if (data.taskFunction) {
       const available = getAvailableTaskFunctions();
       if (!available.includes(data.taskFunction)) throw new Error('Invalid task function');
     }
     const { id, ...rest } = data;
-    return TaskSyncService.updateTask(id, rest as Partial<TaskFormData>);
+    return TaskSyncService.updateTask(id, rest as Partial<TaskFormData>, adminIdFromCtx(context));
   });
 
 export const deleteAdminTask = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(z.object({ id: z.string().min(1) }))
-  .handler(async ({ data }) => {
-    await TaskSyncService.deleteTask(data.id);
+  .handler(async ({ data, context }) => {
+    await TaskSyncService.deleteTask(data.id, adminIdFromCtx(context));
     return { success: true };
   });
 
@@ -221,11 +192,11 @@ export const operateAdminTask = createServerFn({ method: 'POST' })
     const tm = TaskManager.getInstance();
     switch (data.operation) {
       case 'enable': {
-        const result = await TaskSyncService.enableTask(data.id);
+        const result = await TaskSyncService.enableTask(data.id, adminIdFromCtx(context));
         return (await tm.getTaskStatus(data.id)) || DatabaseTaskLoader.convertToTaskWithStatus(result);
       }
       case 'disable': {
-        const result = await TaskSyncService.disableTask(data.id);
+        const result = await TaskSyncService.disableTask(data.id, adminIdFromCtx(context));
         return (await tm.getTaskStatus(data.id)) || DatabaseTaskLoader.convertToTaskWithStatus(result);
       }
       case 'execute': {
@@ -248,21 +219,11 @@ export const getTaskLogs = createServerFn({ method: 'GET' })
   .validator(taskLogsSchema)
   .handler(async ({ data }) => {
     const limit = data.limit ?? 50;
-    const status = data.status as TaskStatus | undefined;
     const direction = data.direction ?? 'next';
     const cursor = parseExecutionCursor(data.cursor);
-    const where = applyExecutionCursor({ taskId: data.id, ...(status ? { status } : {}) }, cursor, direction);
 
     const [executions, stats] = await Promise.all([
-      prisma.taskExecution.findMany({
-        where,
-        orderBy: getExecutionOrderBy(direction),
-        take: limit + 1,
-        include: {
-          task: { select: { id: true, name: true, description: true } },
-          executedByUser: { select: { id: true, name: true, email: true } },
-        },
-      }),
+      listTaskExecutions({ taskId: data.id, status: data.status }, { cursor, direction, limit }),
       TaskExecutionService.getTaskExecutionStats(data.id, 7),
     ]);
     const page = buildExecutionPage(executions, limit, cursor, direction);
@@ -293,23 +254,9 @@ export const listExecutions = createServerFn({ method: 'GET' })
   .validator(executionsListSchema)
   .handler(async ({ data }) => {
     const limit = data.limit ?? 50;
-    const status = data.status as TaskStatus | undefined;
     const direction = data.direction ?? 'next';
     const cursor = parseExecutionCursor(data.cursor);
-    const baseWhere: Prisma.TaskExecutionWhereInput = {
-      ...(data.taskId ? { taskId: data.taskId } : {}),
-      ...(status ? { status } : {}),
-    };
-    const where = applyExecutionCursor(baseWhere, cursor, direction);
-    const executions = await prisma.taskExecution.findMany({
-      where,
-      orderBy: getExecutionOrderBy(direction),
-      take: limit + 1,
-      include: {
-        task: { select: { id: true, name: true, description: true, taskFunction: true } },
-        executedByUser: { select: { id: true, name: true, email: true } },
-      },
-    });
+    const executions = await listTaskExecutions({ taskId: data.taskId, status: data.status }, { cursor, direction, limit });
     const page = buildExecutionPage(executions, limit, cursor, direction);
 
     return {
@@ -336,13 +283,7 @@ export const getExecution = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(z.object({ id: z.string().min(1) }))
   .handler(async ({ data }) => {
-    const exec = await prisma.taskExecution.findUnique({
-      where: { id: data.id },
-      include: {
-        task: { select: { id: true, name: true, description: true, taskFunction: true } },
-        executedByUser: { select: { id: true, name: true, email: true } },
-      },
-    });
+    const exec = await getTaskExecution(data.id);
     if (!exec) throw new Error('Execution not found');
     return exec;
   });
@@ -381,30 +322,12 @@ export const getAllTaskLogs = createServerFn({ method: 'GET' })
     const direction = data.direction ?? 'next';
     const cursor = parseExecutionCursor(data.cursor);
 
-    const where: Prisma.TaskExecutionWhereInput = { startedAt: { gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000) } };
-    if (data.taskId) where.taskId = data.taskId;
-    if (data.status) where.status = data.status;
-    if (data.search) {
-      where.OR = [{ task: { name: { contains: data.search } } }, { error: { contains: data.search } }];
-    }
-
-    const statsWhere = { ...where };
-    delete statsWhere.OR;
-    const [executions, statusStats, avg] = await Promise.all([
-      prisma.taskExecution.findMany({
-        where: applyExecutionCursor(where, cursor, direction),
-        orderBy: getExecutionOrderBy(direction),
-        take: limit + 1,
-        include: {
-          task: { select: { id: true, name: true, description: true, taskFunction: true } },
-          executedByUser: { select: { id: true, name: true, email: true } },
-        },
-      }),
-      prisma.taskExecution.groupBy({ by: ['status'], where: statsWhere, _count: { status: true } }),
-      prisma.taskExecution.aggregate({
-        where: { ...statsWhere, status: 'success', duration: { not: null } },
-        _avg: { duration: true },
-      }),
+    // The search term narrows the listing only; the statistics stay over the
+    // unsearched window, as they did under Prisma.
+    const filters = { taskId: data.taskId, status: data.status, since: new Date(Date.now() - days * 24 * 60 * 60 * 1000) };
+    const [executions, stats] = await Promise.all([
+      listTaskExecutions({ ...filters, search: data.search }, { cursor, direction, limit }),
+      taskExecutionStats(filters),
     ]);
     const page = buildExecutionPage(executions, limit, cursor, direction);
 
@@ -420,8 +343,8 @@ export const getAllTaskLogs = createServerFn({ method: 'GET' })
       resultDetails: e.result && typeof e.result === 'object' ? (e.result as any).details || null : null,
     }));
 
-    const statsTotal = statusStats.reduce((total, stat) => total + stat._count.status, 0);
-    const successCount = statusStats.find((s) => s.status === 'success')?._count.status || 0;
+    const statsTotal = stats.total;
+    const successCount = stats.byStatus.success ?? 0;
 
     return {
       executions: formatted,
@@ -435,8 +358,8 @@ export const getAllTaskLogs = createServerFn({ method: 'GET' })
       stats: {
         period: `${days} days`,
         total: statsTotal,
-        byStatus: Object.fromEntries(statusStats.map((s) => [s.status, s._count.status])),
-        averageDuration: Math.round(avg._avg.duration || 0),
+        byStatus: stats.byStatus,
+        averageDuration: Math.round(stats.averageDuration),
         successRate: statsTotal > 0 ? Math.round((successCount / statsTotal) * 100) : 0,
       },
       filters: { taskId: data.taskId || null, status: data.status || null, search: data.search || null, days },
@@ -462,33 +385,14 @@ export const getTaskStats = createServerFn({ method: 'GET' })
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    const execStats = await prisma.taskExecution.groupBy({
-      by: ['status'],
-      where: { startedAt: { gte: startDate } },
-      _count: { status: true },
-    });
-    const total = execStats.reduce((s, e) => s + e._count.status, 0);
-    const succ = execStats.find((e) => e.status === 'success')?._count.status || 0;
-    const fail = execStats.find((e) => e.status === 'failed')?._count.status || 0;
+    const execStats = await taskExecutionStats({ since: startDate });
+    const total = execStats.total;
+    const succ = execStats.byStatus.success ?? 0;
+    const fail = execStats.byStatus.failed ?? 0;
 
-    const avg = await prisma.taskExecution.aggregate({
-      where: { status: 'success', startedAt: { gte: startDate }, duration: { not: null } },
-      _avg: { duration: true },
-    });
-
-    const mostActive = await prisma.taskExecution.groupBy({
-      by: ['taskId'],
-      where: { startedAt: { gte: startDate } },
-      _count: { taskId: true },
-      orderBy: { _count: { taskId: 'desc' } },
-      take: 5,
-    });
-    const taskDetails = await Promise.all(
-      mostActive.map(async (s) => {
-        const t = await DatabaseTaskLoader.loadTask(s.taskId);
-        return { taskId: s.taskId, taskName: t?.name || 'Unknown', executionCount: s._count.taskId };
-      }),
-    );
+    // The busiest tasks come back with their names already joined, so the
+    // per-row task lookup Prisma's groupBy forced is gone.
+    const taskDetails = await mostActiveTasks(startDate, 5);
 
     return {
       period: `${days} days`,
@@ -504,9 +408,9 @@ export const getTaskStats = createServerFn({ method: 'GET' })
         successful: succ,
         failed: fail,
         successRate: total > 0 ? Math.round((succ / total) * 100) : 0,
-        averageDuration: Math.round(avg._avg.duration || 0),
+        averageDuration: Math.round(execStats.averageDuration),
       },
-      statusBreakdown: Object.fromEntries(execStats.map((s) => [s.status, s._count.status])),
+      statusBreakdown: execStats.byStatus,
       mostActiveTasks: taskDetails,
     };
   });

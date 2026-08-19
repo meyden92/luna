@@ -1,24 +1,19 @@
 import { parseCronExpression } from 'cron-schedule';
-import prisma from '@/libs/prismadb';
+import {
+  getTaskById,
+  getTaskByName,
+  listAllTasks,
+  listEnabledTasks,
+  setTaskLastExecutionAt,
+  setTaskNextExecutionAt,
+} from '@/db/queries/tasks';
 import type { DatabaseTask, TaskWithStatus } from '@/types/tasks';
 import { validateTaskFunction } from './task-functions';
 
 export class DatabaseTaskLoader {
   static async loadEnabledTasks(): Promise<DatabaseTask[]> {
     try {
-      const tasks = await prisma.task.findMany({
-        where: {
-          enabled: true,
-        },
-        include: {
-          executions: {
-            orderBy: {
-              startedAt: 'desc',
-            },
-            take: 1, // Get the most recent execution
-          },
-        },
-      });
+      const tasks = await listEnabledTasks();
 
       // Validate that all task functions exist
       const validTasks = tasks.filter((task) => {
@@ -38,21 +33,7 @@ export class DatabaseTaskLoader {
 
   static async loadAllTasks(): Promise<DatabaseTask[]> {
     try {
-      const tasks = await prisma.task.findMany({
-        include: {
-          executions: {
-            orderBy: {
-              startedAt: 'desc',
-            },
-            take: 5, // Get the 5 most recent executions for admin view
-          },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
-
-      return tasks;
+      return await listAllTasks();
     } catch (error) {
       console.error('Failed to load all tasks from database:', error);
       throw error;
@@ -61,40 +42,17 @@ export class DatabaseTaskLoader {
 
   static async loadTask(taskId: string): Promise<DatabaseTask | null> {
     try {
-      const task = await prisma.task.findUnique({
-        where: { id: taskId },
-        include: {
-          executions: {
-            orderBy: {
-              startedAt: 'desc',
-            },
-            take: 10,
-          },
-        },
-      });
-
-      return task;
+      return await getTaskById(taskId);
     } catch (error) {
       console.error(`Failed to load task ${taskId}:`, error);
       throw error;
     }
   }
 
+  /** Name lookup is case-insensitive, as it was under the MariaDB collation. */
   static async loadTaskByName(name: string): Promise<DatabaseTask | null> {
     try {
-      const task = await prisma.task.findUnique({
-        where: { name },
-        include: {
-          executions: {
-            orderBy: {
-              startedAt: 'desc',
-            },
-            take: 5,
-          },
-        },
-      });
-
-      return task;
+      return await getTaskByName(name);
     } catch (error) {
       console.error(`Failed to load task '${name}':`, error);
       throw error;
@@ -103,13 +61,7 @@ export class DatabaseTaskLoader {
 
   static async updateNextExecutionTime(taskId: string, nextExecution: Date): Promise<void> {
     try {
-      await prisma.task.update({
-        where: { id: taskId },
-        data: {
-          nextExecutionAt: nextExecution,
-          updatedAt: new Date(),
-        },
-      });
+      await setTaskNextExecutionAt(taskId, nextExecution);
     } catch (error) {
       console.error(`Failed to update next execution time for task ${taskId}:`, error);
       throw error;
@@ -118,13 +70,7 @@ export class DatabaseTaskLoader {
 
   static async updateLastExecutionTime(taskId: string): Promise<void> {
     try {
-      await prisma.task.update({
-        where: { id: taskId },
-        data: {
-          lastExecutionAt: new Date(),
-          updatedAt: new Date(),
-        },
-      });
+      await setTaskLastExecutionAt(taskId, new Date());
     } catch (error) {
       console.error(`Failed to update last execution time for task ${taskId}:`, error);
       throw error;

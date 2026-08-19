@@ -1,7 +1,7 @@
-import type { Prisma } from '@db/client';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
-import prisma from '@/libs/prismadb';
+import * as ai from '@/db/queries/ai';
+import type { JsonValue } from '@/db/schema/json';
 import { deleteTemplateImages, uploadTemplateImages } from '@/libs/template-upload';
 import { templateFormSchema } from '@/schemas/template-schema';
 import { userIdFromCtx as adminIdFromCtx } from '@/server/middleware/context-helpers';
@@ -49,8 +49,7 @@ const templateInputSchema: z.ZodType<TemplateInput> = z
   })
   .passthrough() as unknown as z.ZodType<TemplateInput>;
 
-const editingModelFieldValuesJson = (value: Record<string, unknown> | undefined): Prisma.InputJsonValue =>
-  (value ?? {}) as Prisma.InputJsonValue;
+const editingModelFieldValuesJson = (value: Record<string, unknown> | undefined): JsonValue => (value ?? {}) as JsonValue;
 
 async function decodePreviewImage(input: TemplateInput): Promise<File | null> {
   if (!input.previewImageBase64 || !input.previewImageName) return null;
@@ -64,10 +63,10 @@ function partitionVariables(allVariables: TemplateInput['variables']) {
   return { local, links };
 }
 
-async function buildGlobalVariableLinks(links: TemplateInput['variables']) {
+async function buildGlobalVariableLinks(links: TemplateInput['variables']): Promise<ai.GlobalVariableLink[]> {
   if (links.length === 0) return [];
   const ids = links.map((v) => v.globalVariableId!).filter(Boolean);
-  const globals = await prisma.globalVariable.findMany({ where: { id: { in: ids } } });
+  const globals = await ai.listGlobalVariablesByIds(ids);
   const map = new Map(globals.map((g) => [g.id, g]));
 
   return links
@@ -81,7 +80,7 @@ async function buildGlobalVariableLinks(links: TemplateInput['variables']) {
       }
       return {
         globalVariableId: link.globalVariableId!,
-        addedOptions: added.length > 0 ? added : undefined,
+        addedOptions: added.length > 0 ? (added as JsonValue) : undefined,
         required: link.required ?? false,
       };
     })
@@ -91,26 +90,13 @@ async function buildGlobalVariableLinks(links: TemplateInput['variables']) {
 export const listAdminTemplates = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .handler(async () => {
-    return prisma.template.findMany({
-      include: {
-        globalVariables: true,
-        createdByUser: { select: { name: true, email: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    return ai.listAdminTemplates();
   });
 
 export const getTemplateFormData = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .handler(async () => {
-    const [editingModels, globalVariables] = await Promise.all([
-      prisma.editingModel.findMany({
-        where: { isActive: true },
-        include: { fields: { orderBy: { sortOrder: 'asc' } } },
-        orderBy: { sortOrder: 'asc' },
-      }),
-      prisma.globalVariable.findMany({ orderBy: { name: 'asc' } }),
-    ]);
+    const [editingModels, globalVariables] = await Promise.all([ai.listActiveEditingModels(), ai.listGlobalVariables()]);
     return { editingModels, globalVariables };
   });
 
@@ -119,21 +105,9 @@ export const getAdminTemplateForEdit = createServerFn({ method: 'GET' })
   .validator(z.object({ id: z.string().min(1) }))
   .handler(async ({ data }) => {
     const [template, editingModels, globalVariables] = await Promise.all([
-      prisma.template.findUnique({
-        where: { id: data.id },
-        include: {
-          globalVariables: {
-            include: { globalVariable: true },
-            orderBy: { sortOrder: 'asc' },
-          },
-        },
-      }),
-      prisma.editingModel.findMany({
-        where: { isActive: true },
-        include: { fields: { orderBy: { sortOrder: 'asc' } } },
-        orderBy: { sortOrder: 'asc' },
-      }),
-      prisma.globalVariable.findMany({ orderBy: { name: 'asc' } }),
+      ai.getTemplateForEdit(data.id),
+      ai.listActiveEditingModels(),
+      ai.listGlobalVariables(),
     ]);
     if (!template) throw new Error('Template not found');
     return { template, editingModels, globalVariables };
@@ -143,10 +117,7 @@ export const getAdminTemplate = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(z.object({ id: z.string().min(1) }))
   .handler(async ({ data }) => {
-    const template = await prisma.template.findUnique({
-      where: { id: data.id },
-      include: { globalVariables: true },
-    });
+    const template = await ai.getTemplateWithVariableLinks(data.id);
     if (!template) throw new Error('Template not found');
     return template;
   });
@@ -171,8 +142,9 @@ export const createAdminTemplate = createServerFn({ method: 'POST' })
     }
 
     try {
-      const template = await prisma.template.create({
-        data: {
+      // Template row and its global-variable links land in one transaction.
+      const template = await ai.createTemplate(
+        {
           name: validData.name,
           description: validData.description || null,
           prompt: validData.prompt,
@@ -180,14 +152,15 @@ export const createAdminTemplate = createServerFn({ method: 'POST' })
           isActive: validData.isActive,
           minImageCount: validData.minImageCount,
           maxImageCount: validData.maxImageCount,
-          variables: local as any,
-          globalVariables: { create: linkCreate },
-          previewImages: previewImageUrl ? JSON.stringify([previewImageUrl]) : null,
-          createdBy: adminIdFromCtx(context),
           inputImageCount: validData.inputImageCount,
+          variables: local as unknown as JsonValue,
+          previewImages: previewImageUrl ? JSON.stringify([previewImageUrl]) : null,
           editingModelFieldValues: editingModelFieldValuesJson(validData.editingModelFieldValues),
+          createdBy: adminIdFromCtx(context),
+          links: linkCreate,
         },
-      });
+        adminIdFromCtx(context),
+      );
       return { success: true, templateId: template.id };
     } catch (e) {
       console.error('Failed to create template:', e);
@@ -198,8 +171,8 @@ export const createAdminTemplate = createServerFn({ method: 'POST' })
 export const updateAdminTemplate = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(templateInputSchema.and(z.object({ id: z.string().min(1) })))
-  .handler(async ({ data }) => {
-    const existing = await prisma.template.findUnique({ where: { id: data.id } });
+  .handler(async ({ data, context }) => {
+    const existing = await ai.getTemplateById(data.id);
     if (!existing) throw new Error('Template not found');
 
     const validation = templateFormSchema.safeParse(data);
@@ -235,9 +208,10 @@ export const updateAdminTemplate = createServerFn({ method: 'POST' })
     }
 
     try {
-      const template = await prisma.template.update({
-        where: { id: data.id },
-        data: {
+      // The template row and its whole link set are replaced in one transaction.
+      const template = await ai.updateTemplate(
+        {
+          id: data.id,
           name: validData.name,
           description: validData.description || null,
           prompt: validData.prompt,
@@ -245,13 +219,14 @@ export const updateAdminTemplate = createServerFn({ method: 'POST' })
           isActive: validData.isActive,
           minImageCount: validData.minImageCount,
           maxImageCount: validData.maxImageCount,
-          variables: local as any,
-          globalVariables: { deleteMany: {}, create: linkCreate },
-          previewImages: previewImageUrl ? JSON.stringify([previewImageUrl]) : null,
           inputImageCount: validData.inputImageCount,
+          variables: local as unknown as JsonValue,
+          previewImages: previewImageUrl ? JSON.stringify([previewImageUrl]) : null,
           editingModelFieldValues: editingModelFieldValuesJson(validData.editingModelFieldValues),
+          links: linkCreate,
         },
-      });
+        adminIdFromCtx(context),
+      );
 
       if (uploadedNew && existingPreview && existingPreview !== previewImageUrl) {
         try {
@@ -277,13 +252,13 @@ export const updateAdminTemplate = createServerFn({ method: 'POST' })
 export const deleteAdminTemplate = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(z.object({ id: z.string().min(1) }))
-  .handler(async ({ data }) => {
-    const template = await prisma.template.findUnique({ where: { id: data.id } });
+  .handler(async ({ data, context }) => {
+    const template = await ai.getTemplateById(data.id);
     if (!template) throw new Error('Template not found');
     if (template.previewImages) {
-      const urls = JSON.parse(template.previewImages as string) as string[];
+      const urls = JSON.parse(template.previewImages) as string[];
       await deleteTemplateImages(urls);
     }
-    await prisma.template.delete({ where: { id: data.id } });
+    await ai.deleteTemplate(data.id, adminIdFromCtx(context));
     return { success: true };
   });

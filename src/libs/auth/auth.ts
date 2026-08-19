@@ -1,16 +1,22 @@
 import { betterAuth } from 'better-auth';
-import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { admin as adminPlugin } from 'better-auth/plugins';
 import { tanstackStartCookies } from 'better-auth/tanstack-start';
+import { auditUserCreated, authDatabaseAdapter } from '@/db/queries/auth';
 import { env } from '../env';
-import { prismabase } from '../prismadb';
 import { ensureUserHasDefaultGroup } from '../rbac/default-group';
 
+/**
+ * Better-Auth on Drizzle (issue #36). The adapter is built inside `src/db/` so
+ * the Drizzle handle never leaves it (issue #15); see `authDatabaseAdapter` for
+ * why the Postgres provider needs no field overrides.
+ *
+ * Schema generation and migration are separate concerns now (issue #9):
+ * `@better-auth/cli generate` can emit a Drizzle schema but cannot apply it, so
+ * `src/db/schema/auth.ts` is hand-owned and Drizzle Kit migrates it.
+ */
 export const auth = betterAuth({
   plugins: [adminPlugin(), tanstackStartCookies()],
-  database: prismaAdapter(prismabase, {
-    provider: 'mysql',
-  }),
+  database: authDatabaseAdapter(),
   databaseHooks: {
     user: {
       create: {
@@ -23,6 +29,10 @@ export const auth = betterAuth({
               error,
             });
           }
+          // Better-Auth's adapter writes through Drizzle directly, so this is
+          // the only place a registration can be audited (#36). writeAuditLog
+          // already swallows its own failures, so it cannot break signup.
+          await auditUserCreated(user);
         },
       },
     },

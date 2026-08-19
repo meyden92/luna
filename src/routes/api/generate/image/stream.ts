@@ -1,8 +1,9 @@
 import crypto from 'node:crypto';
-import type { Prisma } from '@db/client';
 import { createFileRoute } from '@tanstack/react-router';
 import Replicate from 'replicate';
 import { z } from 'zod';
+import { getActiveGenerationModel, markAiGenerationCancelled, upsertAiGeneration } from '@/db/queries/ai';
+import type { JsonValue } from '@/db/schema/json';
 import {
   createPredictionAbortRegistry,
   createSseWriter,
@@ -17,7 +18,6 @@ import {
 } from '@/libs/ai-generation-utils';
 import { checkScopedRateLimit, retryAfterSeconds } from '@/libs/api/rate-limit';
 import { env } from '@/libs/env';
-import prisma from '@/libs/prismadb';
 import { requireAuthenticatedUser } from '@/libs/rbac/guards';
 
 const replicate = new Replicate({ auth: env.REPLICATE_API_TOKEN });
@@ -83,10 +83,7 @@ async function handle(request: Request): Promise<Response> {
   const generationId = body.generationId ?? crypto.randomUUID();
   const prompt = body.prompt;
 
-  const generationModel = await prisma.generationModel.findUnique({
-    where: { id: generationModelId, isActive: true },
-    include: { fields: { orderBy: { sortOrder: 'asc' } } },
-  });
+  const generationModel = await getActiveGenerationModel(generationModelId);
   if (!generationModel) {
     return new Response(JSON.stringify({ error: 'Generation model not found or inactive' }), {
       status: 404,
@@ -106,80 +103,43 @@ async function handle(request: Request): Promise<Response> {
     async start(controller) {
       const { send, close } = createSseWriter(controller, { signal: abortSignal });
       const requestSnapshot = { fieldValues: rawInput };
-      const withRequestSnapshot = (result?: Prisma.InputJsonValue): Prisma.InputJsonValue => {
+      const withRequestSnapshot = (result?: JsonValue): JsonValue => {
         if (result && typeof result === 'object' && !Array.isArray(result)) {
-          return { ...(result as Record<string, unknown>), ...requestSnapshot } as Prisma.InputJsonValue;
+          return { ...result, ...requestSnapshot } as JsonValue;
         }
-        return requestSnapshot as Prisma.InputJsonValue;
+        return requestSnapshot as JsonValue;
       };
-      const persistProcessing = async () => {
+      // One statement per progress step, never a transaction spanning the
+      // stream: a transaction held open for the minutes this poll runs would
+      // pin a connection and block vacuum for its whole duration.
+      const persist = async (status: string, errorMessage: string | null, result?: JsonValue) => {
         throwIfAborted(abortSignal);
-        await prisma.aiGeneration
-          .upsert({
-            where: { id: generationId },
-            update: {
-              kind: 'generation',
-              userId: user.id,
-              modelId: generationModelId,
-              modelLabel: generationModel.label,
-              prompt,
-              status: 'processing',
-              errorMessage: null,
-              result: withRequestSnapshot(),
-            },
-            create: {
-              id: generationId,
-              kind: 'generation',
-              userId: user.id,
-              modelId: generationModelId,
-              modelLabel: generationModel.label,
-              prompt,
-              status: 'processing',
-              result: withRequestSnapshot(),
-            },
-          })
-          .catch((e: unknown) => console.error('[generate-image] persist processing failed', e));
+        await upsertAiGeneration(
+          {
+            id: generationId,
+            kind: 'generation',
+            userId: user.id,
+            modelId: generationModelId,
+            modelLabel: generationModel.label,
+            prompt,
+            status,
+            errorMessage,
+            result: withRequestSnapshot(result),
+          },
+          user.id,
+        ).catch((e: unknown) => console.error('[generate-image] persist failed', e));
       };
-      const persistTerminal = async (status: 'succeeded' | 'failed', errorMessage?: string, result?: Prisma.InputJsonValue) => {
-        throwIfAborted(abortSignal);
-        await prisma.aiGeneration
-          .upsert({
-            where: { id: generationId },
-            update: {
-              kind: 'generation',
-              userId: user.id,
-              modelId: generationModelId,
-              modelLabel: generationModel.label,
-              prompt,
-              status,
-              errorMessage: errorMessage ?? null,
-              result: withRequestSnapshot(result),
-            },
-            create: {
-              id: generationId,
-              kind: 'generation',
-              userId: user.id,
-              modelId: generationModelId,
-              modelLabel: generationModel.label,
-              prompt,
-              status,
-              errorMessage,
-              result: withRequestSnapshot(result),
-            },
-          })
-          .catch((e: unknown) => console.error('[generate-image] persist terminal failed', e));
-      };
+      const persistProcessing = () => persist('processing', null);
+      const persistTerminal = (status: 'succeeded' | 'failed', errorMessage?: string, result?: JsonValue) =>
+        persist(status, errorMessage ?? null, result);
       const fail = async (error: string) => {
         send({ status: 'failed', progress: 100, error });
         await persistTerminal('failed', error);
       };
       const persistCancelled = async () => {
-        await prisma.aiGeneration
-          .updateMany({
-            where: { id: generationId, userId: user.id, status: 'processing' },
-            data: { status: 'failed', errorMessage: 'Generation was cancelled' },
-          })
-          .catch((e: unknown) => console.error('[generate-image] persist cancellation failed', e));
+        await markAiGenerationCancelled(generationId, user.id, user.id).catch((e: unknown) =>
+          console.error('[generate-image] persist cancellation failed', e),
+        );
       };
 
       try {
@@ -286,7 +246,7 @@ async function handle(request: Request): Promise<Response> {
           successCount,
           totalCount: outputUrls.length,
           model: generationModel.label,
-        } as Prisma.InputJsonValue);
+        } as JsonValue);
       } catch (err) {
         if (isAbortError(err) || abortSignal.aborted) {
           await persistCancelled();

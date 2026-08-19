@@ -1,5 +1,11 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import {
+  claimFormShareView as claimFormShareViewRow,
+  getFormShareWithFields,
+  getRevealableFormShareField,
+  getViewableFile as getViewableFileRow,
+} from '@/db/queries/features';
 import { RATE_LIMITS } from '@/libs/api/rate-limit';
 import { getCDNImage } from '@/libs/utils';
 import { appMiddleware } from '@/server/server-fn';
@@ -39,14 +45,7 @@ export const getViewableFile = createServerFn({ method: 'GET' })
   })
   .handler(async ({ data: id }): Promise<ViewableFileResult> => {
     const startedAt = Date.now();
-    const prisma = await getPrisma();
-    const info = await prisma.file.findFirst({
-      where: { id, isDeleted: false, moderationStatus: { not: 'quarantined' } },
-      include: {
-        owner: { select: { id: true, name: true, image: true } },
-        metadata: { select: { artist: true, lyrics: true, duration: true, width: true, height: true } },
-      },
-    });
+    const info = await getViewableFileRow(id);
     if (!info) return { status: 'not-found' };
 
     if (info.private) {
@@ -142,11 +141,6 @@ const revealFormShareFieldSchema = z.object({
 });
 const FORM_SHARE_VIEW_TOKEN_MS = 30 * 60_000;
 
-async function getPrisma() {
-  const { default: prisma } = await import('@/libs/prismadb');
-  return prisma;
-}
-
 async function formShareTokenKey(): Promise<Buffer> {
   const { env } = await import('@/libs/env');
   return Buffer.from(env.FORM_FIELD_ENCRYPTION_KEY, 'base64');
@@ -199,11 +193,7 @@ export const getFormShareForView = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'none', rateLimit: RATE_LIMITS.publicFormShareView }))
   .validator(formShareIdSchema)
   .handler(async ({ data: id }): Promise<FormShareView> => {
-    const prisma = await getPrisma();
-    const share = await prisma.formShare.findFirst({
-      where: { id, isDeleted: false },
-      include: { fields: { orderBy: { sortOrder: 'asc' } } },
-    });
+    const share = await getFormShareWithFields(id);
 
     if (!share) {
       return notFoundFormShare(id);
@@ -259,101 +249,33 @@ export const claimFormShareView = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'none', rateLimit: RATE_LIMITS.publicFormShareClaim }))
   .validator(formShareIdSchema)
   .handler(async ({ data: id }): Promise<FormShareClaim> => {
-    const prisma = await getPrisma();
-    const share = await prisma.formShare.findFirst({
-      where: { id, isDeleted: false },
-      select: {
-        id: true,
-        expiresAt: true,
-        maxViews: true,
-        viewCount: true,
-        fields: { select: { isSensitive: true } },
-      },
-    });
+    // The claim is atomic inside the query function: it locks the row, decides
+    // whether the share is still viewable, and increments the counter in one
+    // transaction, so concurrent viewers cannot both slip past `maxViews`.
+    const claimed = await claimFormShareViewRow(id);
 
-    if (!share) {
+    if (claimed.status === 'not-found') {
+      return { id, expiresAt: null, maxViews: null, viewCount: 0, status: 'not-found', viewToken: null };
+    }
+
+    if (claimed.status !== 'ok') {
       return {
-        id,
-        expiresAt: null,
-        maxViews: null,
-        viewCount: 0,
-        status: 'not-found',
+        id: claimed.id,
+        expiresAt: claimed.expiresAt?.toISOString() ?? null,
+        maxViews: claimed.maxViews,
+        viewCount: claimed.viewCount,
+        status: claimed.status,
         viewToken: null,
       };
     }
-
-    if (share.expiresAt && share.expiresAt < new Date()) {
-      return {
-        id: share.id,
-        expiresAt: share.expiresAt.toISOString(),
-        maxViews: share.maxViews,
-        viewCount: share.viewCount,
-        status: 'expired-time',
-        viewToken: null,
-      };
-    }
-
-    // Atomically claim a view: the conditional UPDATE guarantees concurrent
-    // viewers can't both pass the maxViews limit, and the first view starts
-    // the expiry countdown in the same statement. Raw SQL because the
-    // conditional atomic claim (CASE expression) is not expressible as a single
-    // Prisma update.
-    const claimed = await prisma.$executeRaw`
-      UPDATE form_share
-      SET expiresAt = CASE
-            WHEN viewCount = 0 AND expiresInMs IS NOT NULL AND expiresAt IS NULL
-            THEN DATE_ADD(NOW(3), INTERVAL expiresInMs * 1000 MICROSECOND)
-            ELSE expiresAt
-          END,
-          viewCount = viewCount + 1
-      WHERE id = ${id}
-        AND isDeleted = 0
-        AND (expiresAt IS NULL OR expiresAt > NOW(3))
-        AND (maxViews IS NULL OR viewCount < maxViews)
-    `;
-
-    if (claimed === 0) {
-      const current = await prisma.formShare.findFirst({
-        where: { id },
-        select: { id: true, isDeleted: true, expiresAt: true, maxViews: true, viewCount: true },
-      });
-
-      if (!current || current.isDeleted) {
-        return {
-          id,
-          expiresAt: null,
-          maxViews: null,
-          viewCount: 0,
-          status: 'not-found',
-          viewToken: null,
-        };
-      }
-
-      const expiredByTime = current.expiresAt !== null && current.expiresAt < new Date();
-      return {
-        id: current.id,
-        expiresAt: current.expiresAt?.toISOString() ?? null,
-        maxViews: current.maxViews,
-        viewCount: current.viewCount,
-        status: expiredByTime ? 'expired-time' : 'expired-views',
-        viewToken: null,
-      };
-    }
-
-    const updated = await prisma.formShare.findUniqueOrThrow({
-      where: { id, isDeleted: false },
-      select: { expiresAt: true, viewCount: true },
-    });
-
-    const hasSensitiveFields = share.fields.some((field) => field.isSensitive);
 
     return {
-      id: share.id,
-      expiresAt: updated.expiresAt?.toISOString() ?? null,
-      maxViews: share.maxViews,
-      viewCount: updated.viewCount,
+      id: claimed.id,
+      expiresAt: claimed.expiresAt?.toISOString() ?? null,
+      maxViews: claimed.maxViews,
+      viewCount: claimed.viewCount,
       status: 'ok',
-      viewToken: hasSensitiveFields ? await signFormShareViewToken(share.id, updated.expiresAt) : null,
+      viewToken: claimed.hasSensitiveFields ? await signFormShareViewToken(claimed.id, claimed.expiresAt) : null,
     };
   });
 
@@ -365,20 +287,10 @@ export const revealFormShareField = createServerFn({ method: 'POST' })
       throw new Error('Reveal session expired');
     }
 
-    const prisma = await getPrisma();
-    const field = await prisma.formShareField.findFirst({
-      where: {
-        id: data.fieldId,
-        formId: data.shareId,
-        isSensitive: true,
-        type: { not: 'hidden' },
-        form: { isDeleted: false },
-      },
-      include: { form: { select: { expiresAt: true } } },
-    });
+    const field = await getRevealableFormShareField({ fieldId: data.fieldId, shareId: data.shareId });
 
     if (!field) throw new Error('Field not found');
-    if (field.form.expiresAt && field.form.expiresAt < new Date()) throw new Error('This share has expired');
+    if (field.formExpiresAt && field.formExpiresAt < new Date()) throw new Error('This share has expired');
 
     const { decryptFieldValue } = await import('@/libs/encryption/field-encryption');
     return { value: decryptFieldValue(field.value) };

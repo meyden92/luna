@@ -1,10 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 import Replicate from 'replicate';
 import { UPLOAD_CONFIG } from '@/config/upload-config';
+import { getEditingModelById } from '@/db/queries/ai';
 import { createSseWriter, eventStreamResponse, isAbortError, pollReplicatePrediction } from '@/libs/ai-generation-utils';
 import { checkScopedRateLimit, retryAfterSeconds } from '@/libs/api/rate-limit';
 import { env } from '@/libs/env';
-import prisma from '@/libs/prismadb';
 import { ForbiddenError, requireAdmin } from '@/libs/rbac/guards';
 
 const replicate = new Replicate({ auth: env.REPLICATE_API_TOKEN });
@@ -71,7 +71,7 @@ async function handle(request: Request): Promise<Response> {
     return json({ error: `Each image must be at most ${UPLOAD_CONFIG.MAX_FILE_SIZE / (1024 * 1024)}MB` }, 413);
   }
 
-  const editingModel = await prisma.editingModel.findUnique({ where: { id: editingModelId } });
+  const editingModel = await getEditingModelById(editingModelId);
   if (!editingModel) return json({ error: 'Editing model not found' }, 404);
 
   const abortController = new AbortController();

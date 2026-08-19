@@ -3,11 +3,10 @@ import { DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import type Replicate from 'replicate';
 import type { Prediction } from 'replicate';
-import { writeCreateAuditLog } from '@/libs/audit/transaction-audit';
-import prisma from '@/libs/prismadb';
+import { createGeneratedFile, findCachedImage, touchCachedImage, upsertCachedImage } from '@/db/queries/ai';
 import { getCdnUrl } from '@/libs/runtime-config';
 import { s3Client } from '@/libs/S3Helper';
-import { ensureStorageQuotaAvailable, StorageQuotaExceededError } from '@/libs/storage-quota';
+import { StorageQuotaExceededError } from '@/libs/storage-quota';
 import { getCDNImage } from '@/libs/utils';
 import { env } from './env';
 
@@ -279,25 +278,22 @@ export async function uploadGeneratedImageToS3({
   }
 
   throwIfAborted(signal);
+  // The quota check and the insert it guards share one transaction, opened only
+  // once the upload has finished — nothing holds it across the SSE stream.
   let dbResult: { id: string; url: string };
   try {
-    dbResult = await prisma.$transaction(async (tx) => {
-      await ensureStorageQuotaAvailable(tx, userId, uploadBuffer.byteLength);
-      const createdFile = await tx.file.create({
-        data: {
-          ownerId: userId,
-          size: uploadBuffer.byteLength,
-          url: encodeURIComponent(fileName),
-          private: false,
-          tags,
-          title,
-          contentType: 'image/png',
-        },
-      });
-      await writeCreateAuditLog(tx, { model: 'File', record: createdFile, userId });
-
-      return { id: createdFile.id, url: createdFile.url };
-    });
+    dbResult = await createGeneratedFile(
+      {
+        ownerId: userId,
+        size: uploadBuffer.byteLength,
+        url: encodeURIComponent(fileName),
+        private: false,
+        tags,
+        title,
+        contentType: 'image/png',
+      },
+      userId,
+    );
   } catch (error) {
     await deleteUploadedObject(key, logPrefix);
     throw error;
@@ -311,36 +307,23 @@ function hashImageBuffer(buffer: Buffer): string {
 }
 
 async function upsertCachedImageRow({ url, hash, userId, filename, size, purpose }: CachedImageRow): Promise<void> {
-  const data = {
+  await upsertCachedImage({
+    ownerId: userId,
+    hash,
     url,
     filename: filename || `cached-${hash}.png`,
     contentType: 'image/png',
     size,
-    hash,
     purpose,
-    ownerId: userId,
-  };
-
-  await prisma.cachedImage.upsert({
-    where: { ownerId_hash: { ownerId: userId, hash } },
-    update: {
-      url,
-      filename: data.filename,
-      contentType: data.contentType,
-      size: data.size,
-      purpose,
-      lastAccessedAt: new Date(),
-    },
-    create: data,
   });
 }
 
 async function checkImageCache(hash: string, userId: string, signal?: AbortSignal): Promise<{ url: string; hasOwnerRow: boolean } | null> {
   throwIfAborted(signal);
-  const cached = await prisma.cachedImage.findUnique({ where: { ownerId_hash: { ownerId: userId, hash } } });
+  const cached = await findCachedImage(userId, hash);
   if (cached) {
     throwIfAborted(signal);
-    await prisma.cachedImage.update({ where: { ownerId_hash: { ownerId: userId, hash } }, data: { lastAccessedAt: new Date() } });
+    await touchCachedImage(userId, hash);
     return { url: cached.url, hasOwnerRow: true };
   }
 

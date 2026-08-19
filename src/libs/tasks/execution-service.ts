@@ -1,9 +1,21 @@
-import type { Prisma } from '@db/client';
+import {
+  createTaskExecution,
+  deleteTaskExecutionsBefore,
+  incrementTaskRetryCount,
+  resetTaskRetryCount,
+  taskExecutionStats,
+  updateTaskExecution,
+} from '@/db/queries/tasks';
+import type { JsonValue } from '@/db/schema/json';
 import { isAbortError } from '@/libs/ai-generation-utils';
-import prisma from '@/libs/prismadb';
 import type { DatabaseTask, TaskExecutionContext, TaskExecutionLog, TaskExecutionResult, TaskStatus } from '@/types/tasks';
 import { DatabaseTaskLoader } from './db-loader';
 import { getTaskFunction } from './task-functions';
+
+/** jsonb columns hold plain data; `Date` and `undefined` do not survive a round trip. */
+function toJson(value: unknown): JsonValue {
+  return JSON.parse(JSON.stringify(value ?? null)) as JsonValue;
+}
 
 export class TaskExecutionService {
   /**
@@ -148,16 +160,7 @@ export class TaskExecutionService {
   }
 
   private static async createExecutionRecord(taskId: string, context: TaskExecutionContext) {
-    return await prisma.taskExecution.create({
-      data: {
-        taskId,
-        status: 'pending',
-        triggeredBy: context.triggeredBy,
-        executedBy: context.executedBy || null,
-        logs: [],
-        startedAt: new Date(),
-      },
-    });
+    return await createTaskExecution({ taskId, triggeredBy: context.triggeredBy, executedBy: context.executedBy });
   }
 
   private static async updateExecutionStatus(
@@ -171,123 +174,40 @@ export class TaskExecutionService {
       completedAt?: Date;
     },
   ) {
-    await prisma.taskExecution.update({
-      where: { id: executionId },
-      data: {
-        status,
-        result: data.result,
-        error: data.error,
-        logs: (data.logs || []) as unknown as Prisma.InputJsonValue,
-        duration: data.duration,
-        completedAt: data.completedAt,
-      },
+    await updateTaskExecution(executionId, {
+      status,
+      result: toJson(data.result),
+      error: data.error,
+      logs: toJson(data.logs ?? []),
+      duration: data.duration,
+      completedAt: data.completedAt,
     });
   }
 
   static async incrementRetryCount(taskId: string) {
-    await prisma.task.update({
-      where: { id: taskId },
-      data: {
-        retryCount: {
-          increment: 1,
-        },
-        updatedAt: new Date(),
-      },
-    });
+    await incrementTaskRetryCount(taskId);
   }
 
   static async resetRetryCount(taskId: string) {
-    await prisma.task.update({
-      where: { id: taskId },
-      data: {
-        retryCount: 0,
-        updatedAt: new Date(),
-      },
-    });
+    await resetTaskRetryCount(taskId);
   }
 
-  static async getExecutionHistory(taskId: string, limit = 50, status?: TaskStatus, offset = 0) {
-    const where: Prisma.TaskExecutionWhereInput = { taskId };
-    if (status) {
-      where.status = status;
-    }
-
-    return await prisma.taskExecution.findMany({
-      where,
-      orderBy: {
-        startedAt: 'desc',
-      },
-      take: limit,
-      skip: offset,
-      include: {
-        task: {
-          select: {
-            name: true,
-            description: true,
-          },
-        },
-        executedByUser: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-    });
-  }
-
-  static async countExecutions(taskId: string, status?: TaskStatus) {
-    const where: Prisma.TaskExecutionWhereInput = { taskId };
-    if (status) {
-      where.status = status;
-    }
-    return prisma.taskExecution.count({ where });
-  }
-
+  /**
+   * Executions grouped by status plus the mean successful duration.
+   *
+   * `task_execution` is excluded from the data migration, so this legitimately
+   * sees an empty table: the result is `{}`, `0`, `0` rather than an error.
+   */
   static async getTaskExecutionStats(taskId: string, days = 30) {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    const stats = await prisma.taskExecution.groupBy({
-      by: ['status'],
-      where: {
-        taskId,
-        startedAt: {
-          gte: startDate,
-        },
-      },
-      _count: {
-        status: true,
-      },
-    });
-
-    const avgDuration = await prisma.taskExecution.aggregate({
-      where: {
-        taskId,
-        status: 'success',
-        startedAt: {
-          gte: startDate,
-        },
-        duration: {
-          not: null,
-        },
-      },
-      _avg: {
-        duration: true,
-      },
-    });
+    const { byStatus, averageDuration, total } = await taskExecutionStats({ taskId, since: startDate });
 
     return {
-      stats: stats.reduce(
-        (acc, stat) => {
-          acc[stat.status as TaskStatus] = stat._count.status;
-          return acc;
-        },
-        {} as Record<TaskStatus, number>,
-      ),
-      averageDuration: avgDuration._avg.duration || 0,
-      totalExecutions: stats.reduce((sum, stat) => sum + stat._count.status, 0),
+      stats: byStatus as Record<TaskStatus, number>,
+      averageDuration,
+      totalExecutions: total,
     };
   }
 
@@ -295,14 +215,6 @@ export class TaskExecutionService {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
 
-    const deleted = await prisma.taskExecution.deleteMany({
-      where: {
-        startedAt: {
-          lt: cutoffDate,
-        },
-      },
-    });
-
-    return deleted.count;
+    return await deleteTaskExecutionsBefore(cutoffDate);
   }
 }

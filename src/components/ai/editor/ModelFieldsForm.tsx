@@ -1,12 +1,14 @@
-import type { EditingModelField } from '@db/client';
 import type { z } from 'zod';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
+import type { editingModelField } from '@/db/schema/ai';
 import type { editingModelFieldSchema } from '@/schemas/admin/editing-model-schema';
 import { ExpandableTextarea } from './ExpandableTextarea';
+
+type EditingModelField = typeof editingModelField.$inferSelect;
 
 export type { EditingModelField };
 

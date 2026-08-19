@@ -1,46 +1,38 @@
 import { DeleteObjectsCommand } from '@aws-sdk/client-s3';
 import { createServerFn } from '@tanstack/react-start';
+import {
+  hardDeleteFiles,
+  listDeletedFilesWithOwner,
+  listSoftDeletedFiles,
+  restoreDeletedFiles as queryRestoreDeletedFiles,
+} from '@/db/queries/admin';
 import { env } from '@/libs/env';
-import prisma from '@/libs/prismadb';
 import { fileS3Key, s3Client } from '@/libs/S3Helper';
 import { permanentlyDeleteFilesSchema, restoreFilesSchema } from '@/schemas/admin/deleted-files-schema';
+import { userIdFromCtx as adminIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
 
 export const listDeletedFiles = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .handler(async () => {
-    return prisma.file.findMany({
-      where: { isDeleted: true },
-      include: { owner: { select: { id: true, name: true, email: true } } },
-      orderBy: [{ deletedAt: 'desc' }, { owner: { name: 'asc' } }],
-    });
+    return listDeletedFilesWithOwner();
   });
 
 export const restoreDeletedFiles = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(restoreFilesSchema)
-  .handler(async ({ data }) => {
-    const filesToRestore = await prisma.file.findMany({
-      where: { id: { in: data.fileIds }, isDeleted: true },
-      select: { id: true, title: true },
-    });
-    if (filesToRestore.length === 0) throw new Error('No soft-deleted files found with the provided IDs');
+  .handler(async ({ data, context }) => {
+    const restored = await queryRestoreDeletedFiles(data.fileIds, adminIdFromCtx(context));
+    if (restored.length === 0) throw new Error('No soft-deleted files found with the provided IDs');
 
-    const result = await prisma.file.updateMany({
-      where: { id: { in: filesToRestore.map((f) => f.id) }, isDeleted: true },
-      data: { isDeleted: false, deletedAt: null },
-    });
-    return { restoredCount: result.count, fileIds: filesToRestore.map((f) => f.id) };
+    return { restoredCount: restored.length, fileIds: restored.map((f) => f.id) };
   });
 
 export const permanentlyDeleteFiles = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(permanentlyDeleteFilesSchema)
-  .handler(async ({ data }) => {
-    const filesToDelete = await prisma.file.findMany({
-      where: { id: { in: data.fileIds }, isDeleted: true },
-      select: { id: true, url: true, ownerId: true, title: true, size: true },
-    });
+  .handler(async ({ data, context }) => {
+    const filesToDelete = await listSoftDeletedFiles(data.fileIds);
     if (filesToDelete.length === 0) throw new Error('No soft-deleted files found with the provided IDs');
 
     const errors: string[] = [];
@@ -71,11 +63,9 @@ export const permanentlyDeleteFiles = createServerFn({ method: 'POST' })
     }
 
     const deletableIds = filesToDelete.filter((f) => !failedKeys.has(fileS3Key(f.ownerId, f.url))).map((f) => f.id);
-    const dbResult = await prisma.file.deleteMany({
-      where: { id: { in: deletableIds }, isDeleted: true },
-    });
+    const deletedCount = await hardDeleteFiles(deletableIds, adminIdFromCtx(context));
     return {
-      deletedCount: dbResult.count,
+      deletedCount,
       s3DeletedCount,
       errors,
       fileIds: deletableIds,

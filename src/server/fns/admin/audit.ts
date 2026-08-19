@@ -1,7 +1,12 @@
-import type { Prisma } from '@db/client';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
-import prisma from '@/libs/prismadb';
+import {
+  type AuditCursor,
+  getAuditLogById,
+  listRelatedAuditLogs,
+  listAuditLogs as queryAuditLogs,
+  listAuditModels as queryAuditModels,
+} from '@/db/queries/admin';
 import { appMiddleware } from '@/server/server-fn';
 
 const listAuditLogsSchema = z.object({
@@ -16,11 +21,6 @@ const listAuditLogsSchema = z.object({
 
 const RELATED_AUDIT_LOG_LIMIT = 50;
 const AUDIT_CURSOR_SEPARATOR = '|';
-
-type AuditCursor = {
-  timestamp: Date;
-  id: string;
-};
 
 function encodeAuditCursor(log: AuditCursor) {
   return `${log.timestamp.toISOString()}${AUDIT_CURSOR_SEPARATOR}${log.id}`;
@@ -37,18 +37,6 @@ function parseAuditCursor(cursor?: string): AuditCursor | null {
   if (Number.isNaN(timestamp.getTime()) || !id) throw new Error('Invalid audit cursor');
 
   return { timestamp, id };
-}
-
-function getAuditCursorFilter(cursor: AuditCursor, direction: 'next' | 'previous'): Prisma.AuditLogWhereInput {
-  if (direction === 'previous') {
-    return {
-      OR: [{ timestamp: { gt: cursor.timestamp } }, { timestamp: cursor.timestamp, id: { gt: cursor.id } }],
-    };
-  }
-
-  return {
-    OR: [{ timestamp: { lt: cursor.timestamp } }, { timestamp: cursor.timestamp, id: { lt: cursor.id } }],
-  };
 }
 
 function buildAuditPage<T extends AuditCursor>(rows: T[], pageSize: number, cursor: AuditCursor | null, direction: 'next' | 'previous') {
@@ -72,7 +60,7 @@ function buildAuditPage<T extends AuditCursor>(rows: T[], pageSize: number, curs
 export const listAuditModels = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .handler(async () => {
-    const models = await prisma.auditLog.groupBy({ by: ['model'], orderBy: { model: 'asc' } });
+    const models = await queryAuditModels();
     return models.map((m) => m.model);
   });
 
@@ -80,29 +68,17 @@ export const listAuditLogs = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(listAuditLogsSchema)
   .handler(async ({ data }) => {
-    const where: Prisma.AuditLogWhereInput = {};
-    if (data.model) where.model = data.model;
-    if (data.recordId) where.recordId = data.recordId;
-    if (data.action) where.action = data.action;
-
-    if (data.search) {
-      where.OR = [
-        { model: { contains: data.search } },
-        { recordId: { contains: data.search } },
-        { action: { contains: data.search } },
-        { user: { name: { contains: data.search } } },
-        { user: { email: { contains: data.search } } },
-      ];
-    }
-
     const direction = data.direction ?? 'next';
     const cursor = parseAuditCursor(data.cursor);
-    const cursorFilter = cursor ? getAuditCursorFilter(cursor, direction) : undefined;
-    const logs = await prisma.auditLog.findMany({
-      where: cursorFilter ? { AND: [where, cursorFilter] } : where,
-      orderBy: direction === 'previous' ? [{ timestamp: 'asc' }, { id: 'asc' }] : [{ timestamp: 'desc' }, { id: 'desc' }],
-      take: data.pageSize + 1,
-      include: { user: { select: { id: true, name: true, email: true } } },
+    const logs = await queryAuditLogs({
+      model: data.model,
+      recordId: data.recordId,
+      action: data.action,
+      search: data.search,
+      cursor,
+      direction,
+      // One extra row is what tells the pager whether another page exists.
+      limit: data.pageSize + 1,
     });
     const page = buildAuditPage(logs, data.pageSize, cursor, direction);
 
@@ -119,17 +95,13 @@ export const getAuditLog = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(z.object({ id: z.string().min(1) }))
   .handler(async ({ data }) => {
-    const auditLog = await prisma.auditLog.findUnique({
-      where: { id: data.id },
-      include: { user: { select: { id: true, name: true, email: true } } },
-    });
+    const auditLog = await getAuditLogById(data.id);
     if (!auditLog) throw new Error('Audit log not found');
 
-    let relatedAuditLogs = await prisma.auditLog.findMany({
-      where: { model: auditLog.model, recordId: auditLog.recordId },
-      orderBy: [{ timestamp: 'desc' }, { id: 'desc' }],
-      take: RELATED_AUDIT_LOG_LIMIT,
-      include: { user: { select: { id: true, name: true, email: true } } },
+    let relatedAuditLogs = await listRelatedAuditLogs({
+      model: auditLog.model,
+      recordId: auditLog.recordId,
+      limit: RELATED_AUDIT_LOG_LIMIT,
     });
     if (!relatedAuditLogs.some((log) => log.id === auditLog.id)) {
       relatedAuditLogs = [...relatedAuditLogs, auditLog].sort(

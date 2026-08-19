@@ -1,8 +1,9 @@
 import { DeleteObjectsCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { createServerFn } from '@tanstack/react-start';
+import { purgeCachedImages, purgeTemplateGenerations } from '@/db/queries/admin';
 import { env } from '@/libs/env';
-import prisma from '@/libs/prismadb';
 import { s3Client } from '@/libs/S3Helper';
+import { userIdFromCtx as adminIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
 
 const CACHE_PREFIX = 'cache/';
@@ -28,7 +29,7 @@ async function listCacheKeys(): Promise<string[]> {
 
 export const purgeGenerativeCache = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'admin' }))
-  .handler(async () => {
+  .handler(async ({ context }) => {
     const keys = (await listCacheKeys()).filter((k) => k.startsWith(CACHE_PREFIX) && k !== CACHE_PREFIX);
 
     if (keys.length > 0) {
@@ -48,16 +49,16 @@ export const purgeGenerativeCache = createServerFn({ method: 'POST' })
       }
     }
 
-    const dbCache = await prisma.cachedImage.deleteMany({});
-    const dbGen = await prisma.templateGeneration.deleteMany({});
+    const dbCacheRecordsDeleted = await purgeCachedImages();
+    const dbGenerationRecordsDeleted = await purgeTemplateGenerations(adminIdFromCtx(context));
 
     return {
       success: true,
       message: 'Purge complete.',
       details: {
         s3ObjectsDeleted: keys.length,
-        dbCacheRecordsDeleted: dbCache.count,
-        dbGenerationRecordsDeleted: dbGen.count,
+        dbCacheRecordsDeleted,
+        dbGenerationRecordsDeleted,
       },
     };
   });

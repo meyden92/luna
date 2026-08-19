@@ -1,4 +1,3 @@
-import type { GlobalVariable } from '@db/client';
 import { useNavigate } from '@tanstack/react-router';
 import { Loader2, Settings2 } from 'lucide-react';
 import { useState } from 'react';
@@ -25,11 +24,13 @@ import {
   useFormWatch,
 } from '@/components/ui/tanstack-form';
 import { Textarea } from '@/components/ui/textarea';
+import type { globalVariable } from '@/db/schema/ai';
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import { queryKeys } from '@/libs/query-keys';
 import { type GlobalVariableFormData, globalVariableFormSchema } from '@/schemas/admin/global-variable-schema';
 import { createGlobalVariable, updateGlobalVariable } from '@/server/fns/admin/global-variables';
 
+type GlobalVariable = typeof globalVariable.$inferSelect;
 type FormValues = GlobalVariableFormData;
 
 interface GlobalVariableFormProps {

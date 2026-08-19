@@ -1,8 +1,8 @@
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
+import { listOwnedActiveFiles } from '@/db/queries/files';
 import { env } from '@/libs/env';
-import prisma from '@/libs/prismadb';
 import { ForbiddenError, requireAuthenticatedUser } from '@/libs/rbac/guards';
 import { fileS3Key, s3Client } from '@/libs/S3Helper';
 
@@ -290,12 +290,13 @@ async function handle(request: Request): Promise<Response> {
     return json({ error: 'Invalid download request' }, 400);
   }
 
-  const rows = await prisma.file.findMany({
-    where: { id: { in: ids }, ownerId: userId, isDeleted: false },
-    select: { id: true, url: true, title: true, size: true, updatedAt: true },
-  });
+  // One statement for the whole archive, never one per file: `listOwnedActiveFiles`
+  // is a single `id = ANY($1) AND owner_id = $2 AND is_deleted = false` select.
+  const rows = await listOwnedActiveFiles(ids, userId);
   const rowsById = new Map(rows.map((row) => [row.id, row]));
-  const files = ids.map((id) => rowsById.get(id)).filter((file): file is DownloadFile => Boolean(file));
+  // Narrowed to "the row exists" rather than to DownloadFile: the query returns
+  // whole file rows, of which DownloadFile is the subset the ZIP writer reads.
+  const files = ids.map((id) => rowsById.get(id)).filter((file): file is NonNullable<typeof file> => Boolean(file));
 
   if (files.length !== ids.length) return json({ error: 'One or more files could not be downloaded' }, 404);
 

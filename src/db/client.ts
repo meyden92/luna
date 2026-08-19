@@ -23,3 +23,10 @@ function getPool(): Pool {
 // `drizzle(pool, config)` overload no longer exists for node-postgres.
 export const db = drizzle({ client: getPool(), relations });
 export type Db = typeof db;
+
+/**
+ * The handle a `db.transaction()` callback receives. Query modules take
+ * `Db | Tx` so a write composes into a caller's transaction without the query
+ * module knowing whether one is open.
+ */
+export type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];

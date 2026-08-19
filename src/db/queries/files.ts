@@ -51,7 +51,10 @@ export function listOwnerFiles(db: Db, ownerId: string, limit = 50) {
 
 /** Exact hash lookup, case-normalised. Mirrors the moderation gate's shape. */
 export function findBySha256(db: Db, sha256: string) {
-  return db.select({ id: file.id }).from(file).where(eq(file.sha256, normaliseHash(sha256)));
+  return db
+    .select({ id: file.id })
+    .from(file)
+    .where(eq(file.sha256, normaliseHash(sha256)));
 }
 
 /** Soft-delete, returning the row so the caller can audit the change. */

@@ -25,4 +25,4 @@ export const relations = defineRelations(schema, (r) => ({
   fileMetadata: {
     file: r.one.file({ from: r.fileMetadata.fileId, to: r.file.id }),
   },
-}))
+}));

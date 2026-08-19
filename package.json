@@ -11,6 +11,8 @@
     "start": "bun .output/server/index.mjs",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
+    "db:push": "drizzle-kit push",
+    "db:verify": "bun scripts/db/verify-schema.ts",
     "lint": "biome lint --diagnostic-level=warn",
     "format": "biome check --write",
     "update": "bunx taze major --interactive --install",

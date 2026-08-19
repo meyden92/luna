@@ -1,14 +1,23 @@
 # Cutover runbook: production MariaDB → PostgreSQL
 
-The operational half of issue #47. Rehearse until this is boring, then execute it.
+The operational half of issue #47.
 
-This is the only document in the epic that touches production. Everything it does
-is **copy-out**, never migrate-out: MariaDB is read and left running, so rollback
-at every step is a `DATABASE_URL` change back to it.
+**Production is already closed and the source data is frozen.**
+`.private/lunashare-dump.sql` is the final production dump — there is nothing
+left to freeze and no second dump to take. That removes the maintenance window
+entirely: this is no longer a timed cutover, it is a migration of a fixed dataset
+followed by a deploy, done at whatever pace you like.
+
+It also means the rehearsal is not a stand-in. It runs against the exact bytes
+that are going to production, so a clean rehearsal is the migration having
+already succeeded once.
+
+Everything here is **copy-out**, never migrate-out: the dump is read and the
+MariaDB instance is left alone, so rollback stays a `DATABASE_URL` change back
+to it.
 
 Prerequisite: the rehearsal in [`db-rehearsal.md`](./db-rehearsal.md) runs clean
-twice in a row. If it does not, the migration is not ready, and no amount of care
-during the window will fix that.
+twice in a row. If it does not, the migration is not ready.
 
 ## Before the window
 
@@ -28,34 +37,34 @@ during the window will fix that.
    | Backup schedule | _record it here_ |
 
 2. **Verify backup AND restore on the new engine before anything depends on it.**
-   Take a backup, restore it somewhere disposable, and confirm the row counts.
-   An unverified restore is not a backup.
+   Take a backup of the new Postgres, restore it somewhere disposable, and
+   confirm the row counts. An unverified restore is not a backup. This is about
+   protecting the data once it is *on* Postgres — the source is already safe,
+   because it is a frozen file.
 
-3. **Rehearse the full cutover at least twice** against a copy of production, end
-   to end, using the steps below. Two consecutive runs must produce identical row
-   counts and a clean smoke test.
+3. **Rehearse twice**, end to end, using the steps below. Two consecutive runs
+   must produce identical row counts and a clean smoke test. Because the dump is
+   final, a rehearsal is byte-for-byte what production will get.
 
-## The window
+## The migration
 
-Downtime is minutes — the migrated data is ~5.5 MB (#24). A maintenance window
-was accepted precisely so this stays a simple copy rather than a dual-write or
-CDC problem.
+No window, no freeze, no downtime to manage: the source stopped changing before
+this started. The migrated data is ~5.5 MB (#24) and a full run takes minutes.
 
 ```sh
-# 1. Freeze writes. Nothing may write to MariaDB after this point.
-docker compose stop app
+# 1. Load the final dump into the scratch MariaDB. Already done if you have
+#    rehearsed; it is the same file.
+docker compose -f docker-compose.dev.yml up -d --wait mariadb
+docker exec lunashare-mariadb-scratch sh -c \
+  'mariadb -uroot -plunashare lunashare < /dump/lunashare-dump.sql'
 
-# 2. Take the final source dump. This is the rollback artifact, not a formality.
-#    Keep it until Postgres has earned trust; it holds cleartext credentials (#27).
-mysqldump --single-transaction --routines --triggers lunashare > lunashare-final.sql
-
-# 3. Load it into the scratch MariaDB and transform into production Postgres.
-#    DATABASE_URL points at the NEW Postgres; the transform reads MariaDB over
-#    REHEARSAL_MARIADB_* and only ever writes to Postgres.
+# 2. Transform into production Postgres. DATABASE_URL points at the NEW Postgres;
+#    the transform reads MariaDB over REHEARSAL_MARIADB_* and only ever writes to
+#    Postgres. It truncates its target tables first, so re-running is safe.
 bun run db:push
 bun scripts/db/transform.ts
 
-# 4. Verify before letting any traffic near it.
+# 3. Verify before letting any traffic near it.
 bun run db:verify        # applied schema vs the source DDL
 bun run db:verify-data   # row counts, FK integrity, column names, collation
 ```
@@ -87,26 +96,29 @@ Manual, in this order, because each depends on the one before:
 At any step: redeploy the previous image with `DATABASE_URL` pointed back at
 MariaDB. That is the whole procedure.
 
-It works because **the source database is never modified**. Nothing is migrated
-out of MariaDB, only copied, so it stays authoritative until the new engine has
-earned trust. There is nothing to roll back on the Postgres side either — the
-fallback is the untouched original, which is a stronger position than depending
-on down-migrations that drizzle-kit does not have (#10).
+It works because **the source is never modified** — and here it is not even
+live, it is a frozen dump plus a retired instance. There is nothing to roll back
+on the Postgres side either: the fallback is the untouched original, which is a
+stronger position than depending on down-migrations that drizzle-kit does not
+have (#10).
 
-The point of no return is not the cutover itself. It is the moment you decide
-Postgres is authoritative and stop being willing to lose the writes made since —
-which is a decision, not an event. Make it deliberately.
+Because production was closed before the migration began, there is no window in
+which writes could be lost, and so no point of no return to judge. Postgres
+becomes authoritative when the first write lands on it after the deploy.
 
 ## Afterwards
 
-**Leave MariaDB running and untouched.** Retain it and `lunashare-final.sql`
-until Postgres has run clean for a period the owner decides.
+**Leave the MariaDB instance alone.** Retain it and
+`.private/lunashare-dump.sql` until Postgres has run clean for a period you
+decide. The dump is the more important of the two now: it is the complete,
+final state of production in a single file.
 
 When that period is up, remove them **deliberately**:
 
 - The dump contains **cleartext API token credentials** (#27). It needs
   destroying, not deleting — overwrite or use `shred`, and remove any copies from
-  backups and from `.private/`.
+  backups and from `.private/`. Do not skip this because the file is gitignored;
+  gitignored is not the same as gone.
 - The historical `audit_log` rows are not migrated (#24) and exist only in the
   dump and the retired instance. Destroying them is intended: that is where the
   cleartext credentials live.

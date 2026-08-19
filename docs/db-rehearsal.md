@@ -11,14 +11,18 @@ until Postgres has earned trust (#24).
 ## What you need
 
 - Docker.
-- `.private/lunashare-dump.sql` — the production dump. Gitignored, and it
-  contains cleartext credentials (#27), so it is destroyed rather than deleted
-  when it is no longer needed.
+- `.private/lunashare-dump.sql` — the production dump. This is the **final**
+  one: production is closed and the source data is frozen, so there is no newer
+  dump coming and no second one to take at cutover. A rehearsal therefore runs
+  against the exact bytes destined for production. Gitignored, and it contains
+  cleartext credentials (#27), so it is destroyed rather than deleted when it is
+  no longer needed.
 - `.private/source-ddl.sql` — the `CREATE TABLE` blocks extracted from that
   dump. Both the schema verification and the transform read it as the
   authoritative description of the source.
 
-Regenerate the DDL extract if the dump is replaced:
+Regenerate the DDL extract only if the dump is ever replaced — it should not be,
+now that the source is frozen:
 
 ```sh
 awk '/^CREATE TABLE/,/ENGINE=/' .private/lunashare-dump.sql > .private/source-ddl.sql

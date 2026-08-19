@@ -1,4 +1,7 @@
+# Agent Guidelines
+
 ## Coding preferences - general
+
 - Keep things simple. Channel "yagni" energy unless told otherwise
 - Typesafety is useful, take advantage of it.
 - Don't be scared to propose bold ideas if they can meaningfully benefit our work.
@@ -48,8 +51,8 @@ The following should be applied to requests for bugs, failures, regressions, bro
 - Workarounds, symptom patches, broad try/catch wrappers, silent fallbacks, retries, and temporary fixes are forbidden unless explicitly approved.
 - If the root cause is outside the task scope, stop and report instead of patching around it.
 
-
 ## Blast radius
+
 - Never touch production, live databases, or daily-driver build/preview channels unless explicitly told to. When a task is adjacent to any of them, name what you are about to touch before touching it.
 
 ## Think Before Coding
@@ -57,6 +60,7 @@ The following should be applied to requests for bugs, failures, regressions, bro
 **Don't assume. Don't hide confusion. Surface tradeoffs.**
 
 Before implementing:
+
 - State your assumptions explicitly. If uncertain, ask.
 - If multiple interpretations exist, present them - don't pick silently.
 - If a simpler approach exists, say so. Push back when warranted.
@@ -79,12 +83,14 @@ Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, sim
 **Touch only what you must. Clean up only your own mess.**
 
 When editing existing code:
+
 - Don't "improve" adjacent code, comments, or formatting.
 - Don't refactor things that aren't broken.
 - Match existing style, even if you'd do it differently.
 - If you notice unrelated dead code, mention it - don't delete it.
 
 When your changes create orphans:
+
 - Remove imports/variables/functions that YOUR changes made unused.
 - Don't remove pre-existing dead code unless asked.
 
@@ -97,13 +103,16 @@ The test: Every changed line should trace directly to the user's request.
 ## Workflow
 
 ### General Rules
+
 When working on something, no matter what, we need to always reference a github issue. So everything that has been done remains traceable
 
 ### Working on issues
+
 When working on a implementation for an issue - Read the full epic on github, change the label to "Doing" and work on it on a separate branch.
 When done: Create a Pull Request and change the label to "testing" and instruct the user on how to test out the changes.
 
 ### Bug reports
+
 When the user reports a bug that is not relevant to the current implementation task, you should create a issue on github for it and not start on a fix.
 
 ## Agent skills

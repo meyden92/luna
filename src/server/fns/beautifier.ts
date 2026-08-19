@@ -1,10 +1,9 @@
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { createServerFn } from '@tanstack/react-start';
-import { writeCreateAuditLog } from '@/libs/audit/transaction-audit';
+import { createGeneratedFile, getOwnedImageFile } from '@/db/queries/ai';
 import { env } from '@/libs/env';
 import { fileS3Key, getPrivateSignedUrl, publicUploadAcl, s3Client } from '@/libs/S3Helper';
-import { ensureStorageQuotaAvailableViaPrisma } from '@/libs/storage-quota';
 import { getCDNImage } from '@/libs/utils';
 import { type BeautifierSourceFile, beautifierSourceFileQuerySchema, saveBeautifiedImageSchema } from '@/schemas/beautifier-schema';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
@@ -16,22 +15,8 @@ export const getBeautifierSourceFile = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'user' }))
   .validator(beautifierSourceFileQuerySchema)
   .handler(async ({ data, context }): Promise<BeautifierSourceFileResult> => {
-    const { default: prisma } = await import('@/libs/prismadb');
     const userId = userIdFromCtx(context);
-    const file = await prisma.file.findFirst({
-      where: { id: data.fileId, ownerId: userId, isDeleted: false },
-      select: {
-        id: true,
-        title: true,
-        contentType: true,
-        size: true,
-        createdAt: true,
-        ownerId: true,
-        private: true,
-        url: true,
-        metadata: { select: { width: true, height: true } },
-      },
-    });
+    const file = await getOwnedImageFile(data.fileId, userId);
 
     if (!file) return { status: 'not-found' };
     if (!file.contentType.startsWith('image/')) return { status: 'not-image' };
@@ -73,12 +58,8 @@ export const saveBeautifiedImage = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'user' }))
   .validator(saveBeautifiedImageSchema)
   .handler(async ({ data, context }) => {
-    const { default: prisma } = await import('@/libs/prismadb');
     const userId = userIdFromCtx(context);
-    const source = await prisma.file.findFirst({
-      where: { id: data.sourceFileId, ownerId: userId, isDeleted: false },
-      select: { id: true, title: true, contentType: true, private: true, folderId: true },
-    });
+    const source = await getOwnedImageFile(data.sourceFileId, userId);
 
     if (!source) throw new Error('Source file not found');
     if (!source.contentType.startsWith('image/')) throw new Error('Source file is not an image');
@@ -101,31 +82,22 @@ export const saveBeautifiedImage = createServerFn({ method: 'POST' })
     }).done();
 
     try {
-      const createdFile = await prisma.$transaction(async (tx) => {
-        await ensureStorageQuotaAvailableViaPrisma(tx, userId, buffer.byteLength);
-        const file = await tx.file.create({
-          data: {
-            ownerId: userId,
-            folderId: source.folderId,
-            size: buffer.byteLength,
-            url: encodeURIComponent(filename),
-            private: source.private,
-            tags: 'beautified',
-            title: data.title ?? `${source.title || 'Image'} beautified.png`,
-            contentType: 'image/png',
-          },
-        });
-        await tx.fileMetadata.create({
-          data: {
-            fileId: file.id,
-            width: data.config.width,
-            height: data.config.height,
-            description: `Beautified from ${source.id}`,
-          },
-        });
-        await writeCreateAuditLog(tx, { model: 'File', record: file, userId });
-        return file;
-      });
+      // Quota admission and the insert it guards stay in one transaction, opened
+      // only after the upload so nothing waits on S3 while holding a row lock.
+      const createdFile = await createGeneratedFile(
+        {
+          ownerId: userId,
+          folderId: source.folderId,
+          size: buffer.byteLength,
+          url: encodeURIComponent(filename),
+          private: source.private,
+          tags: 'beautified',
+          title: data.title ?? `${source.title || 'Image'} beautified.png`,
+          contentType: 'image/png',
+          dimensions: { width: data.config.width, height: data.config.height, description: `Beautified from ${source.id}` },
+        },
+        userId,
+      );
 
       return {
         file: {

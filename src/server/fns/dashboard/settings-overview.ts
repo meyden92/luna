@@ -36,7 +36,8 @@ export interface SettingsOverview {
 export const getSettingsOverview = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'user' }))
   .handler(async ({ context }): Promise<SettingsOverview> => {
-    const { default: prisma } = await import('@/libs/prismadb');
+    const [{ countTemplateGenerationsByStatus, getSettingsProfile, listOwnedUploadsInRange, listUserTokens }, { storageUsage }] =
+      await Promise.all([import('@/db/queries/auth'), import('@/db/queries/files')]);
     const userId = userIdFromCtx(context);
 
     const today = new Date();
@@ -44,54 +45,11 @@ export const getSettingsOverview = createServerFn({ method: 'GET' })
     const thirtyDaysEnd = endOfDay(today);
 
     const [user, tokens, fileAggregate, recentFiles, generatorGroups] = await Promise.all([
-      prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          image: true,
-          receiveEmail: true,
-          isProfilePublic: true,
-          bio: true,
-          description: true,
-          showAllFilesIncludesFoldered: true,
-        },
-      }),
-      prisma.token.findMany({
-        where: { userId },
-        select: {
-          id: true,
-          name: true,
-          key: true,
-          enabled: true,
-          compressImage: true,
-          convertToJpeg: true,
-          jpegQuality: true,
-          folderId: true,
-          stripMetadata: true,
-          flowId: true,
-          createdAt: true,
-        },
-      }),
-      prisma.file.aggregate({
-        where: { ownerId: userId, isDeleted: false },
-        _count: { _all: true },
-        _sum: { size: true },
-      }),
-      prisma.file.findMany({
-        where: {
-          ownerId: userId,
-          isDeleted: false,
-          createdAt: { gte: thirtyDaysAgo, lte: thirtyDaysEnd },
-        },
-        select: { createdAt: true, title: true },
-      }),
-      prisma.templateGeneration.groupBy({
-        by: ['status'],
-        where: { userId },
-        _count: { _all: true },
-      }),
+      getSettingsProfile(userId),
+      listUserTokens(userId),
+      storageUsage(userId),
+      listOwnedUploadsInRange({ ownerId: userId, from: thirtyDaysAgo, to: thirtyDaysEnd }),
+      countTemplateGenerationsByStatus(userId),
     ]);
 
     if (!user) throw new Error('User not found');
@@ -127,10 +85,9 @@ export const getSettingsOverview = createServerFn({ method: 'GET' })
     let successfulGenerations = 0;
     let failedGenerations = 0;
     for (const group of generatorGroups) {
-      const count = group._count._all;
-      totalGenerations += count;
-      if (group.status === 'success') successfulGenerations = count;
-      else if (group.status === 'failed') failedGenerations = count;
+      totalGenerations += group.total;
+      if (group.status === 'success') successfulGenerations = group.total;
+      else if (group.status === 'failed') failedGenerations = group.total;
     }
 
     return {
@@ -143,9 +100,23 @@ export const getSettingsOverview = createServerFn({ method: 'GET' })
       bio: user.bio,
       description: user.description,
       stats: monthlyUploadStats,
-      filecount: fileAggregate._count._all,
-      filesize: fileAggregate._sum.size ?? 0,
-      tokens,
+      filecount: fileAggregate.fileCount,
+      filesize: fileAggregate.totalBytes,
+      // Projected explicitly so the token row's other columns never cross the
+      // server-function boundary.
+      tokens: tokens.map((token) => ({
+        id: token.id,
+        name: token.name,
+        key: token.key,
+        enabled: token.enabled,
+        compressImage: token.compressImage,
+        convertToJpeg: token.convertToJpeg,
+        jpegQuality: token.jpegQuality,
+        folderId: token.folderId,
+        stripMetadata: token.stripMetadata,
+        flowId: token.flowId,
+        createdAt: token.createdAt,
+      })),
       fileExtensions,
       generatorStats: { totalGenerations, successfulGenerations, failedGenerations },
       showAllFilesIncludesFoldered: user.showAllFilesIncludesFoldered,

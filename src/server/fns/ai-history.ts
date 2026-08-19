@@ -1,7 +1,8 @@
-import type { Prisma } from '@db/client';
 import { queryOptions } from '@tanstack/react-query';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import * as ai from '@/db/queries/ai';
+import type { JsonValue } from '@/db/schema/json';
 import { queryKeys } from '@/libs/query-keys';
 import { getCDNImage } from '@/libs/utils';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
@@ -14,16 +15,16 @@ const HISTORY_STALE_TIME = 30_000;
 
 export type AiHistoryKind = 'generation' | 'edit';
 
-function jsonObject(value: Prisma.JsonValue | null): Record<string, unknown> | null {
+function jsonObject(value: JsonValue | null): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
 }
 
-function jsonStringArray(value: Prisma.JsonValue | null): string[] {
+function jsonStringArray(value: JsonValue | null): string[] {
   return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : [];
 }
 
-function jsonRecord(value: unknown): Record<string, Prisma.JsonValue> | undefined {
-  return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, Prisma.JsonValue>) : undefined;
+function jsonRecord(value: unknown): Record<string, JsonValue> | undefined {
+  return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, JsonValue>) : undefined;
 }
 
 /**
@@ -40,10 +41,10 @@ export interface AiGenerationHistoryItem {
   modelLabel: string;
   modelId: string;
   prompt?: string;
-  fieldValues?: Record<string, Prisma.JsonValue>;
+  fieldValues?: Record<string, JsonValue>;
   imageCount?: number;
   inputPreviews?: string[];
-  result?: Prisma.JsonValue;
+  result?: JsonValue;
   error?: string;
 }
 
@@ -51,13 +52,8 @@ export const listAiGenerations = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'user' }))
   .validator(z.object({ kind: z.enum(['generation', 'edit']) }))
   .handler(async ({ data, context }) => {
-    const { default: prisma } = await import('@/libs/prismadb');
     const userId = userIdFromCtx(context);
-    const rows = await prisma.aiGeneration.findMany({
-      where: { userId, kind: data.kind },
-      orderBy: { createdAt: 'desc' },
-      take: HISTORY_LIMIT,
-    });
+    const rows = await ai.listAiGenerations(userId, data.kind, HISTORY_LIMIT);
     return rows.map((r): AiGenerationHistoryItem => {
       const resultObject = jsonObject(r.result);
       return {
@@ -81,11 +77,10 @@ export const deleteAiGeneration = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'user' }))
   .validator(z.object({ id: z.string().min(1) }))
   .handler(async ({ data, context }) => {
-    const { default: prisma } = await import('@/libs/prismadb');
     const userId = userIdFromCtx(context);
     // Delete only the history row — never the underlying generated File, which
     // remains in the user's gallery.
-    await prisma.aiGeneration.deleteMany({ where: { id: data.id, userId } });
+    await ai.deleteAiGeneration(data.id, userId, userId);
     return { success: true };
   });
 
@@ -93,12 +88,9 @@ export const clearCompletedAiGenerations = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'user' }))
   .validator(z.object({ kind: z.enum(['generation', 'edit']) }))
   .handler(async ({ data, context }) => {
-    const { default: prisma } = await import('@/libs/prismadb');
     const userId = userIdFromCtx(context);
-    const res = await prisma.aiGeneration.deleteMany({
-      where: { userId, kind: data.kind, status: { in: ['succeeded', 'failed'] } },
-    });
-    return { deletedCount: res.count };
+    const deletedCount = await ai.deleteCompletedAiGenerations(userId, data.kind, userId);
+    return { deletedCount };
   });
 
 /**
@@ -113,7 +105,7 @@ export interface TemplateHistoryItem {
   createdAt: number;
   templateId: string;
   templateName: string;
-  variableValues: Prisma.JsonValue;
+  variableValues: JsonValue;
   inputPreviews: string[];
   batchId: string;
   batchIndex: number;
@@ -124,14 +116,8 @@ export interface TemplateHistoryItem {
 export const listTemplateGenerations = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'user' }))
   .handler(async ({ context }) => {
-    const { default: prisma } = await import('@/libs/prismadb');
     const userId = userIdFromCtx(context);
-    const rows = await prisma.templateGeneration.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      take: HISTORY_LIMIT,
-      include: { resultFile: { select: { url: true } }, template: { select: { name: true } } },
-    });
+    const rows = await ai.listTemplateGenerationHistory(userId, HISTORY_LIMIT);
     return rows.map((r): TemplateHistoryItem => {
       const originalImageUrls = jsonStringArray(r.originalImageUrls);
       const resultImageUrl = r.resultFile?.url ? getCDNImage(r.resultFile.url, userId) : null;
@@ -156,22 +142,18 @@ export const deleteTemplateGenerationRow = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'user' }))
   .validator(z.object({ id: z.string().min(1) }))
   .handler(async ({ data, context }) => {
-    const { default: prisma } = await import('@/libs/prismadb');
     const userId = userIdFromCtx(context);
     // Remove only the history row; the generated File stays in the user's gallery.
-    await prisma.templateGeneration.deleteMany({ where: { id: data.id, userId } });
+    await ai.deleteTemplateGenerationRow(data.id, userId, userId);
     return { success: true };
   });
 
 export const clearCompletedTemplateGenerations = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'user' }))
   .handler(async ({ context }) => {
-    const { default: prisma } = await import('@/libs/prismadb');
     const userId = userIdFromCtx(context);
-    const res = await prisma.templateGeneration.deleteMany({
-      where: { userId, status: { in: ['success', 'failed'] } },
-    });
-    return { deletedCount: res.count };
+    const deletedCount = await ai.deleteCompletedTemplateGenerations(userId, userId);
+    return { deletedCount };
   });
 
 export const aiHistoryQueryOptions = (kind: AiHistoryKind) =>

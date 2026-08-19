@@ -23,6 +23,9 @@ const QUERY_MODULE_GLOB = 'src/db/queries/**/*.ts';
 async function findAuditedModelUsages(): Promise<Map<string, string[]>> {
   const usages = new Map<string, string[]>();
   for await (const path of new Glob(QUERY_MODULE_GLOB).scan('.')) {
+    // Tests name models too; counting them would let a model look covered when
+    // only its test mentions it.
+    if (path.endsWith('.test.ts')) continue;
     const source = await Bun.file(path).text();
     // Matches both writeAuditLog({ model: 'X', ... }) and
     // writeAuditLogs(handle, 'X', ...), which is the bulk form.

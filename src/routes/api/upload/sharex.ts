@@ -1,20 +1,19 @@
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
-import type { Prisma } from '@db/client';
 import { createFileRoute } from '@tanstack/react-router';
 import sharp from 'sharp';
+import { createUploadedFile, findOwnedActiveFolderId, releaseUploadedFile } from '@/db/queries/uploads';
+import type { JsonValue } from '@/db/schema/json';
 import { checkScopedRateLimit, retryAfterSeconds } from '@/libs/api/rate-limit';
-import { writeCreateAuditLog } from '@/libs/audit/transaction-audit';
 import { validateTokenKey } from '@/libs/auth/token-auth';
 import { env } from '@/libs/env';
 import { dispatchFlowTrigger } from '@/libs/flows/run-flow';
-import { type MetadataScrubReport, scrubMetadataIfNeeded } from '@/libs/metadata-scrubber';
-import { checkModerationGate, createModerationCase, type FileHashes } from '@/libs/moderation/hash-gate';
-import prisma from '@/libs/prismadb';
+import { scrubMetadataIfNeeded } from '@/libs/metadata-scrubber';
+import { checkModerationGate, createModerationCase } from '@/libs/moderation/hash-gate';
 import { UnauthorizedError } from '@/libs/rbac/guards';
 import { getCdnUrl } from '@/libs/runtime-config';
 import { s3Client } from '@/libs/S3Helper';
-import { ensureStorageQuotaAvailableViaPrisma, StorageQuotaExceededError, storageQuotaExceededPayload } from '@/libs/storage-quota';
+import { StorageQuotaExceededError, storageQuotaExceededPayload } from '@/libs/storage-quota';
 
 const MULTIPART_OVERHEAD_BYTES = 1024 * 1024;
 let inFlightSharexUploads = 0;
@@ -61,77 +60,12 @@ async function authenticateTokenFromForm(formData: FormData, headers: Headers) {
   return { user: { id: tokenRecord.user.id, email: tokenRecord.user.email }, tokenRecord };
 }
 
-async function releaseReservedFile(id: string): Promise<void> {
-  try {
-    await prisma.file.delete({ where: { id } });
-  } catch {
-    await prisma.file
-      .update({
-        where: { id },
-        data: { isDeleted: true, deletedAt: new Date() },
-      })
-      .catch(() => undefined);
-  }
-}
-
 async function deleteUploadedObject(key: string): Promise<void> {
   try {
     await s3Client.send(new DeleteObjectCommand({ Bucket: env.AWS_BUCKET_NAME, Key: key }));
   } catch {
     // Best-effort cleanup after a failed upload attempt.
   }
-}
-
-async function reserveFileRecord({
-  userId,
-  size,
-  fileName,
-  storedFileName,
-  contentType,
-  tags,
-  folderId,
-  imageDimensions,
-  privateUpload,
-  hashes,
-  scrubReport,
-}: {
-  userId: string;
-  size: number;
-  fileName: string;
-  storedFileName: string;
-  contentType: string;
-  tags: string;
-  folderId: string | null;
-  imageDimensions: { width: number; height: number } | null;
-  privateUpload: boolean;
-  hashes: FileHashes;
-  scrubReport: MetadataScrubReport;
-}) {
-  return prisma.$transaction(async (tx) => {
-    await ensureStorageQuotaAvailableViaPrisma(tx, userId, size);
-
-    const createdFile = await tx.file.create({
-      data: {
-        ownerId: userId,
-        size,
-        url: encodeURIComponent(storedFileName),
-        private: privateUpload,
-        tags,
-        title: fileName,
-        contentType,
-        folderId,
-        sha256: hashes.sha256,
-        md5: hashes.md5,
-        phash: hashes.phash,
-        scrubReport: scrubReport as unknown as Prisma.InputJsonValue,
-        moderationStatus: privateUpload ? 'quarantined' : 'clear',
-        ...(imageDimensions ? { metadata: { create: imageDimensions } } : {}),
-      },
-    });
-    await writeCreateAuditLog(tx, { model: 'File', record: createdFile, userId });
-
-    return createdFile;
-  });
 }
 
 async function handle(request: Request): Promise<Response> {
@@ -243,30 +177,26 @@ async function handleWithUploadSlot(request: Request): Promise<Response> {
 
   const fileName = `${Date.now()}-${uploadFileName.split(' ').join('_')}`;
 
-  let folderId: string | null = null;
-  if (tokenRecord.folderId) {
-    const targetFolder = await prisma.folder.findFirst({
-      where: { id: tokenRecord.folderId, ownerId: user.id, isDeleted: false },
-      select: { id: true },
-    });
-    folderId = targetFolder?.id ?? null;
-  }
+  const folderId = tokenRecord.folderId ? await findOwnedActiveFolderId(tokenRecord.folderId, user.id) : null;
 
-  let dbResult: Awaited<ReturnType<typeof reserveFileRecord>>;
+  let dbResult: Awaited<ReturnType<typeof createUploadedFile>>;
   try {
-    dbResult = await reserveFileRecord({
-      userId: user.id,
-      size: uploadBuffer.byteLength,
-      fileName: uploadFileName,
-      storedFileName: fileName,
-      contentType: uploadContentType,
-      tags: tags.join(','),
-      folderId,
-      imageDimensions,
-      privateUpload: !moderationGate.allowed,
-      hashes: moderationGate.hashes,
-      scrubReport,
-    });
+    dbResult = await createUploadedFile(
+      {
+        ownerId: user.id,
+        size: uploadBuffer.byteLength,
+        url: encodeURIComponent(fileName),
+        title: uploadFileName,
+        tags: tags.join(','),
+        contentType: uploadContentType,
+        folderId,
+        privateUpload: !moderationGate.allowed,
+        hashes: moderationGate.hashes,
+        scrubReport: scrubReport as unknown as JsonValue,
+        dimensions: imageDimensions,
+      },
+      user.id,
+    );
   } catch (error) {
     if (error instanceof StorageQuotaExceededError) {
       return json(storageQuotaExceededPayload(error), error.status);
@@ -289,7 +219,7 @@ async function handleWithUploadSlot(request: Request): Promise<Response> {
   try {
     await upload.done();
   } catch (error) {
-    await Promise.all([releaseReservedFile(dbResult.id), deleteUploadedObject(key)]);
+    await Promise.all([releaseUploadedFile(dbResult.id, user.id), deleteUploadedObject(key)]);
     const message = error instanceof Error ? error.message : 'Upload failed';
     return json({ error: message, code: 'UPLOAD_FAILED' }, 500);
   }

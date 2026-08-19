@@ -1,4 +1,10 @@
-import type { Task, TaskExecution } from '@db/client';
+import type { task, taskExecution } from '@/db/schema/automation';
+
+// Inferred from the Drizzle schema rather than Prisma's generated client
+// (issue #36). `import type` is erased, so nothing Drizzle-shaped ships to the
+// client bundle.
+type Task = typeof task.$inferSelect;
+type TaskExecution = typeof taskExecution.$inferSelect;
 
 export type TaskStatus = 'pending' | 'running' | 'success' | 'failed' | 'timeout';
 export type TriggerType = 'schedule' | 'manual' | 'api' | 'retry';

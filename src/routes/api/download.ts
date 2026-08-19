@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { getDeliverableFile } from '@/db/queries/delivery';
 import { deliverySessionAllowsFile, verifyDeliverySession } from '@/libs/delivery-session';
 import { recordEgress } from '@/libs/egress/record';
-import prisma from '@/libs/prismadb';
 import { getOptionalAuthenticatedUser } from '@/libs/rbac/guards';
 import { isUserAdmin } from '@/libs/rbac/service';
 import { fileS3Key, getDownloadSignedUrl } from '@/libs/S3Helper';
@@ -27,10 +27,7 @@ async function handle(request: Request): Promise<Response> {
   const id = requestUrl.searchParams.get('id');
   if (!id) return json({ error: 'File id required' }, 400);
 
-  const file = await prisma.file.findFirst({
-    where: { id, isDeleted: false },
-    select: { id: true, folderId: true, title: true, url: true, ownerId: true, private: true, size: true, moderationStatus: true },
-  });
+  const file = await getDeliverableFile(id);
   if (!file || file.moderationStatus === 'quarantined') return json({ error: 'File not found' }, 404);
 
   if (file.private) {

@@ -1,28 +1,15 @@
 import type { PublicEmbedFile } from '@/libs/oembed';
 
-// Server-only: reaches prismadb, analytics, and egress. Never import this from a
-// client route directly — go through getPublicEmbedFile (server fn) instead.
+// Server-only: reaches the database, analytics, and egress. Never import this
+// from a client route directly — go through getPublicEmbedFile (server fn).
 export async function findPublicEmbedFile(id: string): Promise<PublicEmbedFile | null> {
-  const [{ default: prisma }, { getCDNImage }, { getPublicOrigin }] = await Promise.all([
-    import('@/libs/prismadb'),
+  const [{ getEmbeddableFile }, { getCDNImage }, { getPublicOrigin }] = await Promise.all([
+    import('@/db/queries/delivery'),
     import('@/libs/utils'),
     import('@/libs/request-origin'),
   ]);
 
-  const file = await prisma.file.findFirst({
-    where: { id, isDeleted: false, private: false },
-    select: {
-      id: true,
-      title: true,
-      url: true,
-      ownerId: true,
-      contentType: true,
-      size: true,
-      owner: { select: { name: true } },
-      metadata: { select: { artist: true, duration: true, width: true, height: true } },
-    },
-  });
-
+  const file = await getEmbeddableFile(id);
   if (!file) return null;
 
   const origin = getPublicOrigin();
@@ -42,7 +29,7 @@ export async function findPublicEmbedFile(id: string): Promise<PublicEmbedFile |
     cdnUrl: getCDNImage(`/${file.ownerId}/${file.url}`),
     viewUrl: `${origin}/view/${file.id}`,
     embedUrl: `${origin}/embed/${file.id}`,
-    ownerName: file.owner.name,
+    ownerName: file.ownerName,
     metadata: file.metadata
       ? {
           artist: file.metadata.artist,

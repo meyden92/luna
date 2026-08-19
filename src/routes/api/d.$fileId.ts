@@ -1,27 +1,14 @@
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { createFileRoute } from '@tanstack/react-router';
+import { getDeliverableFile } from '@/db/queries/delivery';
 import { deliverySessionAllowsFile, verifyDeliverySession } from '@/libs/delivery-session';
 import { recordEgress } from '@/libs/egress/record';
 import { env } from '@/libs/env';
-import prisma from '@/libs/prismadb';
 import { getOptionalAuthenticatedUser } from '@/libs/rbac/guards';
 import { fileS3Key, s3Client } from '@/libs/S3Helper';
 
 async function handle(request: Request, fileId: string): Promise<Response> {
-  const file = await prisma.file.findFirst({
-    where: { id: fileId, isDeleted: false },
-    select: {
-      id: true,
-      ownerId: true,
-      folderId: true,
-      url: true,
-      title: true,
-      private: true,
-      size: true,
-      contentType: true,
-      moderationStatus: true,
-    },
-  });
+  const file = await getDeliverableFile(fileId);
   if (!file || file.moderationStatus === 'quarantined') return new Response('Not found', { status: 404 });
 
   if (file.private) {

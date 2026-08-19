@@ -1,6 +1,12 @@
+import { markTemplateGenerationSucceeded } from '@/db/queries/ai';
+import { markTemplateGenerationFailed } from '@/db/queries/tasks';
 import { firstReplicateOutput, throwIfAborted, uploadGeneratedImageToS3 } from '@/libs/ai-generation-utils';
-import prisma from '@/libs/prismadb';
 
+/**
+ * Turns a succeeded Replicate prediction into a stored file and records it on
+ * the generation. Both status writes are audited inside the query module, since
+ * `TemplateGeneration` is an audited model.
+ */
 export async function processSuccessfulGeneration(
   generationId: string,
   resultImageUrl: unknown,
@@ -14,14 +20,7 @@ export async function processSuccessfulGeneration(
   const outputUrl = firstReplicateOutput(resultImageUrl);
   if (!outputUrl) {
     throwIfAborted(signal);
-    await prisma.templateGeneration.update({
-      where: { id: generationId },
-      data: {
-        status: 'failed',
-        errorMessage: 'No output generated',
-        replicateStatus,
-      },
-    });
+    await markTemplateGenerationFailed(generationId, { errorMessage: 'No output generated', replicateStatus }, userId);
     throw new Error('No output generated');
   }
 
@@ -40,14 +39,7 @@ export async function processSuccessfulGeneration(
   });
 
   throwIfAborted(signal);
-  await prisma.templateGeneration.update({
-    where: { id: generationId },
-    data: {
-      status: 'success',
-      resultFileId: fileId,
-      replicateStatus: replicateStatus,
-    },
-  });
+  await markTemplateGenerationSucceeded(generationId, { resultFileId: fileId, replicateStatus }, userId);
 
   return result_url;
 }

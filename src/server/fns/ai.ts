@@ -1,5 +1,8 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import * as ai from '@/db/queries/ai';
+import { softDeleteFiles } from '@/db/queries/files';
+import { markTemplateGenerationFailed } from '@/db/queries/tasks';
 import { getCDNImage } from '@/libs/utils';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
@@ -7,11 +10,6 @@ import { appMiddleware } from '@/server/server-fn';
 const STREAMING_RECONCILE_AFTER_MS = 10 * 60 * 1000;
 
 const aiModelsSchema = z.object({ type: z.enum(['editing', 'generation']).optional() });
-
-async function getPrisma() {
-  const { default: prisma } = await import('@/libs/prismadb');
-  return prisma;
-}
 
 async function getReplicate() {
   const [{ default: Replicate }, { env }] = await Promise.all([import('replicate'), import('@/libs/env')]);
@@ -22,45 +20,22 @@ export const listAiModels = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'user' }))
   .validator(aiModelsSchema)
   .handler(async ({ data }) => {
-    const prisma = await getPrisma();
-    if (data.type === 'generation') {
-      return prisma.generationModel.findMany({
-        where: { isActive: true },
-        include: { fields: { orderBy: { sortOrder: 'asc' } } },
-        orderBy: { sortOrder: 'asc' },
-      });
-    }
-    return prisma.editingModel.findMany({
-      where: { isActive: true },
-      include: { fields: { orderBy: { sortOrder: 'asc' } } },
-      orderBy: { sortOrder: 'asc' },
-    });
+    if (data.type === 'generation') return ai.listActiveGenerationModels();
+    return ai.listActiveEditingModels();
   });
 
 export const listAiTemplates = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'user' }))
   .handler(async () => {
-    const prisma = await getPrisma();
-    const templates = await prisma.template.findMany({
-      where: { isActive: true },
-      include: {
-        globalVariables: { include: { globalVariable: true }, orderBy: { sortOrder: 'asc' } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-    return { templates };
+    return { templates: await ai.listActiveTemplates() };
   });
 
 export const getTemplateGeneration = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'user' }))
   .validator(z.object({ id: z.string().min(1) }))
   .handler(async ({ data, context }) => {
-    const prisma = await getPrisma();
     const userId = userIdFromCtx(context);
-    const generation = await prisma.templateGeneration.findUnique({
-      where: { id: data.id },
-      include: { resultFile: true, template: true },
-    });
+    const generation = await ai.getTemplateGenerationWithResult(data.id);
     if (!generation) throw new Error('Generation not found');
     if (generation.userId !== userId) throw new Error('Unauthorized');
 
@@ -91,10 +66,7 @@ export const getTemplateGeneration = createServerFn({ method: 'GET' })
       if (prediction.status === 'succeeded') {
         const resultImageUrl = firstReplicateOutput(prediction.output);
         if (!resultImageUrl) {
-          await prisma.templateGeneration.update({
-            where: { id: generation.id },
-            data: { status: 'failed', errorMessage: 'No output generated' },
-          });
+          await markTemplateGenerationFailed(generation.id, { errorMessage: 'No output generated' }, userId);
           return { id: generation.id, status: 'failed', error: 'No output generated' };
         }
         const url = await processSuccessfulGeneration(
@@ -109,14 +81,11 @@ export const getTemplateGeneration = createServerFn({ method: 'GET' })
         return { id: generation.id, status: 'success', resultImageUrl: url, finalPrompt: generation.finalPrompt };
       }
       if (prediction.status === 'failed' || prediction.status === 'canceled') {
-        await prisma.templateGeneration.update({
-          where: { id: generation.id },
-          data: {
-            status: 'failed',
-            errorMessage: String(prediction.error) || 'Generation failed',
-            replicateStatus: prediction.status,
-          },
-        });
+        await markTemplateGenerationFailed(
+          generation.id,
+          { errorMessage: String(prediction.error) || 'Generation failed', replicateStatus: prediction.status },
+          userId,
+        );
         return { id: generation.id, status: 'failed' as const, error: String(prediction.error ?? 'failed') };
       }
       return { id: generation.id, status: 'processing', replicateStatus: prediction.status };
@@ -128,7 +97,6 @@ export const getTemplateGeneration = createServerFn({ method: 'GET' })
 export const getActiveGenerations = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'user' }))
   .handler(async ({ context }) => {
-    const prisma = await getPrisma();
     const [{ firstReplicateOutput }, { processSuccessfulGeneration }] = await Promise.all([
       import('@/libs/ai-generation-utils'),
       import('@/libs/template-utils'),
@@ -136,15 +104,7 @@ export const getActiveGenerations = createServerFn({ method: 'GET' })
     const replicate = await getReplicate();
     const userId = userIdFromCtx(context);
     const staleStreamingCutoff = new Date(Date.now() - STREAMING_RECONCILE_AFTER_MS);
-    const processing = await prisma.templateGeneration.findMany({
-      where: {
-        userId,
-        status: 'processing',
-        replicateId: { not: null },
-        OR: [{ replicateStatus: null }, { replicateStatus: { not: 'streaming' } }, { createdAt: { lt: staleStreamingCutoff } }],
-      },
-      include: { template: true },
-    });
+    const processing = await ai.listReconcilableTemplateGenerations(userId, staleStreamingCutoff);
 
     await Promise.all(
       processing.map(async (gen) => {
@@ -156,20 +116,14 @@ export const getActiveGenerations = createServerFn({ method: 'GET' })
             if (out) {
               await processSuccessfulGeneration(gen.id, out, userId, gen.templateId, gen.template.name, pred.status);
             } else {
-              await prisma.templateGeneration.update({
-                where: { id: gen.id },
-                data: { status: 'failed', errorMessage: 'No output generated' },
-              });
+              await markTemplateGenerationFailed(gen.id, { errorMessage: 'No output generated' }, userId);
             }
           } else if (pred.status === 'failed' || pred.status === 'canceled') {
-            await prisma.templateGeneration.update({
-              where: { id: gen.id },
-              data: {
-                status: 'failed',
-                errorMessage: String(pred.error) || 'Generation failed',
-                replicateStatus: pred.status,
-              },
-            });
+            await markTemplateGenerationFailed(
+              gen.id,
+              { errorMessage: String(pred.error) || 'Generation failed', replicateStatus: pred.status },
+              userId,
+            );
           }
         } catch (e) {
           console.error(`Error checking generation ${gen.id}:`, e);
@@ -177,29 +131,20 @@ export const getActiveGenerations = createServerFn({ method: 'GET' })
       }),
     );
 
-    const active = await prisma.templateGeneration.findMany({
-      where: { userId, status: 'processing' },
-      select: { id: true, status: true, createdAt: true, template: { select: { name: true } } },
-      orderBy: { createdAt: 'desc' },
-    });
-    return { generations: active };
+    return { generations: await ai.listActiveTemplateGenerations(userId) };
   });
 
 export const deleteTemplateGeneration = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'user' }))
   .validator(z.object({ generationId: z.string().min(1) }))
   .handler(async ({ data, context }) => {
-    const prisma = await getPrisma();
     const [{ DeleteObjectCommand }, { env }, { fileS3Key, s3Client }] = await Promise.all([
       import('@aws-sdk/client-s3'),
       import('@/libs/env'),
       import('@/libs/S3Helper'),
     ]);
     const userId = userIdFromCtx(context);
-    const generation = await prisma.templateGeneration.findUnique({
-      where: { id: data.generationId, userId },
-      include: { resultFile: true },
-    });
+    const generation = await ai.getOwnedTemplateGenerationWithResult(data.generationId, userId);
     if (!generation) throw new Error('Generation not found or access denied');
     if (!generation.resultFile) throw new Error('No file associated with this generation');
 
@@ -210,14 +155,8 @@ export const deleteTemplateGeneration = createServerFn({ method: 'POST' })
       console.error(`Failed to delete from S3: ${s3Key}`, e);
     }
 
-    await prisma.file.update({
-      where: { id: generation.resultFile.id },
-      data: { isDeleted: true, deletedAt: new Date() },
-    });
-    await prisma.templateGeneration.update({
-      where: { id: data.generationId },
-      data: { resultFileId: null, errorMessage: 'Image deleted by user' },
-    });
+    await softDeleteFiles([generation.resultFile.id], userId, userId);
+    await ai.detachTemplateGenerationResult({ id: data.generationId, ownerId: userId, errorMessage: 'Image deleted by user' }, userId);
 
     return { success: true, generationId: data.generationId, message: 'Image deleted successfully' };
   });

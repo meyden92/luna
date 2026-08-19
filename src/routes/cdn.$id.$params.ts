@@ -1,8 +1,8 @@
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { createFileRoute } from '@tanstack/react-router';
+import { getDeliverableImage } from '@/db/queries/delivery';
 import { recordEgress } from '@/libs/egress/record';
 import { env } from '@/libs/env';
-import prisma from '@/libs/prismadb';
 import { canonicalRenditionParams, getOrCreateRendition, parseRenditionParamSegment, verifyRenditionSignature } from '@/libs/renditions';
 import { s3Client } from '@/libs/S3Helper';
 
@@ -10,10 +10,7 @@ async function handle(request: Request, id: string, params: string): Promise<Res
   const parsed = parseRenditionParamSegment(decodeURIComponent(params), request.headers.get('accept'));
   const canonical = canonicalRenditionParams(parsed);
   const url = new URL(request.url);
-  const file = await prisma.file.findFirst({
-    where: { id, isDeleted: false, contentType: { startsWith: 'image/' } },
-    select: { id: true, ownerId: true, url: true, private: true, size: true, moderationStatus: true },
-  });
+  const file = await getDeliverableImage(id);
 
   if (!file || file.moderationStatus === 'quarantined') return new Response('Not found', { status: 404 });
   if (file.private && !verifyRenditionSignature(file.id, canonical, url.searchParams.get('sig'), url.searchParams.get('exp'))) {

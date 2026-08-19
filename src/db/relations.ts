@@ -56,7 +56,10 @@ export const relations = defineRelations(schema, (r) => ({
   // is the deepest nested include in the codebase.
   template: {
     globalVariables: r.many.templateGlobalVariable(),
-    createdByUser: r.one.user({ from: r.template.createdBy, to: r.user.id }),
+    // `optional: false` on both NOT NULL foreign keys below, for the same reason
+    // as `snippet.author`: the row always resolves, so the admin list and the
+    // template editor need no null branch the database already rules out.
+    createdByUser: r.one.user({ from: r.template.createdBy, to: r.user.id, optional: false }),
     editingModel: r.one.editingModel({ from: r.template.editingModelId, to: r.editingModel.id, optional: true }),
   },
   templateGlobalVariable: {
@@ -64,13 +67,17 @@ export const relations = defineRelations(schema, (r) => ({
     globalVariable: r.one.globalVariable({
       from: r.templateGlobalVariable.globalVariableId,
       to: r.globalVariable.id,
+      optional: false,
     }),
   },
   globalVariable: {
     templates: r.many.templateGlobalVariable(),
   },
   templateGeneration: {
-    template: r.one.template({ from: r.templateGeneration.templateId, to: r.template.id }),
+    // `optional: false` because `template_generation.template_id` is NOT NULL
+    // behind a foreign key: the template always resolves, and the history and
+    // status-poll call sites need not carry a null branch the database rules out.
+    template: r.one.template({ from: r.templateGeneration.templateId, to: r.template.id, optional: false }),
     resultFile: r.one.file({ from: r.templateGeneration.resultFileId, to: r.file.id, optional: true }),
   },
 

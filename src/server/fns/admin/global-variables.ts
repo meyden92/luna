@@ -1,29 +1,31 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
-import prisma from '@/libs/prismadb';
+import * as ai from '@/db/queries/ai';
+import type { JsonValue } from '@/db/schema/json';
 import { globalVariableFormSchema } from '@/schemas/admin/global-variable-schema';
+import { userIdFromCtx as adminIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
+
+const asJson = (options: unknown): JsonValue | undefined =>
+  options === undefined ? undefined : (JSON.parse(JSON.stringify(options)) as JsonValue);
 
 export const listGlobalVariables = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .handler(async () => {
-    return prisma.globalVariable.findMany({ orderBy: { name: 'asc' } });
+    return ai.listGlobalVariables();
   });
 
 export const listGlobalVariablesWithUsage = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .handler(async () => {
-    return prisma.globalVariable.findMany({
-      orderBy: { updatedAt: 'desc' },
-      include: { _count: { select: { templates: true } } },
-    });
+    return ai.listGlobalVariablesWithUsage();
   });
 
 export const getGlobalVariable = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(z.object({ id: z.string().min(1) }))
   .handler(async ({ data }) => {
-    const variable = await prisma.globalVariable.findUnique({ where: { id: data.id } });
+    const variable = await ai.getGlobalVariable(data.id);
     if (!variable) throw new Error('Global variable not found');
     return variable;
   });
@@ -31,52 +33,52 @@ export const getGlobalVariable = createServerFn({ method: 'GET' })
 export const createGlobalVariable = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(globalVariableFormSchema)
-  .handler(async ({ data }) => {
-    const existing = await prisma.globalVariable.findUnique({ where: { name: data.name } });
-    if (existing) throw new Error('A global variable with this name already exists.');
+  .handler(async ({ data, context }) => {
+    // The duplicate check is case-insensitive because MariaDB's collation made
+    // it so and the form never asked for case to be significant (issue #23).
+    if (await ai.globalVariableNameTaken(data.name)) throw new Error('A global variable with this name already exists.');
 
-    await prisma.globalVariable.create({
-      data: {
+    await ai.createGlobalVariable(
+      {
         name: data.name,
         label: data.label,
         type: data.type,
         description: data.description,
         defaultValue: data.defaultValue,
-        options: data.options ? JSON.parse(JSON.stringify(data.options)) : undefined,
+        options: asJson(data.options),
         required: data.required || false,
       },
-    });
+      adminIdFromCtx(context),
+    );
     return { success: true };
   });
 
 export const updateGlobalVariable = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(globalVariableFormSchema.and(z.object({ id: z.string().min(1) })))
-  .handler(async ({ data }) => {
-    const existing = await prisma.globalVariable.findFirst({
-      where: { name: data.name, NOT: { id: data.id } },
-    });
-    if (existing) throw new Error('A global variable with this name already exists.');
+  .handler(async ({ data, context }) => {
+    if (await ai.globalVariableNameTaken(data.name, data.id)) throw new Error('A global variable with this name already exists.');
 
-    await prisma.globalVariable.update({
-      where: { id: data.id },
-      data: {
+    await ai.updateGlobalVariable(
+      {
+        id: data.id,
         name: data.name,
         label: data.label,
         type: data.type,
         description: data.description,
         defaultValue: data.defaultValue,
-        options: data.options ? JSON.parse(JSON.stringify(data.options)) : undefined,
+        options: asJson(data.options),
         required: data.required || false,
       },
-    });
+      adminIdFromCtx(context),
+    );
     return { success: true };
   });
 
 export const deleteGlobalVariable = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(z.object({ id: z.string().min(1) }))
-  .handler(async ({ data }) => {
-    await prisma.globalVariable.delete({ where: { id: data.id } });
+  .handler(async ({ data, context }) => {
+    await ai.deleteGlobalVariable(data.id, adminIdFromCtx(context));
     return { success: true };
   });

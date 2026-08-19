@@ -51,38 +51,6 @@ export async function ensureStorageQuotaAvailable(tx: Tx, userId: string, incomi
   return evaluateQuota(quotaMiB, usedBytes, incomingBytes);
 }
 
-/**
- * TEMPORARY, and deleted by the batch that moves the last caller.
- *
- * Five sites still take the quota under a Prisma transaction — both upload paths
- * (#34), the beautifier and generation utilities (#38), and the sync service
- * (#39). Admission control and the insert it guards have to share one
- * transaction, so this cannot be half-migrated: splitting them across a Drizzle
- * transaction and a Prisma one would release the lock before the insert and let
- * two concurrent uploads both fit.
- *
- * It is a separate named function rather than a union-typed parameter so
- * `grep ensureStorageQuotaAvailableViaPrisma` shows exactly what is left to move.
- */
-type PrismaStorageQuotaTransaction = {
-  $queryRaw: <T = unknown>(query: TemplateStringsArray, ...values: unknown[]) => Promise<T>;
-  file: {
-    aggregate: (args: { where: { ownerId: string; isDeleted: false }; _sum: { size: true } }) => Promise<{ _sum: { size: number | null } }>;
-  };
-};
-
-export async function ensureStorageQuotaAvailableViaPrisma(
-  tx: PrismaStorageQuotaTransaction,
-  userId: string,
-  incomingBytes: number,
-): Promise<StorageQuotaDetails> {
-  const lockedUsers = await tx.$queryRaw<Array<{ storageQuotaMiB: number | null }>>`
-    SELECT storage_quota_mib AS storageQuotaMiB FROM \`user\` WHERE id = ${userId} FOR UPDATE
-  `;
-  const used = await tx.file.aggregate({ where: { ownerId: userId, isDeleted: false }, _sum: { size: true } });
-  return evaluateQuota(lockedUsers[0]?.storageQuotaMiB ?? null, used._sum.size ?? 0, incomingBytes);
-}
-
 function evaluateQuota(quotaMiB: number | null, usedBytes: number, incomingBytes: number): StorageQuotaDetails {
   const quotaBytes = storageQuotaMiBToBytes(quotaMiB);
   const remainingBytes = Math.max(quotaBytes - usedBytes, 0);

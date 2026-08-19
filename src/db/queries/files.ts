@@ -3,6 +3,7 @@ import { and, asc, count, desc, eq, gte, ilike, inArray, lte, not, or, sql, sum 
 import { type AuditHandle, writeAuditLog } from '../audit';
 import { db } from '../client';
 import { file, fileMetadata, folder } from '../schema/files';
+import { containsInsensitive } from './like';
 
 /**
  * Query module for files (issue #15). Call sites import these functions and
@@ -11,9 +12,12 @@ import { file, fileMetadata, folder } from '../schema/files';
  * reviewable place each instead of ~200 inline reads, and makes audited writes
  * unforgettable because the audit call lives inside the write function.
  *
- * Every function takes the handle last and defaults it to the module's own `db`,
- * so a caller composes a write into its transaction by passing `tx` and
- * otherwise passes nothing.
+ * Functions take the handle last and default it to the module's own `db`, so a
+ * caller composes a write into its transaction by passing `tx` and otherwise
+ * passes nothing. The exception is `getFileWithOwner`, which uses the relational
+ * query API: that must be called on the concrete `db` handle, because a
+ * `Db | Tx` union widens jsonb columns back to `unknown` and TanStack Start then
+ * refuses to serialise the row.
  */
 
 /**
@@ -39,18 +43,6 @@ export function normaliseFileHashes<T extends { sha256?: string | null; md5?: st
     md5: values.md5 ? normaliseHash(values.md5) : values.md5,
     phash: values.phash ? normaliseHash(values.phash) : values.phash,
   };
-}
-
-/**
- * Escapes a user-supplied substring for LIKE/ILIKE.
- *
- * Prisma's `contains:` inherited case-insensitivity from the MariaDB collation —
- * the application never asked for it. `ilike` asks for it explicitly, which is
- * what keeps search behaving as it does today instead of silently becoming
- * case-sensitive with no error and no failing test (issue #23).
- */
-function containsPattern(value: string): string {
-  return `%${value.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
 }
 
 export type GalleryFilters = {
@@ -113,8 +105,7 @@ export async function listGallery(ownerId: string, filters: GalleryFilters, hand
   else if (excludeFoldered) conditions.push(sql`${file.folderId} IS NULL`);
 
   if (search) {
-    const pattern = containsPattern(search);
-    conditions.push(or(ilike(file.title, pattern), ilike(file.tags, pattern)));
+    conditions.push(or(containsInsensitive(file.title, search), containsInsensitive(file.tags, search)));
   }
   if (startDate) conditions.push(gte(file.createdAt, new Date(startDate)));
   if (endDate) conditions.push(lte(file.createdAt, new Date(endDate)));
@@ -133,7 +124,7 @@ export async function listGallery(ownerId: string, filters: GalleryFilters, hand
 
   const tagList = (tags ?? []).map((tag) => tag.trim()).filter(Boolean);
   if (tagList.length > 0) {
-    const anyTag = or(...tagList.map((tag) => ilike(file.tags, containsPattern(tag))));
+    const anyTag = or(...tagList.map((tag) => containsInsensitive(file.tags, tag)));
     const negated = tagsOperator === 'is not' || tagsOperator === 'none of';
     conditions.push(negated ? not(anyTag as SQL) : anyTag);
   }

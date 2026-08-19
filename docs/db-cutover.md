@@ -78,10 +78,10 @@ Both verifications exit non-zero on any unreconciled difference. **Do not
 continue past a non-zero exit.**
 
 ```sh
-# 5. Ship it.
+# 4. Ship it.
 git checkout main && git merge feat/drizzle-postgres
 
-# 6. Point the application at Postgres and start it.
+# 5. Point the application at Postgres and start it.
 #    DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/lunashare
 docker compose up -d app
 ```
@@ -98,8 +98,15 @@ Manual, in this order, because each depends on the one before:
 
 ## Rollback
 
-At any step: redeploy the previous image with `DATABASE_URL` pointed back at
-MariaDB. That is the whole procedure.
+At any step: redeploy the previous image — the last one built with Prisma — with
+`DATABASE_URL` pointed back at MariaDB. That is the whole procedure.
+
+**This has not been rehearsed, and cannot be from here.** It is sound *by
+construction* rather than by demonstration: the source is never written to, so
+there is nothing to undo. But executing it needs a deploy, so treat "rollback
+works" as an argument you have checked rather than a result you have seen. If
+you want it demonstrated, the cheap version is to redeploy the previous image
+against MariaDB once, before cutting over, and confirm the app still serves.
 
 It works because **the source is never modified** — and here it is not even
 live, it is a frozen dump plus a retired instance. There is nothing to roll back

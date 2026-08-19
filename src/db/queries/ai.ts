@@ -1,5 +1,4 @@
 import { and, count, desc, eq, ilike, inArray, isNotNull, isNull, lt, ne, or } from 'drizzle-orm';
-import { ensureStorageQuotaAvailable } from '@/libs/storage-quota';
 import { type AuditHandle, writeAuditLog, writeAuditLogs } from '../audit';
 import { db, type Tx } from '../client';
 import { cachedImage } from '../schema/admin';
@@ -17,6 +16,7 @@ import {
 } from '../schema/ai';
 import { file, fileMetadata } from '../schema/files';
 import type { JsonValue } from '../schema/json';
+import { ensureStorageQuotaAvailable } from './storage';
 
 /**
  * Query module for AI generation, templates, model configuration and presets

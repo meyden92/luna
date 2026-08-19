@@ -1,6 +1,5 @@
 import type { Column, SQL } from 'drizzle-orm';
 import { and, avg, count, desc, eq, gt, gte, ilike, inArray, isNotNull, isNull, lt, ne, notInArray, or, sql } from 'drizzle-orm';
-import { ensureStorageQuotaAvailable } from '@/libs/storage-quota';
 import { type AuditHandle, writeAuditLog } from '../audit';
 import { db } from '../client';
 import { cachedImage } from '../schema/admin';
@@ -10,6 +9,7 @@ import { session, user } from '../schema/auth';
 import { task, taskExecution } from '../schema/automation';
 import { file, fileMetadata, fileRendition } from '../schema/files';
 import type { JsonValue } from '../schema/json';
+import { ensureStorageQuotaAvailable } from './storage';
 
 /**
  * Query module for the scheduled-task system (issues #15, #39): the loader, the

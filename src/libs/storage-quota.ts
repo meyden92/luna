@@ -1,7 +1,11 @@
-import type { Tx } from '@/db/client';
-import { storageUsage } from '@/db/queries/files';
-import { lockUserStorageQuota } from '@/db/queries/storage';
-
+/**
+ * Storage-quota vocabulary: constants, the error type, and pure conversions.
+ *
+ * This module MUST stay free of database imports. Admin routes and components
+ * import `MAX_STORAGE_QUOTA_MIB` and the byte conversions, so anything reachable
+ * from here is reachable from the client bundle. Admission control itself reads
+ * the database and therefore lives in `src/db/queries/storage.ts`.
+ */
 export const DEFAULT_STORAGE_QUOTA_MIB = 2048;
 export const BYTES_PER_MIB = 1024 * 1024;
 export const MAX_STORAGE_QUOTA_MIB = 2_147_483_647;
@@ -40,18 +44,7 @@ export function storageQuotaExceededPayload(error: StorageQuotaExceededError) {
   };
 }
 
-/**
- * Admission control for an upload. Must run inside a transaction: the quota read
- * takes a row lock so two concurrent uploads cannot both see the same free space
- * and both fit, and a lock outside a transaction is released immediately.
- */
-export async function ensureStorageQuotaAvailable(tx: Tx, userId: string, incomingBytes: number): Promise<StorageQuotaDetails> {
-  const quotaMiB = await lockUserStorageQuota(userId, tx);
-  const { totalBytes: usedBytes } = await storageUsage(userId, tx);
-  return evaluateQuota(quotaMiB, usedBytes, incomingBytes);
-}
-
-function evaluateQuota(quotaMiB: number | null, usedBytes: number, incomingBytes: number): StorageQuotaDetails {
+export function evaluateQuota(quotaMiB: number | null, usedBytes: number, incomingBytes: number): StorageQuotaDetails {
   const quotaBytes = storageQuotaMiBToBytes(quotaMiB);
   const remainingBytes = Math.max(quotaBytes - usedBytes, 0);
   const details = { usedBytes, quotaBytes, remainingBytes, attemptedBytes: incomingBytes };

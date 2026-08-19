@@ -3,7 +3,9 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config as loadEnv } from 'dotenv';
-import { disconnectTestPrisma, getTestPrisma, SESSION_COOKIE_NAME, TEST_ADMIN_EMAIL, TEST_EMAIL_DOMAIN, TEST_USER_EMAIL } from './utils/db';
+import { eq } from 'drizzle-orm';
+import { session, user } from '../../src/db/schema';
+import { disconnectTestDb, getTestDb, SESSION_COOKIE_NAME, TEST_ADMIN_EMAIL, TEST_EMAIL_DOMAIN, TEST_USER_EMAIL } from './utils/db';
 import { signSessionCookie } from './utils/sign-cookie';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -15,25 +17,24 @@ const SESSION_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 type StoredSession = { storagePath: string; cookieValue: string };
 
 async function ensureUser(email: string, name: string, isSuperAdmin: boolean): Promise<string> {
-  const prisma = getTestPrisma();
+  const db = getTestDb();
   const id = `e2e-${email.split('@')[0]}`;
-  await prisma.user.upsert({
-    where: { email },
-    update: { name, isSuperAdmin, active: true, banned: false, isDeleted: false },
-    create: {
-      id,
-      email,
-      name,
-      emailVerified: true,
-      active: true,
-      isSuperAdmin,
-    },
-  });
-  return id;
+  // Emails are stored lower-cased (issue #23) — seed through the same rule the
+  // application uses, or the fixture user is invisible to a normalised lookup.
+  const normalisedEmail = email.toLowerCase();
+  const [row] = await db
+    .insert(user)
+    .values({ id, email: normalisedEmail, name, emailVerified: true, active: true, isSuperAdmin })
+    .onConflictDoUpdate({
+      target: user.email,
+      set: { name, isSuperAdmin, active: true, banned: false, isDeleted: false, updatedAt: new Date() },
+    })
+    .returning({ id: user.id });
+  return row?.id ?? id;
 }
 
 async function createSessionForUser(userId: string, baseURL: URL): Promise<StoredSession> {
-  const prisma = getTestPrisma();
+  const db = getTestDb();
   const secret = process.env.BETTER_AUTH_SECRET;
   if (!secret) {
     throw new Error('BETTER_AUTH_SECRET is not set — cannot mint Playwright session cookies.');
@@ -43,16 +44,14 @@ async function createSessionForUser(userId: string, baseURL: URL): Promise<Store
   const sessionId = `e2e-session-${randomBytes(12).toString('hex')}`;
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
 
-  await prisma.session.deleteMany({ where: { userId } });
-  await prisma.session.create({
-    data: {
-      id: sessionId,
-      userId,
-      token,
-      expiresAt,
-      ipAddress: '127.0.0.1',
-      userAgent: 'playwright-e2e',
-    },
+  await db.delete(session).where(eq(session.userId, userId));
+  await db.insert(session).values({
+    id: sessionId,
+    userId,
+    token,
+    expiresAt,
+    ipAddress: '127.0.0.1',
+    userAgent: 'playwright-e2e',
   });
 
   const cookieValue = signSessionCookie(token, secret);
@@ -96,5 +95,5 @@ export default async function globalSetup(): Promise<void> {
   process.env.E2E_ADMIN_STORAGE = adminSession.storagePath;
   process.env.E2E_TEST_EMAIL_DOMAIN = TEST_EMAIL_DOMAIN;
 
-  await disconnectTestPrisma();
+  await disconnectTestDb();
 }

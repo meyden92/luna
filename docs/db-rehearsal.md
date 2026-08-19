@@ -46,6 +46,7 @@ bun run db:rehearse
 | Step | Script | What it proves |
 |---|---|---|
 | `db:push` | drizzle-kit | The Drizzle schema applies to Postgres |
+| `db:migrate` | drizzle-kit | Applies the versioned migrations in `./drizzle` — this is what production uses; `db:push` is dev-only |
 | — | `scripts/db/transform.ts` | Rows copy across, parent-first, through the Drizzle schema |
 | `db:verify` | `scripts/db/verify-schema.ts` | The applied schema matches the **source DDL** |
 | `db:verify-data` | `scripts/db/verify-data.ts` | Row counts, FK integrity, column names and collation |

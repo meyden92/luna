@@ -58,10 +58,15 @@ docker compose -f docker-compose.dev.yml up -d --wait mariadb
 docker exec lunashare-mariadb-scratch sh -c \
   'mariadb -uroot -plunashare lunashare < /dump/lunashare-dump.sql'
 
-# 2. Transform into production Postgres. DATABASE_URL points at the NEW Postgres;
-#    the transform reads MariaDB over REHEARSAL_MARIADB_* and only ever writes to
-#    Postgres. It truncates its target tables first, so re-running is safe.
-bun run db:push
+# 2. Create the schema, then transform into production Postgres. DATABASE_URL
+#    points at the NEW Postgres; the transform reads MariaDB over
+#    REHEARSAL_MARIADB_* and only ever writes to Postgres. It truncates its
+#    target tables first, so re-running is safe.
+#
+#    db:migrate applies the versioned migrations in ./drizzle and records what it
+#    applied. Use it here, NOT db:push -- push diffs the live schema and is for
+#    the disposable dev database only.
+bun run db:migrate
 bun scripts/db/transform.ts
 
 # 3. Verify before letting any traffic near it.

@@ -1,10 +1,10 @@
 import { and, eq } from 'drizzle-orm';
-import { ensureStorageQuotaAvailable } from '@/libs/storage-quota';
 import { type AuditHandle, writeAuditLog } from '../audit';
 import { db } from '../client';
 import { file, fileMetadata, folder } from '../schema/files';
 import type { JsonValue } from '../schema/json';
 import { normaliseFileHashes } from './files';
+import { ensureStorageQuotaAvailable } from './storage';
 
 /**
  * Query module for the two upload paths — the web uploader and ShareX (issue

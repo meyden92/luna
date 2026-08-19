@@ -9,19 +9,10 @@ COPY package.json bun.lock ./
 RUN --mount=type=cache,id=bun,target=/root/.bun/install/cache \
     bun install --frozen-lockfile
 
-COPY prisma ./prisma
-COPY prisma.config.ts ./prisma.config.ts
-# prisma.config.ts resolves DATABASE_URL eagerly and `prisma generate` would
-# fail without it. Generation only emits client code and never connects, so a
-# placeholder is sufficient here; the real URL is supplied at runtime.
-RUN DATABASE_URL="mysql://build:build@localhost:3306/build" bunx prisma generate
-
 # --- build ------------------------------------------------------------------
 FROM base AS builder
 
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/.prisma ./.prisma
-COPY --from=deps /app/prisma ./prisma
 COPY . .
 
 # No deployment URLs here on purpose: CDN_URL and PUBLIC_BASE_URL are read from
@@ -44,14 +35,14 @@ ARG BUILD_TIME=unknown
 ENV BUILD_COMMIT=$BUILD_COMMIT
 ENV BUILD_TIME=$BUILD_TIME
 
-# `sharp` and the Prisma MariaDB adapter load native code at runtime.
+# `sharp` loads native code at runtime. There is no code-generation step any
+# more: the Drizzle schema is ordinary TypeScript, so the build no longer needs
+# a database URL to produce a client (issue #46).
 RUN apk add --no-cache libc6-compat openssl vips
 
 # The oven/bun image ships a non-root `bun` user (uid 1000); reuse it rather
 # than creating another one.
 COPY --from=builder --chown=bun:bun /app/.output ./.output
-COPY --from=builder --chown=bun:bun /app/prisma ./prisma
-COPY --from=builder --chown=bun:bun /app/.prisma ./.prisma
 COPY --from=builder --chown=bun:bun /app/node_modules ./node_modules
 COPY --from=builder --chown=bun:bun /app/package.json ./package.json
 

@@ -1,2 +1,0 @@
-ALTER TABLE `user`
-  ADD COLUMN `storage_quota_mib` INTEGER NOT NULL DEFAULT 2048;

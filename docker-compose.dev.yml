@@ -1,0 +1,36 @@
+# Local development database only. Disposable — safe to destroy and recreate.
+#
+# This file is deliberately separate from docker-compose.yml, which is the
+# deployment file (it pulls the published image and restarts unless stopped).
+# Nothing here should ever run in production.
+#
+#   docker compose -f docker-compose.dev.yml up -d
+#   docker compose -f docker-compose.dev.yml down -v   # -v also drops the data
+#
+# Then in your local .env:
+#   DATABASE_URL=postgresql://lunashare:lunashare@127.0.0.1:5432/lunashare
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: lunashare-postgres-dev
+    environment:
+      POSTGRES_USER: lunashare
+      POSTGRES_PASSWORD: lunashare
+      POSTGRES_DB: lunashare
+      # The migration assumes UTC everywhere (see issue #23).
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      - "5432:5432"
+    volumes:
+      # Postgres 18+ wants the mount at /var/lib/postgresql, not .../data —
+      # it places the cluster in a major-version subdirectory so pg_upgrade works.
+      - lunashare-pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lunashare -d lunashare"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  lunashare-pgdata:

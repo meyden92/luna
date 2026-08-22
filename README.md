@@ -2,12 +2,12 @@
 
 File sharing and media platform built on TanStack Start.
 
-**Stack:** TanStack Start (React 19, Vite 8, Nitro 3) · Prisma 7 + MariaDB · Better-Auth · Tailwind CSS 4 + shadcn/ui · Biome · Bun
+**Stack:** TanStack Start (React 19, Vite 8, Nitro 3) · Drizzle + PostgreSQL · Better-Auth · Tailwind CSS 4 + shadcn/ui · Biome · Bun
 
 ## Requirements
 
 - [Bun](https://bun.sh) ≥ 1.2 — runtime, package manager and script runner
-- MariaDB (or via `docker-compose`)
+- PostgreSQL 18 (or via `docker-compose.dev.yml`)
 - An S3-compatible object store
 
 ```bash
@@ -20,14 +20,16 @@ curl -fsSL https://bun.sh/install | bash
 # 1. install dependencies
 bun install
 
-# 2. configure environment
+# 2. start the local database
+docker compose -f docker-compose.dev.yml up -d --wait
+
+# 3. configure environment
 cp .env.sample .env   # then fill in the values
 
-# 3. generate the Prisma client and apply migrations
-bun run db:generate
+# 4. apply migrations
 bun run db:migrate
 
-# 4. start the dev server on http://localhost:3000
+# 5. start the dev server on http://localhost:3000
 bun run dev
 ```
 
@@ -46,8 +48,10 @@ or malformed variable fails loudly with the offending key named.
 | `bun run format` | Biome check + write |
 | `bun run check-types` | Regenerate routes, then `tsc --noEmit` |
 | `bun run generate:routes` | Regenerate the TanStack Router route tree |
-| `bun run db:generate` | `prisma generate` |
-| `bun run db:migrate` | `prisma migrate deploy` |
+| `bun run db:generate` | Generate a migration from the Drizzle schema |
+| `bun run db:migrate` | Apply pending migrations |
+| `bun run db:push` | Push the schema straight to the database (dev only) |
+| `bun run db:audit-coverage` | Static audit-coverage report — see [`docs/db-verification.md`](docs/db-verification.md) |
 | `bun test` | Unit tests (scoped to `src/` — see `bunfig.toml`) |
 | `bun run test:e2e` | Playwright end-to-end suite |
 
@@ -75,7 +79,7 @@ at your own infrastructure with environment variables alone — no rebuild:
 
 ```bash
 docker run -p 3000:3000 \
-  -e DATABASE_URL="mysql://user:pass@db:3306/lunashare" \
+  -e DATABASE_URL="postgresql://user:pass@db:5432/lunashare" \
   -e CDN_URL="https://cdn.yourdomain.com" \
   -e BETTER_AUTH_SECRET="..." \
   ghcr.io/meyden92/luna:latest

@@ -1,7 +1,7 @@
 # Database verification
 
-What the Drizzle migration (epic #29) proves at runtime, how to run it, and — the
-part that matters most — what it deliberately does **not** prove.
+What the database layer proves at runtime, how to run it, and — the part that
+matters most — what it deliberately does **not** prove.
 
 Two classes of defect survive a green type check, a clean schema diff and a
 passing test suite, and both were the reason for issue #45:
@@ -30,12 +30,12 @@ unset, so `bun test` still runs for anyone without a database. They import
 `../client` lazily because it opens a connection pool at module load, which a
 static import would do before `skipIf` had a chance to skip anything.
 
-The suite runs against the **development Postgres holding the real migrated
+The suite runs against the **development Postgres holding a copy of the real
 production dataset** (4 users, 4,230 files, 24 templates, 92 cached images, 49
 snippets, an empty `audit_log` and an empty `task_execution`), not against
-fixtures. Fixtures cannot have the awkward historical values the transform had to
-handle. Each run creates its own rows under a per-run id, tears all of them down
-in `afterAll`, and asserts `audit_log` returns to the exact count it started at.
+fixtures. Fixtures cannot have the awkward historical values real data carries.
+Each run creates its own rows under a per-run id, tears all of them down in
+`afterAll`, and asserts `audit_log` returns to the exact count it started at.
 
 `audit-coverage.test.ts` prints one `console.error` from the audit layer. That is
 deliberate: the savepoint test makes an audit INSERT genuinely fail, and the
@@ -135,10 +135,10 @@ Covered here:
   nothing.
 - **API token lookup.** A key created in upper case is stored lower case, and
   `validateTokenKey` still authenticates when the client presents it upper case.
-- **The migrated rows themselves.** `user.email`, `token.key`, `file.sha256`,
+- **The stored rows themselves.** `user.email`, `token.key`, `file.sha256`,
   `file.md5`, `file.phash` and `denylist_entry.hash` are asserted to hold no
   value that differs from its own `lower()`. This is the half a write-path fix
-  cannot reach: history has to have been normalised too, and this checks the real
+  cannot reach: history has to be normalised too, and this checks the real
   dataset rather than a fixture.
 - **Search filters** across files (`listGallery`), users (`listAdminUsersPage`),
   the audit trail (`listAuditLogs`, on both `model` and `action`, which hold
@@ -221,8 +221,8 @@ fixture rather than the access path.
   and `md5` halves do, and those are covered.
 - **Hash-shaped columns nothing compares across a case boundary**:
   `ocr_result.fileHash`, `cached_image.hash`, `file_rendition.paramHash` and
-  `view_event.visitorHash`. They are excluded from the transform's `LOWERCASED`
-  set on purpose, listed in `scripts/db/transform-tables.ts` with the reasoning.
+  `view_event.visitorHash`. Each is written and read in one canonical case by
+  the code that produces it, so the value never crosses a case boundary.
   `view_event.visitorHash` in particular is only ever produced by
   `createHmac(...).digest('hex')` on both sides, so no case boundary exists.
 - **Fixed vocabularies with no case boundary**: `rbac_group.key`, `user.role`,
@@ -238,9 +238,9 @@ fixture rather than the access path.
   `ensureSystemGroup`'s `onConflictDoNothing` loser path, not `claimFormShareView`'s
   row lock, not the storage-quota admission check. Those are single-run tests
   against a single connection.
-- **Audit trail history.** Production's `audit_log` is deliberately not migrated
-  (#24). The table starts empty and fills from the first audited write after
-  cutover, so there is no historical audit data to verify.
+- **Audit trail history.** Production's pre-cutover `audit_log` was deliberately
+  never carried across (#24). The table started empty and fills from the first
+  audited write onwards, so there is no historical audit data to verify.
 - **Plan stability over time.** The `EXPLAIN` assertions are a snapshot against
   the current statistics of the current dataset. They will catch a query that
   loses its index; they will not catch a plan that degrades only at a data volume

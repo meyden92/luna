@@ -1,6 +1,6 @@
 # E2E Tests (Playwright)
 
-End-to-end tests for LunaShare. Run against the real TanStack Start app and a real MariaDB instance.
+End-to-end tests for LunaShare. Run against the real TanStack Start app and a real PostgreSQL instance.
 
 ## Quickstart
 
@@ -46,7 +46,7 @@ tests/e2e/
 │   ├── auth.ts             # authenticatedPage, adminPage
 │   └── locale.ts           # setLocale(context, 'en' | 'de')
 ├── utils/
-│   ├── db.ts               # Prisma client + test constants
+│   ├── db.ts               # Drizzle seeding handle + test constants
 │   └── sign-cookie.ts      # HMAC signing matching better-call/setSignedCookie
 ├── public/                 # tests for unauthenticated routes
 ├── auth/                   # tests for /login + auth gating
@@ -84,7 +84,7 @@ test('dashboard loads', async ({ authenticatedPage }) => {
 
 ## Required env vars
 
-- `DATABASE_URL` — MariaDB connection (same as the dev app uses).
+- `DATABASE_URL` — PostgreSQL connection (same as the dev app uses).
 - `BETTER_AUTH_SECRET` — must match the value the running app uses; otherwise the signed cookie will be rejected by `auth.api.getSession`.
 
 Optional:

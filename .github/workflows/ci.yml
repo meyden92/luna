@@ -35,12 +35,11 @@ jobs:
 
       # DATABASE_URL is deliberately unset here. The database-backed suites
       # (audit coverage, collation, and the denylist fail-open regression) assert
-      # against a *seeded* database, not merely a schema — and the only seed is
-      # the production dump, which is gitignored and holds cleartext credentials
-      # (issue #27). They detect the missing URL and skip themselves rather than
-      # failing, so this job still catches everything that does not need a
-      # database. Run them locally against the dev Postgres, or as part of
-      # `bun run db:rehearse` — see docs/db-verification.md.
+      # against a *seeded* database, not merely a schema, and CI has no seeded
+      # database to point them at. They detect the missing URL and skip
+      # themselves rather than failing, so this job still catches everything
+      # that does not need a database. Run them locally against the dev
+      # Postgres — see docs/db-verification.md.
       #
       # bunfig.toml scopes `bun test` to src/; the Playwright suite runs
       # separately via `bun run test:e2e`.

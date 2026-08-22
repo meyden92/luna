@@ -1,10 +1,10 @@
-# Local development database only. Disposable — safe to destroy and recreate.
+# Local development database. Disposable — safe to destroy and recreate.
 #
 # This file is deliberately separate from docker-compose.yml, which is the
 # deployment file (it pulls the published image and restarts unless stopped).
 # Nothing here should ever run in production.
 #
-#   docker compose -f docker-compose.dev.yml up -d
+#   docker compose -f docker-compose.dev.yml up -d --wait
 #   docker compose -f docker-compose.dev.yml down -v   # -v also drops the data
 #
 # Then in your local .env:
@@ -17,7 +17,7 @@ services:
       POSTGRES_USER: lunashare
       POSTGRES_PASSWORD: lunashare
       POSTGRES_DB: lunashare
-      # The migration assumes UTC everywhere (see issue #23).
+      # Timestamps are stored as timestamptz with the cluster pinned to UTC.
       TZ: UTC
       PGTZ: UTC
     ports:
@@ -32,36 +32,5 @@ services:
       timeout: 5s
       retries: 10
 
-  # Scratch source database for the migration rehearsal (issue #32). The
-  # production dump is loaded in here and copied *out of* into Postgres; nothing
-  # is ever migrated out of the real MariaDB, which is what makes rollback a
-  # DATABASE_URL flip against an untouched source (issue #24).
-  #
-  # Pinned to 11.8 to match the source server (11.8.6). Port 3307 keeps it clear
-  # of any MySQL already listening locally.
-  #
-  #   docker compose -f docker-compose.dev.yml up -d mariadb
-  #   bun run db:rehearse
-  mariadb:
-    image: mariadb:11.8
-    container_name: lunashare-mariadb-scratch
-    environment:
-      MARIADB_ROOT_PASSWORD: lunashare
-      MARIADB_DATABASE: lunashare
-      TZ: UTC
-    ports:
-      - "3307:3306"
-    volumes:
-      # The dump is gitignored and holds cleartext credentials (issue #27) —
-      # mounted read-only so a rehearsal can never write back to it.
-      - ./.private:/dump:ro
-      - lunashare-mariadb-scratch:/var/lib/mysql
-    healthcheck:
-      test: ["CMD-SHELL", "healthcheck.sh --connect --innodb_initialized"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-
 volumes:
   lunashare-pgdata:
-  lunashare-mariadb-scratch:

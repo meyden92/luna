@@ -13,7 +13,6 @@
       "!!**/.tanstack",
       "!**/*.d.ts",
       "!!**/.agents",
-      "!!**/.prisma",
       "!!**/.claude",
       "!!**/playwright-report",
       "!!**/test-results",

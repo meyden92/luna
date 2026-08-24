@@ -66,7 +66,10 @@ test.describe('Credentials', () => {
     await adminPage.getByLabel('Display name').fill(created.name);
     await adminPage.getByLabel('Email').fill(created.email);
     await adminPage.getByLabel('Initial password').fill(created.password);
-    await adminPage.getByRole('button', { name: /^create user$/i }).last().click();
+    await adminPage
+      .getByRole('button', { name: /^create user$/i })
+      .last()
+      .click();
 
     await expect(adminPage.getByText(new RegExp(`can now sign in as "${created.username}"`, 'i'))).toBeVisible();
 
@@ -109,7 +112,10 @@ test.describe('Credentials', () => {
     await adminPage.getByLabel('Display name').fill(created.name);
     await adminPage.getByLabel('Email').fill(created.email);
     await adminPage.getByLabel('Initial password').fill(created.password);
-    await adminPage.getByRole('button', { name: /^create user$/i }).last().click();
+    await adminPage
+      .getByRole('button', { name: /^create user$/i })
+      .last()
+      .click();
     await expect(adminPage.getByText(/can now sign in as/i)).toBeVisible();
 
     const context = await browser.newContext();

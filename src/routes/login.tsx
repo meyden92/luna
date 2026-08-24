@@ -1,11 +1,23 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { Loader2, LogIn } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Brandmark } from '@/components/landing/Brandmark';
 import { NightBandBackdrop } from '@/components/landing/NightBandBackdrop';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  type FormConfigWithSchema,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormSubscribe,
+  FormWithSchema,
+} from '@/components/ui/tanstack-form';
 import { authClient } from '@/libs/auth/auth-client';
+import { signInSchema } from '@/schemas/credentials-schema';
 
 type LoginSearch = {
   redirect?: string;
@@ -28,26 +40,29 @@ export const Route = createFileRoute('/login')({
 
 function LoginPage() {
   const search = Route.useSearch();
-  const [isLoading, setIsLoading] = useState(false);
   const callbackURL = safeRedirectPath(search.redirect);
 
-  const loginWithDiscord = async () => {
-    try {
-      setIsLoading(true);
-      const result = await authClient.signIn.social({
-        provider: 'discord',
-        callbackURL,
-        newUserCallbackURL: callbackURL,
-        scopes: ['email', 'identify', 'guilds'],
-      });
+  // Between first paint and hydration a submit is handled by the browser, not
+  // React: a native GET that navigates away and discards what was typed.
+  const [isReady, setIsReady] = useState(false);
+  useEffect(() => setIsReady(true), []);
+
+  const formConfig: FormConfigWithSchema<typeof signInSchema> = {
+    schema: signInSchema,
+    defaultValues: { username: '', password: '' },
+    onSubmit: async ({ username, password }) => {
+      const result = await authClient.signIn.username({ username, password });
+
+      // Never distinguish "no such Username" from "wrong password": on a public
+      // form a specific message is an account enumeration oracle.
       if (result.error) {
-        toast.error(result.error.message || result.error.statusText, { position: 'bottom-center' });
+        const message = result.error.status === 429 ? 'Too many attempts. Try again in a few minutes.' : 'Invalid username or password';
+        toast.error(message, { position: 'bottom-center' });
+        return;
       }
-    } catch {
-      toast.error('Something went wrong', { position: 'bottom-center' });
-    } finally {
-      setIsLoading(false);
-    }
+
+      window.location.href = callbackURL;
+    },
   };
 
   // Split screen from lg up: sign-in on the left, brand panel on the right.
@@ -61,18 +76,66 @@ function LoginPage() {
             <h1 className="font-serif text-[clamp(30px,3.2vw,42px)] font-normal leading-[1.05] tracking-[-0.02em] text-luna-ink">
               Welcome back to <span className="italic text-luna-accent-2 dark:text-luna-accent">LunaShare</span>
             </h1>
-            <p className="text-[14.5px] leading-[1.6] text-luna-ink-3">Login to your account using Discord</p>
+            <p className="text-[14.5px] leading-[1.6] text-luna-ink-3">Login to your account</p>
           </div>
 
-          <Button
-            onClick={loginWithDiscord}
-            disabled={isLoading}
-            className="w-full"
-            size="lg"
+          <FormWithSchema
+            config={formConfig}
+            className="space-y-5"
           >
-            {isLoading ? <Loader2 className="mr-2 size-4 animate-spin" /> : <LogIn className="mr-2 size-4" />}
-            Login with Discord
-          </Button>
+            <FormField
+              name="username"
+              renderFieldAction={({ value, onChange, onBlur }) => (
+                <FormItem>
+                  <FormLabel>Username</FormLabel>
+                  <FormControl>
+                    <Input
+                      autoComplete="username"
+                      autoFocus
+                      value={value ?? ''}
+                      onChange={(e) => onChange(e.target.value)}
+                      onBlur={onBlur}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              name="password"
+              renderFieldAction={({ value, onChange, onBlur }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      autoComplete="current-password"
+                      value={value ?? ''}
+                      onChange={(e) => onChange(e.target.value)}
+                      onBlur={onBlur}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormSubscribe
+              selectorAction={(state: any) => state.isSubmitting as boolean}
+              renderAction={(isSubmitting: boolean) => (
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || !isReady}
+                  className="w-full"
+                  size="lg"
+                >
+                  {isSubmitting || !isReady ? <Loader2 className="mr-2 size-4 animate-spin" /> : <LogIn className="mr-2 size-4" />}
+                  Login
+                </Button>
+              )}
+            />
+          </FormWithSchema>
         </div>
       </div>
 

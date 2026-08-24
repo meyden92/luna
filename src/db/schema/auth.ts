@@ -17,7 +17,12 @@ export const user = pgTable(
   {
     id: text('id').primaryKey(),
     email: text('email').notNull().unique(),
-    active: boolean('active').default(false).notNull(),
+    // `username` is the lower-cased form sign-in matches on; `displayUsername`
+    // keeps the casing the User typed. Nullable: a User has neither until
+    // credentials are set for them.
+    username: text('username').unique(),
+    displayUsername: text('display_username'),
+    active: boolean('active').default(true).notNull(),
     image: text('image'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     // Prisma applied @updatedAt at query level, not in the database — the

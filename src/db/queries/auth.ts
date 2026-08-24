@@ -1,10 +1,10 @@
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { and, count, desc, eq, gte, isNull, lte, or } from 'drizzle-orm';
+import { and, count, desc, eq, gte, isNull, lte, ne, or, sql } from 'drizzle-orm';
 import { type AuditHandle, writeAuditLog } from '../audit';
 import { db } from '../client';
 import * as schema from '../schema';
 import { templateGeneration } from '../schema/ai';
-import { token, user } from '../schema/auth';
+import { account, token, user } from '../schema/auth';
 import { file } from '../schema/files';
 
 /**
@@ -110,6 +110,8 @@ export async function getSettingsProfile(userId: string, handle: AuditHandle = d
  * for the same reason, so the two behave identically.
  */
 export type ProfileUpdate = {
+  /** The Avatar's CDN key, or null once removed. */
+  image?: string | null;
   receiveEmail?: boolean;
   isProfilePublic?: boolean;
   bio?: string | null;
@@ -312,4 +314,66 @@ export async function validateTokenKey(key: string, handle: AuditHandle = db): P
  */
 export async function auditUserCreated(created: { id: string } & Record<string, unknown>): Promise<void> {
   await writeAuditLog(db, { model: 'User', action: 'create', after: created, userId: created.id });
+}
+
+/** Resolves the argument `scripts/auth/set-credentials.ts` was given. */
+export async function findUserByEmailOrId(identifier: string, handle: AuditHandle = db) {
+  const [row] = await handle
+    .select({ id: user.id, email: user.email, name: user.name, username: user.username })
+    .from(user)
+    // Emails are stored lower-cased — match the write-side rule.
+    .where(identifier.includes('@') ? eq(user.email, identifier.toLowerCase()) : eq(user.id, identifier));
+  return row;
+}
+
+/**
+ * Whoever already holds this Username, if anyone but `exceptUserId`. Compared
+ * through `lower()` because Postgres `text` matches exactly and Usernames do
+ * not.
+ */
+export async function findUserIdByUsername(normalizedUsername: string, exceptUserId?: string, handle: AuditHandle = db) {
+  const matches = sql`lower(${user.username}) = ${normalizedUsername}`;
+  const [row] = await handle
+    .select({ id: user.id })
+    .from(user)
+    .where(exceptUserId ? and(matches, ne(user.id, exceptUserId)) : matches);
+  return row;
+}
+
+/** Whoever already holds this email. `user.email` is unique. */
+export async function findUserIdByEmail(normalizedEmail: string, handle: AuditHandle = db) {
+  const [row] = await handle.select({ id: user.id }).from(user).where(eq(user.email, normalizedEmail));
+  return row;
+}
+
+/** A User's password Account, if they have one yet. */
+export async function findCredentialAccount(userId: string, providerId: string, handle: AuditHandle = db) {
+  const [row] = await handle
+    .select({ id: account.id, updatedAt: account.updatedAt })
+    .from(account)
+    .where(and(eq(account.userId, userId), eq(account.providerId, providerId)));
+  return row;
+}
+
+/**
+ * Records a password change against `User`, because `Account` is deliberately
+ * unaudited. The marker field carries the meaning: summaries are derived from
+ * the diff, and the hash must never enter a snapshot.
+ */
+export async function auditCredentialChange(
+  userId: string,
+  previousChangeAt: Date | null,
+  actorId: string | null | undefined,
+  handle: AuditHandle = db,
+) {
+  const [row] = await handle.select().from(user).where(eq(user.id, userId));
+  if (!row) return;
+
+  await writeAuditLog(handle, {
+    model: 'User',
+    action: 'update',
+    before: { ...row, credentialsChangedAt: previousChangeAt },
+    after: { ...row, credentialsChangedAt: new Date() },
+    userId: actorId,
+  });
 }

@@ -1,7 +1,8 @@
 import { betterAuth } from 'better-auth';
-import { admin as adminPlugin } from 'better-auth/plugins';
+import { admin as adminPlugin, username as usernamePlugin } from 'better-auth/plugins';
 import { tanstackStartCookies } from 'better-auth/tanstack-start';
 import { auditUserCreated, authDatabaseAdapter } from '@/db/queries/auth';
+import { isValidUsername, PASSWORD_MIN_LENGTH, USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH } from '@/schemas/credentials-schema';
 import { env } from '../env';
 import { ensureUserHasDefaultGroup } from '../rbac/default-group';
 
@@ -15,7 +16,23 @@ import { ensureUserHasDefaultGroup } from '../rbac/default-group';
  * `src/db/schema/auth.ts` is hand-owned and Drizzle Kit migrates it.
  */
 export const auth = betterAuth({
-  plugins: [adminPlugin(), tanstackStartCookies()],
+  plugins: [
+    adminPlugin(),
+    usernamePlugin({
+      minUsernameLength: USERNAME_MIN_LENGTH,
+      maxUsernameLength: USERNAME_MAX_LENGTH,
+      usernameValidator: isValidUsername,
+    }),
+    tanstackStartCookies(),
+  ],
+  emailAndPassword: {
+    // Registration is closed — Users are created by an admin or by
+    // scripts/auth/set-credentials.ts — so the public sign-up endpoint, which
+    // is mounted either way, must refuse.
+    enabled: true,
+    disableSignUp: true,
+    minPasswordLength: PASSWORD_MIN_LENGTH,
+  },
   database: authDatabaseAdapter(),
   databaseHooks: {
     user: {
@@ -58,12 +75,16 @@ export const auth = betterAuth({
       ipAddressHeaders: ['cf-connecting-ip'], // or any other custom header
     },
   },
-  socialProviders: {
-    discord: {
-      clientId: env.DISCORD_CLIENT_ID,
-      clientSecret: env.DISCORD_CLIENT_SECRET,
-      prompt: 'consent',
-      scope: ['email', 'identify', 'guilds'],
+  // The rate-limit middleware in src/server/middleware cannot cover sign-in: it
+  // wraps TanStack server functions, and sign-in runs through Better-Auth's own
+  // request handler. This store is in-memory, so the window resets on deploy.
+  rateLimit: {
+    // The window is keyed on IP and path, and every request in the end-to-end
+    // suite shares one address, so an enabled limiter would throttle the suite.
+    enabled: env.NODE_ENV === 'production',
+    customRules: {
+      '/sign-in/username': { window: 60 * 15, max: 5 },
+      '/sign-in/email': { window: 60 * 15, max: 5 },
     },
   },
 });

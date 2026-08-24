@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { RefreshCw, Shield, Trash2 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { AccountCredentials } from '@/components/settings/account-credentials';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -132,9 +133,11 @@ function SettingsAccountPage() {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-medium">Account</h3>
-        <p className="text-sm text-muted-foreground">Manage your active sessions and sign out devices you no longer use.</p>
+        <p className="text-sm text-muted-foreground">Manage how you sign in, and the devices you are signed in on.</p>
       </div>
       <Separator />
+
+      <AccountCredentials />
 
       <Card>
         <CardHeader className="gap-3">

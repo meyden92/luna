@@ -37,7 +37,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useImpersonation } from '@/hooks/use-impersonation';
 import { authClient } from '@/libs/auth/auth-client';
 import { queryKeys } from '@/libs/query-keys';
-import { cn } from '@/libs/utils';
+import { cn, getAvatarUrl } from '@/libs/utils';
 
 interface NavigationProps extends React.ComponentProps<'nav'> {
   canAccessAdmin?: boolean;
@@ -240,7 +240,7 @@ export default function Navigation({ className, canAccessAdmin = false, onSignOu
               <DropdownMenuTrigger>
                 <Avatar className="h-10 w-10 border border-luna-line">
                   <AvatarImage
-                    src={resolvedUser?.image || undefined}
+                    src={getAvatarUrl(resolvedUser?.image) ?? undefined}
                     alt={resolvedUser?.name || 'User'}
                   />
                   <AvatarFallback className="bg-luna-accent-soft text-luna-accent-2">{resolvedUser?.name?.[0] || 'U'}</AvatarFallback>

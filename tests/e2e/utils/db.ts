@@ -6,6 +6,11 @@ export const TEST_USER_EMAIL = `e2e-user@${TEST_EMAIL_DOMAIN}`;
 export const TEST_ADMIN_EMAIL = `e2e-admin@${TEST_EMAIL_DOMAIN}`;
 export const SESSION_COOKIE_NAME = 'lunashare.session_token';
 
+/** Credentials for the seeded fixtures, used by the specs that sign in for real. */
+export const TEST_USER_USERNAME = 'e2euser';
+export const TEST_ADMIN_USERNAME = 'e2eadmin';
+export const TEST_PASSWORD = 'e2e-fixture-password';
+
 /**
  * Seeding handle for the Playwright suite.
  *

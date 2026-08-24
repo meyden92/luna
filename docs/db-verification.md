@@ -289,8 +289,16 @@ no migration can prove:
 bun run auth:set-credentials <your-email>
 ```
 
-Sign in with what it set. If that works against the rehearsal database, the
-production cutover is deploy → run the script → sign in.
+Sign in with what it set.
+
+Nothing applies migrations on start — not the image, not compose, not CI — so
+the production cutover is **deploy → migrate → set credentials → sign in**, and
+skipping the middle step leaves the new code querying the old schema:
+
+```sh
+docker compose exec app bun run db:migrate
+docker compose exec -it app bun run auth:set-credentials <your-email>
+```
 
 `user.id` is what everything hangs off; the Discord identifier lived only in
 `account.account_id` and was read by no application code. `file.owner_id` is

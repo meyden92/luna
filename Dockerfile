@@ -53,6 +53,12 @@ COPY --from=builder --chown=bun:bun /app/scripts ./scripts
 COPY --from=builder --chown=bun:bun /app/src ./src
 COPY --from=builder --chown=bun:bun /app/tsconfig.json ./tsconfig.json
 
+# Nothing applies migrations on start, so `db:migrate` has to be runnable in the
+# container. Without these the app boots against whatever schema it finds and
+# fails on the first query for a column it expects.
+COPY --from=builder --chown=bun:bun /app/drizzle ./drizzle
+COPY --from=builder --chown=bun:bun /app/drizzle.config.ts ./drizzle.config.ts
+
 USER bun
 
 EXPOSE 3000

@@ -3,14 +3,23 @@ import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import sharp from 'sharp';
 
 import { AVATAR_MAX_UPLOAD_BYTES, avatarTooLargeMessage } from '@/schemas/credentials-schema';
-import { env } from './env';
-import { s3Client } from './S3Helper';
 import { UserFacingError } from './user-facing-error';
 
 /**
  * An Avatar is a plain bucket object, never a `file` row: it stays out of the
  * file manager and off the owner's storage quota.
  */
+
+/**
+ * The bucket and its client are reached through this rather than imported,
+ * because importing them validates the whole environment at module load — which
+ * `normalizeAvatar`, a pure bytes-to-bytes function, has no need of and which
+ * would make its tests require a full set of secrets.
+ */
+async function storage() {
+  const [{ env }, { s3Client }] = await Promise.all([import('./env'), import('./S3Helper')]);
+  return { bucket: env.AWS_BUCKET_NAME, client: s3Client };
+}
 
 export const AVATAR_SIZE = 512;
 /** Refused before decoding, so a decompression bomb is never expanded. */
@@ -45,10 +54,12 @@ export async function normalizeAvatar(input: Buffer): Promise<Buffer> {
 export async function uploadAvatar(normalized: Buffer): Promise<string> {
   const key = `${AVATAR_PREFIX}/${randomBytes(16).toString('hex')}.webp`;
 
+  const { bucket, client } = await storage();
+
   try {
-    await s3Client.send(
+    await client.send(
       new PutObjectCommand({
-        Bucket: env.AWS_BUCKET_NAME,
+        Bucket: bucket,
         Key: key,
         Body: normalized,
         ContentType: 'image/webp',
@@ -77,7 +88,8 @@ export async function deleteAvatar(previous: string | null | undefined): Promise
   if (!key.startsWith(`${AVATAR_PREFIX}/`)) return;
 
   try {
-    await s3Client.send(new DeleteObjectCommand({ Bucket: env.AWS_BUCKET_NAME, Key: key }));
+    const { bucket, client } = await storage();
+    await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
   } catch (error) {
     console.error(`[Avatar] Failed to delete replaced avatar ${key}:`, error);
   }

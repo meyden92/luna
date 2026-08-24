@@ -46,6 +46,13 @@ COPY --from=builder --chown=bun:bun /app/.output ./.output
 COPY --from=builder --chown=bun:bun /app/node_modules ./node_modules
 COPY --from=builder --chown=bun:bun /app/package.json ./package.json
 
+# LunaShare sends no email, so `auth:set-credentials` is the only way back into
+# an instance nobody can sign in to. Bun runs the TypeScript directly; the
+# script reaches into `src/`, and tsconfig is what resolves the `@/` aliases.
+COPY --from=builder --chown=bun:bun /app/scripts ./scripts
+COPY --from=builder --chown=bun:bun /app/src ./src
+COPY --from=builder --chown=bun:bun /app/tsconfig.json ./tsconfig.json
+
 USER bun
 
 EXPOSE 3000

@@ -9,6 +9,18 @@ COPY package.json bun.lock ./
 RUN --mount=type=cache,id=bun,target=/root/.bun/install/cache \
     bun install --frozen-lockfile
 
+# --- production dependencies ------------------------------------------------
+# The runtime image only keeps node_modules for the maintenance scripts
+# (db:migrate, auth:set-credentials) — the Nitro server bundle in .output is
+# self-contained. A --production install keeps dev tooling (vite, playwright,
+# typescript, …) out of the image.
+FROM base AS prod-deps
+RUN apk add --no-cache libc6-compat openssl vips-dev
+
+COPY package.json bun.lock ./
+RUN --mount=type=cache,id=bun,target=/root/.bun/install/cache \
+    bun install --frozen-lockfile --production
+
 # --- build ------------------------------------------------------------------
 FROM base AS builder
 
@@ -43,7 +55,7 @@ RUN apk add --no-cache libc6-compat openssl vips
 # The oven/bun image ships a non-root `bun` user (uid 1000); reuse it rather
 # than creating another one.
 COPY --from=builder --chown=bun:bun /app/.output ./.output
-COPY --from=builder --chown=bun:bun /app/node_modules ./node_modules
+COPY --from=prod-deps --chown=bun:bun /app/node_modules ./node_modules
 COPY --from=builder --chown=bun:bun /app/package.json ./package.json
 
 # LunaShare sends no email, so `auth:set-credentials` is the only way back into

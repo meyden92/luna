@@ -18,10 +18,8 @@ import { resetUserPasswordSchema } from '@/schemas/credentials-schema';
 import { resetAdminUserPassword } from '@/server/fns/admin/users';
 
 /**
- * The administrator half of account recovery (issue #54). There is no reset
- * link to send, so a forgotten password ends here or at
- * `scripts/auth/set-credentials.ts`. Setting a password signs the User out
- * everywhere.
+ * The administrator half of account recovery: there is no reset link to send.
+ * Setting a password signs the User out everywhere.
  */
 export function ResetPasswordDialog({ userId, userName }: { userId: string; userName: string }) {
   const [open, setOpen] = useState(false);

@@ -57,9 +57,8 @@ async function ensureUser(email: string, name: string, username: string, isSuper
 }
 
 /**
- * Gives the fixture a password Account so the auth specs can sign in for real.
- * The hash comes from Better-Auth's own primitive, so it cannot drift from what
- * the application verifies against.
+ * Gives the fixture a password Account. The hash comes from Better-Auth's own
+ * primitive, so it cannot drift from what the application verifies against.
  */
 async function ensureCredentialAccount(userId: string): Promise<void> {
   const db = getTestDb();

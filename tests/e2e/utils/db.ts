@@ -6,13 +6,7 @@ export const TEST_USER_EMAIL = `e2e-user@${TEST_EMAIL_DOMAIN}`;
 export const TEST_ADMIN_EMAIL = `e2e-admin@${TEST_EMAIL_DOMAIN}`;
 export const SESSION_COOKIE_NAME = 'lunashare.session_token';
 
-/**
- * Credentials for the seeded fixtures (issue #54). Sign-in used to be
- * unautomatable — an OAuth consent screen cannot be driven from a browser — so
- * the suite forged session cookies instead. It still does for every suite that
- * is not about authentication, but the auth specs now drive the real form, and
- * that needs a Username and password on the fixtures.
- */
+/** Credentials for the seeded fixtures, used by the specs that sign in for real. */
 export const TEST_USER_USERNAME = 'e2euser';
 export const TEST_ADMIN_USERNAME = 'e2eadmin';
 export const TEST_PASSWORD = 'e2e-fixture-password';

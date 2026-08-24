@@ -17,11 +17,9 @@ export const user = pgTable(
   {
     id: text('id').primaryKey(),
     email: text('email').notNull().unique(),
-    // Better-Auth's username plugin owns both columns (#54). `username` is the
-    // normalised (lower-cased) form it matches on and indexes uniquely;
-    // `displayUsername` keeps the casing the User typed. Nullable because the
-    // plugin declares them optional — a User created before the Discord cutover
-    // has neither until credentials are set for it.
+    // `username` is the lower-cased form sign-in matches on; `displayUsername`
+    // keeps the casing the User typed. Nullable: a User has neither until
+    // credentials are set for them.
     username: text('username').unique(),
     displayUsername: text('display_username'),
     active: boolean('active').default(true).notNull(),

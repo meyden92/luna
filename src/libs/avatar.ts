@@ -8,14 +8,8 @@ import { s3Client } from './S3Helper';
 import { UserFacingError } from './user-facing-error';
 
 /**
- * Avatars (issue #54). An Avatar is a plain object in the bucket under a static
- * prefix, never a `file` row: it stays out of the file manager and off the
- * owner's storage quota. This mirrors how template preview images are handled
- * in `template-upload.ts` — random name, long cache header, best-effort delete
- * of the object it replaces.
- *
- * Every Avatar gets a fresh random name, so replacing one is visible
- * immediately and no cache ever has to be invalidated.
+ * An Avatar is a plain bucket object, never a `file` row: it stays out of the
+ * file manager and off the owner's storage quota.
  */
 
 export const AVATAR_SIZE = 512;
@@ -31,24 +25,18 @@ export class AvatarRejectedError extends UserFacingError {
   }
 }
 
-/**
- * Re-encodes an uploaded image into the one shape every Avatar has: a square
- * WebP of `AVATAR_SIZE`. Re-encoding is also what discards EXIF — including the
- * GPS coordinates a phone photograph carries — so nothing but pixels reaches
- * the CDN.
- */
+/** Re-encodes to a square WebP, which also discards EXIF, GPS included. */
 export async function normalizeAvatar(input: Buffer): Promise<Buffer> {
   if (input.byteLength > AVATAR_MAX_UPLOAD_BYTES) {
     throw new AvatarRejectedError(avatarTooLargeMessage());
   }
 
   try {
-    // `sharp` keeps no metadata unless asked, so the EXIF drop needs no step of
-    // its own. `cover` centres a non-square photo rather than distorting it.
+    // `cover` centres a non-square photo rather than distorting it.
     return await sharp(input).resize(AVATAR_SIZE, AVATAR_SIZE, { fit: 'cover', position: 'centre' }).webp({ quality: 82 }).toBuffer();
   } catch {
-    // sharp refuses anything it cannot decode, which is the content sniff —
-    // the browser-supplied MIME type is never trusted.
+    // Failure to decode is the content sniff; the browser-supplied MIME type is
+    // never trusted.
     throw new AvatarRejectedError('That file is not an image we can read');
   }
 }
@@ -71,10 +59,9 @@ export async function uploadAvatar(normalized: Buffer): Promise<string> {
 }
 
 /**
- * Removes the object an Avatar replaced. Best-effort by design: a User whose
- * new Avatar is already stored must not see an error because the old one could
- * not be cleaned up. Only objects under the Avatar prefix are touched, so a
- * stale Discord CDN URL left on a User is ignored rather than parsed.
+ * Removes the object an Avatar replaced, best-effort: a stored new Avatar must
+ * not fail because the old one could not be cleaned up. Anything outside the
+ * Avatar prefix is left alone.
  */
 export async function deleteAvatar(previous: string | null | undefined): Promise<void> {
   if (!previous) return;

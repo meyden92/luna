@@ -28,8 +28,7 @@ function payloadFor(err: unknown): { status: number; body: ErrorPayload; headers
   if (err instanceof ZodError) {
     return { status: 400, body: { error: 'Validation failed', code: 'VALIDATION_FAILED', details: err.issues } };
   }
-  // A rejected Avatar or a taken Username: the message is written for the
-  // person who typed it in, so it goes back verbatim (#54).
+  // The message is written for whoever typed the input, so it goes back as-is.
   if (err instanceof UserFacingError) {
     return { status: err.status, body: { error: err.message, code: 'VALIDATION_FAILED' } };
   }

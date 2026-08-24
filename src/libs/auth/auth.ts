@@ -26,9 +26,9 @@ export const auth = betterAuth({
     tanstackStartCookies(),
   ],
   emailAndPassword: {
-    // The credential Account is the only way a human signs in (#54). Sign-up is
-    // closed: Users are created by an admin or by scripts/auth/set-credentials.ts,
-    // so the public /sign-up/email endpoint must never accept a registration.
+    // Registration is closed — Users are created by an admin or by
+    // scripts/auth/set-credentials.ts — so the public sign-up endpoint, which
+    // is mounted either way, must refuse.
     enabled: true,
     disableSignUp: true,
     minPasswordLength: PASSWORD_MIN_LENGTH,
@@ -75,17 +75,12 @@ export const auth = betterAuth({
       ipAddressHeaders: ['cf-connecting-ip'], // or any other custom header
     },
   },
-  // A password form is guessable in a way an OAuth redirect never was (#54).
-  // The rate-limit middleware in src/server/middleware cannot cover this: it
+  // The rate-limit middleware in src/server/middleware cannot cover sign-in: it
   // wraps TanStack server functions, and sign-in runs through Better-Auth's own
-  // request handler. The default store is in-memory, so the window resets on
-  // deploy — accepted for a single-instance self-host.
+  // request handler. This store is in-memory, so the window resets on deploy.
   rateLimit: {
-    // Off outside production, which is Better-Auth's own posture: the window is
-    // per IP and per path, and every Playwright request shares one address, so
-    // an enabled limiter would throttle the end-to-end suite itself. The
-    // consequence is that the throttle is a production-only control with no
-    // automated coverage.
+    // The window is keyed on IP and path, and every request in the end-to-end
+    // suite shares one address, so an enabled limiter would throttle the suite.
     enabled: env.NODE_ENV === 'production',
     customRules: {
       '/sign-in/username': { window: 60 * 15, max: 5 },

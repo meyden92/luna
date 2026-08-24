@@ -21,9 +21,8 @@ import { createUserSchema } from '@/schemas/credentials-schema';
 import { createAdminUser } from '@/server/fns/admin/users';
 
 /**
- * Registration is closed (issue #54), so this dialog is the only way a User is
- * created through the app. The initial password is handed over out of band —
- * LunaShare sends no email — and the new User can change it from their profile.
+ * The only way a User is created through the app. The initial password is
+ * handed over out of band, since LunaShare sends no email.
  */
 export function CreateUserDialog() {
   const [open, setOpen] = useState(false);
@@ -140,10 +139,9 @@ export function CreateUserDialog() {
             />
 
             <FormSubscribe
-              // `isFieldsValidating` is the one that matters: the Username
-              // availability check is a field-level async validator, and a
-              // submit while it is in flight is silently dropped by the form.
-              // Disabling until it settles is what makes the button honest.
+              // The Username availability check is a field-level async
+              // validator, and the form silently drops a submit fired while one
+              // is in flight — hence `isFieldsValidating`.
               selectorAction={(state: any) => (state.isSubmitting || state.isValidating || state.isFieldsValidating) as boolean}
               renderAction={(isBusy: boolean) => (
                 <Button

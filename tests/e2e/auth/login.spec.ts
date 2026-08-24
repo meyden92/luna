@@ -3,16 +3,11 @@ import { TEST_PASSWORD, TEST_USER_USERNAME } from '../utils/db';
 import { signIn } from '../utils/sign-in';
 
 /**
- * Sign-in, through the real form (issue #54).
+ * Sign-in, through the real form. Every other suite starts from a forged
+ * session cookie instead, so this is the only place the door itself is tried.
  *
- * The suite could not test authentication at all until now: an OAuth consent
- * screen cannot be driven from a browser, so `global-setup` forged signed
- * session cookies to get past a door it had no way to open. A password form can
- * be driven, so this is where sign-in is actually exercised.
- *
- * The throttle on repeated attempts is deliberately not asserted here: the
- * limiter is keyed on IP and path, every request in this suite shares one
- * address, and an enabled limiter would throttle the suite itself.
+ * The throttle on repeated attempts is deliberately not asserted: the limiter is
+ * keyed on IP and path, and every request here shares one address.
  */
 
 test.describe('Login flow', () => {

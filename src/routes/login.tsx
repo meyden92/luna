@@ -42,10 +42,8 @@ function LoginPage() {
   const search = Route.useSearch();
   const callbackURL = safeRedirectPath(search.redirect);
 
-  // The page is server-rendered, so between first paint and hydration a submit
-  // is handled by the browser rather than by React — a native GET that navigates
-  // away and throws away what was typed. Keeping the button disabled until the
-  // client has taken over is the whole fix.
+  // Between first paint and hydration a submit is handled by the browser, not
+  // React: a native GET that navigates away and discards what was typed.
   const [isReady, setIsReady] = useState(false);
   useEffect(() => setIsReady(true), []);
 
@@ -55,10 +53,8 @@ function LoginPage() {
     onSubmit: async ({ username, password }) => {
       const result = await authClient.signIn.username({ username, password });
 
-      // Never distinguish "no such Username" from "wrong password": the login
-      // form is public, and a specific message turns it into an account
-      // enumeration oracle (#54). Better-Auth's own message is already generic;
-      // the rate-limit refusal is the one case worth passing through verbatim.
+      // Never distinguish "no such Username" from "wrong password": on a public
+      // form a specific message is an account enumeration oracle.
       if (result.error) {
         const message = result.error.status === 429 ? 'Too many attempts. Try again in a few minutes.' : 'Invalid username or password';
         toast.error(message, { position: 'bottom-center' });

@@ -2,23 +2,8 @@ import { UserFacingError } from '../user-facing-error';
 import { auth } from './auth';
 
 /**
- * Writing credential Accounts (issue #54).
- *
- * Better-Auth's admin plugin exposes `/admin/create-user` and
- * `/admin/set-user-password` over HTTP, but those endpoints authorise against
- * its own `user.role` column. LunaShare's authority is RBAC — `isSuperAdmin` or
- * membership of the admin group — so going through the HTTP endpoints would
- * introduce a second, disagreeing definition of "admin". These helpers use
- * Better-Auth's server context instead, and authorisation stays where it
- * already is: the `admin` middleware on the server functions that call them.
- *
- * Password hashing always comes from that same context, so the scheme can never
- * drift from what sign-in verifies against.
- *
- * Every read and every audited write lives in `db/queries/auth` — the Drizzle
- * handle does not leave `src/db/` (issue #15), and an audited write happens
- * inside its write function (issue #13). This module orchestrates; it does not
- * query.
+ * Writing credential Accounts. Callers must be authorised before they get here:
+ * nothing below checks who is asking.
  */
 
 /** A failure the caller can show to a human as-is. */
@@ -41,12 +26,8 @@ async function assertUsernameFree(normalized: string, exceptUserId?: string) {
 
 /**
  * Gives an existing User a Username and password, replacing whatever credential
- * Account they had. Used by the admin password reset and by
- * `scripts/auth/set-credentials.ts`.
- *
- * `actorId` is who is doing it. Omit it for the script, where there is no
- * request and therefore no actor — the audit layer records null rather than
- * guessing.
+ * Account they had. Omit `actorId` where there is no request behind the call;
+ * the audit entry then records no actor rather than guessing at one.
  */
 export async function setUserCredentials({
   userId,
@@ -83,9 +64,8 @@ export async function setUserCredentials({
       });
     }
 
-    // Anyone holding a session on the old password loses it. An admin resetting
-    // a password is either onboarding someone or responding to a compromise,
-    // and both want every existing session gone.
+    // A password reset answers either onboarding or a compromise, and both want
+    // every existing session gone.
     await ctx.internalAdapter.deleteUserSessions(userId);
 
     await auditCredentialChange(userId, existing?.updatedAt ?? null, actorId);
@@ -93,12 +73,9 @@ export async function setUserCredentials({
 }
 
 /**
- * Creates a User with a Username and password. Registration is closed, so this
- * is reachable only from the admin panel.
- *
- * Goes through Better-Auth's internal adapter, which runs the `user.create`
- * database hooks — that is what assigns the default RBAC group and writes the
- * creation to the audit log.
+ * Creates a User with a Username and password. Goes through the internal
+ * adapter so the `user.create` hooks fire, which is what assigns the default
+ * RBAC group and audits the creation.
  */
 export async function createUserWithCredentials({
   username,

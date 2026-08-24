@@ -6,25 +6,18 @@ import { clickUntil } from '../utils/hydration';
 import { signIn } from '../utils/sign-in';
 
 /**
- * Self-service credentials and Avatar (issue #54), through the real interface.
+ * Self-service credentials and Avatar, through the real interface.
  *
- * Every mutation here is either idempotent (the Avatar) or performed on a User
- * the test creates for itself. The shared fixtures' Usernames and passwords are
- * never changed: the sign-in specs depend on them, and Playwright runs files in
- * parallel.
- *
- * `global-teardown` removes anything at the fixture email domain, so the Users
- * created below clean themselves up.
+ * Every mutation is either idempotent or performed on a User the test creates
+ * for itself: the sign-in specs depend on the shared fixtures' credentials, and
+ * Playwright runs files in parallel.
  */
 
 const ACCOUNT_URL = '/settings/account';
 
 /**
- * Types a Username and waits for the availability check to answer.
- *
- * The check is a debounced async field validator, so a submit fired while it is
- * still in flight is dropped by the form. Waiting for the response is what
- * makes these tests deterministic rather than racing a timer.
+ * Types a Username and waits for the availability check to answer, which the
+ * form requires before it will accept a submit.
  */
 async function fillUsername(page: import('@playwright/test').Page, label: string, value: string) {
   const answered = page.waitForResponse((r) => r.url().includes('is-username-available'), { timeout: 15_000 }).catch(() => null);
@@ -53,8 +46,7 @@ test.describe('Avatar', () => {
     await page.getByTestId('avatar-input').setInputFiles({ name: 'avatar.png', mimeType: 'image/png', buffer: image });
 
     await expect(page.getByText(/avatar updated/i)).toBeVisible();
-    // Whatever went in, what comes back is the normalised WebP under the
-    // Avatar prefix — the file manager never sees it.
+    // Whatever went in, what comes back is the normalised WebP.
     await expect(page.locator('img[src*="static/avatar/"]').first()).toBeVisible();
   });
 

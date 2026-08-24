@@ -1,17 +1,12 @@
 /**
- * Set a User's Username and password from the command line (issue #54).
+ * Set a User's Username and password from the command line.
  *
  *   bun scripts/auth/set-credentials.ts <email-or-user-id>
  *
- * This is not cutover scaffolding. LunaShare sends no email, so there is no
- * reset link to fall back on: this script is the permanent answer to a locked
- * out administrator, and the only way in on a fresh instance that has no
- * credential Account yet.
- *
- * The hash is produced by Better-Auth's own context rather than by hand, so the
- * scheme can never drift from what sign-in verifies against. That is also why
- * this imports the real auth instance and therefore needs the app's full
- * environment — run it where the app runs.
+ * LunaShare sends no email, so this is the only account recovery there is, and
+ * the only way into an instance with no credential Account yet. It loads the
+ * real auth instance and so needs the app's full environment — run it where the
+ * app runs.
  */
 import { CredentialsError, setUserCredentials } from '../../src/libs/auth/credentials';
 import { PASSWORD_MIN_LENGTH, passwordSchema, usernameSchema } from '../../src/schemas/credentials-schema';
@@ -22,11 +17,8 @@ function fail(message: string): never {
 }
 
 /**
- * Input already read from stdin but not yet consumed by a prompt.
- *
- * A pipe delivers every line in one chunk, so answering one prompt from a chunk
- * and discarding the rest would lose every later answer — the difference
- * between a script only a human can drive and one a shell can drive too.
+ * Input read from stdin but not yet consumed. A pipe delivers every line in one
+ * chunk, so discarding the remainder after a prompt loses every later answer.
  */
 let pending = '';
 

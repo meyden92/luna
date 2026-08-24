@@ -247,12 +247,7 @@ export const updateUserGroups = createServerFn({ method: 'POST' })
     return { success: true, assignedGroupIds: finalGroupIds };
   });
 
-/**
- * Registration is closed (issue #54), so this is the only way a User comes into
- * existence through the app. Authorisation is RBAC's, via the `admin`
- * middleware — see `libs/auth/credentials` for why Better-Auth's own
- * `/admin/create-user` endpoint is deliberately not used.
- */
+/** The only way a User comes into existence through the app. */
 export const createAdminUser = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(createUserSchema)
@@ -262,8 +257,8 @@ export const createAdminUser = createServerFn({ method: 'POST' })
   });
 
 /**
- * The administrator half of account recovery. LunaShare sends no email, so a
- * forgotten password is resolved here or by `scripts/auth/set-credentials.ts`.
+ * The administrator half of account recovery. LunaShare sends no email, so the
+ * only other way back in is `scripts/auth/set-credentials.ts`.
  */
 export const resetAdminUserPassword = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'admin' }))

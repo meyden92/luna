@@ -5,16 +5,13 @@ import { userIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
 
 /**
- * Self-service Avatar management (issue #54).
- *
- * Username, display name and password changes are not here: Better-Auth's own
- * client endpoints already do those, and re-wrapping them would only add a
- * second place for the rules to drift. An Avatar needs `sharp` and the bucket,
- * so it has to be a server function.
+ * Self-service Avatar management. Username, display name and password changes
+ * have no server function: Better-Auth's client endpoints own those rules, and
+ * wrapping them would give the rules a second place to drift.
  */
 
 const avatarSchema = z.object({
-  /** The raw image, base64-encoded — server functions carry JSON, not multipart. */
+  /** Base64-encoded: server functions carry JSON, not multipart. */
   image: z.string().min(1),
 });
 
@@ -29,8 +26,7 @@ export const updateAvatar = createServerFn({ method: 'POST' })
 
     const userId = userIdFromCtx(context);
 
-    // Base64 inflates by 4/3, so the ceiling is checked on the decoded bytes —
-    // and before `normalizeAvatar` ever sees them, same as the raw path.
+    // Base64 inflates by 4/3, so the ceiling applies to the decoded bytes.
     const bytes = Buffer.from(data.image, 'base64');
     if (bytes.byteLength > AVATAR_MAX_UPLOAD_BYTES) {
       throw new AvatarRejectedError(avatarTooLargeMessage());
@@ -40,8 +36,7 @@ export const updateAvatar = createServerFn({ method: 'POST' })
     const key = await uploadAvatar(await normalizeAvatar(bytes));
 
     await updateUserProfile(userId, { image: key }, userId);
-    // Only after the new Avatar is stored and recorded, so a failed delete can
-    // never leave a User pointing at an object that is gone.
+    // Last, so a failed delete cannot leave a User pointing at a gone object.
     await deleteAvatar(previous);
 
     return { image: key };

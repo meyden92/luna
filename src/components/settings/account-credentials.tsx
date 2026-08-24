@@ -32,13 +32,8 @@ import {
 import { removeAvatar, updateAvatar } from '@/server/fns/account';
 
 /**
- * The self-service half of issue #54: a User's Avatar, display name, Username
- * and password.
- *
- * Username, display name and password go straight through Better-Auth's client,
- * which owns the rules for all three — wrapping them in server functions would
- * only create a second place for those rules to drift. The Avatar needs `sharp`
- * and the bucket, so it is the one operation with a server function behind it.
+ * A User's own Avatar, display name, Username and password. All but the Avatar
+ * go straight through Better-Auth's client, which owns those rules.
  */
 
 const identitySchema = z.object({
@@ -61,14 +56,13 @@ function AvatarCard({ image: initialImage, name }: { image: string | null; name:
   const [isReading, setIsReading] = useState(false);
   const queryClient = useQueryClient();
 
-  // The server function returns the new key, so this card does not have to wait
-  // for the session store to catch up before showing what was just uploaded.
+  // The server function returns the new key, so the preview need not wait for
+  // the session store to catch up.
   const [image, setImage] = useState(initialImage);
 
   const settled = (next: string | null) => {
     setImage(next);
-    // Everywhere else that renders the avatar — the header, chiefly — reads the
-    // session, so it still needs a refetch.
+    // The header renders the avatar from the session, which still needs it.
     void authClient.getSession({ query: { disableCookieCache: true } });
     void queryClient.invalidateQueries();
   };
@@ -77,8 +71,7 @@ function AvatarCard({ image: initialImage, name }: { image: string | null; name:
     successMessage: 'Avatar updated',
     onSuccess: (result) => settled(result.image),
   });
-  // `removeAvatar` takes no input, so it cannot go through useAppMutation,
-  // which always calls its server function with a `data` argument.
+  // useAppMutation always passes a `data` argument; `removeAvatar` takes none.
   const remove = useMutation({
     mutationFn: () => removeAvatar(),
     onSuccess: () => {
@@ -169,8 +162,7 @@ function IdentityCard({ name, username }: { name: string; username: string }) {
     onSubmit: async (values) => {
       const result = await authClient.updateUser({
         name: values.name,
-        // Better-Auth normalises the Username and keeps the typed casing as
-        // the display form; both columns are its own.
+        // Better-Auth normalises the Username and keeps the typed casing.
         username: values.username,
         displayUsername: values.username,
       });
@@ -238,9 +230,9 @@ function IdentityCard({ name, username }: { name: string; username: string }) {
           />
 
           <FormSubscribe
-            // The Username availability check is a field-level async validator,
-            // and a submit while it is in flight is silently dropped by the
-            // form — hence `isFieldsValidating`, not just `isValidating`.
+            // The Username availability check is a field-level async
+            // validator, and the form silently drops a submit fired while one
+            // is in flight — hence `isFieldsValidating`.
             selectorAction={(state: any) => (state.isSubmitting || state.isValidating || state.isFieldsValidating) as boolean}
             renderAction={(isBusy: boolean) => (
               <Button

@@ -4,16 +4,12 @@ import sharp from 'sharp';
 import { AVATAR_MAX_UPLOAD_BYTES, AVATAR_SIZE, AvatarRejectedError, normalizeAvatar } from './avatar';
 
 /**
- * The Avatar normalisation seam from issue #54.
- *
- * This is the one thing the end-to-end suite cannot assert. Playwright can see
- * that a picture renders; it cannot see that the stored object is square WebP
- * and that the GPS coordinates baked into the photograph did not survive the
- * trip to a public CDN. Both are the reason re-encoding exists at all, so both
- * are asserted here, on the bytes themselves.
+ * What the end-to-end suite cannot assert: Playwright sees that a picture
+ * renders, not that the stored bytes are square WebP with the photograph's GPS
+ * coordinates gone. Both are why re-encoding exists.
  */
 
-/** A deliberately non-square photograph carrying GPS EXIF, as a phone produces. */
+/** A non-square photograph carrying GPS EXIF, as a phone produces. */
 async function photoWithGps(width = 1200, height = 800): Promise<Buffer> {
   return sharp({
     create: { width, height, channels: 3, background: { r: 200, g: 40, b: 90 } },
@@ -40,8 +36,8 @@ describe('normalizeAvatar', () => {
   test('drops the location the photograph was taken at', async () => {
     const original = await photoWithGps();
     // Guard the fixture with an independent reader: a test that strips nothing
-    // proves nothing. `exifr` only reads the JPEG side — it refuses the WebP
-    // output outright — so the absence is asserted on the EXIF block itself.
+    // proves nothing. `exifr` refuses the WebP output, so the absence is
+    // asserted on the EXIF block itself.
     expect(await exifr.gps(original)).toBeTruthy();
 
     const normalized = await normalizeAvatar(original);

@@ -45,15 +45,22 @@ export async function normalizeAvatar(input: Buffer): Promise<Buffer> {
 export async function uploadAvatar(normalized: Buffer): Promise<string> {
   const key = `${AVATAR_PREFIX}/${randomBytes(16).toString('hex')}.webp`;
 
-  await s3Client.send(
-    new PutObjectCommand({
-      Bucket: env.AWS_BUCKET_NAME,
-      Key: key,
-      Body: normalized,
-      ContentType: 'image/webp',
-      CacheControl: 'public, max-age=31536000, immutable',
-    }),
-  );
+  try {
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: env.AWS_BUCKET_NAME,
+        Key: key,
+        Body: normalized,
+        ContentType: 'image/webp',
+        CacheControl: 'public, max-age=31536000, immutable',
+      }),
+    );
+  } catch (error) {
+    // The SDK's own failures read as deserialization internals, which say
+    // nothing to whoever picked the picture. Keep the detail where it is useful.
+    console.error(`[Avatar] Failed to store ${key}:`, error);
+    throw new Error('Could not store your avatar. Try again in a moment.');
+  }
 
   return key;
 }

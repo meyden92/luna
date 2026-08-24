@@ -13,7 +13,6 @@
  * this imports the real auth instance and therefore needs the app's full
  * environment — run it where the app runs.
  */
-import { eq } from 'drizzle-orm';
 import { CredentialsError, setUserCredentials } from '../../src/libs/auth/credentials';
 import { PASSWORD_MIN_LENGTH, passwordSchema, usernameSchema } from '../../src/schemas/credentials-schema';
 
@@ -89,15 +88,8 @@ async function main() {
   const identifier = process.argv[2];
   if (!identifier) fail('Usage: bun scripts/auth/set-credentials.ts <email-or-user-id>');
 
-  const { db } = await import('../../src/db/client');
-  const { user } = await import('../../src/db/schema');
-
-  // Emails are stored lower-cased (issue #23), so match the write-side rule.
-  const [target] =
-    (await db
-      .select({ id: user.id, email: user.email, name: user.name, username: user.username })
-      .from(user)
-      .where(identifier.includes('@') ? eq(user.email, identifier.toLowerCase()) : eq(user.id, identifier))) ?? [];
+  const { findUserByEmailOrId } = await import('../../src/db/queries/auth');
+  const target = await findUserByEmailOrId(identifier);
 
   if (!target) fail(`No User matches "${identifier}".`);
 

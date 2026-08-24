@@ -19,6 +19,19 @@ import { signIn } from '../utils/sign-in';
 
 const ACCOUNT_URL = '/settings/account';
 
+/**
+ * Types a Username and waits for the availability check to answer.
+ *
+ * The check is a debounced async field validator, so a submit fired while it is
+ * still in flight is dropped by the form. Waiting for the response is what
+ * makes these tests deterministic rather than racing a timer.
+ */
+async function fillUsername(page: import('@playwright/test').Page, label: string, value: string) {
+  const answered = page.waitForResponse((r) => r.url().includes('is-username-available'), { timeout: 15_000 }).catch(() => null);
+  await page.getByLabel(label).fill(value);
+  await answered;
+}
+
 /** A throwaway identity, unique per run so parallel workers cannot collide. */
 function throwaway() {
   const suffix = Math.random().toString(36).slice(2, 8);
@@ -62,7 +75,7 @@ test.describe('Credentials', () => {
     await adminPage.goto('/admin/users');
     await clickUntil(adminPage.getByRole('button', { name: /create user/i }), adminPage.getByLabel('Initial password'));
 
-    await adminPage.getByLabel('Username').fill(created.username);
+    await fillUsername(adminPage, 'Username', created.username);
     await adminPage.getByLabel('Display name').fill(created.name);
     await adminPage.getByLabel('Email').fill(created.email);
     await adminPage.getByLabel('Initial password').fill(created.password);
@@ -108,7 +121,7 @@ test.describe('Credentials', () => {
 
     await adminPage.goto('/admin/users');
     await clickUntil(adminPage.getByRole('button', { name: /create user/i }), adminPage.getByLabel('Initial password'));
-    await adminPage.getByLabel('Username').fill(created.username);
+    await fillUsername(adminPage, 'Username', created.username);
     await adminPage.getByLabel('Display name').fill(created.name);
     await adminPage.getByLabel('Email').fill(created.email);
     await adminPage.getByLabel('Initial password').fill(created.password);
@@ -126,10 +139,52 @@ test.describe('Credentials', () => {
     await expect(page).toHaveURL(/\/dashboard/);
 
     await page.goto(ACCOUNT_URL);
-    await page.getByLabel('Username').fill(TEST_USER_USERNAME);
-    await page.getByRole('button', { name: /save profile/i }).click();
+    await fillUsername(page, 'Username', TEST_USER_USERNAME);
 
+    // Told while typing, not after submitting: the field itself refuses before
+    // the form is ever sent.
     await expect(page.getByText(/already taken/i)).toBeVisible();
+
+    await context.close();
+  });
+
+  test('an administrator resets a password, and the old one stops working', async ({ adminPage, browser }) => {
+    const created = throwaway();
+
+    await adminPage.goto('/admin/users');
+    await clickUntil(adminPage.getByRole('button', { name: /create user/i }), adminPage.getByLabel('Initial password'));
+    await fillUsername(adminPage, 'Username', created.username);
+    await adminPage.getByLabel('Display name').fill(created.name);
+    await adminPage.getByLabel('Email').fill(created.email);
+    await adminPage.getByLabel('Initial password').fill(created.password);
+    await adminPage
+      .getByRole('button', { name: /^create user$/i })
+      .last()
+      .click();
+    await expect(adminPage.getByText(new RegExp(`can now sign in as "${created.username}"`, 'i'))).toBeVisible();
+
+    // Reach the new User's detail page through the admin list.
+    await adminPage.goto('/admin/users?search=' + encodeURIComponent(created.email));
+    await adminPage.getByRole('link', { name: created.email }).first().click();
+
+    const reset = 'reset-password-9';
+    await clickUntil(adminPage.getByRole('button', { name: /reset password/i }), adminPage.getByLabel('New password'));
+    await adminPage.getByLabel('New password').fill(reset);
+    await adminPage
+      .getByRole('button', { name: /^reset password$/i })
+      .last()
+      .click();
+    await expect(adminPage.getByText(/password reset/i)).toBeVisible();
+
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    await page.goto('/login');
+    await signIn(page, created.username, created.password);
+    await expect(page.getByText(/invalid username or password/i)).toBeVisible();
+
+    await signIn(page, created.username, reset);
+    await expect(page).toHaveURL(/\/dashboard/);
 
     await context.close();
   });

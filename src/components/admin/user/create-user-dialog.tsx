@@ -15,6 +15,7 @@ import {
   FormWithSchema,
 } from '@/components/ui/tanstack-form';
 import { useAppMutation } from '@/hooks/use-app-mutation';
+import { usernameTakenMessage } from '@/libs/auth/username-availability';
 import { queryKeys } from '@/libs/query-keys';
 import { createUserSchema } from '@/schemas/credentials-schema';
 import { createAdminUser } from '@/server/fns/admin/users';
@@ -64,6 +65,10 @@ export function CreateUserDialog() {
           >
             <FormField
               name="username"
+              validators={{
+                onChangeAsync: ({ value }) => usernameTakenMessage(value),
+                onChangeAsyncDebounceMs: 400,
+              }}
               renderFieldAction={({ value, onChange, onBlur }) => (
                 <FormItem>
                   <FormLabel>Username</FormLabel>
@@ -135,14 +140,18 @@ export function CreateUserDialog() {
             />
 
             <FormSubscribe
-              selectorAction={(state: any) => state.isSubmitting as boolean}
-              renderAction={(isSubmitting: boolean) => (
+              // `isFieldsValidating` is the one that matters: the Username
+              // availability check is a field-level async validator, and a
+              // submit while it is in flight is silently dropped by the form.
+              // Disabling until it settles is what makes the button honest.
+              selectorAction={(state: any) => (state.isSubmitting || state.isValidating || state.isFieldsValidating) as boolean}
+              renderAction={(isBusy: boolean) => (
                 <Button
                   type="submit"
-                  disabled={isSubmitting || create.isPending}
+                  disabled={isBusy || create.isPending}
                   className="w-full"
                 >
-                  {isSubmitting || create.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+                  {isBusy || create.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
                   Create user
                 </Button>
               )}

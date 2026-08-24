@@ -268,8 +268,8 @@ export const createAdminUser = createServerFn({ method: 'POST' })
 export const resetAdminUserPassword = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(resetUserPasswordSchema)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { setUserCredentials } = await import('@/libs/auth/credentials');
-    await setUserCredentials({ userId: data.userId, password: data.newPassword });
+    await setUserCredentials({ userId: data.userId, password: data.newPassword, actorId: adminIdFromCtx(context) });
     return { success: true };
   });

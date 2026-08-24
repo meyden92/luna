@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import sharp from 'sharp';
 
-import { AVATAR_MAX_UPLOAD_BYTES } from '@/schemas/credentials-schema';
+import { AVATAR_MAX_UPLOAD_BYTES, avatarTooLargeMessage } from '@/schemas/credentials-schema';
 import { env } from './env';
 import { s3Client } from './S3Helper';
 import { UserFacingError } from './user-facing-error';
@@ -39,7 +39,7 @@ export class AvatarRejectedError extends UserFacingError {
  */
 export async function normalizeAvatar(input: Buffer): Promise<Buffer> {
   if (input.byteLength > AVATAR_MAX_UPLOAD_BYTES) {
-    throw new AvatarRejectedError(`Image is larger than ${Math.floor(AVATAR_MAX_UPLOAD_BYTES / 1024 / 1024)} MiB`);
+    throw new AvatarRejectedError(avatarTooLargeMessage());
   }
 
   try {

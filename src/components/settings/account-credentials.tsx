@@ -20,8 +20,15 @@ import {
 } from '@/components/ui/tanstack-form';
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import { authClient } from '@/libs/auth/auth-client';
+import { usernameTakenMessage } from '@/libs/auth/username-availability';
 import { getAvatarUrl } from '@/libs/utils';
-import { AVATAR_MAX_UPLOAD_BYTES, changePasswordSchema, changeUsernameSchema, displayNameSchema } from '@/schemas/credentials-schema';
+import {
+  AVATAR_MAX_UPLOAD_BYTES,
+  avatarTooLargeMessage,
+  changePasswordSchema,
+  changeUsernameSchema,
+  displayNameSchema,
+} from '@/schemas/credentials-schema';
 import { removeAvatar, updateAvatar } from '@/server/fns/account';
 
 /**
@@ -84,7 +91,7 @@ function AvatarCard({ image: initialImage, name }: { image: string | null; name:
   const onPick = async (file: File | undefined) => {
     if (!file) return;
     if (file.size > AVATAR_MAX_UPLOAD_BYTES) {
-      toast.error(`Image is larger than ${Math.floor(AVATAR_MAX_UPLOAD_BYTES / 1024 / 1024)} MiB`);
+      toast.error(avatarTooLargeMessage());
       return;
     }
 
@@ -190,6 +197,10 @@ function IdentityCard({ name, username }: { name: string; username: string }) {
         >
           <FormField
             name="username"
+            validators={{
+              onChangeAsync: ({ value }) => usernameTakenMessage(value, username),
+              onChangeAsyncDebounceMs: 400,
+            }}
             renderFieldAction={({ value, onChange, onBlur }) => (
               <FormItem>
                 <FormLabel>Username</FormLabel>
@@ -227,13 +238,16 @@ function IdentityCard({ name, username }: { name: string; username: string }) {
           />
 
           <FormSubscribe
-            selectorAction={(state: any) => state.isSubmitting as boolean}
-            renderAction={(isSubmitting: boolean) => (
+            // The Username availability check is a field-level async validator,
+            // and a submit while it is in flight is silently dropped by the
+            // form — hence `isFieldsValidating`, not just `isValidating`.
+            selectorAction={(state: any) => (state.isSubmitting || state.isValidating || state.isFieldsValidating) as boolean}
+            renderAction={(isBusy: boolean) => (
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isBusy}
               >
-                {isSubmitting ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+                {isBusy ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
                 Save profile
               </Button>
             )}

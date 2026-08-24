@@ -22,6 +22,9 @@ export const PASSWORD_MIN_LENGTH = 8;
  */
 export const AVATAR_MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 
+/** One wording for the refusal, wherever the ceiling is checked. */
+export const avatarTooLargeMessage = () => `Image is larger than ${Math.floor(AVATAR_MAX_UPLOAD_BYTES / 1024 / 1024)} MiB`;
+
 const USERNAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
 /** Handed to Better-Auth's `usernameValidator`, which only sees the charset. */

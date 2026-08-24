@@ -1,4 +1,3 @@
-import { and, eq, ne, sql } from 'drizzle-orm';
 import { UserFacingError } from '../user-facing-error';
 import { auth } from './auth';
 
@@ -15,6 +14,11 @@ import { auth } from './auth';
  *
  * Password hashing always comes from that same context, so the scheme can never
  * drift from what sign-in verifies against.
+ *
+ * Every read and every audited write lives in `db/queries/auth` — the Drizzle
+ * handle does not leave `src/db/` (issue #15), and an audited write happens
+ * inside its write function (issue #13). This module orchestrates; it does not
+ * query.
  */
 
 /** A failure the caller can show to a human as-is. */
@@ -27,35 +31,35 @@ export class CredentialsError extends UserFacingError {
 /** Better-Auth's provider id for a password Account. */
 const CREDENTIAL_PROVIDER = 'credential';
 
-/**
- * Rejects a Username already held by someone else. The unique index on
- * `user.username` is the real guarantee; this exists to turn a constraint
- * violation into a message worth reading.
- */
+/** Rejects a Username already held by someone else. */
 async function assertUsernameFree(normalized: string, exceptUserId?: string) {
-  const { db } = await import('@/db/client');
-  const { user } = await import('@/db/schema');
-
-  const [taken] = await db
-    .select({ id: user.id })
-    .from(user)
-    .where(
-      exceptUserId
-        ? and(sql`lower(${user.username}) = ${normalized}`, ne(user.id, exceptUserId))
-        : sql`lower(${user.username}) = ${normalized}`,
-    );
-
-  if (taken) throw new CredentialsError('That username is already taken');
+  const { findUserIdByUsername } = await import('@/db/queries/auth');
+  if (await findUserIdByUsername(normalized, exceptUserId)) {
+    throw new CredentialsError('That username is already taken');
+  }
 }
 
 /**
  * Gives an existing User a Username and password, replacing whatever credential
  * Account they had. Used by the admin password reset and by
  * `scripts/auth/set-credentials.ts`.
+ *
+ * `actorId` is who is doing it. Omit it for the script, where there is no
+ * request and therefore no actor — the audit layer records null rather than
+ * guessing.
  */
-export async function setUserCredentials({ userId, username, password }: { userId: string; username?: string; password?: string }) {
-  const { db } = await import('@/db/client');
-  const { account } = await import('@/db/schema');
+export async function setUserCredentials({
+  userId,
+  username,
+  password,
+  actorId,
+}: {
+  userId: string;
+  username?: string;
+  password?: string;
+  actorId?: string | null;
+}) {
+  const { auditCredentialChange, findCredentialAccount } = await import('@/db/queries/auth');
   const ctx = await auth.$context;
 
   if (username) {
@@ -66,10 +70,7 @@ export async function setUserCredentials({ userId, username, password }: { userI
 
   if (password) {
     const hash = await ctx.password.hash(password);
-    const [existing] = await db
-      .select({ id: account.id })
-      .from(account)
-      .where(and(eq(account.userId, userId), eq(account.providerId, CREDENTIAL_PROVIDER)));
+    const existing = await findCredentialAccount(userId, CREDENTIAL_PROVIDER);
 
     if (existing) {
       await ctx.internalAdapter.updateAccount(existing.id, { password: hash });
@@ -86,6 +87,8 @@ export async function setUserCredentials({ userId, username, password }: { userI
     // a password is either onboarding someone or responding to a compromise,
     // and both want every existing session gone.
     await ctx.internalAdapter.deleteUserSessions(userId);
+
+    await auditCredentialChange(userId, existing?.updatedAt ?? null, actorId);
   }
 }
 
@@ -108,16 +111,15 @@ export async function createUserWithCredentials({
   email: string;
   password: string;
 }) {
-  const { db } = await import('@/db/client');
-  const { user } = await import('@/db/schema');
+  const { findUserIdByEmail } = await import('@/db/queries/auth');
 
   const normalizedEmail = email.toLowerCase();
   const normalizedUsername = username.toLowerCase();
 
   await assertUsernameFree(normalizedUsername);
-
-  const [emailTaken] = await db.select({ id: user.id }).from(user).where(eq(user.email, normalizedEmail));
-  if (emailTaken) throw new CredentialsError('A user with that email already exists');
+  if (await findUserIdByEmail(normalizedEmail)) {
+    throw new CredentialsError('A user with that email already exists');
+  }
 
   const ctx = await auth.$context;
   const created = await ctx.internalAdapter.createUser({

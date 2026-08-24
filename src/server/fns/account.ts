@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import { avatarTooLargeMessage } from '@/schemas/credentials-schema';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
 
@@ -32,7 +33,7 @@ export const updateAvatar = createServerFn({ method: 'POST' })
     // and before `normalizeAvatar` ever sees them, same as the raw path.
     const bytes = Buffer.from(data.image, 'base64');
     if (bytes.byteLength > AVATAR_MAX_UPLOAD_BYTES) {
-      throw new AvatarRejectedError(`Image is larger than ${Math.floor(AVATAR_MAX_UPLOAD_BYTES / 1024 / 1024)} MiB`);
+      throw new AvatarRejectedError(avatarTooLargeMessage());
     }
 
     const previous = (await getSettingsProfile(userId))?.image;

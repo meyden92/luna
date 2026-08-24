@@ -53,11 +53,11 @@ COPY --from=builder --chown=bun:bun /app/scripts ./scripts
 COPY --from=builder --chown=bun:bun /app/src ./src
 COPY --from=builder --chown=bun:bun /app/tsconfig.json ./tsconfig.json
 
-# Nothing applies migrations on start, so `db:migrate` has to be runnable in the
-# container. Without these the app boots against whatever schema it finds and
-# fails on the first query for a column it expects.
+# The entrypoint migrates before the server starts, so the migrations and the
+# config that finds them have to be in the image.
 COPY --from=builder --chown=bun:bun /app/drizzle ./drizzle
 COPY --from=builder --chown=bun:bun /app/drizzle.config.ts ./drizzle.config.ts
+COPY --from=builder --chown=bun:bun --chmod=755 /app/scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
 
 USER bun
 
@@ -67,4 +67,6 @@ ENV PORT=3000
 # Nitro's bun preset reads HOST (via srvx), not the HOSTNAME the node preset used.
 ENV HOST="0.0.0.0"
 ENV TZ=UTC
+
+ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
 CMD ["bun", ".output/server/index.mjs"]

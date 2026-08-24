@@ -291,13 +291,20 @@ bun run auth:set-credentials <your-email>
 
 Sign in with what it set.
 
-Nothing applies migrations on start — not the image, not compose, not CI — so
-the production cutover is **deploy → migrate → set credentials → sign in**, and
-skipping the middle step leaves the new code querying the old schema:
+The container applies pending migrations before the server starts, so a deploy
+carries its own schema change and the cutover is **deploy → set credentials →
+sign in**:
 
 ```sh
-docker compose exec app bun run db:migrate
 docker compose exec -it app bun run auth:set-credentials <your-email>
+```
+
+A migration that fails stops the container rather than serving queries against a
+schema that cannot answer them. To start without migrating — a bad migration
+caught in production, say — override the entrypoint:
+
+```sh
+docker compose run --entrypoint bun app .output/server/index.mjs
 ```
 
 `user.id` is what everything hangs off; the Discord identifier lived only in

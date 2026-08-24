@@ -17,7 +17,14 @@ export const user = pgTable(
   {
     id: text('id').primaryKey(),
     email: text('email').notNull().unique(),
-    active: boolean('active').default(false).notNull(),
+    // Better-Auth's username plugin owns both columns (#54). `username` is the
+    // normalised (lower-cased) form it matches on and indexes uniquely;
+    // `displayUsername` keeps the casing the User typed. Nullable because the
+    // plugin declares them optional — a User created before the Discord cutover
+    // has neither until credentials are set for it.
+    username: text('username').unique(),
+    displayUsername: text('display_username'),
+    active: boolean('active').default(true).notNull(),
     image: text('image'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     // Prisma applied @updatedAt at query level, not in the database — the

@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { queryKeys } from '@/libs/query-keys';
+import { getAvatarUrl } from '@/libs/utils';
 import { getProfileById } from '@/server/fns/dashboard/profile';
 
 const profileQuery = (id: string) =>
@@ -39,7 +40,7 @@ function ProfilePage() {
               <div>
                 <Avatar className="w-24 h-24 sm:w-32 sm:h-32 border-4 border-white">
                   <AvatarImage
-                    src={user.image || ''}
+                    src={getAvatarUrl(user.image) ?? ''}
                     alt={user.name}
                   />
                   <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>

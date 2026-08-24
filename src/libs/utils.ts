@@ -64,6 +64,16 @@ export function getCDNImage(image: string | null | undefined, userId?: string, f
   return fallback || '/placeholders/file.png';
 }
 
+/**
+ * An Avatar is stored as a bucket key (issue #54), but a User migrated from
+ * Discord may still carry an absolute URL — resolve both.
+ */
+export function getAvatarUrl(image: string | null | undefined): string | null {
+  if (!image) return null;
+  if (image.startsWith('http')) return image;
+  return `${getCdnUrl()}/${image}`;
+}
+
 export function getTemplateImageUrl(path: string): string {
   if (!path) return '';
   if (path.startsWith('http')) return path;

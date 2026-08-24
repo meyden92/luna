@@ -17,8 +17,6 @@ const envSchema = z.object({
   AWS_ACCESS_KEY_ID: z.string().min(1),
   AWS_SECRET_ACCESS_KEY: z.string().min(1),
   AWS_BUCKET_NAME: z.string().min(1),
-  DISCORD_CLIENT_ID: z.string().min(1),
-  DISCORD_CLIENT_SECRET: z.string().min(1),
   REPLICATE_API_TOKEN: z.string().min(1).optional(),
   FORM_FIELD_ENCRYPTION_KEY: z.string().refine(isBase64Encoded32ByteKey, {
     message: 'must be a 32-byte base64-encoded key',

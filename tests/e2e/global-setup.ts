@@ -2,10 +2,21 @@ import { randomBytes } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { hashPassword } from 'better-auth/crypto';
 import { config as loadEnv } from 'dotenv';
 import { eq } from 'drizzle-orm';
-import { session, user } from '../../src/db/schema';
-import { disconnectTestDb, getTestDb, SESSION_COOKIE_NAME, TEST_ADMIN_EMAIL, TEST_EMAIL_DOMAIN, TEST_USER_EMAIL } from './utils/db';
+import { account, session, user } from '../../src/db/schema';
+import {
+  disconnectTestDb,
+  getTestDb,
+  SESSION_COOKIE_NAME,
+  TEST_ADMIN_EMAIL,
+  TEST_ADMIN_USERNAME,
+  TEST_EMAIL_DOMAIN,
+  TEST_PASSWORD,
+  TEST_USER_EMAIL,
+  TEST_USER_USERNAME,
+} from './utils/db';
 import { signSessionCookie } from './utils/sign-cookie';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -16,7 +27,7 @@ const SESSION_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 
 type StoredSession = { storagePath: string; cookieValue: string };
 
-async function ensureUser(email: string, name: string, isSuperAdmin: boolean): Promise<string> {
+async function ensureUser(email: string, name: string, username: string, isSuperAdmin: boolean): Promise<string> {
   const db = getTestDb();
   const id = `e2e-${email.split('@')[0]}`;
   // Emails are stored lower-cased (issue #23) — seed through the same rule the
@@ -24,13 +35,44 @@ async function ensureUser(email: string, name: string, isSuperAdmin: boolean): P
   const normalisedEmail = email.toLowerCase();
   const [row] = await db
     .insert(user)
-    .values({ id, email: normalisedEmail, name, emailVerified: true, active: true, isSuperAdmin })
+    .values({ id, email: normalisedEmail, name, username, displayUsername: username, emailVerified: true, active: true, isSuperAdmin })
     .onConflictDoUpdate({
       target: user.email,
-      set: { name, isSuperAdmin, active: true, banned: false, isDeleted: false, updatedAt: new Date() },
+      set: {
+        name,
+        username,
+        displayUsername: username,
+        isSuperAdmin,
+        active: true,
+        banned: false,
+        isDeleted: false,
+        updatedAt: new Date(),
+      },
     })
     .returning({ id: user.id });
-  return row?.id ?? id;
+
+  const userId = row?.id ?? id;
+  await ensureCredentialAccount(userId);
+  return userId;
+}
+
+/**
+ * Gives the fixture a password Account so the auth specs can sign in for real.
+ * The hash comes from Better-Auth's own primitive, so it cannot drift from what
+ * the application verifies against.
+ */
+async function ensureCredentialAccount(userId: string): Promise<void> {
+  const db = getTestDb();
+  const password = await hashPassword(TEST_PASSWORD);
+
+  await db.delete(account).where(eq(account.userId, userId));
+  await db.insert(account).values({
+    id: `e2e-credential-${userId}`,
+    userId,
+    accountId: userId,
+    providerId: 'credential',
+    password,
+  });
 }
 
 async function createSessionForUser(userId: string, baseURL: URL): Promise<StoredSession> {
@@ -85,8 +127,8 @@ export default async function globalSetup(): Promise<void> {
 
   const baseURL = new URL(process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000');
 
-  const userId = await ensureUser(TEST_USER_EMAIL, 'E2E User', false);
-  const adminId = await ensureUser(TEST_ADMIN_EMAIL, 'E2E Admin', true);
+  const userId = await ensureUser(TEST_USER_EMAIL, 'E2E User', TEST_USER_USERNAME, false);
+  const adminId = await ensureUser(TEST_ADMIN_EMAIL, 'E2E Admin', TEST_ADMIN_USERNAME, true);
 
   const userSession = await createSessionForUser(userId, baseURL);
   const adminSession = await createSessionForUser(adminId, baseURL);

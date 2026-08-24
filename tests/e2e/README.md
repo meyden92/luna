@@ -24,14 +24,22 @@ The HTML report is written to `playwright-report/index.html` after a run.
 
 ## How auth works
 
+Sign-in is a username and password (issue #54), so the auth specs drive the real
+login form. Every other suite still starts from a forged session cookie: those
+tests are about files and admin screens, and making each of them sign in would
+slow the suite down to prove something `auth/login.spec.ts` already proves.
+
 `global-setup.ts` runs once before the suite. It:
 
 1. Upserts two test users in the dev DB:
    - `e2e-user@lunashare.test` — regular user
    - `e2e-admin@lunashare.test` — `isSuperAdmin: true`
-2. Creates a `Session` row per user with a random token.
-3. Signs the token using `BETTER_AUTH_SECRET` (HMAC-SHA256, base64) — same scheme Better-Auth's `setSignedCookie` uses.
-4. Writes Playwright `storageState` JSON to `tests/e2e/.auth/{userId}.json` and exports the paths via `E2E_USER_STORAGE` / `E2E_ADMIN_STORAGE`.
+2. Gives each a Username and a password Account, hashed with Better-Auth's own
+   primitive so it cannot drift from what sign-in verifies against
+   (`TEST_USER_USERNAME` / `TEST_PASSWORD` in `utils/db.ts`).
+3. Creates a `Session` row per user with a random token.
+4. Signs the token using `BETTER_AUTH_SECRET` (HMAC-SHA256, base64) — same scheme Better-Auth's `setSignedCookie` uses.
+5. Writes Playwright `storageState` JSON to `tests/e2e/.auth/{userId}.json` and exports the paths via `E2E_USER_STORAGE` / `E2E_ADMIN_STORAGE`.
 
 Tests then use the `authenticatedPage` / `adminPage` fixtures from `fixtures/auth.ts`, which open a browser context preloaded with the right session cookie.
 

@@ -1,0 +1,155 @@
+import { Loader2, UserPlus } from 'lucide-react';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import {
+  type FormConfigWithSchema,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormSubscribe,
+  FormWithSchema,
+} from '@/components/ui/tanstack-form';
+import { useAppMutation } from '@/hooks/use-app-mutation';
+import { queryKeys } from '@/libs/query-keys';
+import { createUserSchema } from '@/schemas/credentials-schema';
+import { createAdminUser } from '@/server/fns/admin/users';
+
+/**
+ * Registration is closed (issue #54), so this dialog is the only way a User is
+ * created through the app. The initial password is handed over out of band —
+ * LunaShare sends no email — and the new User can change it from their profile.
+ */
+export function CreateUserDialog() {
+  const [open, setOpen] = useState(false);
+
+  const create = useAppMutation(createAdminUser, {
+    invalidates: [queryKeys.admin.users],
+    successMessage: (user) => `${user.name} can now sign in as "${user.username}"`,
+    onSuccess: () => setOpen(false),
+  });
+
+  const config: FormConfigWithSchema<typeof createUserSchema> = {
+    schema: createUserSchema,
+    defaultValues: { username: '', name: '', email: '', password: '' },
+    onSubmit: async (values) => {
+      await create.mutateAsync(values);
+    },
+  };
+
+  return (
+    <>
+      <Button onClick={() => setOpen(true)}>
+        <UserPlus className="mr-2 h-4 w-4" />
+        Create user
+      </Button>
+
+      <Dialog
+        open={open}
+        onOpenChange={setOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create user</DialogTitle>
+            <DialogDescription>They sign in with the username and password you set here.</DialogDescription>
+          </DialogHeader>
+
+          <FormWithSchema
+            config={config}
+            className="space-y-4"
+          >
+            <FormField
+              name="username"
+              renderFieldAction={({ value, onChange, onBlur }) => (
+                <FormItem>
+                  <FormLabel>Username</FormLabel>
+                  <FormControl>
+                    <Input
+                      value={value ?? ''}
+                      onChange={(e) => onChange(e.target.value)}
+                      onBlur={onBlur}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              name="name"
+              renderFieldAction={({ value, onChange, onBlur }) => (
+                <FormItem>
+                  <FormLabel>Display name</FormLabel>
+                  <FormControl>
+                    <Input
+                      value={value ?? ''}
+                      onChange={(e) => onChange(e.target.value)}
+                      onBlur={onBlur}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              name="email"
+              renderFieldAction={({ value, onChange, onBlur }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="email"
+                      value={value ?? ''}
+                      onChange={(e) => onChange(e.target.value)}
+                      onBlur={onBlur}
+                    />
+                  </FormControl>
+                  <FormDescription>Not used to sign in and never written to — LunaShare sends no email.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              name="password"
+              renderFieldAction={({ value, onChange, onBlur }) => (
+                <FormItem>
+                  <FormLabel>Initial password</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      autoComplete="new-password"
+                      value={value ?? ''}
+                      onChange={(e) => onChange(e.target.value)}
+                      onBlur={onBlur}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormSubscribe
+              selectorAction={(state: any) => state.isSubmitting as boolean}
+              renderAction={(isSubmitting: boolean) => (
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || create.isPending}
+                  className="w-full"
+                >
+                  {isSubmitting || create.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+                  Create user
+                </Button>
+              )}
+            />
+          </FormWithSchema>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}

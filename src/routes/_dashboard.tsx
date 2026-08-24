@@ -10,9 +10,11 @@ import { FoldersProvider } from '@/contexts/FoldersContext';
 import { UploadRefContext } from '@/contexts/UploadRefContext';
 
 export const Route = createFileRoute('/_dashboard')({
-  beforeLoad: ({ context }) => {
+  beforeLoad: ({ context, location }) => {
     if (!context.session?.user?.id) {
-      throw redirect({ to: '/login' });
+      // The login page has always known how to return someone to where they
+      // were; until #54 nothing ever told it where that was.
+      throw redirect({ to: '/login', search: { redirect: location.href } });
     }
   },
   component: DashboardLayout,

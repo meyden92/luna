@@ -12,6 +12,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:audit-coverage": "bun scripts/db/audit-coverage.ts",
+    "auth:set-credentials": "bun scripts/auth/set-credentials.ts",
     "lint": "biome lint --diagnostic-level=warn",
     "format": "biome check --write",
     "update": "bunx taze major --interactive --install",

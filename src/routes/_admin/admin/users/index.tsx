@@ -2,13 +2,14 @@ import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { z } from 'zod';
+import { CreateUserDialog } from '@/components/admin/user/create-user-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { queryKeys } from '@/libs/query-keys';
 import { storageQuotaMiBToBytes } from '@/libs/storage-quota';
-import { formatSize } from '@/libs/utils';
+import { formatSize, getAvatarUrl } from '@/libs/utils';
 import { listAdminUsersWithFiles } from '@/server/fns/admin/users';
 
 const PAGE_SIZE = 25;
@@ -90,7 +91,10 @@ function AdminUsersPage() {
       <Card>
         <CardHeader className="gap-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle>All Registered Users</CardTitle>
+            <div className="flex items-center gap-3">
+              <CardTitle>All Registered Users</CardTitle>
+              <CreateUserDialog />
+            </div>
             <form
               className="flex w-full gap-2 sm:w-auto"
               onSubmit={(event) => {
@@ -199,7 +203,7 @@ function AdminUsersPage() {
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         <img
-                          src={user.image || '/default-avatar.png'}
+                          src={getAvatarUrl(user.image) ?? '/default-avatar.png'}
                           alt={user.name}
                           width={32}
                           height={32}

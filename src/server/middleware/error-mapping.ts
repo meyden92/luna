@@ -1,6 +1,7 @@
 import { createMiddleware } from '@tanstack/react-start';
 import { ZodError } from 'zod';
 import { ForbiddenError, UnauthorizedError } from '@/libs/rbac/errors';
+import { UserFacingError } from '@/libs/user-facing-error';
 
 export class RateLimitError extends Error {
   retryAfterMs: number;
@@ -26,6 +27,11 @@ function payloadFor(err: unknown): { status: number; body: ErrorPayload; headers
   }
   if (err instanceof ZodError) {
     return { status: 400, body: { error: 'Validation failed', code: 'VALIDATION_FAILED', details: err.issues } };
+  }
+  // A rejected Avatar or a taken Username: the message is written for the
+  // person who typed it in, so it goes back verbatim (#54).
+  if (err instanceof UserFacingError) {
+    return { status: err.status, body: { error: err.message, code: 'VALIDATION_FAILED' } };
   }
   if (err instanceof RateLimitError) {
     return {

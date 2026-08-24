@@ -245,3 +245,54 @@ fixture rather than the access path.
   the current statistics of the current dataset. They will catch a query that
   loses its index; they will not catch a plan that degrades only at a data volume
   this database does not yet hold.
+
+## Rehearsing the username/password cutover (#54)
+
+The Discord cutover migration deletes Account rows, nulls every Avatar and
+empties `session` in the same step that adds the Username columns. It runs
+exactly once, so a permanent test would guard nothing after the day it runs.
+What guards it is a rehearsal against the development database — the one holding
+the copy of the real production dataset described above — before it is run for
+real.
+
+Take a snapshot of what must survive, run the migration, then prove nothing was
+lost. The one assertion the whole change rests on is the last: no User lost a
+file.
+
+```sh
+export DATABASE_URL='postgresql://lunashare:lunashare@127.0.0.1:5432/lunashare'
+
+# 1. Before: owners and their file counts.
+psql "$DATABASE_URL" -c \
+  'SELECT u.id, count(f.id) AS files FROM "user" u LEFT JOIN file f ON f.owner_id = u.id GROUP BY u.id ORDER BY u.id' \
+  > /tmp/before.txt
+
+# 2. Run it.
+bun run db:migrate
+
+# 3. After: the same query must produce byte-identical output.
+psql "$DATABASE_URL" -c \
+  'SELECT u.id, count(f.id) AS files FROM "user" u LEFT JOIN file f ON f.owner_id = u.id GROUP BY u.id ORDER BY u.id' \
+  > /tmp/after.txt
+diff /tmp/before.txt /tmp/after.txt   # must be empty
+
+# 4. The cutover's own post-state. All three must be zero.
+psql "$DATABASE_URL" -c "SELECT count(*) FROM account WHERE provider_id = 'discord'"
+psql "$DATABASE_URL" -c 'SELECT count(*) FROM "session"'
+psql "$DATABASE_URL" -c 'SELECT count(*) FROM "user" WHERE image IS NOT NULL'
+```
+
+Then verify the way back in, which is the other half of the cutover and the part
+no migration can prove:
+
+```sh
+bun run auth:set-credentials <your-email>
+```
+
+Sign in with what it set. If that works against the rehearsal database, the
+production cutover is deploy → run the script → sign in.
+
+`user.id` is what everything hangs off; the Discord identifier lived only in
+`account.account_id` and was read by no application code. `file.owner_id` is
+`ON DELETE RESTRICT`, so Postgres refuses to remove an owner who holds files —
+step 3 is confirming the migration never tried, not hoping it did not.

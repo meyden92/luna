@@ -110,6 +110,8 @@ export async function getSettingsProfile(userId: string, handle: AuditHandle = d
  * for the same reason, so the two behave identically.
  */
 export type ProfileUpdate = {
+  /** The Avatar's CDN key, or null once removed (issue #54). */
+  image?: string | null;
   receiveEmail?: boolean;
   isProfilePublic?: boolean;
   bio?: string | null;

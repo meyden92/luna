@@ -1,4 +1,4 @@
-import { adminClient } from 'better-auth/client/plugins';
+import { adminClient, usernameClient } from 'better-auth/client/plugins';
 import { createAuthClient } from 'better-auth/react';
 import { getRuntimeConfig } from '@/libs/runtime-config';
 
@@ -7,7 +7,7 @@ import { getRuntimeConfig } from '@/libs/runtime-config';
 // only when the auth API lives on a different origin than the app.
 export const authClient = createAuthClient({
   baseURL: getRuntimeConfig().serverUrl,
-  plugins: [adminClient()],
+  plugins: [adminClient(), usernameClient()],
 });
 
 export type Session = typeof authClient.$Infer.Session;

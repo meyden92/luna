@@ -24,6 +24,7 @@ import { ensureBaseGroups, ensureUserHasDefaultGroup, includeDefaultGroup } from
 import { ADMIN_GROUP_KEY, invalidateAuthorizationContext, USER_GROUP_KEY } from '@/libs/rbac/service';
 import { fileS3Key, s3Client } from '@/libs/S3Helper';
 import { MAX_STORAGE_QUOTA_MIB } from '@/libs/storage-quota';
+import { createUserSchema, resetUserPasswordSchema } from '@/schemas/credentials-schema';
 import { userIdFromCtx as adminIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
 
@@ -244,4 +245,31 @@ export const updateUserGroups = createServerFn({ method: 'POST' })
 
     invalidateAuthorizationContext(data.userId);
     return { success: true, assignedGroupIds: finalGroupIds };
+  });
+
+/**
+ * Registration is closed (issue #54), so this is the only way a User comes into
+ * existence through the app. Authorisation is RBAC's, via the `admin`
+ * middleware — see `libs/auth/credentials` for why Better-Auth's own
+ * `/admin/create-user` endpoint is deliberately not used.
+ */
+export const createAdminUser = createServerFn({ method: 'POST' })
+  .middleware(appMiddleware({ auth: 'admin' }))
+  .validator(createUserSchema)
+  .handler(async ({ data }) => {
+    const { createUserWithCredentials } = await import('@/libs/auth/credentials');
+    return createUserWithCredentials(data);
+  });
+
+/**
+ * The administrator half of account recovery. LunaShare sends no email, so a
+ * forgotten password is resolved here or by `scripts/auth/set-credentials.ts`.
+ */
+export const resetAdminUserPassword = createServerFn({ method: 'POST' })
+  .middleware(appMiddleware({ auth: 'admin' }))
+  .validator(resetUserPasswordSchema)
+  .handler(async ({ data }) => {
+    const { setUserCredentials } = await import('@/libs/auth/credentials');
+    await setUserCredentials({ userId: data.userId, password: data.newPassword });
+    return { success: true };
   });

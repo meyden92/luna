@@ -1,4 +1,4 @@
-import { boolean, index, integer, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { boolean, index, integer, pgTable, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 
 /**
  * Better-Auth's five core tables (issue #17): `user`, `session`, `account`,
@@ -79,6 +79,9 @@ export const account = pgTable(
     id: text('id').primaryKey(),
     accountId: text('account_id').notNull(),
     providerId: text('provider_id').notNull(),
+    // Better-Auth ≥1.7 keys accounts by (issuer, accountId). Providers without
+    // an issuer of their own get a synthetic one, e.g. 'local:credential'.
+    issuer: text('issuer').notNull(),
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
@@ -92,7 +95,11 @@ export const account = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [index('account_userId_fkey').on(t.userId), index('account_userId_idx').on(t.userId)],
+  (t) => [
+    index('account_userId_fkey').on(t.userId),
+    index('account_userId_idx').on(t.userId),
+    uniqueIndex('account_issuer_accountId_key').on(t.issuer, t.accountId),
+  ],
 );
 
 export const verification = pgTable(

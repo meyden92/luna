@@ -1,3 +1,4 @@
+import { createLocalAccountIssuer } from '@better-auth/core/db';
 import { UserFacingError } from '../user-facing-error';
 import { auth } from './auth';
 
@@ -59,6 +60,7 @@ export async function setUserCredentials({
       await ctx.internalAdapter.linkAccount({
         userId,
         providerId: CREDENTIAL_PROVIDER,
+        issuer: createLocalAccountIssuer(CREDENTIAL_PROVIDER),
         accountId: userId,
         password: hash,
       });
@@ -99,17 +101,23 @@ export async function createUserWithCredentials({
   }
 
   const ctx = await auth.$context;
-  const created = await ctx.internalAdapter.createUser({
-    email: normalizedEmail,
-    name,
-    username: normalizedUsername,
-    displayUsername: username,
-    emailVerified: false,
-  });
+  const created = await ctx.internalAdapter.createUser(
+    {
+      email: normalizedEmail,
+      name,
+      username: normalizedUsername,
+      displayUsername: username,
+      emailVerified: false,
+    },
+    // Same provisioning source Better-Auth's own sign-up route passes for
+    // credential users; it feeds the `user.validateUserInfo` gate.
+    { method: 'email-password' },
+  );
 
   await ctx.internalAdapter.linkAccount({
     userId: created.id,
     providerId: CREDENTIAL_PROVIDER,
+    issuer: createLocalAccountIssuer(CREDENTIAL_PROVIDER),
     accountId: created.id,
     password: await ctx.password.hash(password),
   });

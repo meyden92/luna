@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createLocalAccountIssuer } from '@better-auth/core/db';
 import { hashPassword } from 'better-auth/crypto';
 import { config as loadEnv } from 'dotenv';
 import { eq } from 'drizzle-orm';
@@ -70,6 +71,7 @@ async function ensureCredentialAccount(userId: string): Promise<void> {
     userId,
     accountId: userId,
     providerId: 'credential',
+    issuer: createLocalAccountIssuer('credential'),
     password,
   });
 }

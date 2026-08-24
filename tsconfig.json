@@ -40,7 +40,9 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
-    "incremental": true,
+    // Deliberately not incremental: a stale .tsbuildinfo made `check-types`
+    // pass locally while CI failed on the same commit (better-auth 1.7 bump).
+    // A full check takes seconds here; correctness beats the cache.
     /* Path aliases */
     "paths": {
       "@/*": ["./src/*"],

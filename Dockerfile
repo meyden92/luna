@@ -81,4 +81,6 @@ ENV HOST="0.0.0.0"
 ENV TZ=UTC
 
 ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
-CMD ["bun", ".output/server/index.mjs"]
+# `--preload` raises Bun's 10-second request idle timeout before the server
+# bootstraps; see scripts/bun-idle-timeout.ts for why it cannot be configured.
+CMD ["bun", "--preload", "./scripts/bun-idle-timeout.ts", ".output/server/index.mjs"]

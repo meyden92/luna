@@ -20,6 +20,9 @@ export const RATE_LIMITS = {
   uploadSharex: { scope: 'uploadSharex', windowMs: 60_000, max: 60 },
   generateImage: { scope: 'generateImage', windowMs: 60_000, max: 10 },
   generateTemplate: { scope: 'generateTemplate', windowMs: 60_000, max: 10 },
+  // Higher than the generate budget: cancelling a batch is one call per batch
+  // and must never be the thing that fails while a user is trying to stop work.
+  cancelTemplate: { scope: 'cancelTemplate', windowMs: 60_000, max: 60 },
   generateEditImage: { scope: 'generateEditImage', windowMs: 60_000, max: 10 },
   testGenerate: { scope: 'testGenerate', windowMs: 60_000, max: 10 },
 } as const satisfies Record<string, RateLimitConfig>;

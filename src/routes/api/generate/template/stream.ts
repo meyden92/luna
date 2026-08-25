@@ -5,9 +5,6 @@ import { UPLOAD_CONFIG } from '@/config/upload-config';
 import { getActiveTemplateForGeneration, markTemplateGenerationsFailed, upsertTemplateGeneration } from '@/db/queries/ai';
 import type { JsonValue } from '@/db/schema/json';
 import {
-  createPredictionAbortRegistry,
-  createSseWriter,
-  eventStreamResponse,
   firstReplicateOutput,
   isAbortError,
   pollReplicatePrediction,
@@ -19,6 +16,7 @@ import {
 import { checkScopedRateLimit, retryAfterSeconds } from '@/libs/api/rate-limit';
 import { env } from '@/libs/env';
 import { requireAuthenticatedUser } from '@/libs/rbac/guards';
+import { createPredictionAbortRegistry, createSseWriter, eventStreamResponse, SSE_HEARTBEAT_MS } from '@/libs/sse-stream';
 import type { TemplateVariable } from '@/types/template';
 
 const replicate = new Replicate({ auth: env.REPLICATE_API_TOKEN });
@@ -138,17 +136,23 @@ async function handle(request: Request): Promise<Response> {
     });
   }
 
+  // A disconnect leaves the predictions running: it is indistinguishable from a
+  // dropped transport, and `checkTemplateGenerations` reconciles a row left in
+  // `streaming` ten minutes later. Deliberate cancellation goes through
+  // /api/generate/template/cancel instead (issue #59).
   const predictionAbort = createPredictionAbortRegistry(
     request.signal,
     (predictionId) => replicate.predictions.cancel(predictionId),
     '[template]',
+    { cancelPredictionsOnDisconnect: false },
   );
-  const { signal: abortSignal, registerPrediction, abortWork } = predictionAbort;
+  const { signal: abortSignal, registerPrediction, handleDisconnect } = predictionAbort;
 
   const stream = new ReadableStream({
     async start(controller) {
       const { send, close } = createSseWriter(controller, {
         signal: abortSignal,
+        heartbeatMs: SSE_HEARTBEAT_MS,
         mapPayload: (data) => ({ ...(data as object), batchId }),
       });
 
@@ -307,6 +311,16 @@ async function handle(request: Request): Promise<Response> {
         const results: Array<Record<string, unknown>> = new Array(imageCount);
         let completedCount = 0;
         let msgIdx = 0;
+        // Progress tracks predictions settled, not polls, so a poll tick only
+        // rotates the status message — it must not invent a percentage.
+        const sendPollProgress = () =>
+          send({
+            status: 'processing',
+            progress: 20 + Math.round((completedCount / imageCount) * 65),
+            message: STATUS_MESSAGES[msgIdx % STATUS_MESSAGES.length],
+            completedCount,
+            totalPredictions: imageCount,
+          });
         const pollPrediction = async ({ prediction, index }: { prediction: Prediction; index: number }): Promise<void> => {
           let finalPrediction = prediction;
           try {
@@ -315,6 +329,7 @@ async function handle(request: Request): Promise<Response> {
               onProgress: ({ prediction: progressPrediction }) => {
                 finalPrediction = progressPrediction;
                 msgIdx++;
+                sendPollProgress();
               },
             });
             finalPrediction = pollResult.prediction;
@@ -407,13 +422,7 @@ async function handle(request: Request): Promise<Response> {
           } finally {
             if (!abortSignal.aborted) {
               completedCount++;
-              send({
-                status: 'processing',
-                progress: 20 + Math.round((completedCount / imageCount) * 65),
-                message: STATUS_MESSAGES[msgIdx % STATUS_MESSAGES.length],
-                completedCount,
-                totalPredictions: imageCount,
-              });
+              sendPollProgress();
             }
           }
         };
@@ -440,10 +449,9 @@ async function handle(request: Request): Promise<Response> {
         });
       } catch (error) {
         if (isAbortError(error) || abortSignal.aborted) {
-          await markTemplateGenerationsFailed(
-            { ids: generationIds, ownerId: user.id, errorMessage: 'Generation was cancelled' },
-            user.id,
-          ).catch((e: unknown) => console.error('[template] persist cancellation failed', e));
+          // Deliberately leaves the rows in `processing` / `streaming`: that is
+          // the state the reconciler looks for, and marking them failed here
+          // would hide a prediction that is still on its way to succeeding.
           return;
         }
         console.error('[template stream] error:', error);
@@ -457,7 +465,7 @@ async function handle(request: Request): Promise<Response> {
       }
     },
     cancel() {
-      abortWork();
+      handleDisconnect();
     },
   });
 

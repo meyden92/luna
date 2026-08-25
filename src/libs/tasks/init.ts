@@ -31,6 +31,19 @@ const DEFAULT_TASKS: DefaultTask[] = [
     args: [30],
   },
   {
+    name: 'check-template-generations',
+    description: 'Finishes template generations whose stream ended before the Replicate prediction did',
+    // Well under the ten minutes a row must sit in `streaming` before it counts
+    // as stale, so a generation orphaned by a dropped connection is recovered
+    // promptly rather than at the next daily sweep (issue #59).
+    cronExpression: '*/5 * * * *',
+    taskFunction: 'checkTemplateGenerations',
+    // Up to twenty generations, each of which may download a result and upload
+    // it to S3.
+    timeout: 300000,
+    maxRetries: 3,
+  },
+  {
     name: 'prune-raw-analytics',
     description: 'Deletes raw view and egress events after rollups have been retained',
     cronExpression: '30 3 * * *',
@@ -42,7 +55,7 @@ const DEFAULT_TASKS: DefaultTask[] = [
 ];
 
 /**
- * Brings the three built-in tasks into line with the definitions above.
+ * Brings the built-in tasks into line with the definitions above.
  *
  * The row is only written when something actually differs. This runs on every
  * boot, and `Task` is audited — an unconditional update would file an audit

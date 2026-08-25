@@ -135,3 +135,36 @@ describe('eventStreamResponse', () => {
     expect(response.headers.get('Cache-Control')).toBe('no-cache');
   });
 });
+
+/**
+ * The heartbeat tests above drive a stand-in controller, which proves the writer
+ * enqueues but not that the frames survive a real response body. This reads
+ * bytes back off an actual `eventStreamResponse` — everything the production
+ * path does except the proxy hops in front of it.
+ */
+describe('heartbeat over a real response body', () => {
+  test('a reader sees keepalives arrive while the producer is idle', async () => {
+    let writer!: ReturnType<typeof createSseWriter>;
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        writer = createSseWriter(controller, { heartbeatMs: HEARTBEAT_MS });
+        writer.send({ status: 'processing', message: 'Creating AI predictions...' });
+      },
+    });
+
+    const reader = eventStreamResponse(stream).body!.getReader();
+    const decoder = new TextDecoder();
+    const frames: string[] = [];
+    // Three reads past the first event: the producer sends nothing more, so
+    // anything that arrives is a keepalive.
+    for (let i = 0; i < 4; i++) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      frames.push(decoder.decode(value));
+    }
+    writer.close();
+
+    expect(frames[0]).toBe('data: {"status":"processing","message":"Creating AI predictions..."}\n\n');
+    expect(frames.slice(1)).toEqual([': ping\n\n', ': ping\n\n', ': ping\n\n']);
+  });
+});

@@ -32,7 +32,14 @@ export const checkTemplateGenerationsExecutor: TaskFunction = async (...args) =>
 
   for (const generation of processingGenerations) {
     throwIfAborted(signal);
-    if (!generation.replicateId) continue;
+    // Selected only once past the staleness cutoff, so there is no prediction
+    // to wait for — the stream died before it created or recorded one.
+    if (!generation.replicateId) {
+      await markTemplateGenerationFailed(generation.id, { errorMessage: 'Generation was interrupted' }, null);
+      results.failed++;
+      results.processed++;
+      continue;
+    }
 
     try {
       const prediction = await replicate.predictions.get(generation.replicateId, { signal });

@@ -39,11 +39,6 @@ export function createSseWriter(
   let closed = false;
   let heartbeat: ReturnType<typeof setInterval> | undefined;
 
-  const write = (frame: string) => {
-    if (closed || options.signal?.aborted) return;
-    controller.enqueue(encoder.encode(frame));
-  };
-
   const close = () => {
     if (closed) return;
     closed = true;
@@ -56,17 +51,27 @@ export function createSseWriter(
     }
   };
 
+  const write = (frame: string) => {
+    if (closed || options.signal?.aborted) return;
+    try {
+      controller.enqueue(encoder.encode(frame));
+    } catch {
+      // The stream errored without aborting the signal. `write` runs from a
+      // timer as well as from `send`, and an uncaught throw there would escape
+      // the event loop rather than the request.
+      close();
+    }
+  };
+
   const send: SseSend = (payload) => {
     const data = options.mapPayload ? options.mapPayload(payload) : payload;
     write(`data: ${JSON.stringify(data)}\n\n`);
   };
 
-  if (options.heartbeatMs) {
-    heartbeat = setInterval(() => write(': ping\n\n'), options.heartbeatMs);
-    // A disconnect fires the signal but not necessarily `close()` — the timer
-    // has to stop either way or it keeps the request alive for its full poll.
-    options.signal?.addEventListener('abort', close, { once: true });
-  }
+  // A disconnect fires the signal but not necessarily `close()`, and a
+  // heartbeat left ticking would keep the request alive for its whole poll.
+  options.signal?.addEventListener('abort', close, { once: true });
+  if (options.heartbeatMs) heartbeat = setInterval(() => write(': ping\n\n'), options.heartbeatMs);
 
   return { send, close };
 }

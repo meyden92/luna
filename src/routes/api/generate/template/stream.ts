@@ -201,8 +201,12 @@ async function handle(request: Request): Promise<Response> {
             replicateStatus?: string;
             resultFileId?: string | null;
           },
+          // Progress writes are pointless once the client is gone, but the
+          // write that records a prediction id is not: it is the only thing
+          // that lets the reconciler find a run nobody is listening to.
+          options: { evenIfDisconnected?: boolean } = {},
         ): Promise<string> => {
-          throwIfAborted(abortSignal);
+          if (!options.evenIfDisconnected) throwIfAborted(abortSignal);
           const generationId = generationIds[index] ?? crypto.randomUUID();
           // One statement per progress step, never a transaction spanning the
           // stream: this runs repeatedly over the minutes a prediction polls,
@@ -291,20 +295,27 @@ async function handle(request: Request): Promise<Response> {
               signal: abortSignal,
             });
             registerPrediction(prediction.id);
-            throwIfAborted(abortSignal);
+            // No abort check here on purpose: a disconnect must not skip
+            // recording the id below, and the poll aborts on its own anyway.
             return { prediction, index };
           }),
         );
 
+        // Runs even if the client has already disconnected, so a prediction
+        // created moments before the drop is still reachable afterwards.
         await Promise.all(
           predictions.map(({ prediction, index }) =>
-            persistGeneration(index, {
-              status: 'processing',
-              finalPrompt,
-              replicateId: prediction.id,
-              replicateStatus: 'streaming',
-              resultFileId: null,
-            }),
+            persistGeneration(
+              index,
+              {
+                status: 'processing',
+                finalPrompt,
+                replicateId: prediction.id,
+                replicateStatus: 'streaming',
+                resultFileId: null,
+              },
+              { evenIfDisconnected: true },
+            ),
           ),
         );
 

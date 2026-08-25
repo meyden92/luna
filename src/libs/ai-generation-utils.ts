@@ -315,7 +315,10 @@ async function uploadImageToCache(
       ContentType: 'image/png',
       ACL: 'public-read',
       ...(options.cacheControl ? { CacheControl: options.cacheControl } : {}),
-      Metadata: { uploaded_at: new Date().toISOString(), originalImageHash: hash },
+      // No object metadata: the upload time is S3's own `LastModified` and the
+      // hash is the key, so the two `x-amz-meta-*` headers this used to send
+      // recorded nothing that was not already here — and an underscore in one
+      // of their names broke SigV4 on RustFS (issue #60).
     },
   });
 

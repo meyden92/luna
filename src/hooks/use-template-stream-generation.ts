@@ -195,6 +195,10 @@ export function useTemplateStreamGeneration() {
           status: 'failed',
           error: errorMessage,
         });
+        // The stream dying no longer kills the generation behind it — the
+        // predictions keep running and the reconciler finishes them (issue
+        // #59) — so history is the one place the result will still show up.
+        queryClient.invalidateQueries({ queryKey: queryKeys.ai.templateHistory });
         toast.error(errorMessage);
         return { success: false, error: errorMessage };
       } finally {

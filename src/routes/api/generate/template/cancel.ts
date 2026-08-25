@@ -8,6 +8,16 @@ import { requireAuthenticatedUser } from '@/libs/rbac/guards';
 
 const replicate = new Replicate({ auth: env.REPLICATE_API_TOKEN });
 
+const cancelBodySchema = z.object({
+  // An upper bound on the request, not the batch limit — the endpoint only ever
+  // touches rows the caller owns, so it need not track `imageCount`.
+  generationIds: z.array(z.string().min(1)).min(1).max(32),
+});
+
+function json(body: unknown, status: number): Response {
+  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+}
+
 /**
  * Cancels a template batch the user deliberately stopped.
  *
@@ -17,14 +27,6 @@ const replicate = new Replicate({ auth: env.REPLICATE_API_TOKEN });
  * #59). Cancellation therefore needs a channel that only a deliberate cancel
  * uses, which is this one.
  */
-const cancelBodySchema = z.object({
-  generationIds: z.array(z.string().min(1)).min(1).max(4),
-});
-
-function json(body: unknown, status: number): Response {
-  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
-}
-
 async function handle(request: Request): Promise<Response> {
   let userId: string;
   try {

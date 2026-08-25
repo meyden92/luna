@@ -785,6 +785,12 @@ export async function upsertTemplateGeneration(values: TemplateGenerationValues,
   const [before] = await handle.select().from(templateGeneration).where(eq(templateGeneration.id, values.id));
 
   if (before) {
+    // A generation never moves backwards out of a terminal status. The stream
+    // records a prediction id even after its client has gone (issue #59), and
+    // that write can land just after an explicit cancel has failed the row —
+    // without this it would flip back to `processing` and be finished later.
+    if (values.status === 'processing' && (before.status === 'success' || before.status === 'failed')) return before;
+
     const [after] = await handle.update(templateGeneration).set(mutable).where(eq(templateGeneration.id, values.id)).returning();
     if (after) await writeAuditLog(handle, { model: 'TemplateGeneration', action: 'update', before, after, userId });
     return after;
@@ -817,10 +823,6 @@ export async function markTemplateGenerationSucceeded(
 }
 
 /**
- * Fails every one of the user's generations in `ids` that is still processing.
- * Used when a stream is cancelled or dies, where several rows share one fate.
- */
-/**
  * The Replicate predictions behind a batch the user is cancelling. Only rows
  * still `processing` have anything to cancel, and the owner check keeps one
  * user's generation ids from reaching another's predictions.
@@ -840,6 +842,10 @@ export function listCancellableTemplateGenerations(ids: string[], ownerId: strin
     );
 }
 
+/**
+ * Fails every one of the user's generations in `ids` that is still processing.
+ * Used when a stream is cancelled or dies, where several rows share one fate.
+ */
 export async function markTemplateGenerationsFailed(
   { ids, ownerId, errorMessage }: { ids: string[]; ownerId: string; errorMessage: string },
   userId: string | null,

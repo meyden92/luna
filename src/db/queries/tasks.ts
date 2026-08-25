@@ -529,11 +529,19 @@ export function listStuckTemplateGenerations(staleStreamingCutoff: Date, limit: 
     .where(
       and(
         eq(templateGeneration.status, 'processing'),
-        isNotNull(templateGeneration.replicateId),
         or(
-          isNull(templateGeneration.replicateStatus),
-          ne(templateGeneration.replicateStatus, 'streaming'),
-          lt(templateGeneration.createdAt, staleStreamingCutoff),
+          and(
+            isNotNull(templateGeneration.replicateId),
+            or(
+              isNull(templateGeneration.replicateStatus),
+              ne(templateGeneration.replicateStatus, 'streaming'),
+              lt(templateGeneration.createdAt, staleStreamingCutoff),
+            ),
+          ),
+          // A row whose stream died before it recorded a prediction id. Nothing
+          // can finish it, but leaving it `processing` strands it forever now
+          // that a disconnect no longer fails the batch itself (issue #59).
+          and(isNull(templateGeneration.replicateId), lt(templateGeneration.createdAt, staleStreamingCutoff)),
         ),
       ),
     )

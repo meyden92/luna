@@ -2,10 +2,11 @@ import { createFileRoute } from '@tanstack/react-router';
 import Replicate from 'replicate';
 import { UPLOAD_CONFIG } from '@/config/upload-config';
 import { getEditingModelById } from '@/db/queries/ai';
-import { createSseWriter, eventStreamResponse, isAbortError, pollReplicatePrediction } from '@/libs/ai-generation-utils';
+import { isAbortError, pollReplicatePrediction } from '@/libs/ai-generation-utils';
 import { checkScopedRateLimit, retryAfterSeconds } from '@/libs/api/rate-limit';
 import { env } from '@/libs/env';
 import { ForbiddenError, requireAdmin } from '@/libs/rbac/guards';
+import { createSseWriter, eventStreamResponse, SSE_HEARTBEAT_MS } from '@/libs/sse-stream';
 
 const replicate = new Replicate({ auth: env.REPLICATE_API_TOKEN });
 
@@ -102,7 +103,7 @@ async function handle(request: Request): Promise<Response> {
 
   const stream = new ReadableStream({
     async start(controller) {
-      const { send, close } = createSseWriter(controller, { signal: abortSignal });
+      const { send, close } = createSseWriter(controller, { signal: abortSignal, heartbeatMs: SSE_HEARTBEAT_MS });
 
       try {
         send({ status: 'processing', progress: 10, message: 'Creating AI prediction...' });

@@ -5,9 +5,6 @@ import { z } from 'zod';
 import { getActiveGenerationModel, markAiGenerationCancelled, upsertAiGeneration } from '@/db/queries/ai';
 import type { JsonValue } from '@/db/schema/json';
 import {
-  createPredictionAbortRegistry,
-  createSseWriter,
-  eventStreamResponse,
   isAbortError,
   normalizeReplicateOutput,
   pollReplicatePrediction,
@@ -19,6 +16,7 @@ import {
 import { checkScopedRateLimit, retryAfterSeconds } from '@/libs/api/rate-limit';
 import { env } from '@/libs/env';
 import { requireAuthenticatedUser } from '@/libs/rbac/guards';
+import { createPredictionAbortRegistry, createSseWriter, eventStreamResponse, SSE_HEARTBEAT_MS } from '@/libs/sse-stream';
 
 const replicate = new Replicate({ auth: env.REPLICATE_API_TOKEN });
 
@@ -97,11 +95,11 @@ async function handle(request: Request): Promise<Response> {
     (predictionId) => replicate.predictions.cancel(predictionId),
     '[generate-image]',
   );
-  const { signal: abortSignal, registerPrediction, abortWork } = predictionAbort;
+  const { signal: abortSignal, registerPrediction, handleDisconnect } = predictionAbort;
 
   const stream = new ReadableStream({
     async start(controller) {
-      const { send, close } = createSseWriter(controller, { signal: abortSignal });
+      const { send, close } = createSseWriter(controller, { signal: abortSignal, heartbeatMs: SSE_HEARTBEAT_MS });
       const requestSnapshot = { fieldValues: rawInput };
       const withRequestSnapshot = (result?: JsonValue): JsonValue => {
         if (result && typeof result === 'object' && !Array.isArray(result)) {
@@ -262,7 +260,7 @@ async function handle(request: Request): Promise<Response> {
       }
     },
     cancel() {
-      abortWork();
+      handleDisconnect();
     },
   });
 

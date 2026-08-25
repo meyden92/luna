@@ -9,14 +9,7 @@ import { s3Client } from '@/libs/S3Helper';
 import { StorageQuotaExceededError } from '@/libs/storage-quota';
 import { getCDNImage } from '@/libs/utils';
 import { env } from './env';
-
-const SSE_HEADERS = {
-  'Content-Type': 'text/event-stream',
-  'Cache-Control': 'no-cache',
-  Connection: 'keep-alive',
-};
-
-export type SseSend = (payload: unknown) => void;
+import type { SseSend } from './sse-stream';
 
 type AiModelField = {
   name: string;
@@ -161,50 +154,6 @@ export function validateAiModelFields(fields: AiModelField[], readValue: (fieldN
   return { ok: true, input };
 }
 
-export function createPredictionAbortRegistry(
-  requestSignal: AbortSignal,
-  cancelPrediction: (predictionId: string) => Promise<unknown>,
-  logPrefix: string,
-): {
-  signal: AbortSignal;
-  registerPrediction: (predictionId: string) => void;
-  abortWork: () => void;
-  cleanup: () => void;
-} {
-  const abortController = new AbortController();
-  const abortSignal = abortController.signal;
-  const predictionIds = new Set<string>();
-  const canceledPredictionIds = new Set<string>();
-
-  const cancelRegisteredPrediction = (predictionId: string) => {
-    if (canceledPredictionIds.has(predictionId)) return;
-    canceledPredictionIds.add(predictionId);
-    void cancelPrediction(predictionId).catch((error: unknown) =>
-      console.error(`${logPrefix} cancel prediction failed`, predictionId, error),
-    );
-  };
-
-  const abortWork = () => {
-    if (!abortSignal.aborted) abortController.abort();
-    for (const predictionId of predictionIds) cancelRegisteredPrediction(predictionId);
-  };
-
-  const registerPrediction = (predictionId: string) => {
-    predictionIds.add(predictionId);
-    if (abortSignal.aborted) cancelRegisteredPrediction(predictionId);
-  };
-
-  if (requestSignal.aborted) abortWork();
-  else requestSignal.addEventListener('abort', abortWork, { once: true });
-
-  return {
-    signal: abortSignal,
-    registerPrediction,
-    abortWork,
-    cleanup: () => requestSignal.removeEventListener('abort', abortWork),
-  };
-}
-
 export function waitFor(ms: number, signal?: AbortSignal): Promise<void> {
   throwIfAborted(signal);
 
@@ -222,10 +171,6 @@ export function waitFor(ms: number, signal?: AbortSignal): Promise<void> {
     signal?.addEventListener('abort', onAbort, { once: true });
     if (signal?.aborted) onAbort();
   });
-}
-
-export function eventStreamResponse(stream: ReadableStream<Uint8Array>): Response {
-  return new Response(stream, { headers: SSE_HEADERS });
 }
 
 export function uploadGeneratedImageErrorMessage(error: unknown, fallback: string): string {
@@ -534,32 +479,6 @@ export async function processCachedImages({
 
   if (useCombinedCache) await uploadMultipleImageCache(combinedHash, urls, logPrefix, signal);
   return { imageUrls: urls, allCached: false };
-}
-
-export function createSseWriter(
-  controller: ReadableStreamDefaultController<Uint8Array>,
-  options: { signal?: AbortSignal; mapPayload?: (payload: unknown) => unknown } = {},
-): { send: SseSend; close: () => void } {
-  const encoder = new TextEncoder();
-  let closed = false;
-
-  const close = () => {
-    if (closed) return;
-    closed = true;
-    try {
-      controller.close();
-    } catch {
-      /* stream already canceled */
-    }
-  };
-
-  const send: SseSend = (payload) => {
-    if (closed || options.signal?.aborted) return;
-    const data = options.mapPayload ? options.mapPayload(payload) : payload;
-    controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
-  };
-
-  return { send, close };
 }
 
 export async function pollReplicatePrediction(

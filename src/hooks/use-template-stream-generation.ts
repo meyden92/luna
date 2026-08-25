@@ -44,6 +44,9 @@ export function useTemplateStreamGeneration() {
   const updateGeneration = useTemplateGenerationQueueStore((state) => state.updateGeneration);
   const updateGenerationsByBatch = useTemplateGenerationQueueStore((state) => state.updateGenerationsByBatch);
   const abortControllersRef = useRef(new Map<string, AbortController>());
+  // Keyed by both batch id and generation id, because a cancel can name either
+  // and the server needs the generation ids to reach the predictions.
+  const batchGenerationIdsRef = useRef(new Map<string, string[]>());
   const queryClient = useQueryClient();
 
   const generate = useCallback(
@@ -98,8 +101,10 @@ export function useTemplateStreamGeneration() {
       // Create abort controller for this generation
       const abortController = new AbortController();
       abortControllersRef.current.set(batchId, abortController);
+      batchGenerationIdsRef.current.set(batchId, generationIds);
       for (const generationId of generationIds) {
         abortControllersRef.current.set(generationId, abortController);
+        batchGenerationIdsRef.current.set(generationId, generationIds);
       }
       let finalStatus: TemplateGenerationStatus | null = null;
       let finalError: string | undefined;
@@ -194,8 +199,10 @@ export function useTemplateStreamGeneration() {
         return { success: false, error: errorMessage };
       } finally {
         abortControllersRef.current.delete(batchId);
+        batchGenerationIdsRef.current.delete(batchId);
         for (const generationId of generationIds) {
           abortControllersRef.current.delete(generationId);
+          batchGenerationIdsRef.current.delete(generationId);
         }
       }
     },
@@ -208,7 +215,20 @@ export function useTemplateStreamGeneration() {
         ? [target]
         : [target.batchId, target.id].filter((key): key is string => typeof key === 'string' && key.length > 0);
     const controller = keys.map((key) => abortControllersRef.current.get(key)).find(Boolean);
+    const generationIds = keys.map((key) => batchGenerationIdsRef.current.get(key)).find(Boolean);
     controller?.abort();
+
+    // Aborting only closes the stream, and the server can no longer read that as
+    // a cancellation — a dropped connection looks identical and used to destroy
+    // predictions that were about to succeed (issue #59). Saying so explicitly
+    // is what stops the Replicate runs and closes the rows.
+    if (generationIds?.length) {
+      void fetch('/api/generate/template/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ generationIds }),
+      }).catch((error: unknown) => console.error('[template] cancel request failed', error));
+    }
   }, []);
 
   const cancelBatch = useCallback(

@@ -820,6 +820,26 @@ export async function markTemplateGenerationSucceeded(
  * Fails every one of the user's generations in `ids` that is still processing.
  * Used when a stream is cancelled or dies, where several rows share one fate.
  */
+/**
+ * The Replicate predictions behind a batch the user is cancelling. Only rows
+ * still `processing` have anything to cancel, and the owner check keeps one
+ * user's generation ids from reaching another's predictions.
+ */
+export function listCancellableTemplateGenerations(ids: string[], ownerId: string, handle: AuditHandle = db) {
+  if (ids.length === 0) return Promise.resolve([]);
+  return handle
+    .select({ id: templateGeneration.id, replicateId: templateGeneration.replicateId })
+    .from(templateGeneration)
+    .where(
+      and(
+        inArray(templateGeneration.id, ids),
+        eq(templateGeneration.userId, ownerId),
+        eq(templateGeneration.status, 'processing'),
+        isNotNull(templateGeneration.replicateId),
+      ),
+    );
+}
+
 export async function markTemplateGenerationsFailed(
   { ids, ownerId, errorMessage }: { ids: string[]; ownerId: string; errorMessage: string },
   userId: string | null,

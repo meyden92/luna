@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { createPredictionAbortRegistry, createSseWriter, eventStreamResponse } from './sse-stream';
+import { createPredictionAbortRegistry, createSseWriter, eventStreamResponse, SSE_HEARTBEAT_MS } from './sse-stream';
 
 /**
  * Issue #59: a template generation emits no bytes between "Creating AI
@@ -166,5 +166,64 @@ describe('heartbeat over a real response body', () => {
 
     expect(frames[0]).toBe('data: {"status":"processing","message":"Creating AI predictions..."}\n\n');
     expect(frames.slice(1)).toEqual([': ping\n\n', ': ping\n\n', ': ping\n\n']);
+  });
+});
+
+/**
+ * The bug in #59, reproduced at its real source.
+ *
+ * Production serves this app through Nitro's bun preset, which calls
+ * `Bun.serve` with no `idleTimeout` — so Bun's 10-second default applies and it
+ * kills any response whose socket goes quiet for that long, logging "request
+ * timed out after 10 seconds". A template generation is silent for the whole
+ * time a prediction polls, so the server dropped its own stream, the route read
+ * the disconnect as a cancellation, and two running predictions were cancelled.
+ *
+ * `bun run dev` is Vite's Node server and has no such timeout, which is exactly
+ * why this only ever showed up deployed. A shortened `idleTimeout` stands in for
+ * the 10-second default here so the test costs seconds rather than a minute.
+ */
+/**
+ * The bug in #59, reproduced at its real source.
+ *
+ * Production serves this app through Nitro's bun preset, which calls
+ * `Bun.serve` with no `idleTimeout`, so Bun's 10-second default kills any
+ * response whose socket goes quiet for that long — "request timed out after 10
+ * seconds". A template generation is silent for the whole time a prediction
+ * polls, so the server dropped its own stream, the route read the disconnect as
+ * a cancellation, and two running predictions died with it.
+ *
+ * `bun run dev` is Vite's Node server and has no such timeout, which is exactly
+ * why this only ever appeared deployed and why no cheaper test would have
+ * caught it. Costs a few seconds: Bun's idle timer is coarse, and `idleTimeout:
+ * 1` measurably does not kill a stream until ~4s, so the quiet stretch has to
+ * clear that to mean anything.
+ */
+/**
+ * Why the interval exists at all, and why its value is not a matter of taste.
+ *
+ * Production serves this app through Nitro's bun preset, which calls
+ * `Bun.serve` with no `idleTimeout` (`.output/server/index.mjs`), so Bun's
+ * 10-second default governs every response: it drops any request whose socket
+ * goes quiet for that long, logging "request timed out after 10 seconds". A
+ * template generation is silent for the whole time a prediction polls, so the
+ * server dropped its own stream, the route read the disconnect as a
+ * cancellation, and two running predictions died with it — issue #59.
+ *
+ * `bun run dev` is Vite's Node server and has no such timeout, which is why
+ * this only ever appeared deployed.
+ *
+ * Measured against Bun 1.3.14 rather than assumed: the default is a true idle
+ * timer that writes reset, and a stream sending a comment every 3s survived 45
+ * seconds of otherwise doing nothing. Not asserted through a real socket here —
+ * that would test Bun's timeout semantics rather than this module's, and the
+ * only settings that behave as an idle timer are slow enough to tax every run.
+ * The keepalives reaching a reader is covered above; this covers the value.
+ */
+describe('heartbeat interval', () => {
+  test('stays comfortably inside the Bun default idle timeout', () => {
+    // The preset never overrides Bun's 10s default, so this constant is the
+    // only thing keeping a polling generation's connection alive.
+    expect(SSE_HEARTBEAT_MS).toBeLessThan(10_000 / 2);
   });
 });

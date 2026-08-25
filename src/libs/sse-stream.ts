@@ -16,8 +16,15 @@ const SSE_HEADERS = {
   'X-Accel-Buffering': 'no',
 };
 
-/** How often an otherwise idle stream emits a keepalive comment. */
-export const SSE_HEARTBEAT_MS = 5000;
+/**
+ * How often an otherwise idle stream emits a keepalive comment.
+ *
+ * Bound by the server, not by taste: production runs on Nitro's bun preset,
+ * which calls `Bun.serve` without an `idleTimeout`, so Bun's 10-second default
+ * kills any response whose socket goes quiet for that long (issue #59). Three
+ * seconds leaves room for a missed tick or a stalled event loop.
+ */
+export const SSE_HEARTBEAT_MS = 3000;
 
 export type SseSend = (payload: unknown) => void;
 

@@ -7,6 +7,8 @@ import type { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/libs/utils';
 
+import styles from './dynamic-filterbar.module.css';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -298,39 +300,35 @@ function DefaultFilterBadge({ filter, definition, context, onRemove, onOperatorC
   }, [filter.values, definition, context]);
 
   return (
-    <div className="flex shrink-0 items-center gap-1 rounded-md border border-border/60 bg-background py-1 pl-2.5 pr-1.5 text-sm shadow-sm animate-in fade-in zoom-in-95 duration-150">
-      <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground/80">{definition.label}</span>
+    <div className={styles.badge}>
+      <span className={styles.badgeLabel}>{definition.label}</span>
 
       {/* Operator dropdown */}
       <PopoverPrimitive.Root
         open={operatorOpen}
         onOpenChange={setOperatorOpen}
       >
-        <PopoverPrimitive.Trigger className="cursor-pointer rounded px-1.5 py-0.5 font-mono text-xs hover:bg-accent">
-          {filter.operator.symbol}
-        </PopoverPrimitive.Trigger>
+        <PopoverPrimitive.Trigger className={styles.operatorTrigger}>{filter.operator.symbol}</PopoverPrimitive.Trigger>
         <PopoverPrimitive.Portal>
           <PopoverPrimitive.Positioner
             side="bottom"
             align="start"
             sideOffset={4}
-            className="z-50"
+            className={styles.operatorPositioner}
           >
-            <PopoverPrimitive.Popup className="bg-popover text-popover-foreground rounded-lg shadow-lg ring-1 ring-foreground/5 p-1 min-w-24 animate-in fade-in slide-in-from-top-1 duration-150">
+            <PopoverPrimitive.Popup className={styles.operatorPopup}>
               {definition.operators.map((op) => (
                 <button
                   key={op.id}
                   type="button"
-                  className={cn(
-                    'flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-accent cursor-pointer',
-                    op.id === filter.operator.id && 'bg-accent',
-                  )}
+                  className={styles.operatorItem}
+                  data-selected={op.id === filter.operator.id || undefined}
                   onClick={() => {
                     onOperatorChange(op);
                     setOperatorOpen(false);
                   }}
                 >
-                  <span className="font-mono w-6">{op.symbol}</span>
+                  <span className={styles.operatorSymbol}>{op.symbol}</span>
                   <span>{op.label}</span>
                 </button>
               ))}
@@ -339,14 +337,14 @@ function DefaultFilterBadge({ filter, definition, context, onRemove, onOperatorC
         </PopoverPrimitive.Portal>
       </PopoverPrimitive.Root>
 
-      <span className="max-w-[12rem] truncate text-xs font-semibold text-foreground/90">{displayValue}</span>
+      <span className={styles.badgeValue}>{displayValue}</span>
 
       <button
         type="button"
         onClick={onRemove}
-        className="cursor-pointer rounded p-1 hover:bg-accent"
+        className={styles.iconButton}
       >
-        <XIcon className="size-3" />
+        <XIcon />
       </button>
     </div>
   );
@@ -389,37 +387,35 @@ function SortDropdown({ sorters, currentSort, defaultSort, onChange, translation
   if (sorters.length === 0) return null;
 
   return (
-    <div className="flex items-center gap-1">
+    <div className={styles.sortWrap}>
       <PopoverPrimitive.Root
         open={open}
         onOpenChange={setOpen}
       >
-        <PopoverPrimitive.Trigger className="flex cursor-pointer items-center gap-1 rounded-lg border border-border/65 bg-background px-3 py-2 text-sm shadow-sm hover:bg-accent">
-          <span className="text-muted-foreground">{translations?.sortBy || 'Sort:'}</span>
+        <PopoverPrimitive.Trigger className={styles.sortTrigger}>
+          <span className={styles.sortLabel}>{translations?.sortBy || 'Sort:'}</span>
           <span>{currentSorter?.label || 'Select'}</span>
-          <ChevronDownIcon className="size-4 text-muted-foreground" />
+          <ChevronDownIcon />
         </PopoverPrimitive.Trigger>
         <PopoverPrimitive.Portal>
           <PopoverPrimitive.Positioner
             side="bottom"
             align="end"
             sideOffset={4}
-            className="z-50"
+            className={styles.sortPositioner}
           >
-            <PopoverPrimitive.Popup className="bg-popover text-popover-foreground rounded-lg shadow-lg ring-1 ring-foreground/5 p-1 min-w-36 animate-in fade-in slide-in-from-top-1 duration-150">
+            <PopoverPrimitive.Popup className={styles.sortPopup}>
               {sorters.map((sorter) => {
                 const Icon = sorter.icon;
                 return (
                   <button
                     key={sorter.key}
                     type="button"
-                    className={cn(
-                      'flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-accent cursor-pointer',
-                      effectiveSort?.key === sorter.key && 'bg-accent',
-                    )}
+                    className={styles.sortItem}
+                    data-selected={effectiveSort?.key === sorter.key || undefined}
                     onClick={() => handleSelectSort(sorter.key)}
                   >
-                    {Icon && <Icon className="size-4 text-muted-foreground" />}
+                    {Icon && <Icon />}
                     <span>{sorter.label}</span>
                   </button>
                 );
@@ -433,11 +429,11 @@ function SortDropdown({ sorters, currentSort, defaultSort, onChange, translation
         <Button
           variant="ghost"
           size="icon"
-          className="size-8 rounded-lg border border-border/65 bg-background shadow-sm"
+          className={styles.directionButton}
           onClick={toggleDirection}
           title={effectiveSort.direction === 'asc' ? 'Ascending' : 'Descending'}
         >
-          {effectiveSort.direction === 'asc' ? <ArrowUpIcon className="size-4" /> : <ArrowDownIcon className="size-4" />}
+          {effectiveSort.direction === 'asc' ? <ArrowUpIcon /> : <ArrowDownIcon />}
         </Button>
       )}
     </div>
@@ -1061,25 +1057,25 @@ export function DynamicFilterBar<TContext = unknown>({
   return (
     <div
       ref={containerRef}
-      className={cn('flex items-center gap-2', className)}
+      className={cn(styles.root, className)}
       onBlur={handleContainerBlur}
     >
       {/* Main filter input area - GitLab style with badges inside */}
-      <div className="flex-1 relative">
+      <div className={styles.field}>
         <div
-          className="flex min-h-11 cursor-text flex-wrap items-center gap-1 rounded-lg border border-border/65 bg-background px-3 py-2 shadow-sm transition-all focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-ring"
+          className={styles.inputBox}
           onClick={() => {
             inputRef.current?.focus();
             setDropdownOpen(true);
           }}
         >
-          <SearchIcon className="size-4 text-muted-foreground shrink-0" />
+          <SearchIcon className={styles.searchIcon} />
 
           {/* Search badge */}
           {state.search && (
-            <div className="flex shrink-0 items-center gap-1 rounded-md border border-border/60 bg-background py-1 pl-2.5 pr-1.5 text-xs shadow-sm">
-              <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground/80">Search</span>
-              <span className="max-w-[12rem] truncate font-semibold">{state.search}</span>
+            <div className={styles.badge}>
+              <span className={styles.badgeLabel}>Search</span>
+              <span className={styles.badgeValue}>{state.search}</span>
               <button
                 type="button"
                 onClick={(e) => {
@@ -1087,9 +1083,9 @@ export function DynamicFilterBar<TContext = unknown>({
                   clearSearchDebounce();
                   handleSetSearch('');
                 }}
-                className="cursor-pointer rounded p-1 hover:bg-accent"
+                className={styles.iconButton}
               >
-                <XIcon className="size-3" />
+                <XIcon />
               </button>
             </div>
           )}
@@ -1123,10 +1119,10 @@ export function DynamicFilterBar<TContext = unknown>({
           })}
 
           {/* Current selection prefix */}
-          {inputPrefix && <span className="whitespace-nowrap text-xs text-muted-foreground">{inputPrefix}</span>}
+          {inputPrefix && <span className={styles.inputPrefix}>{inputPrefix}</span>}
 
           {/* Loading spinner */}
-          {isLoadingAsync && <LoaderIcon className="size-4 text-muted-foreground animate-spin shrink-0" />}
+          {isLoadingAsync && <LoaderIcon className={styles.loader} />}
 
           {/* Input */}
           <input
@@ -1137,7 +1133,7 @@ export function DynamicFilterBar<TContext = unknown>({
             onKeyDown={handleKeyDown}
             onFocus={() => setDropdownOpen(true)}
             placeholder={!hasFilters && !inputPrefix ? placeholder : ''}
-            className="h-7 min-w-24 flex-1 bg-transparent text-sm outline-none"
+            className={styles.input}
           />
 
           {/* Clear all button inside input */}
@@ -1148,10 +1144,10 @@ export function DynamicFilterBar<TContext = unknown>({
                 e.stopPropagation();
                 handleClearAll();
               }}
-              className="shrink-0 cursor-pointer rounded p-1 hover:bg-accent"
+              className={styles.iconButton}
               title={translations?.clearAll || 'Clear all'}
             >
-              <XIcon className="size-4 text-muted-foreground" />
+              <XIcon />
             </button>
           )}
         </div>
@@ -1159,18 +1155,18 @@ export function DynamicFilterBar<TContext = unknown>({
         {/* Dropdown */}
         {dropdownOpen && (
           <div
-            className="absolute left-0 right-0 top-full z-50 mt-2 max-h-72 overflow-y-auto rounded-lg border border-border/60 bg-popover p-2 text-popover-foreground shadow-lg ring-1 ring-foreground/5 animate-in fade-in slide-in-from-top-2 duration-150"
+            className={styles.dropdown}
             onMouseDown={(e) => e.preventDefault()} // Prevent blur on click
           >
             {isLoadingAsync && currentOptions.length === 0 && (
-              <div className="px-3 py-2 text-sm text-muted-foreground flex items-center gap-2">
-                <LoaderIcon className="size-4 animate-spin" />
+              <div className={styles.emptyState}>
+                <LoaderIcon />
                 Loading...
               </div>
             )}
 
             {!isLoadingAsync && currentOptions.length === 0 && (
-              <div className="px-3 py-2 text-sm text-muted-foreground">
+              <div className={styles.emptyState}>
                 {stage === 'filter' ? translations?.noResults || 'No filters available' : translations?.noResults || 'No options found'}
               </div>
             )}
@@ -1197,10 +1193,8 @@ export function DynamicFilterBar<TContext = unknown>({
                   <button
                     key={option.value}
                     type="button"
-                    className={cn(
-                      'flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm',
-                      isHighlighted ? 'bg-accent' : 'hover:bg-accent/50',
-                    )}
+                    className={styles.option}
+                    data-highlighted={isHighlighted || undefined}
                     onClick={handleClick}
                     onMouseEnter={() => setHighlightedIndex(index)}
                   >
@@ -1213,14 +1207,12 @@ export function DynamicFilterBar<TContext = unknown>({
                 <button
                   key={option.value}
                   type="button"
-                  className={cn(
-                    'flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm',
-                    isHighlighted ? 'bg-accent' : 'hover:bg-accent/50',
-                  )}
+                  className={styles.option}
+                  data-highlighted={isHighlighted || undefined}
                   onClick={handleClick}
                   onMouseEnter={() => setHighlightedIndex(index)}
                 >
-                  {Icon && <Icon className="size-4 text-muted-foreground" />}
+                  {Icon && <Icon />}
                   <span>{option.label}</span>
                 </button>
               );
@@ -1229,10 +1221,10 @@ export function DynamicFilterBar<TContext = unknown>({
             {/* Multi-value: show apply button */}
             {stage === 'value' && selectedValues.length > 0 && (
               <>
-                <div className="border-t my-1" />
+                <div className={styles.applySeparator} />
                 <button
                   type="button"
-                  className="flex w-full cursor-pointer items-center justify-center gap-1 rounded-xl bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary/90"
+                  className={styles.applyButton}
                   onClick={() => {
                     handleApplyMultiValue();
                     inputRef.current?.focus();

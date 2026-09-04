@@ -1,0 +1,35 @@
+declare const styles: {
+  readonly "applyButton": string;
+  readonly "applySeparator": string;
+  readonly "badge": string;
+  readonly "badgeIn": string;
+  readonly "badgeLabel": string;
+  readonly "badgeValue": string;
+  readonly "directionButton": string;
+  readonly "dropdown": string;
+  readonly "dropdownIn": string;
+  readonly "emptyState": string;
+  readonly "field": string;
+  readonly "iconButton": string;
+  readonly "input": string;
+  readonly "inputBox": string;
+  readonly "inputPrefix": string;
+  readonly "loader": string;
+  readonly "operatorItem": string;
+  readonly "operatorPopup": string;
+  readonly "operatorPositioner": string;
+  readonly "operatorSymbol": string;
+  readonly "operatorTrigger": string;
+  readonly "option": string;
+  readonly "root": string;
+  readonly "searchIcon": string;
+  readonly "sortItem": string;
+  readonly "sortLabel": string;
+  readonly "sortPopup": string;
+  readonly "sortPositioner": string;
+  readonly "sortTrigger": string;
+  readonly "sortWrap": string;
+  readonly "spin": string;
+};
+export = styles;
+

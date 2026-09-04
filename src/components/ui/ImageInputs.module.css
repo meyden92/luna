@@ -1,0 +1,44 @@
+@layer components {
+  .root {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin-bottom: var(--space-3);
+    color: var(--foreground);
+    outline: none;
+  }
+
+  .tagsLabel {
+    color: var(--foreground);
+  }
+
+  .tagsWrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+
+  .tag {
+    position: relative;
+    cursor: pointer;
+  }
+
+  .removeIcon {
+    /* Nudges the icon just outside the tag's top-left corner. */
+    --icon-offset: 2px;
+
+    position: absolute;
+    top: calc(-1 * var(--icon-offset));
+    left: var(--icon-offset);
+    width: var(--space-3);
+    height: var(--space-3);
+    font-weight: var(--weight-bold);
+    opacity: 0;
+    transition: opacity 150ms;
+  }
+
+  .tag:hover .removeIcon {
+    opacity: 1;
+  }
+}

@@ -2,6 +2,9 @@ import { Eye } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/libs/utils';
+
+import styles from './image-preview.module.css';
 
 interface ImagePreviewProps {
   previewUrl: string;
@@ -55,13 +58,6 @@ export function ImagePreview({
   };
 
   const normalizedSize = normalizeSize(size);
-
-  const sizeClasses = {
-    sm: 'w-60 h-44',
-    md: 'w-[25rem] h-[18.75rem]',
-    lg: 'w-[40rem] h-[30rem]',
-    raw: 'w-auto h-auto max-w-5xl max-h-[85vh] min-w-[30rem] min-h-[22.5rem]',
-  };
 
   const getAutoPosition = () => {
     if (!containerRef.current || position !== 'auto') return position;
@@ -122,14 +118,6 @@ export function ImagePreview({
     setActualPosition(newPosition);
   };
 
-  const positionClasses = {
-    top: 'bottom-full left-1/2 transform -translate-x-1/2 mb-2',
-    bottom: 'top-full left-1/2 transform -translate-x-1/2 mt-2',
-    left: 'right-full top-1/2 transform -translate-y-1/2 mr-2',
-    right: 'left-full top-1/2 transform -translate-y-1/2 ml-2',
-    auto: 'bottom-full left-1/2 transform -translate-x-1/2 mb-2',
-  };
-
   const getPreviewPosition = () => {
     if (!containerRef.current) return {};
 
@@ -185,72 +173,58 @@ export function ImagePreview({
     }
   };
 
+  const renderPreviewBox = () => (
+    <div
+      className={styles.box}
+      data-size={normalizedSize}
+    >
+      {!imageLoaded && !imageError && (
+        <div className={styles.loadingBox}>
+          <div className={styles.spinner} />
+        </div>
+      )}
+
+      {imageError && (
+        <div className={styles.errorBox}>
+          <Eye className={styles.errorIcon} />
+          <span className="type-sm">Preview unavailable</span>
+        </div>
+      )}
+
+      <img
+        src={previewUrl}
+        alt="Preview"
+        className={styles.previewImage}
+        data-visible={imageLoaded && !imageError}
+        onLoad={() => setImageLoaded(true)}
+        onError={() => setImageError(true)}
+      />
+    </div>
+  );
+
   const renderPreview = () => {
     if (!isHovered) return null;
 
-    const previewContent = (
-      <div
-        className="fixed z-[9999] pointer-events-none"
-        style={{
-          zIndex: 9999,
-          ...getPreviewPosition(),
-        }}
-      >
-        <div className={`${sizeClasses[normalizedSize]} bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden`}>
-          {!imageLoaded && !imageError && (
-            <div className="w-full h-full flex items-center justify-center bg-gray-50">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-            </div>
-          )}
-
-          {imageError && (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50 text-gray-500">
-              <Eye className="w-12 h-12 mb-2" />
-              <span className="text-sm text-center px-4">Preview unavailable</span>
-            </div>
-          )}
-
-          <img
-            src={previewUrl}
-            alt="Preview"
-            className={`w-full h-full object-contain ${imageLoaded && !imageError ? 'block' : 'hidden'}`}
-            onLoad={() => setImageLoaded(true)}
-            onError={() => setImageError(true)}
-          />
-        </div>
-      </div>
-    );
-
     // Use portal for dropdown mode to escape container clipping
     if (dropdownMode && portalContainer) {
-      return createPortal(previewContent, portalContainer);
+      return createPortal(
+        <div
+          className={styles.portalOverlay}
+          style={getPreviewPosition()}
+        >
+          {renderPreviewBox()}
+        </div>,
+        portalContainer,
+      );
     }
 
     // For non-dropdown mode, use regular positioning
     return (
-      <div className={`absolute z-[9999] ${positionClasses[actualPosition]} pointer-events-none`}>
-        <div className={`${sizeClasses[normalizedSize]} bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden`}>
-          {!imageLoaded && !imageError && (
-            <div className="w-full h-full flex items-center justify-center bg-gray-50">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-            </div>
-          )}
-
-          {imageError && (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50 text-gray-500">
-              <Eye className="w-12 h-12 mb-2" />
-              <span className="text-sm text-center px-4">Preview unavailable</span>
-            </div>
-          )}
-
-          <img
-            src={previewUrl}
-            alt="Preview"
-            className={`w-full h-full object-contain ${imageLoaded && !imageError ? 'block' : 'hidden'}`}
-            onLoad={() => setImageLoaded(true)}
-            onError={() => setImageError(true)}
-          />
-        </div>
+      <div
+        className={styles.overlay}
+        data-position={actualPosition}
+      >
+        {renderPreviewBox()}
       </div>
     );
   };
@@ -258,7 +232,7 @@ export function ImagePreview({
   return (
     <div
       ref={containerRef}
-      className={`relative inline-block ${className}`}
+      className={cn(styles.root, className)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -293,10 +267,10 @@ export function PreviewIcon({ previewUrl, size = 'default', position = 'auto', c
         type="button"
         variant="ghost"
         size="sm"
-        className="h-5 w-5 p-0 text-muted-foreground hover:text-foreground"
+        className={styles.previewButton}
         title="Preview available - hover to see"
       >
-        <Eye className="w-3 h-3" />
+        <Eye className={styles.previewIcon} />
       </Button>
     </ImagePreview>
   );

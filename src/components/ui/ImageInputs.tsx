@@ -4,7 +4,9 @@ import type { KeyboardEvent } from 'react';
 import { useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/libs/utils';
 
+import styles from './ImageInputs.module.css';
 import { Input } from './input';
 
 interface ImageInputProps {
@@ -47,7 +49,7 @@ function ImageInputs({ baseTitle, changeTitle, changeTags, baseTags }: ImageInpu
   };
 
   return (
-    <div className="mb-3 flex w-full flex-col gap-1 text-black outline-hidden">
+    <div className={styles.root}>
       <Input
         placeholder="Title"
         value={title}
@@ -57,17 +59,17 @@ function ImageInputs({ baseTitle, changeTitle, changeTags, baseTags }: ImageInpu
         placeholder="Tags"
         onKeyDown={(e) => addTagHandler(e)}
       />
-      <div className="text-sm text-foreground">
+      <div className={cn('type-sm', styles.tagsLabel)}>
         Tags:
-        <div className="flex flex-wrap gap-1">
+        <div className={styles.tagsWrap}>
           {tags.map((tag) => (
             <Badge
               key={tag}
-              className="group/badge relative cursor-pointer truncate"
+              className={cn(styles.tag, 'type-truncate')}
               onClick={() => removeTagHandler(tag.toString())}
             >
-              <span className="text-xs">{tag}</span>
-              <X className="absolute left-[2px] top-[-2px] size-3 font-bold opacity-0 group-hover/badge:opacity-100" />
+              <span className="type-xs">{tag}</span>
+              <X className={styles.removeIcon} />
             </Badge>
           ))}
         </div>

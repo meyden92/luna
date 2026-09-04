@@ -1,0 +1,55 @@
+/*
+ * Base UI's overlay scrollbar is kept rather than the native one: callers give
+ * the scroll area a fixed height, and a native scrollbar would eat a gutter out
+ * of every one of those panels.
+ */
+@layer components {
+  .root {
+    position: relative;
+  }
+
+  .viewport {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    outline: none;
+    transition: box-shadow 150ms ease;
+
+    /* The viewport is keyboard-focusable, so it carries its own ring. */
+    &:focus-visible {
+      outline: 1px solid var(--ring);
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent);
+    }
+  }
+
+  .scrollbar {
+    display: flex;
+    padding: 1px;
+    touch-action: none;
+    user-select: none;
+    opacity: 0;
+    transition: opacity 150ms ease;
+
+    &[data-hovering],
+    &[data-scrolling] {
+      opacity: 1;
+    }
+
+    &[data-orientation="vertical"] {
+      width: var(--space-2);
+      height: 100%;
+    }
+
+    &[data-orientation="horizontal"] {
+      height: var(--space-2);
+      flex-direction: column;
+    }
+  }
+
+  .thumb {
+    position: relative;
+    flex: 1;
+    border-radius: var(--radius-full);
+    background-color: var(--input);
+  }
+}

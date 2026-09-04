@@ -1,0 +1,101 @@
+@layer components {
+  .header {
+    text-align: center;
+  }
+
+  .subtitle {
+    max-width: 42rem;
+    margin-inline: auto;
+    color: var(--muted-foreground);
+  }
+
+  .full {
+    width: 100%;
+  }
+
+  .tabsList {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  /* Two-column form layout that stacks below lg. */
+  .formGrid2 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+
+    @media (width >= 1024px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .fieldGrid2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-4);
+  }
+
+  .fieldGrid3 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+
+    @media (width >= 768px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .rowBetween {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .memberCard {
+    padding: var(--space-4);
+  }
+
+  .removeButton {
+    color: var(--destructive);
+
+    &:hover {
+      color: color-mix(in oklab, var(--destructive) 80%, transparent);
+    }
+  }
+
+  .addButton {
+    width: 100%;
+    padding: var(--space-2);
+    border: 1px dashed color-mix(in oklab, var(--muted-foreground) 50%, transparent);
+    border-radius: var(--radius-lg);
+    transition: border-color 0.15s ease;
+
+    &:hover {
+      border-color: var(--muted-foreground);
+    }
+  }
+
+  .muted {
+    color: var(--muted-foreground);
+  }
+
+  .addressBox {
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  .resultCard {
+    margin-top: var(--space-8);
+  }
+
+  .resultPre {
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    background: var(--muted);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    overflow: auto;
+  }
+}

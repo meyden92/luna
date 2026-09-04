@@ -1,0 +1,102 @@
+@layer components {
+  /* Page and card headers: title block stacked on narrow screens, split from sm. */
+  .header,
+  .cardHeader,
+  .configRow {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+
+    @media (width >= 640px) {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
+
+  .cardHeader {
+    padding-bottom: var(--space-2);
+  }
+
+  .deleteAction {
+    align-self: flex-start;
+
+    @media (width >= 640px) {
+      align-self: auto;
+    }
+  }
+
+  .muted {
+    color: var(--muted-foreground);
+  }
+
+  .labelRight {
+    text-align: right;
+  }
+
+  .nameGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .nameInput {
+    grid-column: span 3;
+  }
+
+  .keyInput {
+    min-width: 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .keyRow {
+    padding-top: var(--space-4);
+  }
+
+  /* Bordered strip holding the ShareX config actions. */
+  .configRow {
+    padding: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  .configText {
+    min-width: 0;
+  }
+
+  /* Bordered group holding the per-token ShareX upload settings. */
+  .panel {
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  /* A single labelled control inside the panel. */
+  .well,
+  .toggleRow {
+    padding: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  .toggleRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .folderSelect {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

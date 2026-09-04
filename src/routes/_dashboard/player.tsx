@@ -3,6 +3,7 @@ import { createFileRoute, notFound } from '@tanstack/react-router';
 import MusicPlayer from '@/components/audio/MusicPlayer';
 import { queryKeys } from '@/libs/query-keys';
 import { listMyAudioFiles } from '@/server/fns/dashboard/audio';
+import styles from './player.module.css';
 
 const playerQuery = queryOptions({
   queryKey: queryKeys.dashboard.playerFiles,
@@ -22,7 +23,7 @@ function PlayerPage() {
   const { data: files } = useSuspenseQuery(playerQuery);
 
   return (
-    <div className="h-full">
+    <div className={styles.root}>
       <MusicPlayer files={files} />
     </div>
   );

@@ -1,0 +1,35 @@
+declare const styles: {
+  readonly "canvasActions": string;
+  readonly "canvasCard": string;
+  readonly "canvasFrame": string;
+  readonly "canvasHeader": string;
+  readonly "empty": string;
+  readonly "field": string;
+  readonly "fieldStack": string;
+  readonly "flowItem": string;
+  readonly "flowItemHead": string;
+  readonly "flowItemMeta": string;
+  readonly "flowItemName": string;
+  readonly "flowList": string;
+  readonly "flowNodeDefault": string;
+  readonly "flowNodeTrigger": string;
+  readonly "flowStateIcon": string;
+  readonly "header": string;
+  readonly "headerActions": string;
+  readonly "icon": string;
+  readonly "inspectorBody": string;
+  readonly "inspectorEmpty": string;
+  readonly "inspectorNote": string;
+  readonly "layout": string;
+  readonly "root": string;
+  readonly "rowSpan2": string;
+  readonly "runError": string;
+  readonly "runsErrorCell": string;
+  readonly "selectFull": string;
+  readonly "subtitle": string;
+  readonly "title": string;
+  readonly "titleIcon": string;
+  readonly "toggleRow": string;
+};
+export = styles;
+

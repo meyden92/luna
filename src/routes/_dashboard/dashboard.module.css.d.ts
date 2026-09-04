@@ -1,0 +1,36 @@
+declare const styles: {
+  readonly "actions": string;
+  readonly "densityFooter": string;
+  readonly "densityHeader": string;
+  readonly "densityLabel": string;
+  readonly "densityPanel": string;
+  readonly "densityTrigger": string;
+  readonly "densityValue": string;
+  readonly "dropContent": string;
+  readonly "dropIcon": string;
+  readonly "dropIconWell": string;
+  readonly "dropOverlay": string;
+  readonly "dropSubtitle": string;
+  readonly "dropTitle": string;
+  readonly "fileCount": string;
+  readonly "filterBar": string;
+  readonly "galleryZone": string;
+  readonly "headerRow": string;
+  readonly "lightboxOverlay": string;
+  readonly "riseIn": string;
+  readonly "riseInDelay1": string;
+  readonly "riseInDelay2": string;
+  readonly "root": string;
+  readonly "segment": string;
+  readonly "segmentGroup": string;
+  readonly "segmentIcon": string;
+  readonly "selectButton": string;
+  readonly "selectIcon": string;
+  readonly "title": string;
+  readonly "toolbar": string;
+  readonly "uploadButton": string;
+  readonly "uploadIcon": string;
+  readonly "viewOptions": string;
+};
+export = styles;
+

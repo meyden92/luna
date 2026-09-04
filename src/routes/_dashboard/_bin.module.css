@@ -1,0 +1,14 @@
+@layer components {
+  /* Footer sits at the bottom even on short pages; 4rem is the app header. */
+  .root {
+    --app-header-height: 4rem;
+
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - var(--app-header-height));
+  }
+
+  .body {
+    flex: 1;
+  }
+}

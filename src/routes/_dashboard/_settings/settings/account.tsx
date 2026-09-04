@@ -11,7 +11,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useConfirmation } from '@/hooks/use-confirmation';
 import { authClient } from '@/libs/auth/auth-client';
 import { queryKeys } from '@/libs/query-keys';
+import { cn } from '@/libs/utils';
 import { listUserSessions } from '@/server/fns/session';
+import styles from './account.module.css';
 
 type RevokeAction = { type: 'single'; token: string; isCurrentSession: boolean } | { type: 'others' } | { type: 'all' };
 
@@ -130,32 +132,35 @@ function SettingsAccountPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="stack space-6">
       <div>
-        <h3 className="text-lg font-medium">Account</h3>
-        <p className="text-sm text-muted-foreground">Manage how you sign in, and the devices you are signed in on.</p>
+        <h3 className="type-lg weight-medium">Account</h3>
+        <p className={cn('type-sm', styles.subtitle)}>Manage how you sign in, and the devices you are signed in on.</p>
       </div>
       <Separator />
 
       <AccountCredentials />
 
       <Card>
-        <CardHeader className="gap-3">
-          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <CardHeader className={styles.cardHeader}>
+          <div className={styles.headerRow}>
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
+              <CardTitle className={styles.titleRow}>
+                <Shield className={styles.icon} />
                 Active Sessions
               </CardTitle>
               <CardDescription>Review where your account is signed in and revoke sessions when needed.</CardDescription>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className={styles.actions}>
               <Button
                 variant="outline"
                 onClick={() => void refetch()}
                 disabled={isFetching || pendingAction !== null}
               >
-                <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+                <RefreshCw
+                  className={styles.refreshIcon}
+                  data-spinning={isFetching}
+                />
                 Refresh
               </Button>
               <Button
@@ -177,7 +182,7 @@ function SettingsAccountPage() {
         </CardHeader>
         <CardContent>
           {sessions.length === 0 ? (
-            <div className="flex min-h-[160px] items-center justify-center text-sm text-muted-foreground">No active sessions found.</div>
+            <div className={styles.emptySessions}>No active sessions found.</div>
           ) : (
             <Table>
               <TableHeader>
@@ -187,7 +192,7 @@ function SettingsAccountPage() {
                   <TableHead>Last Active</TableHead>
                   <TableHead>Expires</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className={styles.actionsCell}>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -197,20 +202,30 @@ function SettingsAccountPage() {
 
                   return (
                     <TableRow key={session.id}>
-                      <TableCell className="max-w-[340px] truncate">{session.userAgent || 'Unknown device'}</TableCell>
+                      <TableCell className={styles.deviceCell}>{session.userAgent || 'Unknown device'}</TableCell>
                       <TableCell>{session.ipAddress || '-'}</TableCell>
                       <TableCell>{new Date(session.updatedAt).toLocaleString()}</TableCell>
                       <TableCell>{new Date(session.expiresAt).toLocaleString()}</TableCell>
                       <TableCell>
                         {isCurrentSession ? (
-                          <span className="text-xs font-medium text-green-600">Current</span>
+                          <span
+                            className={styles.status}
+                            data-tone="current"
+                          >
+                            Current
+                          </span>
                         ) : isExpired ? (
-                          <span className="text-xs font-medium text-amber-600">Expired</span>
+                          <span
+                            className={styles.status}
+                            data-tone="expired"
+                          >
+                            Expired
+                          </span>
                         ) : (
-                          <span className="text-xs text-muted-foreground">Active</span>
+                          <span className={styles.status}>Active</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className={styles.actionsCell}>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -223,7 +238,7 @@ function SettingsAccountPage() {
                             })
                           }
                         >
-                          <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                          <Trash2 className={styles.revokeIcon} />
                           Revoke
                         </Button>
                       </TableCell>

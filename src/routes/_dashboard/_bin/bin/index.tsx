@@ -4,7 +4,9 @@ import BinList from '@/components/bin/BinList';
 import BinUploader from '@/components/bin/BinUploader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { queryKeys } from '@/libs/query-keys';
+import { cn } from '@/libs/utils';
 import { listMySnippets } from '@/server/fns/dashboard/snippets';
+import styles from './index.module.css';
 
 const myBinsQuery = queryOptions({
   queryKey: queryKeys.bins.mine,
@@ -21,20 +23,20 @@ function BinPage() {
   const { data: bins } = useSuspenseQuery(myBinsQuery);
 
   return (
-    <div className="container py-8 space-y-8 mx-auto max-w-5xl">
-      <div className="text-center space-y-2 mb-8">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">Your Snippets</h1>
-        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+    <div className="container stack space-8 pad-y-8">
+      <div className={styles.header}>
+        <h1 className={cn('type-4xl weight-bold', styles.title)}>Your Snippets</h1>
+        <p className={cn('type-lg', styles.subtitle)}>
           Store, organize, and share your code snippets securely. All snippets are private by default.
         </p>
       </div>
 
-      <Card className="shadow-sm border-border/50">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-xl flex items-center gap-2">
-            <div className="rounded-lg bg-primary/10 p-2">
+      <Card className={styles.card}>
+        <CardHeader className="pad-y-4">
+          <CardTitle className={cn('type-xl', styles.cardTitle)}>
+            <div className={styles.iconWell}>
               <svg
-                className="h-5 w-5 text-primary"
+                className={styles.icon}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -51,19 +53,23 @@ function BinPage() {
             </div>
             Create New Snippet
           </CardTitle>
-          <CardDescription className="text-base">Share your code with better syntax highlighting and organization</CardDescription>
+          <CardDescription className="type-base">Share your code with better syntax highlighting and organization</CardDescription>
         </CardHeader>
         <CardContent>
           <BinUploader />
         </CardContent>
       </Card>
 
-      <Card className="shadow-sm border-border/50">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-xl flex items-center gap-2">
-            <div className="rounded-lg bg-blue-500/10 p-2">
+      <Card className={styles.card}>
+        <CardHeader className="pad-y-4">
+          <CardTitle className={cn('type-xl', styles.cardTitle)}>
+            <div
+              className={styles.iconWell}
+              data-tone="info"
+            >
               <svg
-                className="h-5 w-5 text-blue-600"
+                className={styles.icon}
+                data-tone="info"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -80,7 +86,7 @@ function BinPage() {
             </div>
             My Snippets ({bins.length})
           </CardTitle>
-          <CardDescription className="text-base">
+          <CardDescription className="type-base">
             {bins.length > 0 ? 'Click any snippet to view it in a new tab' : 'Your uploaded snippets will appear here'}
           </CardDescription>
         </CardHeader>

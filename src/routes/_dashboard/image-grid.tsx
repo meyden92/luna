@@ -8,7 +8,7 @@ export const Route = createFileRoute('/_dashboard/image-grid')({
 
 function ImageGridPage() {
   return (
-    <section className="container mx-auto py-6">
+    <section className="container pad-y-6">
       <ImageGridGenerator />
     </section>
   );

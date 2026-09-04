@@ -1,0 +1,8 @@
+@layer components {
+  /* Full editor height below the fixed 4rem app header. */
+  .root {
+    --app-header-height: 4rem;
+
+    height: calc(100vh - var(--app-header-height));
+  }
+}

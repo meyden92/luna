@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import Footer from '@/components/landing/Footer';
+import styles from './_profile.module.css';
 
 export const Route = createFileRoute('/_dashboard/_profile')({
   component: ProfileLayout,
@@ -7,8 +8,8 @@ export const Route = createFileRoute('/_dashboard/_profile')({
 
 function ProfileLayout() {
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex flex-col">
-      <div className="flex-1">
+    <div className={styles.root}>
+      <div className={styles.body}>
         <Outlet />
       </div>
       <Footer />

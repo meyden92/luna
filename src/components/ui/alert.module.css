@@ -1,0 +1,96 @@
+@layer components {
+  .root {
+    position: relative;
+    display: grid;
+    width: 100%;
+    gap: calc(var(--space-1) / 2);
+    padding-inline: var(--space-4);
+    padding-block: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background-color: var(--card);
+    color: var(--card-foreground);
+    text-align: left;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+
+    /* An action button in the corner needs room and a positioning context. */
+    &:has([data-slot="alert-action"]) {
+      position: relative;
+      padding-inline-end: calc(var(--space-16) + var(--space-2));
+    }
+
+    /* A leading icon gets its own column; the rest of the content sits beside it. */
+    &:has(> svg) {
+      grid-template-columns: auto 1fr;
+      column-gap: calc(var(--space-2) + calc(var(--space-1) / 2));
+    }
+
+    & > svg {
+      grid-row: span 2 / span 2;
+      translate: 0 calc(var(--space-1) / 2);
+      color: currentColor;
+
+      &:not([class*="size-"]) {
+        width: var(--space-4);
+        height: var(--space-4);
+      }
+    }
+  }
+
+  .root[data-variant="destructive"] {
+    color: var(--destructive);
+
+    & [data-slot="alert-description"] {
+      color: color-mix(in oklch, var(--destructive) 90%, transparent);
+    }
+  }
+
+  .title {
+    font-weight: var(--weight-medium);
+
+    /* Lines up with the second grid column when the alert has a leading icon. */
+    [data-slot="alert"]:has(> svg) & {
+      grid-column-start: 2;
+    }
+
+    & a {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+
+      &:hover {
+        color: var(--foreground);
+      }
+    }
+  }
+
+  .description {
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-base);
+    text-wrap: balance;
+
+    @media (width >= 768px) {
+      text-wrap: pretty;
+    }
+
+    & p:not(:last-child) {
+      margin-bottom: var(--space-4);
+    }
+
+    & a {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+
+      &:hover {
+        color: var(--foreground);
+      }
+    }
+  }
+
+  .action {
+    position: absolute;
+    top: calc(var(--space-2) + calc(var(--space-1) / 2));
+    right: var(--space-3);
+  }
+}

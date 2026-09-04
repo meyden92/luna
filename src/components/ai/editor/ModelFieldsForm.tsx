@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import type { editingModelField } from '@/db/schema/ai';
 import type { editingModelFieldSchema } from '@/schemas/admin/editing-model-schema';
 import { ExpandableTextarea } from './ExpandableTextarea';
+import styles from './ModelFieldsForm.module.css';
 
 type EditingModelField = typeof editingModelField.$inferSelect;
 
@@ -49,10 +50,10 @@ export function ModelFieldsForm({ fields, values, onChange, onSubmitShortcut }: 
       return (
         <div
           key={field.id}
-          className="space-y-2"
+          className="stack space-2"
         >
-          <Label className="text-sm">{field.label}</Label>
-          {field.description && <p className="text-xs text-muted-foreground">{field.description}</p>}
+          <Label className={styles.label}>{field.label}</Label>
+          {field.description && <p className={styles.description}>{field.description}</p>}
           <Select
             value={currentValue}
             onValueChange={(val) => val && updateValue(field.name, val)}
@@ -85,13 +86,13 @@ export function ModelFieldsForm({ fields, values, onChange, onSubmitShortcut }: 
       return (
         <div
           key={field.id}
-          className="space-y-2"
+          className="stack space-2"
         >
-          <div className="flex items-center justify-between">
-            <Label className="text-sm">{field.label}</Label>
-            <span className="text-sm text-muted-foreground tabular-nums">{numValue}</span>
+          <div className={styles.sliderHeader}>
+            <Label className={styles.label}>{field.label}</Label>
+            <span className={styles.sliderValue}>{numValue}</span>
           </div>
-          {field.description && <p className="text-xs text-muted-foreground">{field.description}</p>}
+          {field.description && <p className={styles.description}>{field.description}</p>}
           <Slider
             value={[numValue]}
             onValueChange={(val) => updateValue(field.name, Array.isArray(val) ? val[0] : val)}
@@ -108,10 +109,10 @@ export function ModelFieldsForm({ fields, values, onChange, onSubmitShortcut }: 
       return (
         <div
           key={field.id}
-          className="space-y-2"
+          className="stack space-2"
         >
-          <Label className="text-sm">{field.label}</Label>
-          {field.description && <p className="text-xs text-muted-foreground">{field.description}</p>}
+          <Label className={styles.label}>{field.label}</Label>
+          {field.description && <p className={styles.description}>{field.description}</p>}
           <Input
             type="number"
             min={field.minValue ? Number(field.minValue) : undefined}
@@ -131,11 +132,11 @@ export function ModelFieldsForm({ fields, values, onChange, onSubmitShortcut }: 
       return (
         <div
           key={field.id}
-          className="flex items-center justify-between py-2"
+          className={styles.switchField}
         >
-          <div className="space-y-0.5">
-            <Label className="text-sm">{field.label}</Label>
-            {field.description && <p className="text-xs text-muted-foreground">{field.description}</p>}
+          <div className="stack space-1">
+            <Label className={styles.label}>{field.label}</Label>
+            {field.description && <p className={styles.description}>{field.description}</p>}
           </div>
           <Switch
             checked={boolValue}
@@ -150,9 +151,9 @@ export function ModelFieldsForm({ fields, values, onChange, onSubmitShortcut }: 
       return (
         <div
           key={field.id}
-          className="space-y-2"
+          className="stack space-2"
         >
-          <Label className="text-sm">{field.label}</Label>
+          <Label className={styles.label}>{field.label}</Label>
           <ExpandableTextarea
             label={field.label}
             value={String(value)}
@@ -171,16 +172,16 @@ export function ModelFieldsForm({ fields, values, onChange, onSubmitShortcut }: 
       return (
         <div
           key={field.id}
-          className="space-y-2"
+          className="stack space-2"
         >
-          <Label className="text-sm">{field.label}</Label>
-          {field.description && <p className="text-xs text-muted-foreground">{field.description}</p>}
+          <Label className={styles.label}>{field.label}</Label>
+          {field.description && <p className={styles.description}>{field.description}</p>}
           <Input
             value={String(value)}
             onChange={(e) => updateValue(field.name, e.target.value)}
             placeholder={field.label}
           />
-          {field.showCharCount && <p className="text-xs text-muted-foreground text-right">{String(value).length} characters</p>}
+          {field.showCharCount && <p className={styles.charCount}>{String(value).length} characters</p>}
         </div>
       );
     }
@@ -192,5 +193,5 @@ export function ModelFieldsForm({ fields, values, onChange, onSubmitShortcut }: 
     return null;
   }
 
-  return <div className="space-y-4">{visibleFields.map(renderField)}</div>;
+  return <div className="stack space-4">{visibleFields.map(renderField)}</div>;
 }

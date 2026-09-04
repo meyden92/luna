@@ -1,0 +1,207 @@
+@layer components {
+  /* Scrim colours: overlays sit on arbitrary artwork, so they are deliberately
+     absolute rather than theme-following. */
+  .card {
+    --scrim: rgb(0 0 0 / 0.4);
+    --scrim-strong: rgb(0 0 0 / 0.55);
+    --on-scrim: oklch(1 0 0);
+    --action-size: 1.75rem;
+
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--card);
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+
+  .card:hover {
+    border-color: color-mix(in oklab, var(--primary) 50%, transparent);
+    box-shadow: var(--shadow-md);
+  }
+
+  .card[data-selected] {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary);
+  }
+
+  .media {
+    position: relative;
+    aspect-ratio: 1;
+  }
+
+  .images {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    background: var(--muted);
+  }
+
+  .images[data-multi] {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .images[data-state="processing"] {
+    opacity: 0.5;
+    filter: grayscale(30%);
+  }
+
+  .images[data-state="failed"] {
+    opacity: 0.4;
+    filter: grayscale(100%);
+  }
+
+  .imageCell {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .overflowCount {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: var(--scrim-strong);
+    color: var(--on-scrim);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+  }
+
+  .noPreview {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    background: var(--muted);
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .processing {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--scrim);
+  }
+
+  .processingLabel {
+    margin-bottom: var(--space-2);
+    color: var(--on-scrim);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+  }
+
+  .progressWrap {
+    width: 75%;
+  }
+
+  .progressWrap .progressBar {
+    height: var(--space-2);
+  }
+
+  .badge {
+    position: absolute;
+    top: var(--space-2);
+    left: var(--space-2);
+  }
+
+  /* Actions reveal on hover, but stay visible while a generation is running so
+     Cancel is always reachable. */
+  .actions {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+    display: flex;
+    gap: var(--space-1);
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+
+  .card:hover .actions,
+  .actions[data-pinned] {
+    opacity: 1;
+  }
+
+  /* Scoped through the parent so it wins over the Button primitive's own
+     single-class size rule regardless of stylesheet order. */
+  .actions .actionButton {
+    width: var(--action-size);
+    height: var(--action-size);
+  }
+
+  .icon {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  .errorBar {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding: var(--space-2);
+    background: color-mix(in oklab, var(--destructive) 90%, transparent);
+    color: var(--destructive-foreground);
+  }
+
+  .errorRow {
+    --icon-nudge: 0.125rem;
+
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .errorIcon {
+    flex-shrink: 0;
+    margin-top: var(--icon-nudge);
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  .errorText {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .footer {
+    padding: var(--space-2);
+    border-top: 1px solid var(--border);
+    background: color-mix(in oklab, var(--muted) 30%, transparent);
+  }
+
+  .footerRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .time {
+    flex-shrink: 0;
+  }
+}

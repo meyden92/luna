@@ -2,6 +2,7 @@ import { Maximize2 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import styles from './ExpandableTextarea.module.css';
 import { PromptExpandDialog } from './PromptExpandDialog';
 
 interface ExpandableTextareaProps {
@@ -28,8 +29,8 @@ export function ExpandableTextarea({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   return (
-    <div className="space-y-1.5">
-      <div className="relative">
+    <div className="stack space-2">
+      <div className={styles.field}>
         <Textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -41,7 +42,7 @@ export function ExpandableTextarea({
           }}
           maxLength={maxLength}
           placeholder={placeholder}
-          className="min-h-[80px] pr-10"
+          className={styles.textarea}
         />
 
         {/* Expand button */}
@@ -50,15 +51,15 @@ export function ExpandableTextarea({
           variant="ghost"
           size="icon-sm"
           onClick={() => setIsDialogOpen(true)}
-          className="absolute top-2 right-2 opacity-60 hover:opacity-100"
+          className={styles.expandButton}
           title="Expand to fullscreen editor"
         >
-          <Maximize2 className="h-4 w-4" />
+          <Maximize2 className={styles.expandIcon} />
         </Button>
       </div>
 
       {(showCharCount || description) && (
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <div className={styles.meta}>
           <span>{description}</span>
           {showCharCount && (
             <span>

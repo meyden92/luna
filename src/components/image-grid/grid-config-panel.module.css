@@ -1,0 +1,103 @@
+@layer components {
+  .headerIcon {
+    width: var(--space-5);
+    height: var(--space-5);
+  }
+
+  .labelIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  .spread {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  .controlHint {
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  /* Auto-fit derives these dimensions, so the inputs read as recessed. */
+  .derivedInput {
+    background: color-mix(in oklab, var(--muted) 50%, transparent);
+  }
+
+  /* Read-only summary of the layout the current config produces. */
+  .well {
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    background: var(--muted);
+  }
+
+  .wellTitle {
+    margin-bottom: var(--space-1);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+  }
+
+  .wellText {
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .wellSubtext {
+    margin-top: var(--space-1);
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .cropNote {
+    margin-left: var(--space-2);
+    color: var(--success);
+  }
+
+  .warning {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border: 1px solid color-mix(in oklab, var(--warning) 40%, transparent);
+    border-radius: var(--radius-lg);
+    background: color-mix(in oklab, var(--warning) 12%, transparent);
+    color: var(--warning);
+  }
+
+  .warningIcon {
+    flex-shrink: 0;
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  .warningText {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .colorRow {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  .colorSwatch {
+    width: var(--space-16);
+    height: var(--space-10);
+    padding: var(--space-1);
+  }
+
+  .colorText {
+    flex: 1;
+  }
+}

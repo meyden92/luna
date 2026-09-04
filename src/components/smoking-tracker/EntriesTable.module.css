@@ -1,0 +1,73 @@
+@layer components {
+  .empty {
+    padding: var(--space-8);
+    text-align: center;
+    border: 1px dashed color-mix(in oklab, var(--border) 70%, transparent);
+    border-radius: var(--radius-xl);
+    background: color-mix(in oklab, var(--background) 50%, transparent);
+  }
+
+  .emptyTitle {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+  }
+
+  .emptyBody {
+    margin-top: var(--space-1);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .tableWrap {
+    overflow-x: auto;
+    border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+    border-radius: var(--radius-xl);
+  }
+
+  .right {
+    text-align: right;
+  }
+
+  .timeCell {
+    white-space: nowrap;
+    font-weight: var(--weight-medium);
+  }
+
+  .noteCell {
+    max-width: 22rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--muted-foreground);
+  }
+
+  .gapCell {
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-1);
+  }
+
+  .badgeIcon {
+    width: var(--space-3);
+    height: var(--space-3);
+  }
+
+  .actionIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  .deleteIcon {
+    color: var(--destructive);
+  }
+}

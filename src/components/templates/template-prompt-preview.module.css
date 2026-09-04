@@ -1,0 +1,95 @@
+@layer components {
+  .headerRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .headerMain {
+    flex: 1;
+  }
+
+  .titleRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  /* Compact toggle that sits on the title's baseline row. */
+  .toggleButton {
+    --toggle-height: 1.75rem;
+
+    block-size: var(--toggle-height);
+  }
+
+  .icon {
+    inline-size: var(--space-4);
+    block-size: var(--space-4);
+  }
+
+  .buttonIcon {
+    inline-size: var(--space-4);
+    block-size: var(--space-4);
+    margin-inline-end: var(--space-2);
+  }
+
+  .actions {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  .variableGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  @media (width >= 768px) {
+    .variableGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .required {
+    margin-inline-start: var(--space-1);
+    color: var(--destructive);
+  }
+
+  /* Matches the height of the inputs beside it so rows stay aligned. */
+  .switchRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    block-size: var(--space-10);
+  }
+
+  .switchLabel {
+    color: var(--muted-foreground);
+    cursor: pointer;
+  }
+
+  .finalSection {
+    padding-block-start: var(--space-6);
+    border-block-start: 1px solid var(--border);
+  }
+
+  /*
+   * Read-only well showing the template author's prompt with the test values
+   * substituted in. Prose settings — mono face, generous leading, preserved
+   * wrapping — so long prompts stay legible; not an editable control, so it
+   * never resizes.
+   */
+  .preview {
+    --preview-min-height: 7.5rem;
+
+    min-block-size: var(--preview-min-height);
+    background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+    color: var(--foreground);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: var(--leading-base);
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    resize: none;
+  }
+}

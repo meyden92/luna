@@ -1,0 +1,76 @@
+@layer components {
+  .frame {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  /* The canvas wrapper sizes itself inline from the render dimensions. */
+  .canvas {
+    transition: opacity 150ms ease;
+  }
+
+  .frame:hover .canvas {
+    opacity: 0.9;
+  }
+
+  /* Revealed on hover over the preview; it explains that cells are clickable. */
+  .callout {
+    position: absolute;
+    top: var(--space-2);
+    left: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    /* Scrim over the rendered grid, so it stays dark in both themes. */
+    background: color-mix(in oklab, oklch(0 0 0) 70%, transparent);
+    color: oklch(1 0 0);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+
+  .frame:hover .callout {
+    opacity: 1;
+  }
+
+  .fullWidth {
+    width: 100%;
+  }
+
+  .footnote {
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    text-align: center;
+  }
+
+  .empty {
+    padding-block: var(--space-12);
+    text-align: center;
+    color: var(--muted-foreground);
+  }
+
+  .emptyIcon {
+    width: var(--space-16);
+    height: var(--space-16);
+    margin-inline: auto;
+    margin-bottom: var(--space-4);
+    opacity: 0.5;
+  }
+
+  .emptyTitle {
+    margin-bottom: var(--space-2);
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+    font-weight: var(--weight-medium);
+  }
+
+  .emptyHint {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+}

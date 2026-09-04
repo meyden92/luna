@@ -1,0 +1,49 @@
+@layer components {
+  .badge {
+    gap: var(--space-2);
+  }
+
+  .dot {
+    width: var(--space-2);
+    height: var(--space-2);
+    border-radius: var(--radius-full);
+    background: var(--muted-foreground);
+  }
+
+  .dot[data-tone="warning"] {
+    background: var(--warning);
+  }
+
+  .dot[data-tone="info"] {
+    background: var(--info);
+  }
+
+  .dot[data-tone="success"] {
+    background: var(--success);
+  }
+
+  .dot[data-tone="destructive"] {
+    background: var(--destructive);
+  }
+
+  .dot[data-pulse] {
+    animation: badgeDotPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes badgeDotPulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dot[data-pulse] {
+      animation-duration: 0.01ms;
+      animation-iteration-count: 1;
+    }
+  }
+}

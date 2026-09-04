@@ -2,6 +2,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import styles from './SortableImageCard.module.css';
 
 export interface ImageItem {
   id: string;
@@ -30,34 +31,33 @@ export function SortableImageCard({ image, onRemove }: SortableImageCardProps) {
     <div
       ref={setNodeRef}
       style={style}
-      className={`group relative rounded-xl overflow-hidden bg-muted/30 ${isDragging ? 'opacity-50 z-50' : ''}`}
+      className={styles.card}
+      data-dragging={isDragging ? '' : undefined}
     >
       {/* Image Container */}
-      <div className="relative aspect-square">
+      <div className={styles.frame}>
         <img
           src={image.preview}
           alt="Reference image"
-          className="absolute inset-0 h-full w-full object-cover"
+          className={styles.image}
           sizes="200px"
           loading="lazy"
         />
 
         {/* Overlay - visible on hover */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
+        <div className={styles.veil} />
 
         {/* Bottom-left label */}
-        <div className="absolute bottom-2 left-2">
-          <span className="px-2 py-1 text-xs font-medium bg-black/60 text-white rounded-md">Image</span>
-        </div>
+        <span className={styles.tag}>Image</span>
 
         {/* Drag handle - top left, visible on hover */}
         <button
           type="button"
           {...listeners}
           {...attributes}
-          className="absolute top-2 left-2 p-1.5 bg-black/60 text-white rounded-md cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"
+          className={styles.handle}
         >
-          <GripVertical className="h-4 w-4" />
+          <GripVertical className={styles.icon} />
         </button>
 
         {/* Remove button - top right, visible on hover */}
@@ -66,16 +66,14 @@ export function SortableImageCard({ image, onRemove }: SortableImageCardProps) {
           variant="ghost"
           size="icon-sm"
           onClick={onRemove}
-          className="absolute top-2 right-2 bg-black/60 text-white hover:bg-destructive hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+          className={styles.remove}
         >
-          <X className="h-4 w-4" />
+          <X className={styles.icon} />
         </Button>
       </div>
 
       {/* Dimension indicator below image */}
-      {dimensions && (
-        <div className="px-2 py-1.5 text-xs text-muted-foreground text-center bg-card border-t border-border">{dimensions}</div>
-      )}
+      {dimensions && <div className={styles.dimensions}>{dimensions}</div>}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { type ReactNode, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { GenerationQueueState } from '@/hooks/stores/create-generation-queue-store';
 import { GenerationCard, type GenerationCardContent, type GenerationCardItem } from './GenerationCard';
+import styles from './GenerationGallery.module.css';
 
 interface GenerationGalleryProps<TItem extends GenerationCardItem> {
   useQueueStore: () => GenerationQueueState<TItem>;
@@ -40,20 +41,20 @@ export function GenerationGallery<TItem extends GenerationCardItem>({
 
   if (generationCount === 0) {
     return (
-      <div className="border-2 border-dashed border-border rounded-lg p-12 text-center">
-        <p className="text-muted-foreground">Generated images will appear here</p>
-        <p className="text-sm text-muted-foreground/70 mt-1">{emptyHint}</p>
+      <div className={styles.empty}>
+        <p>Generated images will appear here</p>
+        <p className={styles.emptyHint}>{emptyHint}</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="stack space-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className={styles.header}>
         <div>
-          <h2 className="text-lg font-semibold">Gallery</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className={styles.title}>Gallery</h2>
+          <p className={styles.count}>
             {generationCount} generation{generationCount !== 1 ? 's' : ''}
           </p>
         </div>
@@ -62,16 +63,16 @@ export function GenerationGallery<TItem extends GenerationCardItem>({
             variant="outline"
             size="sm"
             onClick={() => clearCompleted()}
-            className="gap-1.5"
+            className={styles.clearButton}
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash2 className={styles.clearIcon} />
             Clear Completed
           </Button>
         )}
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className={styles.grid}>
         {generations.map((generation) => (
           <GenerationCard
             key={generation.id}

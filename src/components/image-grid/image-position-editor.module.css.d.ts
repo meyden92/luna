@@ -1,0 +1,37 @@
+declare const styles: {
+  readonly "body": string;
+  readonly "cellBoundary": string;
+  readonly "cellBoundaryInset": string;
+  readonly "corner": string;
+  readonly "crosshair": string;
+  readonly "crosshairDot": string;
+  readonly "crosshairRing": string;
+  readonly "dialog": string;
+  readonly "fullWidth": string;
+  readonly "guide": string;
+  readonly "guides": string;
+  readonly "header": string;
+  readonly "hint": string;
+  readonly "hintKeys": string;
+  readonly "image": string;
+  readonly "imageLayer": string;
+  readonly "overlay": string;
+  readonly "presetButton": string;
+  readonly "presets": string;
+  readonly "rail": string;
+  readonly "railHeading": string;
+  readonly "readout": string;
+  readonly "readoutLabel": string;
+  readonly "readoutValue": string;
+  readonly "stage": string;
+  readonly "tips": string;
+  readonly "tipsHeading": string;
+  readonly "title": string;
+  readonly "titleIcon": string;
+  readonly "viewport": string;
+  readonly "zoomControl": string;
+  readonly "zoomSlider": string;
+  readonly "zoomValue": string;
+};
+export = styles;
+

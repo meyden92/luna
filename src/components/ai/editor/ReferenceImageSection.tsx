@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { proxyImage } from '@/server/fns/storage';
+import styles from './ReferenceImageSection.module.css';
 import { type ImageItem, SortableImageCard } from './SortableImageCard';
 
 const DEFAULT_maxImages = 10;
@@ -208,8 +209,8 @@ export function ReferenceImageSection({
   const remainingSlots = maxImages - images.length;
 
   return (
-    <div className="space-y-3">
-      <Label className="text-sm font-medium">Reference Images</Label>
+    <div className="stack space-3">
+      <Label className={styles.label}>Reference Images</Label>
 
       <Input
         ref={fileInputRef}
@@ -217,20 +218,20 @@ export function ReferenceImageSection({
         accept="image/*"
         multiple
         onChange={handleFileChange}
-        className="hidden"
+        className="hide"
       />
 
       {images.length === 0 ? (
-        <div className="space-y-3">
+        <div className="stack space-3">
           <div
             onClick={handleBrowseClick}
-            className="border-2 border-dashed border-muted-foreground/25 rounded-xl p-8 text-center hover:border-primary/50 hover:bg-muted/30 transition-all cursor-pointer group"
+            className={styles.dropzone}
           >
-            <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:bg-primary/10 transition-colors">
-              <Upload className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+            <div className={styles.dropIcon}>
+              <Upload />
             </div>
-            <p className="text-sm font-medium mb-1">Upload reference images</p>
-            <p className="text-xs text-muted-foreground">PNG, JPG up to 10MB each (max {maxImages} images)</p>
+            <p className={styles.dropTitle}>Upload reference images</p>
+            <p className={styles.dropHint}>PNG, JPG up to 10MB each (max {maxImages} images)</p>
           </div>
           <CacheImageSelector
             onImageSelect={handleCachedImageSelect}
@@ -242,7 +243,7 @@ export function ReferenceImageSection({
           />
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="stack space-3">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -252,7 +253,7 @@ export function ReferenceImageSection({
               items={images.map((img) => img.id)}
               strategy={rectSortingStrategy}
             >
-              <div className="grid grid-cols-2 gap-3">
+              <div className={styles.imageGrid}>
                 {images.map((image) => (
                   <SortableImageCard
                     key={image.id}
@@ -265,14 +266,14 @@ export function ReferenceImageSection({
           </DndContext>
 
           {images.length < maxImages && (
-            <div className="flex gap-2">
+            <div className={styles.addRow}>
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleBrowseClick}
-                className="flex-1"
+                className={styles.addButton}
               >
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className={styles.addIcon} />
                 Add More ({images.length}/{maxImages})
               </Button>
               <CacheImageSelector

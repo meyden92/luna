@@ -1,0 +1,98 @@
+@layer components {
+  .workspace {
+    --rail-width: 340px;
+
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  @media (width >= 768px) {
+    .workspace {
+      height: 100%;
+      min-height: 0;
+      grid-template-columns: var(--rail-width) 1fr;
+    }
+  }
+
+  .main {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Ambient corner glow, previously a global main-glow class in base.css. */
+  .main::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: radial-gradient(ellipse 600px 360px at 80% 10%, color-mix(in oklab, var(--primary) 8%, transparent), transparent 65%);
+  }
+
+  @media (width >= 768px) {
+    .main {
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+    }
+  }
+
+  /* Hairline rules that fade out at both ends, framing the results pane. */
+  .edge {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    pointer-events: none;
+    opacity: 0.6;
+    background: linear-gradient(180deg, transparent, var(--border) 20%, var(--border) 80%, transparent);
+  }
+
+  .edgeStart {
+    left: var(--space-4);
+  }
+
+  .edgeEnd {
+    right: var(--space-4);
+  }
+
+  .header {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    padding: var(--space-6) var(--space-8) var(--space-4);
+  }
+
+  .title {
+    margin: 0 0 var(--space-1);
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    line-height: 1.15;
+    font-weight: var(--weight-normal);
+    letter-spacing: -0.02em;
+    color: var(--foreground);
+  }
+
+  .subtitle {
+    margin: 0;
+    max-width: 56ch;
+    font-size: var(--text-sm);
+    line-height: 1.5;
+    color: var(--muted-foreground);
+  }
+
+  .content {
+    position: relative;
+    z-index: 1;
+    padding: 0 var(--space-8) var(--space-6);
+  }
+
+  @media (width >= 768px) {
+    .content {
+      min-height: 0;
+      flex: 1;
+      overflow-y: auto;
+    }
+  }
+}

@@ -1,0 +1,207 @@
+@layer components {
+  /* Card that reports validation state; `--status-color` drives the border and icon together. */
+  .statusCard {
+    --status-color: var(--destructive);
+
+    border-color: var(--status-color);
+  }
+
+  .statusCard[data-status="warning"] {
+    --status-color: var(--warning);
+  }
+
+  .statusCard[data-status="ok"] {
+    --status-color: var(--success);
+
+    background-color: color-mix(in oklab, var(--success) 8%, transparent);
+  }
+
+  .issueRow {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .issueBody {
+    flex: 1;
+  }
+
+  /* Optical nudge so a 20px icon lines up with the first text line. */
+  .statusIcon {
+    --icon-nudge: 0.125rem;
+
+    flex-shrink: 0;
+    inline-size: var(--space-5);
+    block-size: var(--space-5);
+    margin-block-start: var(--icon-nudge);
+    color: var(--status-color);
+  }
+
+  .okIcon {
+    flex-shrink: 0;
+    inline-size: var(--space-5);
+    block-size: var(--space-5);
+    color: var(--status-color);
+  }
+
+  .okText {
+    color: var(--primary-strong);
+  }
+
+  .muted {
+    color: var(--muted-foreground);
+  }
+
+  .strong {
+    color: var(--foreground);
+  }
+
+  .danger {
+    color: var(--destructive);
+  }
+
+  .warn {
+    color: var(--warning);
+  }
+
+  .errorTitle {
+    color: var(--destructive);
+  }
+
+  .errorBorder {
+    border-color: var(--destructive);
+  }
+
+  /* Field-level validation hints stack under the prompt editor. */
+  .errorLine {
+    display: block;
+    color: var(--destructive);
+  }
+
+  .warnLine {
+    display: block;
+    color: var(--warning);
+  }
+
+  .required {
+    margin-inline-start: var(--space-1);
+    color: var(--destructive);
+  }
+
+  .promptInput {
+    --prompt-min-height: 7.5rem;
+
+    min-block-size: var(--prompt-min-height);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+  }
+
+  .noResize {
+    resize: none;
+  }
+
+  /* Two-thirds main column beside a settings rail from lg up. */
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+
+  @media (width >= 1024px) {
+    .layout {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .mainColumn {
+      grid-column: span 2;
+    }
+  }
+
+  .sectionDivider {
+    padding-block-start: var(--space-6);
+    border-block-start: 1px solid var(--border);
+  }
+
+  .countsSection {
+    padding-block-start: var(--space-4);
+    border-block-start: 1px solid var(--border);
+  }
+
+  .pairGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  .recommendations {
+    padding-block-start: var(--space-2);
+    border-block-start: 1px solid var(--border);
+    color: var(--muted-foreground);
+  }
+
+  .recommendationList {
+    margin-inline-start: var(--space-1);
+    list-style: disc inside;
+  }
+
+  /* Reference panel listing the variables usable in model fields. */
+  .variablesPanel {
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+  }
+
+  .variableRows {
+    padding-block-start: var(--space-1);
+  }
+
+  .variableRow {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .variableCode {
+    padding-inline: var(--space-2);
+    padding-block: var(--space-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background-color: var(--background);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    white-space: nowrap;
+  }
+
+  .panelNote {
+    padding-block-start: var(--space-2);
+    border-block-start: 1px solid var(--border);
+    color: var(--muted-foreground);
+  }
+
+  .switchRow {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  .submit {
+    inline-size: 100%;
+  }
+
+  .spinner {
+    inline-size: var(--space-4);
+    block-size: var(--space-4);
+    margin-inline-end: var(--space-2);
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+}

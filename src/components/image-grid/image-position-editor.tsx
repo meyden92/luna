@@ -2,6 +2,7 @@ import { Maximize2, Minimize2, Move, RotateCcw, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { CellDimensions, SelectedImage } from '@/schemas/image-grid';
+import styles from './image-position-editor.module.css';
 
 interface ImagePositionEditorProps {
   image: SelectedImage;
@@ -209,47 +210,46 @@ export function ImagePositionEditor({ image, isOpen, onClose, onUpdateOffset, ce
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
+    <div className={styles.overlay}>
       {/* Main container */}
       <div
-        className={`bg-background rounded-lg shadow-xl flex flex-col max-h-[95vh] ${
-          isFullscreen ? 'w-[95vw] h-[95vh]' : 'w-full max-w-6xl h-auto'
-        }`}
+        className={styles.dialog}
+        data-fullscreen={isFullscreen ? '' : undefined}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
-          <div className="flex items-center gap-2">
-            <Move className="h-5 w-5" />
-            <h2 className="text-lg font-semibold">Position Image: {image.name}</h2>
+        <div className={styles.header}>
+          <div className="cluster space-2">
+            <Move className={styles.titleIcon} />
+            <h2 className={styles.title}>Position Image: {image.name}</h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="cluster space-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setIsFullscreen(!isFullscreen)}
               title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
             >
-              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              {isFullscreen ? <Minimize2 /> : <Maximize2 />}
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={onClose}
             >
-              <X className="h-4 w-4" />
+              <X />
             </Button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        <div className={styles.body}>
           {/* Main viewport */}
-          <div className="flex-1 flex flex-col items-center justify-center p-6 min-h-0">
-            <div className="text-center mb-4">
-              <p className="text-sm text-muted-foreground mb-2">
+          <div className={styles.stage}>
+            <div className="stack space-2 margin-bottom-4">
+              <p className={styles.hint}>
                 Drag the image to position it within the grid cell. Use arrow keys for fine control and zoom to get a better view.
               </p>
-              <div className="text-xs text-muted-foreground space-x-4">
+              <div className={styles.hintKeys}>
                 <span>Arrow keys: Fine adjust</span>
                 <span>Shift + arrows: Precise adjust</span>
                 <span>Ctrl/Cmd + scroll: Zoom</span>
@@ -258,10 +258,10 @@ export function ImagePositionEditor({ image, isOpen, onClose, onUpdateOffset, ce
             </div>
 
             {/* Zoom control */}
-            <div className="w-full max-w-md mb-6">
-              <div className="flex items-center justify-between text-sm mb-2">
-                <span className="font-medium">Zoom</span>
-                <span className="font-mono text-primary">{Math.round(zoom * 100)}%</span>
+            <div className={`${styles.zoomControl} stack space-3 margin-bottom-6`}>
+              <div className="cluster type-sm">
+                <span className="weight-medium">Zoom</span>
+                <span className={`${styles.zoomValue} margin-left-auto`}>{Math.round(zoom * 100)}%</span>
               </div>
               <input
                 type="range"
@@ -270,14 +270,14 @@ export function ImagePositionEditor({ image, isOpen, onClose, onUpdateOffset, ce
                 step="0.1"
                 value={zoom}
                 onChange={(e) => setZoom(Number(e.target.value))}
-                className="w-full mb-3"
+                className={styles.zoomSlider}
               />
-              <div className="flex gap-2 justify-center">
+              <div className={styles.presets}>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setZoom(1)}
-                  className="text-xs px-3"
+                  className={styles.presetButton}
                 >
                   100%
                 </Button>
@@ -285,7 +285,7 @@ export function ImagePositionEditor({ image, isOpen, onClose, onUpdateOffset, ce
                   variant="outline"
                   size="sm"
                   onClick={() => setZoom(2.0)}
-                  className="text-xs px-3"
+                  className={styles.presetButton}
                 >
                   200%
                 </Button>
@@ -293,7 +293,7 @@ export function ImagePositionEditor({ image, isOpen, onClose, onUpdateOffset, ce
                   variant="outline"
                   size="sm"
                   onClick={() => setZoom(4.0)}
-                  className="text-xs px-3"
+                  className={styles.presetButton}
                 >
                   400%
                 </Button>
@@ -303,20 +303,20 @@ export function ImagePositionEditor({ image, isOpen, onClose, onUpdateOffset, ce
             {/* Image viewport */}
             <div
               ref={overlayRef}
-              className="relative border-2 border-primary rounded-lg overflow-hidden shadow-lg"
+              className={styles.viewport}
               style={{
                 width: viewportDimensions.width,
                 height: viewportDimensions.height,
               }}
             >
               {/* Grid cell boundary indicator */}
-              <div className="absolute inset-0 border-4 border-primary/50 bg-primary/5 pointer-events-none z-20">
-                <div className="absolute inset-2 border border-primary/30 border-dashed" />
+              <div className={styles.cellBoundary}>
+                <div className={styles.cellBoundaryInset} />
               </div>
 
               {/* Draggable image container */}
               <div
-                className="absolute cursor-move overflow-hidden"
+                className={styles.imageLayer}
                 onMouseDown={handleMouseDown}
                 style={{
                   left: -imageOverflow.x / 2,
@@ -331,76 +331,103 @@ export function ImagePositionEditor({ image, isOpen, onClose, onUpdateOffset, ce
                   ref={imageRef}
                   src={image.url}
                   alt={image.name}
-                  className="w-full h-full object-cover select-none pointer-events-none"
+                  className={styles.image}
                   draggable={false}
                   onLoad={handleImageLoad}
                 />
               </div>
 
               {/* Center crosshair */}
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30">
-                <div className="w-6 h-6 border-2 border-white rounded-full bg-primary/20 flex items-center justify-center">
-                  <div className="w-2 h-2 bg-primary rounded-full" />
+              <div className={styles.crosshair}>
+                <div className={styles.crosshairRing}>
+                  <div className={styles.crosshairDot} />
                 </div>
               </div>
 
-              {/* Grid guidelines */}
-              <div className="absolute inset-0 pointer-events-none z-10">
-                {/* Rule of thirds lines */}
-                <div className="absolute left-1/3 top-0 bottom-0 w-px bg-white/30" />
-                <div className="absolute left-2/3 top-0 bottom-0 w-px bg-white/30" />
-                <div className="absolute top-1/3 left-0 right-0 h-px bg-white/30" />
-                <div className="absolute top-2/3 left-0 right-0 h-px bg-white/30" />
+              {/* Grid guidelines: rule of thirds */}
+              <div className={styles.guides}>
+                <div
+                  className={styles.guide}
+                  data-axis="x"
+                  data-third="1"
+                />
+                <div
+                  className={styles.guide}
+                  data-axis="x"
+                  data-third="2"
+                />
+                <div
+                  className={styles.guide}
+                  data-axis="y"
+                  data-third="1"
+                />
+                <div
+                  className={styles.guide}
+                  data-axis="y"
+                  data-third="2"
+                />
               </div>
 
               {/* Corner indicators */}
-              <div className="absolute top-2 left-2 w-3 h-3 border-l-2 border-t-2 border-white pointer-events-none z-20" />
-              <div className="absolute top-2 right-2 w-3 h-3 border-r-2 border-t-2 border-white pointer-events-none z-20" />
-              <div className="absolute bottom-2 left-2 w-3 h-3 border-l-2 border-b-2 border-white pointer-events-none z-20" />
-              <div className="absolute bottom-2 right-2 w-3 h-3 border-r-2 border-b-2 border-white pointer-events-none z-20" />
+              <div
+                className={styles.corner}
+                data-corner="top-left"
+              />
+              <div
+                className={styles.corner}
+                data-corner="top-right"
+              />
+              <div
+                className={styles.corner}
+                data-corner="bottom-left"
+              />
+              <div
+                className={styles.corner}
+                data-corner="bottom-right"
+              />
             </div>
           </div>
 
           {/* Controls panel */}
-          <div className="w-full lg:w-64 border-t lg:border-t-0 lg:border-l p-4 space-y-4 bg-muted/5">
+          <div className={`${styles.rail} stack space-4`}>
             {/* Position display */}
-            <div className="space-y-3">
-              <h3 className="font-medium text-sm">Current Position</h3>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="text-center">
-                  <div className="text-muted-foreground text-xs">X Position</div>
-                  <div className="text-base font-mono">{Math.round(tempOffset.x * 100)}%</div>
+            <div className="stack space-3">
+              <h3 className={styles.railHeading}>Current Position</h3>
+              <div className={styles.readout}>
+                <div>
+                  <div className={styles.readoutLabel}>X Position</div>
+                  <div className={styles.readoutValue}>{Math.round(tempOffset.x * 100)}%</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-muted-foreground text-xs">Y Position</div>
-                  <div className="text-base font-mono">{Math.round(tempOffset.y * 100)}%</div>
+                <div>
+                  <div className={styles.readoutLabel}>Y Position</div>
+                  <div className={styles.readoutValue}>{Math.round(tempOffset.y * 100)}%</div>
                 </div>
               </div>
             </div>
 
             {/* Action buttons */}
-            <div className="space-y-3">
+            <div className="stack space-3">
               <Button
                 variant="outline"
                 onClick={() => setTempOffset({ x: 0, y: 0 })}
-                className="w-full"
+                className={styles.fullWidth}
                 size="sm"
               >
-                <RotateCcw className="h-4 w-4 mr-2" />
+                <RotateCcw />
                 Reset Position
               </Button>
 
-              <div className="space-y-2">
+              <div className="stack space-2">
                 <Button
                   onClick={handleApply}
-                  className="w-full"
+                  className={styles.fullWidth}
                 >
                   Apply Changes
                 </Button>
                 <Button
                   variant="outline"
                   onClick={onClose}
-                  className="w-full"
+                  className={styles.fullWidth}
                   size="sm"
                 >
                   Cancel
@@ -409,8 +436,8 @@ export function ImagePositionEditor({ image, isOpen, onClose, onUpdateOffset, ce
             </div>
 
             {/* Help text */}
-            <div className="text-xs text-muted-foreground space-y-1 pt-2 border-t">
-              <p className="font-medium text-foreground">Quick Tips:</p>
+            <div className={`${styles.tips} stack space-1`}>
+              <p className={styles.tipsHeading}>Quick Tips:</p>
               <p>• Drag image to reposition</p>
               <p>• Arrow keys for fine control</p>
               <p>• Ctrl/Cmd + scroll to zoom</p>

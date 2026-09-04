@@ -1,0 +1,61 @@
+@layer components {
+  .root {
+    padding: var(--space-4);
+    border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+    border-radius: var(--radius-2xl);
+    background: color-mix(in oklab, var(--card) 75%, transparent);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+  }
+
+  .titleRow {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .iconBox {
+    display: inline-flex;
+    padding: var(--space-3);
+    border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+    border-radius: var(--radius-xl);
+    background: var(--background);
+  }
+
+  .icon {
+    width: var(--space-5);
+    height: var(--space-5);
+    color: color-mix(in oklab, var(--foreground) 80%, transparent);
+  }
+
+  .title {
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+    font-weight: var(--weight-semibold);
+    letter-spacing: -0.02em;
+  }
+
+  .description {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  @media (width >= 768px) {
+    .root {
+      padding: var(--space-5);
+    }
+
+    .header {
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+  }
+}

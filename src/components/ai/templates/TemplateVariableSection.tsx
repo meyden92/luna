@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { TemplateVariable } from '@/types/template';
+import styles from './TemplateVariableSection.module.css';
 
 interface TemplateVariableSectionProps {
   variables: TemplateVariable[];
@@ -28,19 +29,19 @@ export function TemplateVariableSection({ variables, values, onChange }: Templat
   const allRequiredFieldsFilled = requiredFieldsRemaining === 0 && requiredVariables.length > 0;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2">
-        <Label className="text-sm font-semibold">Template Options</Label>
+    <div className="stack space-4">
+      <div className={styles.header}>
+        <Label className="weight-semibold">Template Options</Label>
         {requiredVariables.length > 0 && (
-          <div className="text-xs">
+          <div className={styles.status}>
             {allRequiredFieldsFilled ? (
-              <span className="flex items-center gap-1 text-green-600 dark:text-green-400 font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5" />
+              <span className={styles.statusDone}>
+                <CheckCircle2 className={styles.statusIcon} />
                 All required
               </span>
             ) : (
-              <span className="text-muted-foreground">
-                <span className="font-semibold text-foreground">{requiredFieldsRemaining}</span> required
+              <span>
+                <span className={styles.statusCount}>{requiredFieldsRemaining}</span> required
               </span>
             )}
           </div>
@@ -53,19 +54,16 @@ export function TemplateVariableSection({ variables, values, onChange }: Templat
         return (
           <div
             key={variable.name}
-            className="space-y-2"
+            className="stack space-2"
           >
             {variable.type !== 'boolean' && (
-              <Label
-                htmlFor={variable.name}
-                className="text-sm"
-              >
+              <Label htmlFor={variable.name}>
                 {variable.label}
-                {variable.required && <span className="text-destructive ml-1">*</span>}
+                {variable.required && <span className={styles.marker}>*</span>}
               </Label>
             )}
 
-            {variable.description && <p className="text-xs text-muted-foreground">{variable.description}</p>}
+            {variable.description && <p className={styles.description}>{variable.description}</p>}
 
             {/* Text input */}
             {variable.type === 'text' && (
@@ -119,7 +117,7 @@ export function TemplateVariableSection({ variables, values, onChange }: Templat
                     <SelectContent>
                       {!variable.required && (
                         <SelectItem value="__NOTHING__">
-                          <span className="text-muted-foreground italic">None (skip)</span>
+                          <span className={styles.placeholderOption}>None (skip)</span>
                         </SelectItem>
                       )}
                       {variable.options?.map((option) => {
@@ -150,18 +148,15 @@ export function TemplateVariableSection({ variables, values, onChange }: Templat
 
             {/* Boolean checkbox */}
             {variable.type === 'boolean' && (
-              <div className="flex items-center space-x-2">
+              <div className={styles.checkboxRow}>
                 <Checkbox
                   id={variable.name}
                   checked={(value as boolean) || false}
                   onCheckedChange={(checked) => onChange(variable.name, checked)}
                 />
-                <Label
-                  htmlFor={variable.name}
-                  className="text-sm"
-                >
+                <Label htmlFor={variable.name}>
                   {variable.label}
-                  {variable.required && <span className="text-destructive ml-1">*</span>}
+                  {variable.required && <span className={styles.marker}>*</span>}
                 </Label>
               </div>
             )}

@@ -2,6 +2,8 @@ import { Link } from '@tanstack/react-router';
 import type { LucideIcon } from 'lucide-react';
 import { Card, CardDescription, CardHeader, CardTitle } from './card';
 
+import styles from './link-tile.module.css';
+
 interface LinkTileProps {
   href: string;
   title: string;
@@ -11,11 +13,14 @@ interface LinkTileProps {
 
 function LinkTile({ href, title, description, icon: Icon }: LinkTileProps) {
   return (
-    <Link to={href}>
-      <Card className="bg-accent hover:bg-primary/40 transition-colors duration-200">
+    <Link
+      to={href}
+      className={styles.link}
+    >
+      <Card className={styles.card}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Icon className="size-4" />
+          <CardTitle className={styles.title}>
+            <Icon className={styles.icon} />
             {title}
           </CardTitle>
           <CardDescription>{description}</CardDescription>

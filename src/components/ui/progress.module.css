@@ -1,0 +1,43 @@
+@layer components {
+  .root {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .track {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: var(--space-3);
+    overflow-x: hidden;
+    background: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    /* Inner well so the fill reads as sitting inside the track. */
+    box-shadow: inset 0 1px 2px var(--shadow-color-1);
+  }
+
+  /* Base UI animates the fill by writing inline width/offset, so the transition
+     has to cover whichever geometry property it sets. */
+  .indicator {
+    height: 100%;
+    background: linear-gradient(to right, var(--primary-strong), var(--primary));
+    transition: all 500ms ease;
+  }
+
+  .label {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+  }
+
+  .value {
+    margin-left: auto;
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-variant-numeric: tabular-nums;
+  }
+}

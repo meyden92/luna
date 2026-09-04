@@ -1,0 +1,76 @@
+@layer components {
+  /* `--gap` is a spacing step count set from the `spacing` prop. */
+  .root {
+    display: flex;
+    flex-direction: row;
+    width: fit-content;
+    align-items: center;
+    gap: calc(var(--gap, 0) * var(--space-1));
+
+    &[data-orientation="vertical"] {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    &[data-spacing="0"][data-variant="outline"] {
+      border-radius: var(--radius-2xl);
+    }
+  }
+
+  .item {
+    flex-shrink: 0;
+
+    /* Lift the focused segment so its ring is not clipped by its neighbours. */
+    &:focus,
+    &:focus-visible {
+      z-index: 10;
+    }
+  }
+
+  /* With no gap the items read as one joined control: square the inner edges,
+     round only the outer ends, and collapse the shared outline borders. */
+  .root[data-spacing="0"] .item {
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .root[data-spacing="0"][data-orientation="horizontal"] {
+    & .item:first-child {
+      border-start-start-radius: var(--radius-2xl);
+      border-end-start-radius: var(--radius-2xl);
+    }
+
+    & .item:last-child {
+      border-start-end-radius: var(--radius-2xl);
+      border-end-end-radius: var(--radius-2xl);
+    }
+
+    & .item[data-variant="outline"] {
+      border-left-width: 0;
+    }
+
+    & .item[data-variant="outline"]:first-child {
+      border-left-width: 1px;
+    }
+  }
+
+  .root[data-spacing="0"][data-orientation="vertical"] {
+    & .item:first-child {
+      border-start-start-radius: var(--radius-xl);
+      border-start-end-radius: var(--radius-xl);
+    }
+
+    & .item:last-child {
+      border-end-start-radius: var(--radius-xl);
+      border-end-end-radius: var(--radius-xl);
+    }
+
+    & .item[data-variant="outline"] {
+      border-top-width: 0;
+    }
+
+    & .item[data-variant="outline"]:first-child {
+      border-top-width: 1px;
+    }
+  }
+}

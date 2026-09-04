@@ -1,0 +1,47 @@
+@layer components {
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-6);
+  }
+
+  .headingRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .iconTile {
+    padding: var(--space-2);
+    border-radius: var(--radius-lg);
+    background: var(--primary-tint);
+  }
+
+  .icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    color: var(--primary);
+  }
+
+  .subtitle {
+    color: var(--muted-foreground);
+  }
+
+  .tabIcon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .addIcon {
+    width: 1rem;
+    height: 1rem;
+    margin-right: var(--space-2);
+  }
+
+  .tabTrigger {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+}

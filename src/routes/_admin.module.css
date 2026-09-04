@@ -1,0 +1,42 @@
+@layer components {
+  /* Two-column admin shell: a fixed sidebar beside a scrolling content column. */
+  .root {
+    display: flex;
+    min-height: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    background: var(--background);
+  }
+
+  .sidebar {
+    flex-shrink: 0;
+    width: 16rem;
+    padding: var(--space-4);
+    border-right: 1px solid var(--border);
+    background: color-mix(in oklab, var(--muted) 30%, transparent);
+  }
+
+  .brand {
+    margin-block: var(--space-6);
+    color: var(--primary);
+  }
+
+  .content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow-x: hidden;
+  }
+
+  .breadcrumbs {
+    padding: var(--space-8) var(--space-8) var(--space-4);
+  }
+
+  .main {
+    flex: 1;
+    padding: 0 var(--space-8) var(--space-8);
+    overflow-x: hidden;
+  }
+}

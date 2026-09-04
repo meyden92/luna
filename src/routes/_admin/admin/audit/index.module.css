@@ -1,0 +1,7 @@
+@layer components {
+  .panel {
+    background: var(--card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+}

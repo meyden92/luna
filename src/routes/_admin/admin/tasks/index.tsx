@@ -5,6 +5,7 @@ import TaskMonitoringDashboard from '@/components/admin/tasks/TaskMonitoringDash
 import LinkTile from '@/components/ui/link-tile';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import styles from './index.module.css';
 
 export const Route = createFileRoute('/_admin/admin/tasks/')({
   head: () => ({ meta: [{ title: 'Tasks | LunaShare' }] }),
@@ -13,12 +14,12 @@ export const Route = createFileRoute('/_admin/admin/tasks/')({
 
 function AdminTasksPage() {
   return (
-    <div className="container mx-auto py-8 px-4">
-      <h1 className="text-2xl font-bold mb-6">Admin Tasks</h1>
+    <div className="container pad-y-8">
+      <h1 className="type-2xl weight-bold margin-bottom-6">Admin Tasks</h1>
 
-      <div className="mb-8">
-        <h2 className="text-lg font-semibold mb-4">Manual Operations</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      <div className="margin-bottom-8">
+        <h2 className="type-lg weight-semibold margin-bottom-4">Manual Operations</h2>
+        <div className={styles.tileGrid}>
           <LinkTile
             href="/admin/tasks/sync-files"
             title="Sync Files"
@@ -46,39 +47,36 @@ function AdminTasksPage() {
         </div>
       </div>
 
-      <Separator className="my-8" />
+      <Separator className={styles.separator} />
 
       <div>
-        <h2 className="text-lg font-semibold mb-4">Automated Task Management</h2>
-        <Tabs
-          defaultValue="tasks"
-          className="w-full"
-        >
-          <TabsList className="grid w-full grid-cols-2">
+        <h2 className="type-lg weight-semibold margin-bottom-4">Automated Task Management</h2>
+        <Tabs defaultValue="tasks">
+          <TabsList className={styles.tabsList}>
             <TabsTrigger
               value="tasks"
-              className="flex items-center gap-2"
+              className="cluster space-2"
             >
-              <Activity className="h-4 w-4" />
+              <Activity className={styles.icon} />
               Task Manager
             </TabsTrigger>
             <TabsTrigger
               value="monitoring"
-              className="flex items-center gap-2"
+              className="cluster space-2"
             >
-              <BarChart3 className="h-4 w-4" />
+              <BarChart3 className={styles.icon} />
               Monitoring
             </TabsTrigger>
           </TabsList>
           <TabsContent
             value="tasks"
-            className="mt-6"
+            className="margin-top-6"
           >
             <EnhancedTaskList />
           </TabsContent>
           <TabsContent
             value="monitoring"
-            className="mt-6"
+            className="margin-top-6"
           >
             <TaskMonitoringDashboard />
           </TabsContent>

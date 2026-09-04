@@ -3,6 +3,7 @@ import AdminNav from '@/components/admin/AdminNav';
 import AdminBreadcrumbsWrapper from '@/components/admin/admin-breadcrumbs-wrapper';
 import { queryKeys } from '@/libs/query-keys';
 import { checkCurrentUserIsAdmin } from '@/server/fns/rbac';
+import styles from './_admin.module.css';
 
 export const Route = createFileRoute('/_admin')({
   beforeLoad: async ({ context }) => {
@@ -20,18 +21,18 @@ export const Route = createFileRoute('/_admin')({
 
 function AdminLayout() {
   return (
-    <div className="flex bg-background min-h-full max-w-full overflow-x-hidden">
-      <aside className="w-64 bg-muted/30 p-4 border-r border-border shrink-0">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-primary mt-6">Admin Panel</h1>
+    <div className={styles.root}>
+      <aside className={styles.sidebar}>
+        <div className={styles.brand}>
+          <h1 className="type-2xl weight-bold">Admin Panel</h1>
         </div>
         <AdminNav />
       </aside>
-      <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-x-hidden">
-        <div className="p-8 pb-4">
+      <div className={styles.content}>
+        <div className={styles.breadcrumbs}>
           <AdminBreadcrumbsWrapper />
         </div>
-        <main className="flex-1 px-8 pb-8 overflow-x-hidden">
+        <main className={styles.main}>
           <Outlet />
         </main>
       </div>

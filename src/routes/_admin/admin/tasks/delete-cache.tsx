@@ -4,7 +4,9 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import { useConfirmation } from '@/hooks/use-confirmation';
+import { cn } from '@/libs/utils';
 import { purgeGenerativeCache } from '@/server/fns/admin/cache';
+import styles from './delete-cache.module.css';
 
 export const Route = createFileRoute('/_admin/admin/tasks/delete-cache')({
   head: () => ({ meta: [{ title: 'Delete Cache | LunaShare' }] }),
@@ -40,16 +42,18 @@ function DeleteCachePage() {
   }, [confirm, execute]);
 
   return (
-    <div className="space-y-6">
+    <div className="stack space-6">
       <div>
-        <h1 className="text-2xl font-bold">Purge Cache & History</h1>
-        <p className="text-muted-foreground mt-2">Manually clear the entire image cache and reset all template generation history.</p>
+        <h1 className="type-2xl weight-bold">Purge Cache & History</h1>
+        <p className={cn(styles.subtitle, 'margin-top-2')}>
+          Manually clear the entire image cache and reset all template generation history.
+        </p>
       </div>
 
-      <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-destructive">
-        <h3 className="font-semibold flex items-center gap-2">Warning</h3>
-        <p className="text-sm mt-1">This action is destructive and irreversible. It will:</p>
-        <ul className="list-disc list-inside text-sm mt-2 ml-2 space-y-1">
+      <div className={styles.warning}>
+        <h3 className="weight-semibold">Warning</h3>
+        <p className="type-sm margin-top-1">This action is destructive and irreversible. It will:</p>
+        <ul className={cn(styles.warningList, 'type-sm margin-top-2')}>
           <li>
             Delete <strong>ALL</strong> cached images from S3 storage.
           </li>

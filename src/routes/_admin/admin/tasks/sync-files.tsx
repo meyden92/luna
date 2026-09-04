@@ -22,10 +22,11 @@ import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import { queryKeys } from '@/libs/query-keys';
-import { formatSize } from '@/libs/utils';
+import { cn, formatSize } from '@/libs/utils';
 import { compareAdminSync, deleteAdminDbOnlyFiles } from '@/server/fns/admin/sync';
 import { listAdminUsers } from '@/server/fns/admin/users';
 import { deleteS3OnlyFiles, insertS3OnlyFilesToDb } from '@/server/fns/sync';
+import styles from './sync-files.module.css';
 
 type SyncResult = Awaited<ReturnType<typeof compareAdminSync>>;
 
@@ -162,33 +163,33 @@ function SyncFilesPage() {
   const dialogContent = getConfirmDialogContent();
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container pad-y-8">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">File Synchronization Management</CardTitle>
+          <CardTitle className="type-2xl weight-bold">File Synchronization Management</CardTitle>
           <CardDescription>
             Comprehensive file synchronization between database and S3 storage with detailed analysis and remediation options
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="stack space-6">
           <Alert>
-            <InfoIcon className="h-4 w-4" />
+            <InfoIcon className={styles.icon} />
             <AlertTitle>Critical Data Management Tool</AlertTitle>
             <AlertDescription>
               This tool performs comprehensive synchronization analysis between database records and S3 storage.
-              <strong className="text-destructive"> Use with extreme caution as actions can permanently delete data.</strong>
+              <strong className={styles.danger}> Use with extreme caution as actions can permanently delete data.</strong>
               Always verify sync results before taking any destructive actions.
             </AlertDescription>
           </Alert>
 
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className={styles.toolbar}>
             <Button
               onClick={() => performSyncComparison()}
               disabled={isAnyActionExecuting}
               variant="outline"
-              className="flex items-center gap-2"
+              className="cluster space-2"
             >
-              <RefreshCw className={`h-4 w-4 ${isSyncExecuting ? 'animate-spin' : ''}`} />
+              <RefreshCw className={cn(styles.icon, isSyncExecuting && styles.spinning)} />
               {isSyncExecuting ? 'Analyzing Files...' : 'Run Sync Analysis'}
             </Button>
           </div>
@@ -197,43 +198,55 @@ function SyncFilesPage() {
             <>
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <HardDrive className="h-5 w-5" />
+                  <CardTitle className="type-lg cluster space-2">
+                    <HardDrive className={styles.iconLg} />
                     Synchronization Statistics
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <div className="text-center p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600 dark:text-green-400">{syncResult.stats.syncedFiles}</div>
-                      <div className="text-sm text-muted-foreground">Synced Files</div>
+                  <div className={cn(styles.statGrid, 'margin-bottom-6')}>
+                    <div
+                      className={styles.statTile}
+                      data-tone="success"
+                    >
+                      <div className={cn(styles.statValue, 'type-2xl weight-bold')}>{syncResult.stats.syncedFiles}</div>
+                      <div className={cn(styles.statLabel, 'type-sm')}>Synced Files</div>
                     </div>
-                    <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{syncResult.stats.totalDbFiles}</div>
-                      <div className="text-sm text-muted-foreground">Database Files</div>
+                    <div
+                      className={styles.statTile}
+                      data-tone="info"
+                    >
+                      <div className={cn(styles.statValue, 'type-2xl weight-bold')}>{syncResult.stats.totalDbFiles}</div>
+                      <div className={cn(styles.statLabel, 'type-sm')}>Database Files</div>
                     </div>
-                    <div className="text-center p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{syncResult.stats.totalS3Files}</div>
-                      <div className="text-sm text-muted-foreground">S3 Files</div>
+                    <div
+                      className={styles.statTile}
+                      data-tone="accent"
+                    >
+                      <div className={cn(styles.statValue, 'type-2xl weight-bold')}>{syncResult.stats.totalS3Files}</div>
+                      <div className={cn(styles.statLabel, 'type-sm')}>S3 Files</div>
                     </div>
-                    <div className="text-center p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
-                      <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                    <div
+                      className={styles.statTile}
+                      data-tone="warning"
+                    >
+                      <div className={cn(styles.statValue, 'type-2xl weight-bold')}>
                         {formatSize(syncResult.stats.totalDbSize, TRIMMED_SIZE_OPTIONS)}
                       </div>
-                      <div className="text-sm text-muted-foreground">Total Size</div>
+                      <div className={cn(styles.statLabel, 'type-sm')}>Total Size</div>
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
+                  <div className="stack space-3">
+                    <div className={cn(styles.rateRow, 'type-sm')}>
                       <span>Synchronization Rate</span>
-                      <span className="font-medium">
+                      <span className="weight-medium">
                         {Math.round((syncResult.stats.syncedFiles / Math.max(syncResult.stats.totalDbFiles, 1)) * 100)}%
                       </span>
                     </div>
                     <Progress
                       value={(syncResult.stats.syncedFiles / Math.max(syncResult.stats.totalDbFiles, 1)) * 100}
-                      className="h-2"
+                      className={styles.progress}
                     />
                   </div>
                 </CardContent>
@@ -242,8 +255,8 @@ function SyncFilesPage() {
               {syncResult.stats.s3OnlyCount > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <FileX className="h-5 w-5 text-yellow-600" />
+                    <CardTitle className="type-lg cluster space-2">
+                      <FileX className={styles.warningIcon} />
                       Files in S3 but Missing from Database
                       <Badge variant="secondary">{syncResult.stats.s3OnlyCount} files</Badge>
                       <Badge variant="outline">{formatSize(syncResult.stats.s3OnlySize, TRIMMED_SIZE_OPTIONS)}</Badge>
@@ -254,7 +267,7 @@ function SyncFilesPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex flex-wrap gap-2 mb-4">
+                    <div className="cluster space-2 margin-bottom-4">
                       <Button
                         onClick={handleSelectAllS3Files}
                         variant="outline"
@@ -268,9 +281,9 @@ function SyncFilesPage() {
                         variant="destructive"
                         size="sm"
                         disabled={selectedS3Files.length === 0 || isAnyActionExecuting}
-                        className="flex items-center gap-2"
+                        className="cluster space-2"
                       >
-                        <TrashIcon className="h-4 w-4" />
+                        <TrashIcon className={styles.icon} />
                         {isDeleteS3Executing ? 'Deleting...' : `Delete from S3 (${selectedS3Files.length})`}
                       </Button>
                       <Button
@@ -278,42 +291,42 @@ function SyncFilesPage() {
                         variant="default"
                         size="sm"
                         disabled={selectedS3Files.length === 0 || isAnyActionExecuting}
-                        className="flex items-center gap-2"
+                        className="cluster space-2"
                       >
-                        <Plus className="h-4 w-4" />
+                        <Plus className={styles.icon} />
                         {isInsertExecuting ? 'Inserting...' : `Insert to DB (${selectedS3Files.length})`}
                       </Button>
                     </div>
 
-                    <div className="max-h-96 overflow-y-auto border rounded-lg">
-                      <div className="divide-y">
+                    <div className={styles.fileList}>
+                      <div>
                         {syncResult.s3OnlyFiles.map((file) => (
                           <div
                             key={file.key}
-                            className="p-3 hover:bg-muted/50 transition-colors"
+                            className={styles.fileRow}
                           >
-                            <label className="flex items-start gap-3 cursor-pointer">
+                            <label className={styles.fileLabel}>
                               <input
                                 type="checkbox"
                                 checked={selectedS3Files.includes(file.key)}
                                 onChange={() => handleS3FileToggle(file.key)}
-                                className="mt-1"
+                                className="margin-top-1"
                               />
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <FileIcon className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                                  <span className="font-medium text-sm truncate">{file.fileName}</span>
+                              <div className={styles.fileMain}>
+                                <div className="cluster space-2 margin-bottom-1">
+                                  <FileIcon className={styles.fileIconInfo} />
+                                  <span className="weight-medium type-sm type-truncate">{file.fileName}</span>
                                   <Badge
                                     variant="outline"
-                                    className="text-xs"
+                                    className="type-xs"
                                   >
                                     {file.storageClass}
                                   </Badge>
                                 </div>
-                                <div className="text-xs text-muted-foreground space-y-1">
+                                <div className={cn(styles.fileMeta, 'type-xs')}>
                                   <div>Size: {formatSize(file.size, TRIMMED_SIZE_OPTIONS)}</div>
                                   <div>Modified: {formatDate(file.lastModified)}</div>
-                                  <div className="font-mono text-xs bg-muted px-2 py-1 rounded truncate">{file.key}</div>
+                                  <div className={cn(styles.s3Key, 'type-mono type-xs type-truncate')}>{file.key}</div>
                                 </div>
                               </div>
                             </label>
@@ -328,8 +341,8 @@ function SyncFilesPage() {
               {syncResult.stats.dbOnlyCount > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Database className="h-5 w-5 text-red-600" />
+                    <CardTitle className="type-lg cluster space-2">
+                      <Database className={styles.dangerIcon} />
                       Files in Database but Missing from S3
                       <Badge variant="secondary">{syncResult.stats.dbOnlyCount} files</Badge>
                       <Badge variant="outline">{formatSize(syncResult.stats.dbOnlySize, TRIMMED_SIZE_OPTIONS)}</Badge>
@@ -340,7 +353,7 @@ function SyncFilesPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex flex-wrap gap-2 mb-4">
+                    <div className="cluster space-2 margin-bottom-4">
                       <Button
                         onClick={handleSelectAllDbFiles}
                         variant="outline"
@@ -354,45 +367,45 @@ function SyncFilesPage() {
                         variant="destructive"
                         size="sm"
                         disabled={selectedDbFiles.length === 0 || isAnyActionExecuting}
-                        className="flex items-center gap-2"
+                        className="cluster space-2"
                       >
-                        <Database className="h-4 w-4" />
+                        <Database className={styles.icon} />
                         {isDeleteDbExecuting ? 'Deleting...' : `Delete from DB (${selectedDbFiles.length})`}
                       </Button>
                     </div>
 
-                    <div className="max-h-96 overflow-y-auto border rounded-lg">
-                      <div className="divide-y">
+                    <div className={styles.fileList}>
+                      <div>
                         {syncResult.dbOnlyFiles.map((file) => (
                           <div
                             key={file.id}
-                            className="p-3 hover:bg-muted/50 transition-colors"
+                            className={styles.fileRow}
                           >
-                            <label className="flex items-start gap-3 cursor-pointer">
+                            <label className={styles.fileLabel}>
                               <input
                                 type="checkbox"
                                 checked={selectedDbFiles.includes(file.id)}
                                 onChange={() => handleDbFileToggle(file.id)}
-                                className="mt-1"
+                                className="margin-top-1"
                               />
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <Database className="h-4 w-4 text-red-600 flex-shrink-0" />
-                                  <span className="font-medium text-sm truncate">{file.title}</span>
+                              <div className={styles.fileMain}>
+                                <div className="cluster space-2 margin-bottom-1">
+                                  <Database className={styles.fileIconDanger} />
+                                  <span className="weight-medium type-sm type-truncate">{file.title}</span>
                                   <Badge
                                     variant="outline"
-                                    className="text-xs"
+                                    className="type-xs"
                                   >
                                     {file.contentType}
                                   </Badge>
                                 </div>
-                                <div className="text-xs text-muted-foreground space-y-1">
+                                <div className={cn(styles.fileMeta, 'type-xs')}>
                                   <div>Size: {formatSize(file.size, TRIMMED_SIZE_OPTIONS)}</div>
                                   <div>Created: {formatDate(file.createdAt)}</div>
                                   <div>
-                                    DB ID: <span className="font-mono">{file.id}</span>
+                                    DB ID: <span className="type-mono">{file.id}</span>
                                   </div>
-                                  <div className="font-mono text-xs bg-muted px-2 py-1 rounded truncate">
+                                  <div className={cn(styles.s3Key, 'type-mono type-xs type-truncate')}>
                                     Expected S3 Key: {file.fullS3Key}
                                   </div>
                                 </div>
@@ -408,12 +421,12 @@ function SyncFilesPage() {
 
               {syncResult.stats.s3OnlyCount === 0 && syncResult.stats.dbOnlyCount === 0 && (
                 <Card>
-                  <CardContent className="text-center py-8">
-                    <div className="text-green-600 dark:text-green-400 mb-2">
-                      <RefreshCw className="h-12 w-12 mx-auto mb-4" />
+                  <CardContent className={styles.emptyState}>
+                    <div className="margin-bottom-2">
+                      <RefreshCw className={styles.successIcon} />
                     </div>
-                    <h3 className="text-lg font-semibold text-green-600 dark:text-green-400 mb-2">Perfect Synchronization</h3>
-                    <p className="text-muted-foreground">
+                    <h3 className={cn(styles.successTitle, 'type-lg weight-semibold margin-bottom-2')}>Perfect Synchronization</h3>
+                    <p className={styles.muted}>
                       All files are properly synchronized between the database and S3 storage. No action required.
                     </p>
                   </CardContent>
@@ -424,10 +437,10 @@ function SyncFilesPage() {
 
           {!syncResult && (
             <Card>
-              <CardContent className="text-center py-8">
-                <RefreshCw className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">Ready for Analysis</h3>
-                <p className="text-muted-foreground">
+              <CardContent className={styles.emptyState}>
+                <RefreshCw className={styles.idleIcon} />
+                <h3 className="type-lg weight-semibold margin-bottom-2">Ready for Analysis</h3>
+                <p className={styles.muted}>
                   Click "Run Sync Analysis" to compare database records with S3 storage and identify any synchronization issues.
                 </p>
               </CardContent>
@@ -447,7 +460,7 @@ function SyncFilesPage() {
           </AlertDialogHeader>
 
           {confirmDialog.type === 'insertS3' && (
-            <div className="space-y-2">
+            <div className="stack space-2">
               <Label htmlFor="user-select">Assign files to user:</Label>
               <Select
                 value={selectedUserId}
@@ -475,7 +488,7 @@ function SyncFilesPage() {
             <AlertDialogAction
               onClick={handleConfirmAction}
               disabled={confirmDialog.type === 'insertS3' && !selectedUserId}
-              className={dialogContent.actionVariant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : ''}
+              className={dialogContent.actionVariant === 'destructive' ? styles.destructiveAction : undefined}
             >
               {dialogContent.actionText}
             </AlertDialogAction>

@@ -1,0 +1,300 @@
+@layer components {
+  .icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .iconLg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .iconSm {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+
+  .danger {
+    color: var(--destructive);
+  }
+
+  .muted {
+    color: var(--muted-foreground);
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+
+  .spinning {
+    animation: spin 1s linear infinite;
+  }
+
+  /* Toolbar stacks on narrow screens and becomes a row from sm up. */
+  .toolbar,
+  .actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .toolbar {
+    gap: var(--space-4);
+  }
+
+  .actions {
+    gap: var(--space-2);
+  }
+
+  @media (width >= 640px) {
+    .toolbar,
+    .actions {
+      flex-direction: row;
+    }
+  }
+
+  /* ---- Overview tiles ---------------------------------------------------- */
+  .statGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  @media (width >= 768px) {
+    .statGrid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  /* One tile rule; `data-tone` picks the role the number and wash read from.
+     There is no purple role in the scale, so the selection tile uses --primary. */
+  .statTile {
+    --tone: var(--primary);
+    padding: var(--space-3);
+    text-align: center;
+    border-radius: var(--radius-lg);
+    background: color-mix(in oklab, var(--tone) 10%, transparent);
+  }
+
+  .statTile[data-tone="danger"] {
+    --tone: var(--destructive);
+  }
+
+  .statTile[data-tone="info"] {
+    --tone: var(--info);
+  }
+
+  .statTile[data-tone="warning"] {
+    --tone: var(--warning);
+  }
+
+  .statValue {
+    color: var(--tone);
+  }
+
+  .statLabel {
+    color: var(--muted-foreground);
+  }
+
+  .selectionNote {
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    background: color-mix(in oklab, var(--muted) 50%, transparent);
+  }
+
+  /* ---- Per-user group ---------------------------------------------------- */
+  .groupHeader {
+    cursor: pointer;
+    transition: background-color 150ms ease;
+  }
+
+  .groupHeader:hover {
+    background: color-mix(in oklab, var(--muted) 50%, transparent);
+  }
+
+  .groupRow,
+  .previewHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .groupRow {
+    align-items: center;
+  }
+
+  .groupMeta {
+    text-align: right;
+  }
+
+  .metaHint {
+    color: var(--muted-foreground);
+  }
+
+  .groupBody {
+    padding-top: 0;
+  }
+
+  /* ---- File list --------------------------------------------------------- */
+  .fileList {
+    --file-list-max-height: 24rem;
+    max-height: var(--file-list-max-height);
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  .fileRow {
+    padding: var(--space-3);
+    transition: background-color 150ms ease;
+  }
+
+  .fileRow:hover {
+    background: color-mix(in oklab, var(--muted) 50%, transparent);
+  }
+
+  .fileRow + .fileRow {
+    border-top: 1px solid var(--border);
+  }
+
+  .fileRowInner {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .fileMain {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .fileIcon {
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+    color: var(--destructive);
+  }
+
+  .fileMeta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    color: var(--muted-foreground);
+  }
+
+  .s3Key {
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--muted);
+  }
+
+  .rowActions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    margin-left: var(--space-2);
+  }
+
+  .iconButton {
+    width: var(--space-8);
+    height: var(--space-8);
+    padding: 0;
+  }
+
+  .iconButtonDisabled {
+    opacity: 0.5;
+  }
+
+  /* ---- Preview popover --------------------------------------------------- */
+  .previewPopover,
+  .preview,
+  .previewScroll,
+  .previewEmpty,
+  .previewMedia {
+    --preview-max-width: 32rem;
+    --preview-width: 28rem;
+    --preview-media-height: 24rem;
+  }
+
+  .previewPopover {
+    width: auto;
+    max-width: var(--preview-max-width);
+  }
+
+  .previewTitle {
+    overflow: hidden;
+    padding-right: var(--space-2);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .badgeNowrap {
+    white-space: nowrap;
+  }
+
+  .preview,
+  .previewScroll,
+  .previewEmpty {
+    max-width: var(--preview-width);
+  }
+
+  .previewScroll {
+    max-height: var(--preview-media-height);
+    overflow: auto;
+  }
+
+  .previewMedia {
+    max-width: 100%;
+    max-height: var(--preview-media-height);
+    object-fit: contain;
+    border-radius: var(--radius-lg);
+  }
+
+  .previewAudio {
+    width: 100%;
+  }
+
+  .previewText {
+    padding: var(--space-3);
+    overflow: auto;
+    border-radius: var(--radius-lg);
+    background: var(--muted);
+    white-space: pre-wrap;
+  }
+
+  .previewNote {
+    color: var(--muted-foreground);
+  }
+
+  .previewEmpty {
+    padding: var(--space-4);
+    text-align: center;
+    color: var(--muted-foreground);
+  }
+
+  /* ---- Empty state ------------------------------------------------------- */
+  .emptyState {
+    padding-block: var(--space-8);
+    text-align: center;
+  }
+
+  .emptyIcon {
+    width: var(--space-12);
+    height: var(--space-12);
+    margin-inline: auto;
+    margin-bottom: var(--space-4);
+    color: var(--muted-foreground);
+  }
+
+  /* The confirm dialog's primary action turns destructive for hard deletes. */
+  .destructiveAction {
+    background: var(--destructive);
+    color: var(--destructive-foreground);
+  }
+
+  .destructiveAction:hover {
+    background: color-mix(in oklab, var(--destructive) 85%, black);
+  }
+}

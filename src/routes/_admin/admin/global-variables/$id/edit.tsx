@@ -2,7 +2,9 @@ import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { GlobalVariableForm } from '@/components/admin/global-variables/global-variable-form';
 import { queryKeys } from '@/libs/query-keys';
+import { cn } from '@/libs/utils';
 import { getGlobalVariable } from '@/server/fns/admin/global-variables';
+import styles from './edit.module.css';
 
 const globalVariableQueryOptions = (id: string) =>
   queryOptions({
@@ -27,10 +29,10 @@ function EditGlobalVariablePage() {
   const { data: variable } = useSuspenseQuery(globalVariableQueryOptions(id));
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Edit Global Variable</h1>
-        <p className="text-muted-foreground">Update variable configuration.</p>
+    <div className={styles.root}>
+      <div className="margin-bottom-8">
+        <h1 className="type-3xl weight-bold">Edit Global Variable</h1>
+        <p className={cn(styles.subtitle, 'type-base')}>Update variable configuration.</p>
       </div>
       <GlobalVariableForm
         mode="edit"

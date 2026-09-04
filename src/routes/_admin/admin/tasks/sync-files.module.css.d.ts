@@ -1,0 +1,32 @@
+declare const styles: {
+  readonly "danger": string;
+  readonly "dangerIcon": string;
+  readonly "destructiveAction": string;
+  readonly "emptyState": string;
+  readonly "fileIconDanger": string;
+  readonly "fileIconInfo": string;
+  readonly "fileLabel": string;
+  readonly "fileList": string;
+  readonly "fileMain": string;
+  readonly "fileMeta": string;
+  readonly "fileRow": string;
+  readonly "icon": string;
+  readonly "iconLg": string;
+  readonly "idleIcon": string;
+  readonly "muted": string;
+  readonly "progress": string;
+  readonly "rateRow": string;
+  readonly "s3Key": string;
+  readonly "spin": string;
+  readonly "spinning": string;
+  readonly "statGrid": string;
+  readonly "statLabel": string;
+  readonly "statTile": string;
+  readonly "statValue": string;
+  readonly "successIcon": string;
+  readonly "successTitle": string;
+  readonly "toolbar": string;
+  readonly "warningIcon": string;
+};
+export = styles;
+

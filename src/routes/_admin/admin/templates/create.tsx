@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { queryKeys } from '@/libs/query-keys';
 import { getTemplateFormData } from '@/server/fns/admin/templates';
+import styles from './create.module.css';
 
 const templateFormDataQueryOptions = queryOptions({
   queryKey: queryKeys.adminTemplates.formData,
@@ -23,13 +24,13 @@ function CreateTemplatePage() {
 
   if (editingModels.length === 0) {
     return (
-      <div className="max-w-7xl mx-auto pb-8 px-4">
+      <div className={styles.root}>
         <Card>
           <CardHeader>
             <CardTitle>No Editing Models Available</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-muted-foreground">You need to create at least one editing model before you can create templates.</p>
+          <CardContent className="stack space-4">
+            <p className={styles.subtitle}>You need to create at least one editing model before you can create templates.</p>
             <Link to="/admin/models/editing/new">
               <Button>Create Editing Model</Button>
             </Link>
@@ -40,10 +41,10 @@ function CreateTemplatePage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto pb-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Create Template</h1>
-        <p className="text-muted-foreground">Create a new generation template with custom variables and prompts.</p>
+    <div className={styles.root}>
+      <div className="margin-bottom-8">
+        <h1 className="type-3xl weight-bold">Create Template</h1>
+        <p className={styles.subtitle}>Create a new generation template with custom variables and prompts.</p>
       </div>
       <TemplateForm
         mode="create"

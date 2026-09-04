@@ -1,0 +1,13 @@
+@layer components {
+  /* Wide reading width to fit the multi-column template form. */
+  .root {
+    max-width: 80rem;
+    margin-inline: auto;
+    padding-inline: var(--space-4);
+    padding-bottom: var(--space-8);
+  }
+
+  .subtitle {
+    color: var(--muted-foreground);
+  }
+}

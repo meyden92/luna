@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/libs/utils';
 import {
   addDenylistEntry,
   importDenylistEntries,
@@ -17,6 +18,7 @@ import {
   rescanModerationHashes,
   resolveModerationCase,
 } from '@/server/fns/admin/moderation';
+import styles from './index.module.css';
 
 type HashType = 'sha256' | 'md5' | 'phash';
 type BulkDenylistEntry = { hashType: HashType; hash: string; severity: string; notes?: string };
@@ -85,13 +87,13 @@ function ModerationPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="stack space-6">
       <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold">
-          <ShieldAlert className="h-6 w-6" />
+        <h1 className="cluster space-2 type-2xl weight-bold">
+          <ShieldAlert className={styles.icon} />
           Trust & Safety
         </h1>
-        <p className="text-sm text-muted-foreground">Review quarantined uploads and manage cryptographic or perceptual hash denylists.</p>
+        <p className={cn(styles.muted, 'type-sm')}>Review quarantined uploads and manage cryptographic or perceptual hash denylists.</p>
       </div>
 
       <Card>
@@ -107,15 +109,15 @@ function ModerationPage() {
                 <TableHead>Match</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Created</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className={styles.alignEnd}>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {(queueQuery.data ?? []).map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>
-                    <div className="font-medium">{item.file?.title ?? item.fileId}</div>
-                    <div className="text-xs text-muted-foreground">{item.file?.contentType ?? 'Unknown type'}</div>
+                    <div className="weight-medium">{item.file?.title ?? item.fileId}</div>
+                    <div className={cn(styles.muted, 'type-xs')}>{item.file?.contentType ?? 'Unknown type'}</div>
                   </TableCell>
                   <TableCell>
                     {item.matchType}
@@ -123,7 +125,7 @@ function ModerationPage() {
                   </TableCell>
                   <TableCell>{item.status}</TableCell>
                   <TableCell>{new Date(item.createdAt).toLocaleString()}</TableCell>
-                  <TableCell className="space-x-2 text-right">
+                  <TableCell className={styles.actionsCell}>
                     <Button
                       size="sm"
                       variant="outline"
@@ -152,7 +154,7 @@ function ModerationPage() {
                 <TableRow>
                   <TableCell
                     colSpan={5}
-                    className="py-10 text-center text-sm text-muted-foreground"
+                    className={cn(styles.emptyCell, 'type-sm')}
                   >
                     No moderation cases.
                   </TableCell>
@@ -163,14 +165,14 @@ function ModerationPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-[420px_1fr]">
-        <div className="space-y-4">
+      <div className={styles.layout}>
+        <div className="stack space-4">
           <Card>
             <CardHeader>
               <CardTitle>Add Denylist Hash</CardTitle>
               <CardDescription>Use operator-supplied hashes for private blocklists.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="stack space-3">
               <Select
                 value={hashType}
                 onValueChange={(value) => setHashType(value as typeof hashType)}
@@ -208,7 +210,7 @@ function ModerationPage() {
               <CardTitle>Bulk Import</CardTitle>
               <CardDescription>Paste one hash per line, or CSV rows as type,hash,notes.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="stack space-3">
               <Input
                 value={bulkSource}
                 onChange={(event) => setBulkSource(event.target.value)}
@@ -218,9 +220,9 @@ function ModerationPage() {
                 value={bulkHashes}
                 onChange={(event) => setBulkHashes(event.target.value)}
                 placeholder="sha256,hash,notes&#10;md5,hash&#10;hash-only-uses-selected-type"
-                className="min-h-36 font-mono text-xs"
+                className={cn(styles.bulkTextarea, 'type-mono type-xs')}
               />
-              <div className="flex flex-wrap gap-2">
+              <div className="cluster space-2">
                 <Button
                   onClick={importEntries}
                   disabled={!bulkHashes.trim()}
@@ -257,7 +259,7 @@ function ModerationPage() {
                 {(denylistQuery.data ?? []).map((entry) => (
                   <TableRow key={entry.id}>
                     <TableCell>{entry.hashType}</TableCell>
-                    <TableCell className="max-w-[420px] truncate font-mono text-xs">{entry.hash}</TableCell>
+                    <TableCell className={cn(styles.hashCell, 'type-truncate type-mono type-xs')}>{entry.hash}</TableCell>
                     <TableCell>{entry.source}</TableCell>
                     <TableCell>{new Date(entry.createdAt).toLocaleDateString()}</TableCell>
                   </TableRow>

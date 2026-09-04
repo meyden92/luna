@@ -11,6 +11,7 @@ import { GalleryAllFilesSwitch } from './form-components/GalleryAllFilesSwitch';
 import { ProfileBioInput } from './form-components/ProfileBioInput';
 import { ProfileDescriptionInput } from './form-components/ProfileDescriptionInput';
 import { ProfileVisibilitySwitch } from './form-components/ProfileVisibilitySwitch';
+import styles from './user-profile-settings.module.css';
 
 interface UserSettingsProps extends React.ComponentProps<'div'> {
   receiveEmails: boolean;
@@ -56,10 +57,10 @@ export default function UserSettings({
         <Form config={formConfig}>
           {() => (
             <>
-              <div className="space-y-6">
+              <div className={styles.sections}>
                 <div>
-                  <h3 className="text-lg font-medium mb-2">Profile Information</h3>
-                  <div className="space-y-4">
+                  <h3 className={styles.sectionTitle}>Profile Information</h3>
+                  <div className={styles.fields}>
                     <ProfileBioInput />
                     <ProfileDescriptionInput />
                   </div>
@@ -68,8 +69,8 @@ export default function UserSettings({
                 <Separator />
 
                 <div>
-                  <h3 className="text-lg font-medium mb-2">Privacy & Notifications</h3>
-                  <div className="space-y-4">
+                  <h3 className={styles.sectionTitle}>Privacy & Notifications</h3>
+                  <div className={styles.fields}>
                     <EmailPreferenceSwitch />
                     <ProfileVisibilitySwitch />
                   </div>
@@ -78,8 +79,8 @@ export default function UserSettings({
                 <Separator />
 
                 <div>
-                  <h3 className="text-lg font-medium mb-2">Gallery Settings</h3>
-                  <div className="space-y-4">
+                  <h3 className={styles.sectionTitle}>Gallery Settings</h3>
+                  <div className={styles.fields}>
                     <GalleryAllFilesSwitch />
                   </div>
                 </div>
@@ -92,14 +93,14 @@ export default function UserSettings({
                   isValid: state.isValid,
                 })}
                 renderAction={({ canSubmit, isDirty, isSubmitting, isValid }) => (
-                  <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <div className={styles.actions}>
                     <Button
                       type="submit"
                       disabled={!isDirty || !canSubmit || !isValid || isSubmitting}
                     >
                       {isSubmitting ? 'Saving...' : 'Save Changes'}
                     </Button>
-                    {isDirty && !isSubmitting && <span className="text-sm text-muted-foreground">Unsaved changes</span>}
+                    {isDirty && !isSubmitting && <span className={styles.dirtyHint}>Unsaved changes</span>}
                   </div>
                 )}
               />

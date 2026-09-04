@@ -1,7 +1,8 @@
 import { Link, useLocation } from '@tanstack/react-router';
 import { BarChart, Key, Settings, User } from 'lucide-react';
-import { buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/libs/utils';
+import styles from './settings-sidebar.module.css';
 
 export function SettingsSidebar({ className, ...props }: React.HTMLAttributes<HTMLElement>) {
   const pathname = useLocation().pathname;
@@ -31,24 +32,22 @@ export function SettingsSidebar({ className, ...props }: React.HTMLAttributes<HT
 
   return (
     <nav
-      className={cn('flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1', className)}
+      className={cn(styles.root, className)}
       {...props}
     >
       {sidebarNavItems.map((item) => {
         const isActive = pathname === item.href;
         return (
-          <Link
+          <Button
             key={item.href}
-            to={item.href}
-            className={cn(
-              buttonVariants({ variant: 'ghost' }),
-              isActive ? 'bg-muted hover:bg-muted' : 'hover:bg-transparent hover:underline',
-              'justify-start',
-            )}
+            variant="ghost"
+            className={styles.item}
+            data-active={isActive || undefined}
+            render={<Link to={item.href} />}
           >
-            <item.icon className="mr-2 h-4 w-4" />
+            <item.icon className={styles.icon} />
             {item.title}
-          </Link>
+          </Button>
         );
       })}
     </nav>

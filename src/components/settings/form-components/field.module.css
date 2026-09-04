@@ -1,0 +1,53 @@
+/*
+ * Shared shape for the profile settings fields. Every field in this directory
+ * is the same bordered row, so the rules live once beside them.
+ */
+@layer components {
+  .row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  /* Text fields stack their label, control and counter instead. */
+  .rowStacked {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  .text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .label {
+    font-size: var(--text-base);
+    line-height: var(--leading-base);
+  }
+
+  .textarea {
+    min-height: var(--space-24);
+    resize: vertical;
+  }
+
+  .counter {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    text-align: right;
+    color: var(--muted-foreground);
+  }
+
+  /* Warns as the field approaches its cap. */
+  .counterNearLimit {
+    color: var(--warning);
+  }
+}

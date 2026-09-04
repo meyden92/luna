@@ -1,0 +1,52 @@
+@layer components {
+  .root {
+    padding: var(--space-4);
+  }
+
+  .heading {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--space-4);
+  }
+
+  .pill {
+    width: var(--space-24);
+    height: var(--space-6);
+    border-radius: var(--radius-full);
+  }
+
+  /* Column count comes from an inline `grid-template-columns`. */
+  .grid {
+    display: grid;
+    gap: 0.875rem;
+  }
+
+  .card {
+    overflow: hidden;
+    border: 1px solid color-mix(in oklab, var(--border) 20%, transparent);
+    border-radius: var(--radius-2xl);
+  }
+
+  .thumb {
+    width: 100%;
+    border-radius: 0;
+  }
+
+  .meta {
+    padding-block: var(--space-2);
+    padding-inline: var(--space-3);
+  }
+
+  .metaTitle {
+    width: 75%;
+    height: 0.875rem;
+    border-radius: var(--radius-sm);
+  }
+
+  .metaSub {
+    width: 50%;
+    height: 0.625rem;
+    margin-top: var(--space-1);
+    border-radius: var(--radius-sm);
+  }
+}

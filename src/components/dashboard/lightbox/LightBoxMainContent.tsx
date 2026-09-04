@@ -7,6 +7,7 @@ import { useGalleryStore } from '@/hooks/stores/gallery-store';
 import { getCDNImage, isPreviewableFile } from '@/libs/utils';
 import type { GalleryFile } from '@/types/project';
 import { FileContextMenu } from '../FileContextMenu';
+import styles from './LightBoxMainContent.module.css';
 
 interface MainContentProps {
   file: GalleryFile;
@@ -72,15 +73,15 @@ export default function MainContent({ file, userId, handleDeleteAction }: MainCo
     // Video content
     if (contentType.startsWith('video/')) {
       return (
-        <div className="absolute inset-8 flex items-center justify-center">
+        <div className={styles.videoStage}>
           {!isLoaded && !hasError && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center">
-              <Loader2 className="h-12 w-12 animate-spin text-white/40" />
+            <div className={styles.spinnerLayer}>
+              <Loader2 className={styles.spinner} />
             </div>
           )}
           {hasError ? (
-            <div className="flex flex-col items-center justify-center gap-2 text-white/60">
-              <File className="h-16 w-16" />
+            <div className={styles.fallback}>
+              <File className={styles.fallbackIcon} />
               <p>Failed to load video</p>
             </div>
           ) : (
@@ -92,8 +93,8 @@ export default function MainContent({ file, userId, handleDeleteAction }: MainCo
               muted
               controls
               loop
-              className={`max-h-full max-w-full rounded-lg transition-opacity duration-200 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-              style={{ objectFit: 'contain' }}
+              className={styles.video}
+              data-loaded={isLoaded || undefined}
               onLoadedData={() => setIsLoaded(true)}
               onError={() => setHasError(true)}
             />
@@ -105,10 +106,10 @@ export default function MainContent({ file, userId, handleDeleteAction }: MainCo
     // Audio content
     if (contentType.startsWith('audio/')) {
       return (
-        <div className="flex w-full max-w-4xl items-center justify-center px-8">
+        <div className={styles.audioStage}>
           <AudioPlayer
             ref={audioRef}
-            className="w-full rounded-lg"
+            className={styles.audioPlayer}
             src={cdnUrl}
             autoPlay={false}
             showJumpControls
@@ -127,51 +128,41 @@ export default function MainContent({ file, userId, handleDeleteAction }: MainCo
     if (!canPreview) {
       const FileIcon = getFileIcon(contentType);
       return (
-        <div className="flex flex-col items-center justify-center gap-4 text-white/60">
-          <FileIcon className="h-24 w-24" />
-          <p className="text-lg">Preview not available</p>
-          <p className="text-sm">{contentType}</p>
+        <div className={styles.unsupported}>
+          <FileIcon className={styles.unsupportedIcon} />
+          <p className={styles.unsupportedTitle}>Preview not available</p>
+          <p className={styles.unsupportedType}>{contentType}</p>
         </div>
       );
     }
 
-    // Image content
+    // Image content: the stage fills the grid cell and pads the image so it breathes.
     return (
-      /*
-        Container takes full space of parent (which is the grid cell).
-        Using absolute positioning with inset to guarantee dimensions.
-        Padding creates space for the image to breathe.
-      */
       <div
         ref={containerRef}
-        className="absolute inset-0 flex items-center justify-center p-8"
+        className={styles.imageStage}
       >
-        {/* Loading spinner */}
         {!isLoaded && !hasError && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center">
-            <Loader2 className="h-12 w-12 animate-spin text-white/40" />
+          <div className={styles.spinnerLayer}>
+            <Loader2 className={styles.spinner} />
           </div>
         )}
 
-        {/* Error state */}
         {hasError && (
-          <div className="flex flex-col items-center justify-center gap-2 text-white/60">
-            <File className="h-16 w-16" />
+          <div className={styles.fallback}>
+            <File className={styles.fallbackIcon} />
             <p>Failed to load image</p>
           </div>
         )}
 
-        {/* Image */}
         {!hasError && (
           <img
             key={file.id}
             src={cdnUrl}
             alt={title || 'Image preview'}
             sizes="(max-width: 768px) 100vw, calc(100vw - 200px)"
-            className={`
-              max-h-full max-w-full object-contain transition-opacity duration-200
-              ${isLoaded ? 'opacity-100' : 'opacity-0'}
-            `}
+            className={styles.image}
+            data-loaded={isLoaded || undefined}
             onLoad={() => setIsLoaded(true)}
             onError={() => setHasError(true)}
           />
@@ -185,7 +176,7 @@ export default function MainContent({ file, userId, handleDeleteAction }: MainCo
       file={file}
       userId={userId}
       handleDeleteAction={handleDeleteAction}
-      triggerClassName="flex size-full items-center justify-center"
+      triggerClassName={styles.trigger}
     >
       {renderMediaContent()}
     </FileContextMenu>

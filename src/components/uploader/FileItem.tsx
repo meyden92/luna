@@ -2,6 +2,7 @@ import { FileIcon, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { formatSize } from '@/libs/utils';
+import styles from './FileItem.module.css';
 import type { FileStatus } from './useFileUpload';
 
 interface FileItemProps {
@@ -32,26 +33,26 @@ export const FileItem = ({ fileStatus, onRemoveAction, onRetryAction }: FileItem
   return (
     <div
       key={fileStatus.id}
-      className="flex items-center space-x-4"
+      className={styles.root}
     >
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
+      <div className={styles.thumb}>
         {isImage(fileStatus.file) && !imageError && previewUrl ? (
           <img
             src={previewUrl}
             alt={fileStatus.file.name}
-            className="object-cover w-auto h-auto max-w-full max-h-full"
+            className={styles.preview}
             onError={() => setImageError(true)}
           />
         ) : (
-          <FileIcon className="h-6 w-6 text-muted-foreground" />
+          <FileIcon className={styles.fallbackIcon} />
         )}
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-foreground">{fileStatus.file.name}</p>
-        <p className="text-sm text-muted-foreground">{formatSize(fileStatus.file.size, { precision: 1, trim: true })}</p>
-        {fileStatus.status === 'error' && <p className="truncate text-xs text-destructive">{fileStatus.error || 'Upload failed'}</p>}
+      <div className={styles.meta}>
+        <p className={styles.name}>{fileStatus.file.name}</p>
+        <p className={styles.size}>{formatSize(fileStatus.file.size, { precision: 1, trim: true })}</p>
+        {fileStatus.status === 'error' && <p className={styles.error}>{fileStatus.error || 'Upload failed'}</p>}
       </div>
-      <div className="flex shrink-0 space-x-2">
+      <div className={styles.actions}>
         {fileStatus.status === 'error' && (
           <Button
             variant="outline"
@@ -66,7 +67,7 @@ export const FileItem = ({ fileStatus, onRemoveAction, onRetryAction }: FileItem
           size="icon"
           onClick={() => onRemoveAction(fileStatus.id)}
         >
-          <X className="h-4 w-4" />
+          <X className={styles.removeIcon} />
         </Button>
       </div>
     </div>

@@ -16,6 +16,7 @@ import { queryKeys } from '@/libs/query-keys';
 import { cn, formatSize } from '@/libs/utils';
 import { createFolder, deleteFolder, updateFolder } from '@/server/fns/folders';
 import { getStorageUsage } from '@/server/fns/storage';
+import styles from './FolderSidebar.module.css';
 
 type FolderType = {
   id: string;
@@ -52,15 +53,8 @@ const defaultColors = [
   '#ec4899', // pink-500
 ];
 
-const COLLAPSED_WIDTH = 'w-[68px]';
-const EXPANDED_WIDTH = 'w-[242px]';
-
 function SectionLabel({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={cn('px-2.5 font-mono text-[10.5px] font-medium uppercase tracking-[0.15em] text-luna-ink-4', className)}>
-      {children}
-    </div>
-  );
+  return <div className={cn(styles.sectionLabel, className)}>{children}</div>;
 }
 
 /** Reads gallery-file ids from a native drag event; null when the drag isn't an internal file drag. */
@@ -293,21 +287,16 @@ function FolderSidebar({ onFormSharesListOpenChange, onFormBuilderOpenChange, on
     onDrop: (e: React.DragEvent) => handleFolderDrop(e, folderId),
   });
 
-  const sideItemClass = (active: boolean, dragOver = false) =>
-    cn(
-      'flex h-[34px] w-full items-center gap-2.5 rounded-lg border border-dashed border-transparent px-2.5 text-left text-[13.5px] font-medium text-luna-ink-2 transition-colors',
-      'hover:bg-luna-bg-2',
-      active && 'bg-luna-accent-soft text-luna-accent-2 dark:text-luna-accent',
-      dragOver && 'border-luna-accent bg-luna-accent-soft',
-    );
-
-  const sidebarWidth = collapsible ? (isCollapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH) : 'w-full';
+  const widthMode = collapsible ? (isCollapsed ? 'rail' : 'panel') : 'full';
 
   if (!mounted) {
     return (
-      <div className={`h-full shrink-0 ${collapsible ? EXPANDED_WIDTH : 'w-full'}`}>
-        <div className="h-full border-r border-luna-line p-3">
-          <div className="p-2 font-mono text-[10.5px] uppercase tracking-[0.15em] text-luna-ink-4">Loading…</div>
+      <div
+        className={styles.shell}
+        data-width={collapsible ? 'panel' : 'full'}
+      >
+        <div className={styles.placeholder}>
+          <div className={styles.placeholderLabel}>Loading…</div>
         </div>
       </div>
     );
@@ -315,55 +304,59 @@ function FolderSidebar({ onFormSharesListOpenChange, onFormBuilderOpenChange, on
 
   return (
     <>
-      <div className={`h-full shrink-0 transition-all duration-300 ease-in-out ${sidebarWidth}`}>
-        <div className="relative flex h-full flex-col border-r border-luna-line">
+      <div
+        className={styles.shell}
+        data-width={widthMode}
+      >
+        <div className={styles.panel}>
           {collapsible && (
             <Button
               size="sm"
               variant="ghost"
-              className="absolute -right-3 top-3 z-10 h-7 w-7 rounded-full border border-luna-line bg-luna-bg p-0 shadow-sm"
+              className={styles.collapseToggle}
               onClick={toggleCollapse}
               aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
-              {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
+              {isCollapsed ? <ChevronRight className={styles.toggleIcon} /> : <ChevronLeft className={styles.toggleIcon} />}
             </Button>
           )}
 
-          <div className="relative flex h-full flex-col overflow-hidden">
+          <div className={styles.inner}>
             {!isCollapsed ? (
-              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 pb-4 pt-[18px]">
-                <SectionLabel className="mb-1.5">Library</SectionLabel>
+              <div className={styles.body}>
+                <SectionLabel className="margin-bottom-1">Library</SectionLabel>
                 <button
                   type="button"
                   onClick={() => onFolderSelect(null)}
                   aria-current={selectedFolderId === null ? 'true' : undefined}
-                  className={sideItemClass(selectedFolderId === null)}
+                  className={styles.item}
+                  data-active={selectedFolderId === null || undefined}
                 >
-                  <LayoutGrid className="h-3.5 w-3.5 shrink-0" />
-                  <span className="min-w-0 flex-1 truncate">All files</span>
-                  {storageUsage && <span className="font-mono text-[11px] text-luna-ink-4">{storageUsage.fileCount}</span>}
+                  <LayoutGrid className={styles.itemIcon} />
+                  <span className={styles.itemLabel}>All files</span>
+                  {storageUsage && <span className={styles.count}>{storageUsage.fileCount}</span>}
                 </button>
 
-                <div className="mb-1.5 mt-[18px] flex items-center justify-between">
+                <div className={styles.sectionHeader}>
                   <SectionLabel>Folders</SectionLabel>
                   <button
                     type="button"
-                    className="-my-1 mr-1 flex h-6 w-6 items-center justify-center rounded-md text-luna-ink-4 transition-colors hover:bg-luna-bg-2 hover:text-luna-ink disabled:opacity-50"
+                    className={styles.addFolder}
                     onClick={() => setIsCreating(true)}
                     disabled={isCreating}
                     aria-label="New folder"
                   >
-                    <FolderPlus className="h-3.5 w-3.5" />
+                    <FolderPlus className={styles.itemIcon} />
                   </button>
                 </div>
 
                 {isCreating && (
-                  <div className="mb-2 space-y-2 rounded-lg border border-luna-line bg-luna-bg p-2.5">
+                  <div className={styles.editCard}>
                     <Input
                       placeholder="Folder name"
                       value={newFolderName}
                       onChange={(e) => setNewFolderName(e.target.value)}
-                      className="h-9 rounded-md text-sm"
+                      className={styles.editInput}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           handleCreateFolder();
@@ -374,10 +367,10 @@ function FolderSidebar({ onFormSharesListOpenChange, onFormBuilderOpenChange, on
                       }}
                       autoFocus
                     />
-                    <div className="flex gap-2">
+                    <div className={styles.editActions}>
                       <Button
                         size="sm"
-                        className="h-8 flex-1 rounded-md text-xs"
+                        className={styles.editButton}
                         onClick={handleCreateFolder}
                         disabled={!newFolderName.trim()}
                       >
@@ -386,7 +379,7 @@ function FolderSidebar({ onFormSharesListOpenChange, onFormBuilderOpenChange, on
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-8 flex-1 rounded-md text-xs"
+                        className={styles.editButton}
                         onClick={() => {
                           setIsCreating(false);
                           setNewFolderName('');
@@ -398,11 +391,11 @@ function FolderSidebar({ onFormSharesListOpenChange, onFormBuilderOpenChange, on
                   </div>
                 )}
 
-                <div className="flex flex-col gap-px">
+                <div className={styles.folderList}>
                   {isLoading ? (
-                    <div className="rounded-lg border border-dashed border-luna-line-2 p-4 text-xs text-luna-ink-4">Loading...</div>
+                    <div className={styles.listNote}>Loading...</div>
                   ) : optimisticFolders.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-luna-line-2 p-4 text-xs text-luna-ink-4">No folders yet</div>
+                    <div className={styles.listNote}>No folders yet</div>
                   ) : (
                     optimisticFolders.map((folder) => {
                       const isSelected = selectedFolderId === folder.id;
@@ -412,12 +405,12 @@ function FolderSidebar({ onFormSharesListOpenChange, onFormBuilderOpenChange, on
                         return (
                           <div
                             key={folder.id}
-                            className="space-y-2 rounded-lg border border-luna-line bg-luna-bg p-2.5"
+                            className={styles.editCard}
                           >
                             <Input
                               value={editName}
                               onChange={(e) => setEditName(e.target.value)}
-                              className="h-9 rounded-md text-sm"
+                              className={styles.editInput}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                   handleUpdateFolder(folder.id);
@@ -427,10 +420,10 @@ function FolderSidebar({ onFormSharesListOpenChange, onFormBuilderOpenChange, on
                               }}
                               autoFocus
                             />
-                            <div className="flex gap-2">
+                            <div className={styles.editActions}>
                               <Button
                                 size="sm"
-                                className="h-8 flex-1 rounded-md text-xs"
+                                className={styles.editButton}
                                 onClick={() => handleUpdateFolder(folder.id)}
                                 disabled={!editName.trim()}
                               >
@@ -439,7 +432,7 @@ function FolderSidebar({ onFormSharesListOpenChange, onFormBuilderOpenChange, on
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-8 flex-1 rounded-md text-xs"
+                                className={styles.editButton}
                                 onClick={cancelEditing}
                               >
                                 Cancel
@@ -452,54 +445,49 @@ function FolderSidebar({ onFormSharesListOpenChange, onFormBuilderOpenChange, on
                       return (
                         <div
                           key={folder.id}
-                          className="group/folder relative"
+                          className={styles.row}
                           {...dragHandlers(folder.id)}
                         >
                           <button
                             type="button"
                             onClick={() => onFolderSelect(folder.id)}
                             aria-current={isSelected ? 'true' : undefined}
-                            className={sideItemClass(isSelected, dragTargetId === folder.id)}
+                            className={styles.item}
+                            data-active={isSelected || undefined}
+                            data-dragover={dragTargetId === folder.id || undefined}
                           >
                             <span
-                              className="mx-[3px] h-2 w-2 shrink-0 rounded-full"
+                              className={styles.dot}
                               style={{ backgroundColor: folderColor }}
                             />
                             <span
-                              className="min-w-0 flex-1 truncate"
+                              className={styles.itemLabel}
                               title={folder.name}
                             >
                               {folder.name}
                             </span>
-                            <span
-                              className={cn(
-                                'font-mono text-[11px] text-luna-ink-4 transition-opacity group-hover/folder:opacity-0',
-                                isSelected && 'text-inherit opacity-75',
-                              )}
-                            >
-                              {folder._count.files}
-                            </span>
+                            <span className={styles.count}>{folder._count.files}</span>
                           </button>
                           <DropdownMenu>
                             <DropdownMenuTrigger
-                              className="absolute right-1.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-luna-ink-4 opacity-0 transition-opacity hover:bg-luna-bg-3 hover:text-luna-ink group-hover/folder:opacity-100 data-[state=open]:opacity-100"
+                              className={styles.rowMenu}
                               aria-label="Folder options"
                             >
-                              <MoreHorizontal className="h-3.5 w-3.5" />
+                              <MoreHorizontal className={styles.rowMenuIcon} />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                               align="end"
-                              className="w-36"
+                              className={styles.menuContent}
                             >
                               <DropdownMenuItem onClick={() => startEditing(folder)}>
-                                <Edit3 className="mr-2 h-3 w-3" />
+                                <Edit3 className={styles.menuIcon} />
                                 Rename
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => handleDeleteFolder(folder)}
-                                className="text-destructive"
+                                className={styles.menuItemDanger}
                               >
-                                <Trash2 className="mr-2 h-3 w-3" />
+                                <Trash2 className={styles.menuIcon} />
                                 Delete
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -510,58 +498,54 @@ function FolderSidebar({ onFormSharesListOpenChange, onFormBuilderOpenChange, on
                   )}
                 </div>
 
-                <SectionLabel className="mb-1.5 mt-[18px]">Utilities</SectionLabel>
+                <SectionLabel className="margin-bottom-1 margin-top-4">Utilities</SectionLabel>
                 <button
                   type="button"
-                  className={sideItemClass(false)}
+                  className={styles.item}
                   onClick={() => {
                     onFormSharesListOpenChange?.(true);
                     onNavigate?.();
                   }}
                 >
-                  <List className="h-3.5 w-3.5 shrink-0" />
-                  <span className="min-w-0 flex-1 truncate">My form shares</span>
+                  <List className={styles.itemIcon} />
+                  <span className={styles.itemLabel}>My form shares</span>
                 </button>
                 <button
                   type="button"
-                  className={sideItemClass(false)}
+                  className={styles.item}
                   onClick={() => {
                     onFormBuilderOpenChange?.(true);
                     onNavigate?.();
                   }}
                 >
-                  <FileText className="h-3.5 w-3.5 shrink-0" />
-                  <span className="min-w-0 flex-1 truncate">New form share</span>
+                  <FileText className={styles.itemIcon} />
+                  <span className={styles.itemLabel}>New form share</span>
                 </button>
 
-                <div className="mt-auto border-t border-luna-line px-2.5 pb-0.5 pt-3.5">
-                  <div className="flex justify-between font-mono text-[10.5px] text-luna-ink-4">
+                <div className={styles.footer}>
+                  <div className={styles.footerRow}>
                     <span>{storageUsage ? `${formatSize(storageUsage.totalBytes)} used` : '— used'}</span>
                     <span>{storageUsage ? `${storageUsage.fileCount} files` : ''}</span>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-1 flex-col overflow-hidden px-2 pb-2 pt-3">
-                <div className="flex flex-1 flex-col items-center gap-2 overflow-y-auto">
+              <div className={styles.rail}>
+                <div className={styles.railScroll}>
                   <Tooltip>
                     <TooltipTrigger
-                      className={cn(
-                        'flex h-10 w-10 items-center justify-center rounded-lg border transition-colors',
-                        selectedFolderId === null
-                          ? 'border-luna-accent/40 bg-luna-accent-soft text-luna-accent-2 dark:text-luna-accent'
-                          : 'border-luna-line bg-luna-bg hover:bg-luna-bg-2',
-                      )}
+                      className={styles.railItem}
+                      data-active={selectedFolderId === null || undefined}
                       onClick={() => onFolderSelect(null)}
                       aria-label="All files"
                       aria-current={selectedFolderId === null ? 'true' : undefined}
                     >
-                      <LayoutGrid className="h-4 w-4" />
+                      <LayoutGrid className={styles.railIcon} />
                     </TooltipTrigger>
                     <TooltipContent side="right">All files</TooltipContent>
                   </Tooltip>
 
-                  <div className="my-1 h-px w-8 bg-luna-line" />
+                  <div className={styles.railDivider} />
 
                   {optimisticFolders.map((folder) => {
                     const isSelected = selectedFolderId === folder.id;
@@ -570,18 +554,16 @@ function FolderSidebar({ onFormSharesListOpenChange, onFormBuilderOpenChange, on
                     return (
                       <Tooltip key={folder.id}>
                         <TooltipTrigger
-                          className={cn(
-                            'flex h-10 w-10 items-center justify-center rounded-lg border transition-colors duration-150',
-                            isSelected ? 'border-luna-accent/40 bg-luna-accent-soft' : 'border-luna-line bg-luna-bg hover:bg-luna-bg-2',
-                            dragTargetId === folder.id && 'border-dashed border-luna-accent bg-luna-accent-soft',
-                          )}
+                          className={styles.railItem}
+                          data-active={isSelected || undefined}
+                          data-dragover={dragTargetId === folder.id || undefined}
                           onClick={() => onFolderSelect(folder.id)}
                           aria-label={`${folder.name} (${folder._count.files})`}
                           aria-current={isSelected ? 'true' : undefined}
                           {...dragHandlers(folder.id)}
                         >
                           <span
-                            className="h-2 w-2 rounded-full"
+                            className={styles.railDot}
                             style={{ backgroundColor: folderColor }}
                           />
                         </TooltipTrigger>
@@ -593,30 +575,30 @@ function FolderSidebar({ onFormSharesListOpenChange, onFormBuilderOpenChange, on
                   })}
                 </div>
 
-                <div className="mt-2 flex shrink-0 flex-col items-center gap-2 border-t border-luna-line pt-3">
+                <div className={styles.railFooter}>
                   <Tooltip>
                     <TooltipTrigger
-                      className="flex h-10 w-10 items-center justify-center rounded-lg border border-luna-line bg-luna-bg p-0 transition-colors hover:bg-luna-bg-2"
+                      className={styles.railItem}
                       onClick={() => {
                         onFormSharesListOpenChange?.(true);
                         onNavigate?.();
                       }}
                       aria-label="My form shares"
                     >
-                      <List className="h-4 w-4" />
+                      <List className={styles.railIcon} />
                     </TooltipTrigger>
                     <TooltipContent side="right">My form shares</TooltipContent>
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger
-                      className="flex h-10 w-10 items-center justify-center rounded-lg border border-luna-line bg-luna-bg p-0 transition-colors hover:bg-luna-bg-2"
+                      className={styles.railItem}
                       onClick={() => {
                         onFormBuilderOpenChange?.(true);
                         onNavigate?.();
                       }}
                       aria-label="New form share"
                     >
-                      <FileText className="h-4 w-4" />
+                      <FileText className={styles.railIcon} />
                     </TooltipTrigger>
                     <TooltipContent side="right">New form share</TooltipContent>
                   </Tooltip>

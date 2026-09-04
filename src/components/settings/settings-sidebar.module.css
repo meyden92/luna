@@ -1,0 +1,30 @@
+@layer components {
+  /* Horizontal tab strip on small screens, a rail from lg up. */
+  .root {
+    display: flex;
+    gap: var(--space-2);
+
+    @media (width >= 1024px) {
+      flex-direction: column;
+      gap: var(--space-1);
+    }
+  }
+
+  .item {
+    justify-content: flex-start;
+  }
+
+  .item[data-active] {
+    background: var(--muted);
+
+    &:hover {
+      background: var(--muted);
+    }
+  }
+
+  .icon {
+    width: var(--space-4);
+    height: var(--space-4);
+    margin-right: var(--space-2);
+  }
+}

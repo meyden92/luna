@@ -14,6 +14,7 @@ import { useClipboard } from '@/hooks/use-copy-to-clipboard';
 import { useMoveFiles } from '@/hooks/use-move-files';
 import { cn, getCDNImage } from '@/libs/utils';
 import type { GalleryFile } from '@/types/project';
+import styles from './SelectionBar.module.css';
 
 interface SelectionBarProps {
   files: GalleryFile[];
@@ -22,9 +23,6 @@ interface SelectionBarProps {
   hasNextPage: boolean;
   onDeleteFiles: (fileIds: string[]) => void;
 }
-
-const barButtonClass =
-  'flex h-[30px] items-center gap-1.5 rounded-lg px-[11px] text-[12.5px] font-medium opacity-90 transition-all hover:bg-white/12 hover:opacity-100 dark:hover:bg-white/7';
 
 /** Floating action bar shown while files are selected (design "light table" selection bar). */
 export function SelectionBar({ files, userId, isDeleting, hasNextPage, onDeleteFiles }: SelectionBarProps) {
@@ -102,39 +100,32 @@ export function SelectionBar({ files, userId, isDeleting, hasNextPage, onDeleteF
   };
 
   return (
-    <div
-      className={cn(
-        'fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-1 rounded-[14px] py-2 pl-4 pr-2.5',
-        'bg-luna-ink text-luna-bg shadow-[var(--luna-shadow-lg)]',
-        'dark:border dark:border-luna-line-2 dark:bg-luna-bg-3 dark:text-luna-ink',
-        'animate-in fade-in slide-in-from-bottom-2 duration-200',
-      )}
-    >
-      <span className="mr-1.5 text-[13px] opacity-90">
-        <b className="font-semibold">{count}</b> selected
+    <div className={styles.bar}>
+      <span className={styles.count}>
+        <b className={styles.countValue}>{count}</b> selected
       </span>
       <button
         type="button"
-        className={barButtonClass}
+        className={styles.button}
         onClick={selectAllLoaded}
         disabled={!hasUnselectedLoadedFiles}
         title={hasNextPage ? 'Select all loaded files in this view' : 'Select all files in this view'}
       >
-        <CheckSquare className="h-3.5 w-3.5" /> Select all{hasNextPage ? ' loaded' : ''}
+        <CheckSquare className={styles.icon} /> Select all{hasNextPage ? ' loaded' : ''}
       </button>
-      <span className="mx-1.5 h-[18px] w-px bg-current opacity-20" />
+      <span className={styles.divider} />
 
       <DropdownMenu>
-        <DropdownMenuTrigger className={barButtonClass}>
-          <Folder className="h-3.5 w-3.5" /> Move to
+        <DropdownMenuTrigger className={styles.button}>
+          <Folder className={styles.icon} /> Move to
         </DropdownMenuTrigger>
         <DropdownMenuContent
           side="top"
           align="start"
-          className="w-44"
+          className={styles.menuContent}
         >
           <DropdownMenuItem onClick={() => moveFilesTo(ids, null)}>
-            <FolderOpen className="mr-2 h-4 w-4" />
+            <FolderOpen className={styles.menuIcon} />
             Root (All Files)
           </DropdownMenuItem>
           {folders.length > 0 && <DropdownMenuSeparator />}
@@ -144,10 +135,10 @@ export function SelectionBar({ files, userId, isDeleting, hasNextPage, onDeleteF
               onClick={() => moveFilesTo(ids, folder.id)}
             >
               <span
-                className="mr-2 h-2 w-2 shrink-0 rounded-full"
+                className={styles.folderDot}
                 style={{ backgroundColor: folder.color || '#6b7280' }}
               />
-              <span className="truncate">{folder.name}</span>
+              <span className={styles.folderName}>{folder.name}</span>
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>
@@ -155,39 +146,39 @@ export function SelectionBar({ files, userId, isDeleting, hasNextPage, onDeleteF
 
       <button
         type="button"
-        className={barButtonClass}
+        className={styles.button}
         onClick={copyLinks}
       >
-        <Link2 className="h-3.5 w-3.5" /> Copy links
+        <Link2 className={styles.icon} /> Copy links
       </button>
       <button
         type="button"
-        className={barButtonClass}
+        className={styles.button}
         onClick={downloadSelected}
         disabled={isPreparingDownload}
       >
-        {isPreparingDownload ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+        {isPreparingDownload ? <Loader2 className={styles.spinning} /> : <Download className={styles.icon} />}
         {isPreparingDownload ? 'Preparing...' : 'Download'}
       </button>
       <button
         type="button"
-        className={cn(barButtonClass, 'hover:text-[#FF9C92] disabled:pointer-events-none disabled:opacity-50')}
+        className={cn(styles.button, styles.buttonDanger)}
         disabled={isDeleting}
         onClick={() => onDeleteFiles(ids)}
       >
-        {isDeleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+        {isDeleting ? <Loader2 className={styles.spinning} /> : <Trash2 className={styles.icon} />}
         {isDeleting ? 'Deleting...' : 'Delete'}
       </button>
 
-      <span className="mx-1.5 h-[18px] w-px bg-current opacity-20" />
+      <span className={styles.divider} />
       <button
         type="button"
         title="Clear selection"
         aria-label="Clear selection"
         onClick={clearSelection}
-        className="flex h-[30px] w-[30px] items-center justify-center rounded-lg opacity-70 transition-all hover:bg-white/12 hover:opacity-100 dark:hover:bg-white/7"
+        className={styles.close}
       >
-        <X className="h-3.5 w-3.5" />
+        <X className={styles.icon} />
       </button>
     </div>
   );

@@ -1,0 +1,111 @@
+@layer components {
+  .root {
+    position: relative;
+    max-inline-size: 80rem;
+    margin-inline: auto;
+    padding-block: var(--space-12) var(--space-8);
+    padding-inline: var(--space-8);
+  }
+
+  .header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--border);
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.12em;
+    color: var(--muted-foreground);
+  }
+
+  .headline {
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    letter-spacing: -0.01em;
+    color: var(--foreground);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    margin-top: var(--space-6);
+    border-top: 1px solid var(--border);
+
+    @media (width >= 640px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (width >= 1024px) {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  .cell {
+    position: relative;
+    padding-block: var(--space-5);
+    padding-right: var(--space-5);
+  }
+
+  /* Every cell but the first carries the dividing rule on its left. */
+  .cellDivided {
+    padding-left: var(--space-5);
+    border-left: 1px solid var(--border);
+  }
+
+  .icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--space-8);
+    height: var(--space-8);
+    margin-bottom: var(--space-4);
+    border-radius: var(--radius-lg);
+    background: var(--accent);
+    color: var(--primary-strong);
+    transition: transform 250ms ease;
+  }
+
+  .cell:hover .icon {
+    transform: rotate(-6deg) scale(1.05);
+  }
+
+  .title {
+    margin-bottom: var(--space-1);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    letter-spacing: -0.01em;
+    color: var(--foreground);
+  }
+
+  .description {
+    font-size: var(--text-sm);
+    line-height: 1.5;
+    color: var(--muted-foreground);
+  }
+
+  /* Ordinal tag parked in the cell's top-right; it hugs the grid edge on the
+     last column so it never overhangs the section. */
+  .tag {
+    position: absolute;
+    top: var(--space-5);
+    right: 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: 0.1em;
+    color: var(--foreground-subtle);
+  }
+
+  @media (width >= 1024px) {
+    .tag {
+      right: var(--space-5);
+    }
+
+    .cell:last-child .tag {
+      right: 0;
+    }
+  }
+}

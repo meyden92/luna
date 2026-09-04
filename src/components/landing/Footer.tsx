@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { Code, Globe, Star } from 'lucide-react';
 import { Brandmark } from './Brandmark';
+import styles from './Footer.module.css';
 
 const COLUMNS = [
   {
@@ -30,32 +31,30 @@ const COLUMNS = [
 
 export default function Footer() {
   return (
-    <footer className="py-10 pb-8">
-      <div className="mx-auto max-w-[1280px] px-9">
-        <div className="flex flex-wrap justify-between gap-7">
-          <div className="max-w-[280px]">
-            <div className="mb-3 flex items-center gap-2.5">
+    <footer className={styles.root}>
+      <div className={styles.inner}>
+        <div className={styles.columns}>
+          <div className={styles.about}>
+            <div className={styles.brand}>
               <Brandmark />
-              <div className="text-[15px] font-semibold leading-none tracking-[-0.01em] text-luna-ink">
+              <div className={styles.wordmark}>
                 Luna
                 <br />
                 Share
               </div>
             </div>
-            <p className="m-0 text-[12.5px] leading-[1.6] text-luna-ink-3">
-              Secure and seamless file sharing platform for teams and individuals.
-            </p>
+            <p className={styles.blurb}>Secure and seamless file sharing platform for teams and individuals.</p>
           </div>
-          <div className="flex flex-wrap gap-x-14 gap-y-6">
+          <div className={styles.linkGroups}>
             {COLUMNS.map((col) => (
               <div key={col.heading}>
-                <h6 className="mb-3 text-[11px] font-medium uppercase tracking-[0.12em] text-luna-ink-4">{col.heading}</h6>
-                <ul className="flex list-none flex-col gap-2 p-0">
+                <h6 className={styles.heading}>{col.heading}</h6>
+                <ul className={styles.list}>
                   {col.items.map((item) => (
                     <li key={item.to + item.label}>
                       <Link
                         to={item.to}
-                        className="text-[13px] text-luna-ink-2 hover:text-luna-ink"
+                        className={styles.link}
                       >
                         {item.label}
                       </Link>
@@ -66,27 +65,27 @@ export default function Footer() {
             ))}
           </div>
         </div>
-        <div className="mt-9 flex items-center justify-between border-t border-luna-line pt-[18px] text-xs text-luna-ink-4">
+        <div className={styles.colophon}>
           <div>©2025 LunaShare · All rights reserved.</div>
-          <div className="flex items-center gap-[18px]">
+          <div className={styles.social}>
             <a
               href="mailto:contact@lunashare.app"
               aria-label="Contact"
-              className="text-luna-ink-2 hover:text-luna-ink"
+              className={styles.link}
             >
               <Globe size={18} />
             </a>
             <a
               href="https://github.com/crysis992"
               aria-label="GitHub"
-              className="text-luna-ink-2 hover:text-luna-ink"
+              className={styles.link}
             >
               <Code size={18} />
             </a>
             <Link
               to="/dashboard"
               aria-label="Dashboard"
-              className="text-luna-ink-2 hover:text-luna-ink"
+              className={styles.link}
             >
               <Star size={18} />
             </Link>

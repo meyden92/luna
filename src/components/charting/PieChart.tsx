@@ -2,6 +2,7 @@ import type { ComputedDatum, PieSvgProps } from '@nivo/pie';
 import { ResponsivePie } from '@nivo/pie';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type AnyDatum, type BaseChartProps, inferIndexKey, inferSeriesKeys } from './BaseChart';
+import styles from './PieChart.module.css';
 import { useChartTheme } from './useChartTheme';
 
 type PieDatum = {
@@ -420,7 +421,7 @@ export default function PieChart<T extends AnyDatum = AnyDatum>({
 
   return (
     <div
-      className="relative"
+      className={styles.root}
       style={{ height, width }}
     >
       <ResponsivePie

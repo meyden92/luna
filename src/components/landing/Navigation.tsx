@@ -38,6 +38,7 @@ import { useImpersonation } from '@/hooks/use-impersonation';
 import { authClient } from '@/libs/auth/auth-client';
 import { queryKeys } from '@/libs/query-keys';
 import { cn, getAvatarUrl } from '@/libs/utils';
+import styles from './Navigation.module.css';
 
 interface NavigationProps extends React.ComponentProps<'nav'> {
   canAccessAdmin?: boolean;
@@ -121,42 +122,39 @@ export default function Navigation({ className, canAccessAdmin = false, onSignOu
 
   return (
     <nav
-      className={cn(
-        'luna-nav-enter fixed z-40 w-full border-b border-luna-line bg-luna-bg/86 backdrop-blur-[14px]',
-        isImpersonating && !isImpersonationLoading ? 'top-12' : 'top-0',
-        className,
-      )}
+      className={cn(styles.root, className)}
+      data-offset={isImpersonating && !isImpersonationLoading ? '' : undefined}
       {...props}
     >
-      <div className="relative z-10 mx-auto flex h-[4.625rem] items-center gap-8 px-7">
+      <div className={styles.bar}>
         <Link
           to="/"
           aria-label="LunaShare home"
-          className="flex shrink-0 items-center"
+          className={styles.brand}
         >
           <img
             src="/lunashare-logo.png"
             alt="LunaShare"
             width={139}
             height={34}
-            className="h-[34px] w-auto dark:hidden"
+            className={cn(styles.logo, styles.logoLight)}
           />
           <img
             src="/lunashare-logo-dark.png"
             alt="LunaShare"
             width={139}
             height={34}
-            className="hidden h-[34px] w-auto dark:block"
+            className={cn(styles.logo, styles.logoDark)}
           />
         </Link>
 
         {(resolvedSession || isSessionLoading) && (
-          <div className="hidden flex-1 items-center gap-1 text-[13.5px] font-medium text-luna-ink-3 lg:flex">
+          <div className={styles.links}>
             {isSessionLoading
               ? LOADING_LINK_SKELETONS.map((id) => (
                   <Skeleton
                     key={`nav-skeleton-${id}`}
-                    className="h-5 w-20"
+                    className={styles.linkSkeleton}
                   />
                 ))
               : NAV_LINKS.map((link) => {
@@ -165,16 +163,14 @@ export default function Navigation({ className, canAccessAdmin = false, onSignOu
                     return (
                       <DropdownMenu key={link.href}>
                         <DropdownMenuTrigger
-                          className={cn(
-                            'relative inline-flex items-center gap-1.5 rounded-lg px-[13px] py-2 transition-colors',
-                            active ? 'luna-prodnav-active text-luna-ink' : 'hover:bg-luna-bg-2 hover:text-luna-ink',
-                          )}
+                          className={styles.link}
+                          data-active={active || undefined}
                         >
                           {link.label}
-                          <ChevronDown className="h-3 w-3 opacity-70" />
+                          <ChevronDown className={styles.chevron} />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
-                          className="w-56"
+                          className={styles.menuContent}
                           align="start"
                         >
                           {link.children.map((child) => {
@@ -183,9 +179,10 @@ export default function Navigation({ className, canAccessAdmin = false, onSignOu
                               <DropdownMenuItem key={child.href}>
                                 <Link
                                   to={child.href}
-                                  className={cn('flex w-full items-center gap-2', isSubRouteActive(child.href) && 'text-luna-accent-2')}
+                                  className={styles.menuLink}
+                                  data-active={isSubRouteActive(child.href) || undefined}
                                 >
-                                  <ChildIcon className="h-4 w-4" />
+                                  <ChildIcon className={styles.menuIcon} />
                                   <span>{child.label}</span>
                                 </Link>
                               </DropdownMenuItem>
@@ -200,10 +197,8 @@ export default function Navigation({ className, canAccessAdmin = false, onSignOu
                     <Link
                       key={link.href}
                       to={link.href}
-                      className={cn(
-                        'relative inline-flex items-center gap-1.5 rounded-lg px-[13px] py-2 transition-colors',
-                        isActive(link.href) ? 'luna-prodnav-active text-luna-ink' : 'hover:bg-luna-bg-2 hover:text-luna-ink',
-                      )}
+                      className={styles.link}
+                      data-active={isActive(link.href) || undefined}
                     >
                       {link.label}
                     </Link>
@@ -212,12 +207,12 @@ export default function Navigation({ className, canAccessAdmin = false, onSignOu
           </div>
         )}
 
-        <div className="ml-auto flex shrink-0 items-center gap-2.5">
+        <div className={styles.actions}>
           <button
             type="button"
             onClick={() => setTheme(themeIsDark ? 'light' : 'dark')}
             aria-label="Toggle theme"
-            className="inline-flex h-[38px] w-[38px] items-center justify-center rounded-[10px] border border-luna-line bg-luna-bg text-luna-ink transition-all hover:-translate-y-px hover:bg-luna-bg-2"
+            className={styles.iconButton}
           >
             {themeReady ? themeIsDark ? <Sun size={15} /> : <Moon size={15} /> : <Moon size={15} />}
           </button>
@@ -225,36 +220,36 @@ export default function Navigation({ className, canAccessAdmin = false, onSignOu
           {resolvedSession && (
             <button
               type="button"
-              className="inline-flex h-[38px] w-[38px] items-center justify-center rounded-[10px] border border-luna-line bg-luna-bg text-luna-ink transition-all hover:bg-luna-bg-2 lg:hidden"
+              className={cn(styles.iconButton, styles.menuButton)}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Menu"
             >
-              {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+              {mobileMenuOpen ? <X className={styles.buttonIcon} /> : <Menu className={styles.buttonIcon} />}
             </button>
           )}
 
-          {!resolvedSession && isSessionLoading && <Skeleton className="h-10 w-10 rounded-full" />}
+          {!resolvedSession && isSessionLoading && <Skeleton className={styles.avatarSkeleton} />}
 
           {resolvedSession ? (
             <DropdownMenu>
               <DropdownMenuTrigger>
-                <Avatar className="h-10 w-10 border border-luna-line">
+                <Avatar className={styles.avatar}>
                   <AvatarImage
                     src={getAvatarUrl(resolvedUser?.image) ?? undefined}
                     alt={resolvedUser?.name || 'User'}
                   />
-                  <AvatarFallback className="bg-luna-accent-soft text-luna-accent-2">{resolvedUser?.name?.[0] || 'U'}</AvatarFallback>
+                  <AvatarFallback className={styles.avatarFallback}>{resolvedUser?.name?.[0] || 'U'}</AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-56"
+                className={styles.menuContent}
                 align="end"
               >
                 <DropdownMenuGroup>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{resolvedUser?.name}</p>
-                      <p className="text-xs leading-none text-muted-foreground">{resolvedUser?.email}</p>
+                  <DropdownMenuLabel>
+                    <div>
+                      <p className={styles.accountName}>{resolvedUser?.name}</p>
+                      <p className={styles.accountEmail}>{resolvedUser?.email}</p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -262,18 +257,18 @@ export default function Navigation({ className, canAccessAdmin = false, onSignOu
                     <DropdownMenuItem>
                       <Link
                         to="/dashboard"
-                        className="flex items-center"
+                        className={styles.accountLink}
                       >
-                        <HomeIcon className="mr-2 h-4 w-4" />
+                        <HomeIcon className={styles.accountIcon} />
                         <span>Dashboard</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem>
                       <Link
                         to="/settings"
-                        className="flex items-center"
+                        className={styles.accountLink}
                       >
-                        <Settings2 className="mr-2 h-4 w-4" />
+                        <Settings2 className={styles.accountIcon} />
                         <span>Settings</span>
                       </Link>
                     </DropdownMenuItem>
@@ -281,16 +276,16 @@ export default function Navigation({ className, canAccessAdmin = false, onSignOu
                       <Link
                         to="/profile/$id"
                         params={{ id: resolvedUser?.id ?? '' }}
-                        className="flex items-center"
+                        className={styles.accountLink}
                       >
-                        <User2 className="mr-2 h-4 w-4" />
+                        <User2 className={styles.accountIcon} />
                         <span>Profile</span>
                       </Link>
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="mr-2 h-4 w-4" />
+                    <LogOut className={styles.accountIcon} />
                     <span>Log out</span>
                   </DropdownMenuItem>
                   {canAccessAdminResolved && (
@@ -299,9 +294,9 @@ export default function Navigation({ className, canAccessAdmin = false, onSignOu
                       <DropdownMenuItem>
                         <Link
                           to="/admin"
-                          className="flex items-center text-destructive"
+                          className={cn(styles.accountLink, styles.accountLinkDanger)}
                         >
-                          <Shield className="mr-2 h-4 w-4" />
+                          <Shield className={styles.accountIcon} />
                           <span>Admin</span>
                         </Link>
                       </DropdownMenuItem>
@@ -315,15 +310,15 @@ export default function Navigation({ className, canAccessAdmin = false, onSignOu
               <>
                 <Link
                   to="/login"
-                  className="hidden rounded-[10px] border border-luna-line bg-luna-bg px-4 py-2 text-[13.5px] font-medium text-luna-ink transition-colors hover:bg-luna-bg-2 sm:inline-flex"
+                  className={styles.signIn}
                 >
                   Login
                 </Link>
                 <Link
                   to="/dashboard"
-                  className="inline-flex items-center gap-1.5 rounded-[10px] bg-luna-accent px-4 py-2 text-[13.5px] font-medium text-[oklch(0.15_0.03_162)] transition-all hover:-translate-y-px hover:shadow-[0_10px_24px_-10px_color-mix(in_oklab,var(--luna-accent)_55%,transparent)]"
+                  className={styles.openApp}
                 >
-                  Open app <ArrowRight className="h-3.5 w-3.5" />
+                  Open app <ArrowRight className={styles.openAppIcon} />
                 </Link>
               </>
             )
@@ -332,8 +327,8 @@ export default function Navigation({ className, canAccessAdmin = false, onSignOu
       </div>
 
       {resolvedSession && mobileMenuOpen && (
-        <div className="border-t border-luna-line bg-luna-bg px-6 py-4 lg:hidden">
-          <div className="flex flex-col space-y-2">
+        <div className={styles.drawer}>
+          <div className={styles.drawerList}>
             {NAV_LINKS.map((link) => {
               const Icon = link.icon;
 
@@ -342,43 +337,40 @@ export default function Navigation({ className, canAccessAdmin = false, onSignOu
                 return (
                   <div
                     key={link.href}
-                    className="space-y-1"
+                    className={styles.drawerGroup}
                   >
                     <button
                       type="button"
-                      className={cn(
-                        'flex w-full items-center justify-between gap-3 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-colors',
-                        isNavigationItemActive(link)
-                          ? 'border-luna-accent text-luna-accent-2'
-                          : 'border-transparent text-luna-ink-3 hover:border-luna-line-2 hover:text-luna-ink',
-                      )}
+                      className={cn(styles.drawerItem, styles.drawerToggle)}
+                      data-active={isNavigationItemActive(link) || undefined}
                       onClick={() => setMobileToolsOpen((prev) => !prev)}
                     >
-                      <span className="flex items-center gap-3">
-                        <Icon className="h-4 w-4" />
+                      <span className={styles.drawerToggleLabel}>
+                        <Icon className={styles.drawerIcon} />
                         {link.label}
                       </span>
-                      <ChevronDown className={cn('h-4 w-4 transition-transform', isToolsSectionOpen && 'rotate-180')} />
+                      <ChevronDown
+                        className={styles.drawerChevron}
+                        data-open={isToolsSectionOpen || undefined}
+                      />
                     </button>
 
                     {isToolsSectionOpen && (
-                      <div className="ml-6 flex flex-col space-y-1 border-l border-luna-line pl-3">
+                      <div className={styles.drawerChildren}>
                         {link.children.map((child) => {
                           const ChildIcon = child.icon;
                           return (
                             <Link
                               key={child.href}
                               to={child.href}
-                              className={cn(
-                                'flex items-center gap-3 px-3 py-2 text-sm font-medium transition-colors',
-                                isSubRouteActive(child.href) ? 'text-luna-accent-2' : 'text-luna-ink-3 hover:text-luna-ink',
-                              )}
+                              className={styles.drawerChild}
+                              data-active={isSubRouteActive(child.href) || undefined}
                               onClick={() => {
                                 setMobileMenuOpen(false);
                                 setMobileToolsOpen(false);
                               }}
                             >
-                              <ChildIcon className="h-4 w-4" />
+                              <ChildIcon className={styles.drawerIcon} />
                               {child.label}
                             </Link>
                           );
@@ -393,15 +385,11 @@ export default function Navigation({ className, canAccessAdmin = false, onSignOu
                 <Link
                   key={link.href}
                   to={link.href}
-                  className={cn(
-                    'flex items-center gap-3 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-colors',
-                    isActive(link.href)
-                      ? 'border-luna-accent text-luna-accent-2'
-                      : 'border-transparent text-luna-ink-3 hover:border-luna-line-2 hover:text-luna-ink',
-                  )}
+                  className={styles.drawerItem}
+                  data-active={isActive(link.href) || undefined}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className={styles.drawerIcon} />
                   {link.label}
                 </Link>
               );

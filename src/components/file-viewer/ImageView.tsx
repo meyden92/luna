@@ -1,5 +1,6 @@
 import { Eye, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import styles from './ImageView.module.css';
 
 interface ImageViewProps {
   src: string;
@@ -36,7 +37,7 @@ function ImageView({ src, width, height, onError }: ImageViewProps) {
         src={src}
         alt="Shared image"
         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 85vw, 75vw"
-        className="mx-auto block h-auto max-h-[82vh] w-auto max-w-full cursor-zoom-in object-contain"
+        className={styles.image}
         onClick={open}
         onLoad={(event) => {
           if (measured) return;
@@ -51,7 +52,7 @@ function ImageView({ src, width, height, onError }: ImageViewProps) {
       <button
         type="button"
         aria-label="View full size"
-        className="absolute bottom-3.5 right-3.5 z-10 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/55 px-3 py-1.5 text-xs text-white backdrop-blur-md transition-transform hover:-translate-y-px"
+        className={styles.zoomButton}
         onClick={open}
       >
         <Eye size={13} /> View full size
@@ -62,7 +63,7 @@ function ImageView({ src, width, height, onError }: ImageViewProps) {
           role="dialog"
           aria-modal="true"
           aria-label="Full size image"
-          className="fixed inset-0 z-[60] overflow-auto overscroll-contain bg-black/92 backdrop-blur-sm"
+          className={styles.overlay}
           onClick={close}
           onKeyDown={(e) => {
             if (e.key === 'Escape') close();
@@ -71,7 +72,7 @@ function ImageView({ src, width, height, onError }: ImageViewProps) {
           <button
             type="button"
             aria-label="Close"
-            className="fixed right-4 top-4 z-[61] inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/60 text-white transition-all hover:bg-black/80"
+            className={styles.close}
             onClick={(e) => {
               e.stopPropagation();
               close();
@@ -79,11 +80,11 @@ function ImageView({ src, width, height, onError }: ImageViewProps) {
           >
             <X size={18} />
           </button>
-          <div className="flex min-h-full min-w-full items-start justify-center p-4 sm:p-8">
+          <div className={styles.overlayBody}>
             <img
               src={src}
               alt="Shared image at full size"
-              className="h-auto w-auto max-w-none cursor-zoom-out"
+              className={styles.fullImage}
               onError={onError}
               onClick={(e) => {
                 e.stopPropagation();

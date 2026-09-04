@@ -3,6 +3,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
+import styles from './UploadProgress.module.css';
 
 interface UploadProgressProps {
   isOpen: boolean;
@@ -37,25 +38,25 @@ export const UploadProgress = ({
       onOpenChange={handleOpenChange}
     >
       <DialogContent
-        className="sm:max-w-[425px]"
+        className={styles.dialog}
         showCloseButton={!isUploading}
       >
         <DialogHeader>
           <DialogTitle>{dialogTitle}</DialogTitle>
         </DialogHeader>
-        <div className="mt-4">
+        <div className={styles.body}>
           {(!error || hasFailedFiles) && (
             <>
               <Progress
                 value={displayedProgress}
-                className="w-full"
+                className={styles.bar}
               />
               {hasFailedFiles ? (
-                <p className="mt-2 text-center text-sm text-destructive">
+                <p className={styles.failedCount}>
                   {failedFiles.length} {failedFiles.length === 1 ? 'file' : 'files'} failed to upload.
                 </p>
               ) : (
-                <p className="mt-2 text-center">{displayedProgress.toFixed(0)}% Complete</p>
+                <p className={styles.percent}>{displayedProgress.toFixed(0)}% Complete</p>
               )}
             </>
           )}
@@ -63,30 +64,30 @@ export const UploadProgress = ({
           {error && !hasFailedFiles && (
             <Alert
               variant="destructive"
-              className="mt-4"
+              className={styles.alert}
             >
-              <AlertCircle className="h-4 w-4" />
+              <AlertCircle className={styles.alertIcon} />
               <AlertTitle>Error</AlertTitle>
-              <AlertDescription className="whitespace-pre-wrap break-all">{error}</AlertDescription>
+              <AlertDescription className={styles.errorText}>{error}</AlertDescription>
             </Alert>
           )}
 
           {hasFailedFiles && (
             <Alert
               variant="destructive"
-              className="mt-4"
+              className={styles.alert}
             >
-              <AlertCircle className="h-4 w-4" />
+              <AlertCircle className={styles.alertIcon} />
               <AlertTitle>Failed uploads</AlertTitle>
-              <AlertDescription className="space-y-2">
-                {error && <p className="whitespace-pre-wrap break-all">{error}</p>}
-                <ul className="space-y-1">
+              <AlertDescription>
+                {error && <p className={styles.errorText}>{error}</p>}
+                <ul className={styles.failedList}>
                   {failedFiles.map((file) => (
                     <li
                       key={file.id}
-                      className="break-all"
+                      className={styles.failedItem}
                     >
-                      <span className="font-medium">{file.name}</span>
+                      <span className={styles.failedName}>{file.name}</span>
                       {file.error ? <span>: {file.error}</span> : null}
                     </li>
                   ))}

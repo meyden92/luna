@@ -6,8 +6,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { FilesList } from '@/components/uploader/FilesList';
 import { UploadProgress } from '@/components/uploader/UploadProgress';
 import { useFileUpload } from '@/components/uploader/useFileUpload';
-import { cn, formatSize } from '@/libs/utils';
+import { formatSize } from '@/libs/utils';
 import { Input } from '../ui/input';
+import styles from './FloatingUploadButton.module.css';
 
 const UPLOAD_ACCEPT =
   'image/*,video/*,audio/*,text/*,application/gzip,application/json,application/pdf,application/x-7z-compressed,application/x-rar-compressed,application/x-tar,application/x-zip-compressed,application/xml,application/zip,.7z,.gz,.json,.pdf,.rar,.tar,.xml,.zip,.doc,.docx,.ppt,.pptx,.xls,.xlsx';
@@ -122,7 +123,7 @@ export function FloatingUploadButton({
     <>
       <Input
         type="file"
-        className="hidden"
+        className={styles.fileInput}
         accept={UPLOAD_ACCEPT}
         multiple
         onChange={handleFileChange}
@@ -133,10 +134,10 @@ export function FloatingUploadButton({
         <Button
           onClick={() => setIsSidebarOpen(true)}
           size="icon"
-          className="fixed bottom-6 right-6 h-10 w-10 rounded-full shadow-md hover:shadow-lg transition-shadow z-50 opacity-70 hover:opacity-100"
+          className={styles.trigger}
           aria-label="Upload files"
         >
-          <Upload className="h-4 w-4" />
+          <Upload className={styles.icon} />
         </Button>
       ) : null}
 
@@ -146,30 +147,28 @@ export function FloatingUploadButton({
       >
         <SheetContent
           side="right"
-          className="sm:max-w-xl w-full"
+          className={styles.sheet}
         >
           <SheetHeader>
             <SheetTitle>{`Files (${files.length})${files.length > 0 ? ` · ${formatSize(totalUploadBytes, { precision: 1, trim: true })}` : ''}`}</SheetTitle>
           </SheetHeader>
 
-          <div className="flex flex-col flex-1 min-h-0 gap-4 px-6 pb-6">
+          <div className={styles.body}>
             <Button
               variant="outline"
-              className="w-full justify-start gap-2"
+              className={styles.formShare}
               onClick={() => {
                 setIsSidebarOpen(false);
                 onFormBuilderOpenChange(true);
               }}
             >
-              <FileText className="h-4 w-4" />
+              <FileText className={styles.icon} />
               Share Form Data
             </Button>
 
             <div
-              className={cn(
-                'border-2 border-dashed rounded-lg p-8 transition-colors text-center cursor-pointer hover:bg-muted/50',
-                isDragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/25',
-              )}
+              className={styles.dropzone}
+              data-dragging={isDragging || undefined}
               role="button"
               tabIndex={0}
               aria-label="Upload files"
@@ -184,18 +183,18 @@ export function FloatingUploadButton({
                 }
               }}
             >
-              <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                <div className="p-3 bg-background rounded-full shadow-sm border">
-                  <Upload className="h-6 w-6" />
+              <div className={styles.dropzoneInner}>
+                <div className={styles.dropzoneGlyph}>
+                  <Upload className={styles.dropzoneIcon} />
                 </div>
-                <div className="text-sm font-medium">{isDragging ? 'Drop files here' : 'Drag & drop files here or click to browse'}</div>
-                <p className="max-w-xs text-xs">Images, video, audio, text, PDFs, Office docs, and archives up to 200 MB.</p>
+                <div className={styles.dropzoneTitle}>{isDragging ? 'Drop files here' : 'Drag & drop files here or click to browse'}</div>
+                <p className={styles.dropzoneHint}>Images, video, audio, text, PDFs, Office docs, and archives up to 200 MB.</p>
               </div>
             </div>
 
             {files.length > 0 && (
               <>
-                <div className="flex-1 min-h-0 overflow-y-auto">
+                <div className={styles.list}>
                   <FilesList
                     files={files}
                     onRemoveAction={removeFile}
@@ -205,7 +204,7 @@ export function FloatingUploadButton({
 
                 <Button
                   onClick={handleUploadButtonClick}
-                  className="w-full"
+                  className={styles.submit}
                   disabled={isUploading}
                 >
                   Start Upload

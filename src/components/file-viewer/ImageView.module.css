@@ -1,0 +1,94 @@
+@layer components {
+  .image {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: 82vh;
+    margin-inline: auto;
+    object-fit: contain;
+    cursor: zoom-in;
+  }
+
+  /* The overlay chrome sits over arbitrary imagery, so its colours are fixed
+     values rather than Appearance roles. */
+  .zoomButton,
+  .overlay {
+    --scrim: oklch(0 0 0 / 0.55);
+    --on-scrim: oklch(1 0 0);
+  }
+
+  .zoomButton {
+    position: absolute;
+    right: var(--space-3);
+    bottom: var(--space-3);
+    z-index: 10;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding-block: var(--space-1);
+    padding-inline: var(--space-3);
+    border: 1px solid color-mix(in oklab, var(--on-scrim) 10%, transparent);
+    border-radius: var(--radius-full);
+    background: var(--scrim);
+    font-size: var(--text-xs);
+    color: var(--on-scrim);
+    backdrop-filter: blur(12px);
+    transition: transform 150ms ease;
+
+    &:hover {
+      transform: translateY(-1px);
+    }
+  }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    overflow: auto;
+    overscroll-behavior: contain;
+    background: oklch(0 0 0 / 0.92);
+    backdrop-filter: blur(4px);
+  }
+
+  .close {
+    position: fixed;
+    top: var(--space-4);
+    right: var(--space-4);
+    z-index: 61;
+    display: inline-flex;
+    width: var(--space-10);
+    height: var(--space-10);
+    align-items: center;
+    justify-content: center;
+    border: 1px solid color-mix(in oklab, var(--on-scrim) 10%, transparent);
+    border-radius: var(--radius-full);
+    background: oklch(0 0 0 / 0.6);
+    color: var(--on-scrim);
+    transition: background-color 150ms ease;
+
+    &:hover {
+      background: oklch(0 0 0 / 0.8);
+    }
+  }
+
+  .overlayBody {
+    display: flex;
+    min-width: 100%;
+    min-height: 100%;
+    align-items: flex-start;
+    justify-content: center;
+    padding: var(--space-4);
+
+    @media (width >= 640px) {
+      padding: var(--space-8);
+    }
+  }
+
+  .fullImage {
+    width: auto;
+    max-width: none;
+    height: auto;
+    cursor: zoom-out;
+  }
+}

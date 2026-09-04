@@ -1,0 +1,58 @@
+@layer components {
+  .dialog {
+    @media (width >= 640px) {
+      max-inline-size: 26.5625rem;
+    }
+  }
+
+  .body {
+    margin-top: var(--space-4);
+  }
+
+  .bar {
+    width: 100%;
+  }
+
+  .failedCount {
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    text-align: center;
+    color: var(--destructive);
+  }
+
+  .percent {
+    margin-top: var(--space-2);
+    text-align: center;
+  }
+
+  .alert {
+    margin-top: var(--space-4);
+  }
+
+  .alertIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  /* Error text can be a long unbroken URL or stack line. */
+  .errorText {
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .failedList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin-top: var(--space-2);
+  }
+
+  .failedItem {
+    word-break: break-all;
+  }
+
+  .failedName {
+    font-weight: var(--weight-medium);
+  }
+}

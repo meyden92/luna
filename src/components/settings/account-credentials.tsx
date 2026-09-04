@@ -30,6 +30,7 @@ import {
   displayNameSchema,
 } from '@/schemas/credentials-schema';
 import { removeAvatar, updateAvatar } from '@/server/fns/account';
+import styles from './account-credentials.module.css';
 
 /**
  * A User's own Avatar, display name, Username and password. All but the Avatar
@@ -105,13 +106,13 @@ function AvatarCard({ image: initialImage, name }: { image: string | null; name:
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <UserRound className="h-4 w-4" />
+        <CardTitle className={styles.cardTitle}>
+          <UserRound className={styles.titleIcon} />
           Avatar
         </CardTitle>
         <CardDescription>Shown next to your name. Images are resized to a square and stripped of camera metadata.</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-wrap items-center gap-4">
+      <CardContent className={styles.avatarRow}>
         <Avatar size="lg">
           {previewUrl ? (
             <AvatarImage
@@ -126,7 +127,7 @@ function AvatarCard({ image: initialImage, name }: { image: string | null; name:
           ref={fileInput}
           type="file"
           accept="image/*"
-          className="hidden"
+          className={styles.fileInput}
           data-testid="avatar-input"
           onChange={(e) => void onPick(e.target.files?.[0])}
         />
@@ -136,7 +137,7 @@ function AvatarCard({ image: initialImage, name }: { image: string | null; name:
           disabled={isBusy}
           onClick={() => fileInput.current?.click()}
         >
-          {isBusy ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+          {isBusy ? <Loader2 className={styles.spinner} /> : null}
           Upload image
         </Button>
 
@@ -146,7 +147,7 @@ function AvatarCard({ image: initialImage, name }: { image: string | null; name:
             disabled={isBusy}
             onClick={() => remove.mutate()}
           >
-            <Trash2 className="mr-2 size-4" />
+            <Trash2 className={styles.buttonIcon} />
             Remove
           </Button>
         ) : null}
@@ -185,7 +186,7 @@ function IdentityCard({ name, username }: { name: string; username: string }) {
       <CardContent>
         <FormWithSchema
           config={config}
-          className="space-y-5 max-w-md"
+          className={styles.form}
         >
           <FormField
             name="username"
@@ -239,7 +240,7 @@ function IdentityCard({ name, username }: { name: string; username: string }) {
                 type="submit"
                 disabled={isBusy}
               >
-                {isBusy ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+                {isBusy ? <Loader2 className={styles.spinner} /> : null}
                 Save profile
               </Button>
             )}
@@ -274,8 +275,8 @@ function PasswordCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <KeyRound className="h-4 w-4" />
+        <CardTitle className={styles.cardTitle}>
+          <KeyRound className={styles.titleIcon} />
           Password
         </CardTitle>
         <CardDescription>Changing your password signs out every other device.</CardDescription>
@@ -283,7 +284,7 @@ function PasswordCard() {
       <CardContent>
         <FormWithSchema
           config={config}
-          className="space-y-5 max-w-md"
+          className={styles.form}
         >
           <FormField
             name="currentPassword"
@@ -330,7 +331,7 @@ function PasswordCard() {
                 type="submit"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+                {isSubmitting ? <Loader2 className={styles.spinner} /> : null}
                 Change password
               </Button>
             )}

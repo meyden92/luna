@@ -11,9 +11,10 @@ import {
 import { getSelectedCount, getSelectedFileIds, useBulkSelection } from '@/hooks/stores/use-bulk-selection';
 import { useClipboard } from '@/hooks/use-copy-to-clipboard';
 import useEdit from '@/hooks/use-edit';
-import { cn, formatSize, getCDNImage, getFileIcon } from '@/libs/utils';
+import { formatSize, getCDNImage, getFileIcon } from '@/libs/utils';
 import type { GalleryFile } from '@/types/project';
 import { FileContextMenu } from './FileContextMenu';
+import styles from './GalleryEntry.module.css';
 import MoveToFolderMenu from './MoveToFolderMenu';
 
 /** Custom MIME type carrying gallery file ids through native drag-and-drop. */
@@ -207,27 +208,27 @@ function GalleryEntry({
       onOpenChange={setIsDropdownOpen}
     >
       <DropdownMenuTrigger
-        className="flex h-[26px] w-[26px] items-center justify-center rounded-[7px] border border-luna-line bg-luna-bg/85 text-luna-ink-2 backdrop-blur-[6px] transition-colors hover:border-luna-accent hover:bg-luna-bg hover:text-luna-accent-2"
+        className={styles.actionButton}
         aria-label="File options"
         onClick={(e) => e.stopPropagation()}
       >
-        <MoreVertical className="h-3.5 w-3.5" />
+        <MoreVertical className={styles.actionIcon} />
       </DropdownMenuTrigger>
       <DropdownMenuContent
-        className="w-64"
+        className={styles.menuContent}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Bulk editing controls - show ONLY bulk options when files are selected */}
         {hasMultipleSelected ? (
           <>
             <DropdownMenuItem
-              className="truncate text-sm font-medium"
+              className={styles.menuItemCount}
               disabled
             >
               {`${selectedCount} ${selectedCount === 1 ? 'file' : 'files'} selected`}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onClearSelection}>
-              <X className="mr-2 h-4 w-4" />
+              <X className={styles.menuIcon} />
               Clear selection
             </DropdownMenuItem>
             <MoveToFolderMenu
@@ -236,7 +237,7 @@ function GalleryEntry({
               onClose={() => useBulkSelection.getState().clearSelection()}
             />
             <DropdownMenuItem onClick={handleBulkDelete}>
-              <Trash2 className="mr-2 h-4 w-4" />
+              <Trash2 className={styles.menuIcon} />
               {`Delete ${selectedCount} ${selectedCount === 1 ? 'File' : 'Files'}`}
             </DropdownMenuItem>
           </>
@@ -244,7 +245,7 @@ function GalleryEntry({
           <>
             {/* Single file options - only show when no bulk selection */}
             <DropdownMenuItem
-              className="truncate text-sm"
+              className={styles.menuItemTitle}
               disabled
             >
               {file.title}
@@ -291,14 +292,10 @@ function GalleryEntry({
       onContextMenuOpenChange={setIsContextOpen}
     >
       <figure
-        className={cn(
-          'group/card relative m-0 flex-none cursor-pointer overflow-hidden rounded-[10px] border border-luna-line bg-luna-bg-3',
-          'outline-2 -outline-offset-2 outline-transparent transition-[box-shadow,transform,outline-color] duration-150',
-          'hover:z-[2] hover:-translate-y-px hover:shadow-[var(--luna-shadow-md)]',
-          width === undefined && 'aspect-[4/3]',
-          isSelected && 'outline-luna-accent',
-          isOpen && 'z-[2] shadow-[var(--luna-shadow-md)]',
-        )}
+        className={styles.card}
+        data-shape={width === undefined ? 'aspect' : undefined}
+        data-selected={isSelected || undefined}
+        data-open={isOpen || undefined}
         style={width !== undefined ? { width, height } : undefined}
         role="button"
         tabIndex={0}
@@ -316,31 +313,25 @@ function GalleryEntry({
           }
         }}
       >
-        <div className="absolute inset-0">
+        <div className={styles.media}>
           {canPreview ? (
             <img
               alt={file.title || 'untitled'}
-              className="h-full w-full object-cover"
+              className={styles.image}
               loading="lazy"
               draggable={false}
               src={getCDNImage(`/${userId}/${file.url}`)}
             />
           ) : (
-            <div className="luna-ghost-hatch flex h-full w-full flex-col items-center justify-center gap-2 bg-luna-bg-2 text-luna-ink-3">
-              <FileIcon className="h-[22px] w-[22px]" />
-              <span className="font-mono text-sm tracking-[0.05em] text-luna-ink-2">.{ext.toLowerCase()}</span>
-              {duration && <span className="font-mono text-[10px] text-luna-ink-4">{duration}</span>}
+            <div className={styles.placeholder}>
+              <FileIcon className={styles.placeholderIcon} />
+              <span className={styles.placeholderExt}>.{ext.toLowerCase()}</span>
+              {duration && <span className={styles.placeholderDuration}>{duration}</span>}
             </div>
           )}
 
           {/* hover shade */}
-          <div
-            className={cn(
-              'pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-0 transition-opacity duration-150',
-              'group-hover/card:opacity-100',
-              (isSelected || isOpen) && 'opacity-100',
-            )}
-          />
+          <div className={styles.shade} />
 
           {/* select check */}
           <button
@@ -352,27 +343,18 @@ function GalleryEntry({
               e.stopPropagation();
               toggleFile(file.id);
             }}
-            className={cn(
-              'absolute left-2 top-2 z-[3] flex h-[22px] w-[22px] scale-[0.85] items-center justify-center rounded-full border border-luna-line-2 bg-luna-bg/85 text-transparent opacity-0 transition-all duration-150',
-              'hover:text-luna-ink-3 group-hover/card:scale-100 group-hover/card:opacity-100',
-              (selectMode || isSelected) && 'scale-100 opacity-100',
-              isSelected && 'border-luna-accent bg-luna-accent text-[oklch(0.15_0.03_162)]',
-            )}
+            className={styles.check}
+            data-visible={selectMode || isSelected || undefined}
+            data-selected={isSelected || undefined}
           >
             <Check
-              className="h-3 w-3"
+              className={styles.checkIcon}
               strokeWidth={2.6}
             />
           </button>
 
           {/* quick actions */}
-          <div
-            className={cn(
-              'absolute right-2 top-2 z-[3] flex -translate-y-[3px] gap-[5px] opacity-0 transition-all duration-150',
-              'group-hover/card:translate-y-0 group-hover/card:opacity-100',
-              isOpen && 'translate-y-0 opacity-100',
-            )}
-          >
+          <div className={styles.actions}>
             <button
               type="button"
               title="Copy share link"
@@ -380,47 +362,42 @@ function GalleryEntry({
                 e.stopPropagation();
                 clipboard.copy(`${window.location.origin}/view/${file.id}`);
               }}
-              className="flex h-[26px] w-[26px] items-center justify-center rounded-[7px] border border-luna-line bg-luna-bg/85 text-luna-ink-2 backdrop-blur-[6px] transition-colors hover:border-luna-accent hover:bg-luna-bg hover:text-luna-accent-2"
+              className={styles.actionButton}
             >
-              <Link2 className="h-3.5 w-3.5" />
+              <Link2 className={styles.actionIcon} />
             </button>
             <a
               title="Download"
               href={`/api/download?url=${encodeURIComponent(getCDNImage(`/${userId}/${file.url}`))}`}
               download={file.title}
               onClick={(e) => e.stopPropagation()}
-              className="flex h-[26px] w-[26px] items-center justify-center rounded-[7px] border border-luna-line bg-luna-bg/85 text-luna-ink-2 backdrop-blur-[6px] transition-colors hover:border-luna-accent hover:bg-luna-bg hover:text-luna-accent-2"
+              className={styles.actionButton}
             >
-              <Download className="h-3.5 w-3.5" />
+              <Download className={styles.actionIcon} />
             </a>
             {dropdownMenu}
           </div>
 
           {/* video badge */}
           {isVideo && (
-            <span className="absolute bottom-2 right-2 z-[2] flex items-center gap-1 rounded-full bg-black/55 px-2 py-[3px] font-mono text-[10px] text-white backdrop-blur-[4px] transition-opacity group-hover/card:opacity-0">
-              <Play className="h-[11px] w-[11px] fill-current" />
+            <span className={styles.videoBadge}>
+              <Play className={styles.videoIcon} />
               {duration}
             </span>
           )}
 
           {/* hover meta */}
-          <figcaption
-            className={cn(
-              'pointer-events-none absolute inset-x-2.5 bottom-2 z-[2] flex translate-y-1 flex-col gap-px opacity-0 transition-all duration-150',
-              'group-hover/card:translate-y-0 group-hover/card:opacity-100',
-            )}
-          >
-            <span className="truncate font-mono text-[10.5px] text-white">{file.title || 'Untitled'}</span>
-            <span className="flex items-center gap-1.5 font-mono text-[9.5px] text-white/72">
+          <figcaption className={styles.caption}>
+            <span className={styles.captionTitle}>{file.title || 'Untitled'}</span>
+            <span className={styles.captionMeta}>
               {metaSubline}
               {showFolderBadge && file.folder && (
-                <span className="flex min-w-0 items-center gap-1">
+                <span className={styles.folderChip}>
                   <span
-                    className="h-1.5 w-1.5 shrink-0 rounded-full"
+                    className={styles.folderDot}
                     style={{ backgroundColor: file.folder.color || '#6b7280' }}
                   />
-                  <span className="truncate">{file.folder.name}</span>
+                  <span className={styles.folderName}>{file.folder.name}</span>
                 </span>
               )}
             </span>

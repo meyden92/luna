@@ -1,0 +1,32 @@
+@layer components {
+  /* Full-viewport dialog layer. It fades in on mount and back out during the
+     150ms the portal keeps rendering after `isOpen` flips to false. */
+  .root {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    opacity: 1;
+    transition: opacity 150ms ease;
+    animation: lightbox-portal-in 150ms ease both;
+  }
+
+  .root[data-closing] {
+    opacity: 0;
+  }
+
+  @keyframes lightbox-portal-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .root {
+      transition: none;
+      animation-duration: 0.01ms;
+    }
+  }
+}

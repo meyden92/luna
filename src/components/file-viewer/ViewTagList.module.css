@@ -1,0 +1,24 @@
+@layer components {
+  .root {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .column {
+    width: 100%;
+  }
+
+  .heading {
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+    font-weight: var(--weight-bold);
+  }
+
+  .tag {
+    overflow: hidden;
+    max-width: 7.8125rem;
+    margin-left: var(--space-1);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

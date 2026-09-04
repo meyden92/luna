@@ -1,0 +1,40 @@
+@layer components {
+  .icon {
+    flex-shrink: 0;
+    width: var(--space-4);
+    height: var(--space-4);
+    margin-right: var(--space-2);
+  }
+
+  .content {
+    width: 12rem;
+  }
+
+  .separator {
+    height: 1px;
+    margin-block: var(--space-1);
+    background: var(--border);
+  }
+
+  .swatch {
+    flex-shrink: 0;
+    width: var(--space-4);
+    height: var(--space-4);
+    margin-right: var(--space-2);
+    border-radius: var(--radius-sm);
+  }
+
+  .name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .count {
+    margin-left: var(--space-2);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--muted-foreground);
+  }
+}

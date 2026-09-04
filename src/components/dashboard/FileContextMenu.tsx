@@ -6,8 +6,9 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator,
 import { getSelectedFileIds, useBulkSelection } from '@/hooks/stores/use-bulk-selection';
 import { useClipboard } from '@/hooks/use-copy-to-clipboard';
 import useEdit from '@/hooks/use-edit';
-import { getCDNImage } from '@/libs/utils';
+import { cn, getCDNImage } from '@/libs/utils';
 import type { GalleryFile } from '@/types/project';
+import styles from './FileContextMenu.module.css';
 import MoveToFolderMenu from './MoveToFolderMenu';
 
 interface FileContextMenuProps {
@@ -67,12 +68,12 @@ export function FileContextMenu({
   return (
     <ContextMenu onOpenChange={toggleOpen}>
       <ContextMenuTrigger className={triggerClassName}>{children}</ContextMenuTrigger>
-      <ContextMenuContent className="w-64">
+      <ContextMenuContent className={styles.content}>
         {/* Show ONLY bulk options when files are selected, hide single-file options */}
         {hasMultipleSelected ? (
           <>
             <ContextMenuItem
-              className="truncate text-sm font-medium"
+              className={cn(styles.heading, styles.headingCount)}
               disabled
             >
               {`${selectedCount} ${selectedCount === 1 ? 'file' : 'files'} selected`}
@@ -81,7 +82,7 @@ export function FileContextMenu({
               inset
               onClick={onClearSelection}
             >
-              <X className="mr-2 h-4 w-4" />
+              <X className={styles.icon} />
               Clear selection
             </ContextMenuItem>
             <MoveToFolderMenu
@@ -92,7 +93,7 @@ export function FileContextMenu({
               inset
               onClick={handleBulkDelete}
             >
-              <Trash2 className="mr-2 h-4 w-4" />
+              <Trash2 className={styles.icon} />
               {`Delete ${selectedCount} ${selectedCount === 1 ? 'File' : 'Files'}`}
             </ContextMenuItem>
           </>
@@ -100,7 +101,7 @@ export function FileContextMenu({
           <>
             {/* Single file options - only show when no bulk selection */}
             <ContextMenuItem
-              className="truncate text-sm"
+              className={styles.heading}
               disabled
             >
               {file.title}
@@ -135,7 +136,7 @@ export function FileContextMenu({
                 inset
                 render={<a href={`/beautify/${file.id}`} />}
               >
-                <Sparkles className="mr-2 h-4 w-4" />
+                <Sparkles className={styles.icon} />
                 Beautify
               </ContextMenuItem>
             ) : null}

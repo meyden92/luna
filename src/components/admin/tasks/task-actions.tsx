@@ -13,6 +13,7 @@ import { useAppMutation } from '@/hooks/use-app-mutation';
 import { queryKeys } from '@/libs/query-keys';
 import { operateAdminTask } from '@/server/fns/admin/tasks';
 import type { TaskWithStatus } from '@/types/tasks';
+import styles from './task-actions.module.css';
 
 interface TaskActionsProps {
   task: TaskWithStatus;
@@ -38,7 +39,7 @@ export default function TaskActions({ task, onEdit, onDelete }: TaskActionsProps
   };
 
   return (
-    <div className="flex items-center gap-1">
+    <div className={styles.root}>
       {/* Quick actions */}
       <Button
         size="sm"
@@ -47,7 +48,7 @@ export default function TaskActions({ task, onEdit, onDelete }: TaskActionsProps
         disabled={operationMutation.isPending || task.isRunning}
         title="Execute Now"
       >
-        <Zap className="h-3 w-3" />
+        <Zap />
       </Button>
 
       {task.enabled ? (
@@ -58,7 +59,7 @@ export default function TaskActions({ task, onEdit, onDelete }: TaskActionsProps
           disabled={operationMutation.isPending}
           title="Disable Task"
         >
-          <PowerOff className="h-3 w-3" />
+          <PowerOff />
         </Button>
       ) : (
         <Button
@@ -68,18 +69,18 @@ export default function TaskActions({ task, onEdit, onDelete }: TaskActionsProps
           disabled={operationMutation.isPending}
           title="Enable Task"
         >
-          <Power className="h-3 w-3" />
+          <Power />
         </Button>
       )}
 
       {/* More actions dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger>
-          <MoreHorizontal className="h-3 w-3" />
+          <MoreHorizontal />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => onEdit(task.id)}>
-            <Edit className="h-4 w-4 mr-2" />
+            <Edit />
             Edit
           </DropdownMenuItem>
           <DropdownMenuItem>
@@ -87,16 +88,16 @@ export default function TaskActions({ task, onEdit, onDelete }: TaskActionsProps
               to="/admin/tasks/$id/logs"
               params={{ id: String(task.id) }}
             >
-              <FileText className="h-4 w-4 mr-2" />
+              <FileText />
               View Logs
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => onDelete(task.id)}
-            className="text-destructive focus:text-destructive"
+            className={styles.destructiveItem}
           >
-            <Trash2 className="h-4 w-4 mr-2" />
+            <Trash2 />
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>

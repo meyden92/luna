@@ -1,0 +1,19 @@
+@layer components {
+  .trigger {
+    color: var(--destructive);
+  }
+
+  .trigger:hover {
+    background-color: color-mix(in oklab, var(--destructive) 10%, transparent);
+    color: var(--destructive);
+  }
+
+  .confirm {
+    background-color: var(--destructive);
+    color: var(--destructive-foreground);
+  }
+
+  .confirm:hover {
+    background-color: color-mix(in oklab, var(--destructive) 90%, black);
+  }
+}

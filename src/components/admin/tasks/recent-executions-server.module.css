@@ -1,0 +1,16 @@
+@layer components {
+  .subtitle {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .empty {
+    padding-block: var(--space-8);
+    text-align: center;
+  }
+
+  .emptyText {
+    color: var(--muted-foreground);
+  }
+}

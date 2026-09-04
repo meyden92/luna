@@ -19,6 +19,7 @@ import { usernameTakenMessage } from '@/libs/auth/username-availability';
 import { queryKeys } from '@/libs/query-keys';
 import { createUserSchema } from '@/schemas/credentials-schema';
 import { createAdminUser } from '@/server/fns/admin/users';
+import styles from './create-user-dialog.module.css';
 
 /**
  * The only way a User is created through the app. The initial password is
@@ -44,7 +45,7 @@ export function CreateUserDialog() {
   return (
     <>
       <Button onClick={() => setOpen(true)}>
-        <UserPlus className="mr-2 h-4 w-4" />
+        <UserPlus />
         Create user
       </Button>
 
@@ -60,7 +61,7 @@ export function CreateUserDialog() {
 
           <FormWithSchema
             config={config}
-            className="space-y-4"
+            className="stack space-4"
           >
             <FormField
               name="username"
@@ -147,9 +148,9 @@ export function CreateUserDialog() {
                 <Button
                   type="submit"
                   disabled={isBusy || create.isPending}
-                  className="w-full"
+                  className={styles.submit}
                 >
-                  {isBusy || create.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+                  {isBusy || create.isPending ? <Loader2 className={styles.spinner} /> : null}
                   Create user
                 </Button>
               )}

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import type { listExecutions } from '@/server/fns/admin/tasks';
 import ExecutionLogDialog from './execution-log-dialog';
+import styles from './execution-row.module.css';
 
 export type ExecutionHistoryItem = Awaited<ReturnType<typeof listExecutions>>['executions'][number];
 
@@ -15,38 +16,38 @@ const getStatusBadge = (status: string) => {
     case 'success':
       return (
         <Badge
-          variant="secondary"
-          className="text-green-700 bg-green-100"
+          variant="outline"
+          className={styles.successBadge}
         >
-          <CheckCircle className="h-3 w-3 mr-1" />
+          <CheckCircle />
           Success
         </Badge>
       );
     case 'failed':
       return (
         <Badge variant="destructive">
-          <XCircle className="h-3 w-3 mr-1" />
+          <XCircle />
           Failed
         </Badge>
       );
     case 'timeout':
       return (
         <Badge variant="destructive">
-          <Timer className="h-3 w-3 mr-1" />
+          <Timer />
           Timeout
         </Badge>
       );
     case 'running':
       return (
         <Badge variant="default">
-          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+          <Loader2 className={styles.runningIcon} />
           Running
         </Badge>
       );
     case 'pending':
       return (
         <Badge variant="outline">
-          <Clock className="h-3 w-3 mr-1" />
+          <Clock />
           Pending
         </Badge>
       );
@@ -60,21 +61,21 @@ const getTriggerBadge = (trigger: string) => {
     case 'schedule':
       return (
         <Badge variant="outline">
-          <Calendar className="h-3 w-3 mr-1" />
+          <Calendar />
           Scheduled
         </Badge>
       );
     case 'manual':
       return (
         <Badge variant="secondary">
-          <Zap className="h-3 w-3 mr-1" />
+          <Zap />
           Manual
         </Badge>
       );
     case 'api':
       return (
         <Badge variant="outline">
-          <Activity className="h-3 w-3 mr-1" />
+          <Activity />
           API
         </Badge>
       );
@@ -95,29 +96,22 @@ export default function ExecutionRow({ execution }: ExecutionRowProps) {
   return (
     <>
       <div
-        className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+        className={styles.root}
         onClick={() => setShowLogDialog(true)}
       >
-        <div className="flex items-center gap-3">
+        <div className={styles.identity}>
           {getStatusBadge(execution.status)}
           <div>
-            <div className="font-medium text-sm">{execution.task.name}</div>
-            <div className="text-xs text-muted-foreground">
+            <div className={styles.taskName}>{execution.task.name}</div>
+            <div className={styles.taskMeta}>
               {new Date(execution.startedAt).toLocaleString()}
               {execution.duration && ` • ${formatDuration(execution.duration)}`}
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className={styles.trigger}>
           {getTriggerBadge(execution.triggeredBy)}
-          {execution.executedByUser && (
-            <Badge
-              variant="outline"
-              className="text-xs"
-            >
-              {execution.executedByUser.name}
-            </Badge>
-          )}
+          {execution.executedByUser && <Badge variant="outline">{execution.executedByUser.name}</Badge>}
         </div>
       </div>
 

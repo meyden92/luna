@@ -1,0 +1,39 @@
+@layer components {
+  .nav {
+    margin-bottom: var(--space-6);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background-color: var(--accent);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 20%, transparent);
+  }
+
+  .trail {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .crumb {
+    display: flex;
+    align-items: center;
+  }
+
+  .separator {
+    margin-inline: var(--space-2);
+  }
+
+  .current {
+    color: var(--muted-foreground);
+  }
+
+  .link {
+    color: var(--primary-strong);
+  }
+
+  .link:hover {
+    text-decoration: underline;
+  }
+}

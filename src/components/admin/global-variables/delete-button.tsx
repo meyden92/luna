@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { queryKeys } from '@/libs/query-keys';
 import { deleteGlobalVariable } from '@/server/fns/admin/global-variables';
+import styles from './delete-button.module.css';
 
 interface DeleteGlobalVariableButtonProps {
   id: string;
@@ -46,11 +47,11 @@ export function DeleteGlobalVariableButton({ id, name }: DeleteGlobalVariableBut
           <Button
             size="icon"
             variant="ghost"
-            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            className={styles.trigger}
           />
         }
       >
-        <Trash2 className="w-4 h-4" />
+        <Trash2 />
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
@@ -64,7 +65,7 @@ export function DeleteGlobalVariableButton({ id, name }: DeleteGlobalVariableBut
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            className={styles.confirm}
             disabled={isDeleting}
           >
             {isDeleting ? 'Deleting...' : 'Delete'}

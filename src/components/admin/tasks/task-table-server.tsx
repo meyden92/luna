@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { TaskWithStatus } from '@/types/tasks';
 import TaskActions from './task-actions';
+import styles from './task-table-server.module.css';
 
 interface TaskTableServerProps {
   tasks: TaskWithStatus[];
@@ -11,11 +12,35 @@ interface TaskTableServerProps {
 }
 
 const getStatusIcon = (task: TaskWithStatus) => {
-  if (task.isRunning) return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
-  if (task.status === 'scheduled') return <Clock className="h-4 w-4 text-green-500" />;
-  if (task.status === 'stopped') return <Square className="h-4 w-4 text-yellow-500" />;
-  if (task.status === 'disabled') return <XCircle className="h-4 w-4 text-red-500" />;
-  return <CheckCircle className="h-4 w-4 text-gray-500" />;
+  if (task.isRunning)
+    return (
+      <Loader2
+        className={styles.statusIcon}
+        data-status="running"
+      />
+    );
+  if (task.status === 'scheduled')
+    return (
+      <Clock
+        className={styles.statusIcon}
+        data-status="scheduled"
+      />
+    );
+  if (task.status === 'stopped')
+    return (
+      <Square
+        className={styles.statusIcon}
+        data-status="stopped"
+      />
+    );
+  if (task.status === 'disabled')
+    return (
+      <XCircle
+        className={styles.statusIcon}
+        data-status="disabled"
+      />
+    );
+  return <CheckCircle className={styles.statusIcon} />;
 };
 
 const getStatusBadgeVariant = (status: string) => {
@@ -67,16 +92,13 @@ export default function TaskTableServer({ tasks, onEdit, onDelete }: TaskTableSe
       </TableHeader>
       <TableBody>
         {tasks.map((task) => (
-          <TableRow
-            key={task.id}
-            className="group"
-          >
+          <TableRow key={task.id}>
             <TableCell>
-              <div className="flex items-center gap-2">
+              <div className={styles.taskCell}>
                 {getStatusIcon(task)}
                 <div>
-                  <div className="font-medium">{task.name}</div>
-                  <div className="text-sm text-muted-foreground line-clamp-1">{task.description}</div>
+                  <div className={styles.taskName}>{task.name}</div>
+                  <div className={styles.taskDescription}>{task.description}</div>
                 </div>
               </div>
             </TableCell>
@@ -84,23 +106,23 @@ export default function TaskTableServer({ tasks, onEdit, onDelete }: TaskTableSe
               <Badge variant={getStatusBadgeVariant(task.status)}>{task.status}</Badge>
             </TableCell>
             <TableCell>
-              <code className="text-xs bg-muted px-1 py-0.5 rounded">{task.taskFunction}</code>
+              <code className={styles.functionCode}>{task.taskFunction}</code>
             </TableCell>
             <TableCell>
-              <code className="text-xs">{task.cronExpression}</code>
+              <code className={styles.scheduleCode}>{task.cronExpression}</code>
             </TableCell>
             <TableCell>
               {task.nextExecution ? (
-                <span className="text-sm">{new Date(task.nextExecution).toLocaleString()}</span>
+                <span className={styles.nextRun}>{new Date(task.nextExecution).toLocaleString()}</span>
               ) : (
-                <span className="text-muted-foreground">-</span>
+                <span className={styles.placeholder}>-</span>
               )}
             </TableCell>
             <TableCell>
-              <div className="flex items-center gap-2">
+              <div className={styles.lastExecution}>
                 {getLastExecutionBadge(task)}
                 {task.lastExecution && (
-                  <span className="text-xs text-muted-foreground">{new Date(task.lastExecution.startedAt).toLocaleString()}</span>
+                  <span className={styles.lastExecutionTime}>{new Date(task.lastExecution.startedAt).toLocaleString()}</span>
                 )}
               </div>
             </TableCell>

@@ -1,0 +1,17 @@
+@layer components {
+  .root {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .label {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .select {
+    width: 8rem;
+  }
+}

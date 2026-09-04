@@ -2,7 +2,9 @@ import { QueryClient } from '@tanstack/react-query';
 import { createRouter as createTanStackRouter } from '@tanstack/react-router';
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query';
 import { Spinner } from '@/components/ui/spinner';
+import { cn } from '@/libs/utils';
 import type { RootRouteContext } from './route-context';
+import styles from './router.module.css';
 import { routeTree } from './routeTree.gen';
 
 // After a redeploy, hashed chunk files referenced by an already-open tab no longer
@@ -25,21 +27,21 @@ if (typeof window !== 'undefined') {
 
 function RoutePending() {
   return (
-    <div className="flex justify-center pt-24">
-      <Spinner className="size-6 text-muted-foreground" />
+    <div className={styles.pending}>
+      <Spinner className={styles.spinner} />
     </div>
   );
 }
 
 function RouteError({ error }: { error: Error }) {
   return (
-    <div className="flex flex-col items-center gap-3 pt-24 text-center">
-      <p className="text-sm font-medium">Something went wrong while loading this page.</p>
-      <p className="max-w-md text-xs text-muted-foreground break-all">{error.message}</p>
+    <div className={styles.error}>
+      <p className="type-sm weight-medium">Something went wrong while loading this page.</p>
+      <p className={cn(styles.errorMessage, 'type-xs')}>{error.message}</p>
       <button
         type="button"
         onClick={() => window.location.reload()}
-        className="rounded-md border px-3 py-1.5 text-sm transition-colors hover:bg-accent"
+        className={cn(styles.reload, 'type-sm')}
       >
         Reload page
       </button>

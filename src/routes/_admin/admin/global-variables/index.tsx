@@ -66,7 +66,7 @@ function GlobalVariablesPage() {
                   <TableHead>Type</TableHead>
                   <TableHead>Usage</TableHead>
                   <TableHead>Last Updated</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className={styles.alignEnd}>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

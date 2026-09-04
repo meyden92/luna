@@ -1,0 +1,208 @@
+@layer components {
+  .root {
+    /* Matches the height of a standalone Input so a group and a plain field
+       line up in the same row; not a spacing step, hence the named property. */
+    --input-group-height: 2.25rem;
+
+    position: relative;
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    align-items: center;
+    height: var(--input-group-height);
+    border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+    border-radius: var(--radius-lg);
+    background-color: color-mix(in oklab, var(--muted) 35%, transparent);
+    box-shadow: var(--shadow-sm);
+    outline: none;
+    transition:
+      color 150ms ease,
+      background-color 150ms ease,
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+
+    /* The group carries the focus ring on behalf of the control inside it. */
+    &:has([data-slot="input-group-control"]:focus-visible) {
+      border-color: var(--ring);
+      background-color: var(--background);
+      box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 35%, transparent);
+    }
+
+    &:has([data-slot][aria-invalid="true"]) {
+      border-color: var(--destructive);
+      box-shadow: 0 0 0 2px color-mix(in oklab, var(--destructive) 20%, transparent);
+    }
+
+    /* A textarea or a stacked addon makes the group grow instead of sitting on
+       the fixed control height. */
+    &:has(> textarea),
+    &:has(> [data-align="block-start"]),
+    &:has(> [data-align="block-end"]) {
+      height: auto;
+    }
+
+    &:has(> [data-align="block-start"]),
+    &:has(> [data-align="block-end"]) {
+      flex-direction: column;
+    }
+
+    &:has(> [data-align="block-start"]) > input {
+      padding-bottom: var(--space-3);
+    }
+
+    &:has(> [data-align="block-end"]) > input {
+      padding-top: var(--space-3);
+    }
+
+    &:has(> [data-align="inline-start"]) > input {
+      padding-left: var(--space-2);
+    }
+
+    &:has(> [data-align="inline-end"]) > input {
+      padding-right: var(--space-2);
+    }
+  }
+
+  [data-theme="dark"] .root:has([data-slot][aria-invalid="true"]) {
+    box-shadow: 0 0 0 2px color-mix(in oklab, var(--destructive) 40%, transparent);
+  }
+
+  .addon {
+    display: flex;
+    height: auto;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding-block: var(--space-2);
+    cursor: text;
+    user-select: none;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+    color: var(--muted-foreground);
+
+    & svg {
+      width: var(--space-4);
+      height: var(--space-4);
+    }
+
+    & [data-slot="kbd"] {
+      padding-inline: var(--space-2);
+      border-radius: var(--radius-md);
+      background-color: color-mix(in oklab, var(--muted-foreground) 10%, transparent);
+    }
+
+    /* Buttons and shortcut chips sit tight against the field edge. */
+    &[data-align="inline-start"] {
+      order: -1;
+      padding-left: var(--space-3);
+
+      &:has(> button),
+      &:has(> kbd) {
+        margin-left: calc(-1 * var(--space-1));
+      }
+    }
+
+    &[data-align="inline-end"] {
+      order: 1;
+      padding-right: var(--space-3);
+
+      &:has(> button),
+      &:has(> kbd) {
+        margin-right: calc(-1 * var(--space-1));
+      }
+    }
+
+    &[data-align="block-start"],
+    &[data-align="block-end"] {
+      width: 100%;
+      justify-content: flex-start;
+      padding-inline: var(--space-3);
+    }
+
+    &[data-align="block-start"] {
+      order: -1;
+      padding-top: var(--space-3);
+    }
+
+    &[data-align="block-end"] {
+      order: 1;
+      padding-bottom: var(--space-3);
+    }
+  }
+
+  .root[data-disabled="true"] .addon {
+    opacity: 0.5;
+  }
+
+  .button {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    box-shadow: none;
+
+    &[data-size="xs"] {
+      height: var(--space-6);
+      gap: var(--space-1);
+      padding-inline: var(--space-2);
+
+      & svg {
+        width: var(--space-3);
+        height: var(--space-3);
+      }
+    }
+
+    &[data-size="icon-xs"],
+    &[data-size="icon-sm"] {
+      padding: 0;
+      aspect-ratio: 1;
+    }
+
+    &[data-size="icon-xs"] {
+      width: var(--space-6);
+      height: var(--space-6);
+    }
+
+    &[data-size="icon-sm"] {
+      width: var(--space-8);
+      height: var(--space-8);
+    }
+  }
+
+  .text {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+
+    & svg {
+      pointer-events: none;
+      width: var(--space-4);
+      height: var(--space-4);
+    }
+  }
+
+  /* The control gives up its own chrome; the group draws the border and ring. */
+  .control {
+    flex: 1;
+    border: 0;
+    border-radius: 0;
+    background-color: transparent;
+    box-shadow: none;
+
+    &:focus-visible {
+      box-shadow: none;
+      outline: none;
+    }
+  }
+
+  .textarea {
+    resize: none;
+    padding-block: var(--space-2);
+  }
+}

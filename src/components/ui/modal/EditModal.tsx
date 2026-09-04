@@ -14,6 +14,7 @@ import { Label } from '../label';
 import { Separator } from '../separator';
 import { Switch } from '../switch';
 import { Textarea } from '../textarea';
+import styles from './EditModal.module.css';
 
 function EditModal() {
   const isOpen = useEdit((state) => state.isOpen);
@@ -96,14 +97,14 @@ function EditFileSheet({ file, onClose }: { file: GalleryFile; onClose: () => vo
           <SheetTitle>Edit Image</SheetTitle>
           <SheetDescription>Change Image Details</SheetDescription>
         </SheetHeader>
-        <div className="flex flex-col items-center justify-center gap-4">
+        <div className={styles.mediaSection}>
           {file.contentType.startsWith('audio') ? (
             <div>Audio File</div>
           ) : (
             <img
               src={getCDNImage(`/${file.ownerId}/${file.url}`)}
               alt="Edit"
-              className="content-center"
+              className={styles.image}
             />
           )}
           <div>{file.url}</div>
@@ -117,7 +118,7 @@ function EditFileSheet({ file, onClose }: { file: GalleryFile; onClose: () => vo
             }}
             baseTags={file.tags?.split(',')}
           />
-          <div className="flex items-center gap-2 self-start">
+          <div className={styles.privateRow}>
             <Label>Private</Label>
             <Switch
               checked={privateImage}
@@ -139,8 +140,8 @@ function EditFileSheet({ file, onClose }: { file: GalleryFile; onClose: () => vo
             />
           </div>
         ) : null}
-        <Separator className="my-1.5" />
-        <SheetFooter className="mt-2">
+        <Separator className={styles.separator} />
+        <SheetFooter className={styles.footer}>
           <Button
             onClick={handleSave}
             disabled={title.length === 0 || isPending}

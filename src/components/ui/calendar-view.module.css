@@ -1,0 +1,521 @@
+@layer components {
+  /* ---- Root ------------------------------------------------------------ */
+  .root {
+    /* Minimum day-cell height; sized per `data-size` below. */
+    --cell-min-height: var(--space-24);
+
+    width: 100%;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+
+    &[data-fill-height] {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    &[data-size="sm"] {
+      --cell-min-height: var(--space-16);
+
+      font-size: var(--text-xs);
+      line-height: var(--leading-xs);
+    }
+
+    &[data-size="lg"] {
+      /* No token step reaches 8rem; composed from the largest spacing steps. */
+      --cell-min-height: calc(var(--space-24) + var(--space-8));
+
+      font-size: var(--text-base);
+      line-height: var(--leading-base);
+    }
+
+    &[data-variant="default"] {
+      background-color: var(--background);
+    }
+
+    &[data-variant="card"] {
+      padding: var(--space-4);
+      border-radius: var(--radius-2xl);
+      background-color: var(--card);
+      box-shadow: 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent);
+    }
+
+    &[data-variant="bordered"] {
+      padding: var(--space-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+    }
+  }
+
+  /* ---- Nav --------------------------------------------------------------- */
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+
+    &[data-layout="spread"] {
+      justify-content: space-between;
+    }
+
+    &[data-layout="centered"] {
+      justify-content: center;
+      gap: var(--space-4);
+    }
+  }
+
+  .navIcon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .navTitle {
+    /* No spacing token fits a title width; sized to fit "September 2026". */
+    --title-min-width: 10rem;
+
+    min-width: var(--title-min-width);
+    text-align: center;
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+    font-weight: var(--weight-semibold);
+  }
+
+  .navToday {
+    margin-left: var(--space-2);
+  }
+
+  /* ---- Weekdays header ---------------------------------------------------- */
+  .weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+  }
+
+  .weekday {
+    padding-block: var(--space-2);
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+
+    &:first-child {
+      border-left: 1px solid var(--border);
+    }
+  }
+
+  /* ---- Content ------------------------------------------------------------ */
+  .content {
+    display: flex;
+    flex-direction: column;
+
+    &[data-fill-height] {
+      flex: 1;
+      min-height: 0;
+    }
+  }
+
+  .contentInner {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+
+    &[data-fill-height] {
+      flex: 1;
+      min-height: 0;
+      justify-content: center;
+    }
+  }
+
+  .contentAspect {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+
+    &[data-fill-height] {
+      max-height: 100%;
+      aspect-ratio: 7 / 5;
+    }
+  }
+
+  /* ---- Week row ------------------------------------------------------------ */
+  .weekRow {
+    position: relative;
+
+    &[data-fill-height] {
+      flex: 1;
+    }
+  }
+
+  .dayGrid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+
+    &[data-fill-height] {
+      height: 100%;
+    }
+  }
+
+  .dayEmpty {
+    border-right: 1px solid var(--border);
+    border-top: 1px solid var(--border);
+
+    &:first-child {
+      border-left: 1px solid var(--border);
+    }
+
+    &[data-fill-height] {
+      height: 100%;
+    }
+  }
+
+  /* Event lanes float above the day grid, offset below the day-number row. */
+  .eventLanes {
+    position: absolute;
+    inset-inline: 0;
+    top: calc(var(--space-8) + 2px);
+    pointer-events: none;
+  }
+
+  .lane {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: 1fr;
+    height: var(--space-5);
+    margin-bottom: var(--space-1);
+    overflow: hidden;
+  }
+
+  .overflowRow {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    height: var(--space-5);
+  }
+
+  .overflowCellEmpty {
+    height: var(--space-5);
+  }
+
+  /* ---- Day cell -------------------------------------------------------------- */
+  .day {
+    position: relative;
+    min-height: var(--cell-min-height);
+    padding: var(--space-1);
+    border-top: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    transition: background-color 150ms ease-out;
+
+    &:first-child {
+      border-left: 1px solid var(--border);
+    }
+
+    &[data-interactive="true"] {
+      cursor: pointer;
+    }
+
+    &[data-interactive="false"] {
+      cursor: default;
+    }
+
+    &[data-fill-height] {
+      height: 100%;
+    }
+
+    &[data-state="default"] {
+      background-color: var(--background);
+    }
+
+    /* :where() keeps the hover at one-class specificity, in line with the other
+       :hover rules in this module. */
+    &:where([data-state="default"]):hover {
+      background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+    }
+
+    &[data-state="today"] {
+      background-color: color-mix(in oklab, var(--primary) 5%, transparent);
+    }
+
+    &[data-state="outsideMonth"] {
+      background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+      color: color-mix(in oklab, var(--muted-foreground) 70%, transparent);
+    }
+  }
+
+  .dayNumber {
+    /* No token step matches the day-number badge; between --space-6 and --space-8. */
+    --badge-size: 1.75rem;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--badge-size);
+    height: var(--badge-size);
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    transition: background-color 150ms ease-out;
+
+    &[data-state="today"] {
+      background-color: var(--primary);
+      color: var(--primary-foreground);
+    }
+
+    &[data-state="highlighted"] {
+      box-shadow: 0 0 0 2px var(--highlight-color, var(--ring));
+    }
+  }
+
+  /* ---- Event bar (multi-day) --------------------------------------------------- */
+  .eventBar {
+    display: flex;
+    align-items: center;
+    height: var(--space-5);
+    /* Hairline gap between adjacent bars sharing a lane row. */
+    margin-inline: 1px;
+    padding-inline: var(--space-2);
+    padding-block: var(--space-1);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    cursor: pointer;
+    pointer-events: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: opacity 150ms ease-out;
+
+    &:hover {
+      opacity: 0.8;
+    }
+
+    &[data-position="single"] {
+      border-radius: var(--radius-sm);
+    }
+
+    &[data-position="start"] {
+      border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+    }
+
+    &[data-position="middle"] {
+      border-radius: 0;
+    }
+
+    &[data-position="end"] {
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    }
+
+    &[data-color="default"],
+    &[data-color="primary"] {
+      background-color: color-mix(in oklab, var(--primary) 20%, transparent);
+      color: var(--primary);
+    }
+
+    &[data-color="secondary"] {
+      background-color: color-mix(in oklab, var(--secondary) 20%, transparent);
+      color: var(--secondary-foreground);
+    }
+
+    &[data-color="destructive"] {
+      background-color: color-mix(in oklab, var(--destructive) 20%, transparent);
+      color: var(--destructive);
+    }
+
+    &[data-color="success"] {
+      background-color: color-mix(in oklab, var(--success) 20%, transparent);
+      color: var(--success);
+    }
+
+    &[data-color="warning"] {
+      background-color: color-mix(in oklab, var(--warning) 20%, transparent);
+      color: var(--warning);
+    }
+  }
+
+  .eventBarArrow {
+    margin-inline: var(--space-1);
+  }
+
+  .eventTitle {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* ---- Single-day event (overflow dialog) --------------------------------------- */
+  .event {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-inline: var(--space-2);
+    padding-block: var(--space-1);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    cursor: pointer;
+    transition: opacity 150ms ease-out;
+
+    &:hover {
+      opacity: 0.8;
+    }
+
+    &[data-variant="compact"] {
+      /* No token step goes below --text-xs; this stays at that floor. */
+      font-size: var(--text-xs);
+      padding-block: 0;
+    }
+
+    &[data-variant="expanded"] {
+      padding: var(--space-2);
+      border-radius: var(--radius-lg);
+      font-size: var(--text-sm);
+      line-height: var(--leading-sm);
+    }
+
+    &[data-color="default"],
+    &[data-color="primary"] {
+      background-color: color-mix(in oklab, var(--primary) 20%, transparent);
+      color: var(--primary);
+    }
+
+    &[data-color="secondary"] {
+      background-color: color-mix(in oklab, var(--secondary) 20%, transparent);
+      color: var(--secondary-foreground);
+    }
+
+    &[data-color="destructive"] {
+      background-color: color-mix(in oklab, var(--destructive) 20%, transparent);
+      color: var(--destructive);
+    }
+
+    &[data-color="success"] {
+      background-color: color-mix(in oklab, var(--success) 20%, transparent);
+      color: var(--success);
+    }
+
+    &[data-color="warning"] {
+      background-color: color-mix(in oklab, var(--warning) 20%, transparent);
+      color: var(--warning);
+    }
+  }
+
+  /* ---- Overflow trigger ("+N more") ---------------------------------------------- */
+  .overflowTrigger {
+    width: 100%;
+    padding-inline: var(--space-2);
+    padding-block: var(--space-1);
+    border-radius: var(--radius-sm);
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    font-weight: var(--weight-medium);
+    text-align: left;
+    cursor: pointer;
+    pointer-events: auto;
+    transition:
+      color 150ms ease-out,
+      background-color 150ms ease-out;
+
+    &:hover {
+      color: var(--foreground);
+      background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+    }
+  }
+
+  /* ---- Overflow dialog ------------------------------------------------------------- */
+  .overflowDialogTitle {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+
+  .overflowDialogDay {
+    font-size: var(--text-2xl);
+    line-height: var(--leading-2xl);
+    font-weight: var(--weight-bold);
+  }
+
+  .overflowDialogLabel {
+    color: var(--muted-foreground);
+    font-weight: var(--weight-normal);
+  }
+
+  .overflowScrollArea {
+    /* Viewport-relative cap on the dialog list, not a spacing step. */
+    max-height: 60vh;
+  }
+
+  .overflowList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding-right: var(--space-4);
+  }
+
+  .overflowItem {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    width: 100%;
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    text-align: left;
+    transition: background-color 150ms ease-out;
+
+    &:hover {
+      background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+    }
+  }
+
+  .overflowItemColor {
+    width: var(--space-1);
+    align-self: stretch;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+
+    &[data-color="default"],
+    &[data-color="primary"] {
+      background-color: var(--primary);
+    }
+
+    &[data-color="secondary"] {
+      background-color: var(--secondary);
+    }
+
+    &[data-color="destructive"] {
+      background-color: var(--destructive);
+    }
+
+    &[data-color="success"] {
+      background-color: var(--success);
+    }
+
+    &[data-color="warning"] {
+      background-color: var(--warning);
+    }
+  }
+
+  .overflowItemContent {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .overflowItemTitle {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+    transition: color 150ms ease-out;
+  }
+
+  .overflowItem:hover .overflowItemTitle {
+    color: var(--primary);
+  }
+
+  .overflowItemDate {
+    margin-top: var(--space-1);
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+}

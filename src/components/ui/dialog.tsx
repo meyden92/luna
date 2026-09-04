@@ -1,9 +1,10 @@
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
-import { cva, type VariantProps } from 'class-variance-authority';
 import { XIcon } from 'lucide-react';
 import type * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/libs/utils';
+
+import styles from './dialog.module.css';
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return (
@@ -45,47 +46,31 @@ function DialogOverlay({ className, ...props }: DialogPrimitive.Backdrop.Props) 
   return (
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
-      className={cn(
-        'data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 bg-black/80 duration-100 supports-backdrop-filter:backdrop-blur-xs fixed inset-0 isolate z-50',
-        className,
-      )}
+      className={cn(styles.overlay, className)}
       {...props}
     />
   );
 }
 
-const dialogContentVariants = cva(
-  'bg-background data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 ring-foreground/5 rounded-4xl p-6 text-sm ring-1 duration-100 fixed top-1/2 left-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2 outline-none',
-  {
-    variants: {
-      size: {
-        default: 'grid gap-6 max-w-[calc(100%-2rem)] sm:max-w-md',
-        lg: 'grid gap-6 max-w-[calc(100%-2rem)] sm:max-w-2xl',
-        xl: 'flex flex-col gap-4 max-w-[calc(100%-2rem)] sm:max-w-[80vw] h-[85vh]',
-        full: 'flex flex-col gap-4 max-w-[calc(100%-1rem)] sm:max-w-[95vw] h-[95vh]',
-      },
-    },
-    defaultVariants: {
-      size: 'default',
-    },
-  },
-);
+type DialogContentSize = 'default' | 'lg' | 'xl' | 'full';
 
 function DialogContent({
   className,
   children,
   showCloseButton = true,
-  size,
+  size = 'default',
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean;
-} & VariantProps<typeof dialogContentVariants>) {
+  size?: DialogContentSize;
+}) {
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
-        className={cn(dialogContentVariants({ size }), className)}
+        data-size={size}
+        className={cn(styles.popup, className)}
         {...props}
       >
         {children}
@@ -95,7 +80,7 @@ function DialogContent({
             render={
               <Button
                 variant="ghost"
-                className="absolute top-4 right-4"
+                className={styles.close}
                 size="icon-sm"
               />
             }
@@ -113,7 +98,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn('gap-2 flex flex-col', className)}
+      className={cn(styles.header, className)}
       {...props}
     />
   );
@@ -130,7 +115,7 @@ function DialogFooter({
   return (
     <div
       data-slot="dialog-footer"
-      className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)}
+      className={cn(styles.footer, className)}
       {...props}
     >
       {children}
@@ -143,7 +128,7 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn('text-base leading-none font-medium', className)}
+      className={cn(styles.title, className)}
       {...props}
     />
   );
@@ -153,7 +138,7 @@ function DialogDescription({ className, ...props }: DialogPrimitive.Description.
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      className={cn('text-muted-foreground *:[a]:hover:text-foreground text-sm *:[a]:underline *:[a]:underline-offset-3', className)}
+      className={cn(styles.description, className)}
       {...props}
     />
   );

@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { UPLOAD_CONFIG } from '@/config/upload-config';
 import { cn } from '@/libs/utils';
 
+import styles from './image-upload.module.css';
+
 interface ImageUploadProps {
   value?: File | null;
   onChange: (file: File | null) => void;
@@ -93,33 +95,31 @@ export function ImageUpload({
   };
 
   return (
-    <div className={cn('space-y-2', className)}>
+    <div className={cn(styles.root, className)}>
       {displayUrl ? (
-        <div className="relative inline-block group">
+        <div className={styles.previewWrap}>
           <img
             src={displayUrl}
             alt="Preview"
-            className="w-32 h-32 object-cover rounded-lg border shadow-sm transition-opacity group-hover:opacity-90"
+            className={styles.previewImage}
           />
           {!disabled && (
             <Button
               type="button"
               variant="destructive"
               size="icon"
-              className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+              className={styles.removeButton}
               onClick={handleRemove}
             >
-              <X className="h-3 w-3" />
+              <X className={styles.removeIcon} />
             </Button>
           )}
         </div>
       ) : (
         <div
-          className={cn(
-            'relative border-2 border-dashed rounded-lg p-6 transition-colors text-center cursor-pointer hover:bg-muted/50',
-            isDragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/25',
-            disabled && 'opacity-50 cursor-not-allowed hover:bg-transparent',
-          )}
+          className={styles.dropzone}
+          data-dragging={isDragging}
+          data-disabled={disabled}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -130,16 +130,16 @@ export function ImageUpload({
             type="file"
             accept={UPLOAD_CONFIG.ALLOWED_IMAGE_TYPES.join(',')}
             onChange={handleFileChange}
-            className="hidden"
+            className="hide"
             disabled={disabled}
           />
-          <div className="flex flex-col items-center gap-2 text-muted-foreground">
-            <div className="p-2 bg-background rounded-full shadow-sm border">
-              <Upload className="h-5 w-5" />
+          <div className={styles.dropzoneContent}>
+            <div className={styles.iconWrap}>
+              <Upload className={styles.uploadIcon} />
             </div>
-            <div className="text-sm font-medium">{label}</div>
-            <div className="text-xs">Drag & drop or click to upload</div>
-            <div className="text-[10px] uppercase tracking-wider opacity-70">Max {UPLOAD_CONFIG.MAX_FILE_SIZE / (1024 * 1024)}MB</div>
+            <div className="type-sm weight-medium">{label}</div>
+            <div className="type-xs">Drag & drop or click to upload</div>
+            <div className={cn(styles.maxSize, 'type-xs')}>Max {UPLOAD_CONFIG.MAX_FILE_SIZE / (1024 * 1024)}MB</div>
           </div>
         </div>
       )}

@@ -1,0 +1,140 @@
+/* Popup motion follows the tooltip.module.css pattern (ADR 0003). */
+@layer components {
+  .overlay {
+    /* Scrim colour is a genuine one-off: it stays black in both appearances. */
+    --scrim: oklch(0% 0 0 / 80%);
+
+    position: fixed;
+    inset: 0;
+    isolation: isolate;
+    z-index: 50;
+    background-color: var(--scrim);
+    backdrop-filter: blur(4px);
+    transition-property: opacity, overlay, display;
+    transition-duration: 100ms;
+    transition-behavior: allow-discrete;
+
+    &[data-starting-style],
+    &[data-ending-style] {
+      opacity: 0;
+    }
+
+    @starting-style {
+      opacity: 0;
+    }
+  }
+
+  .popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    z-index: 50;
+    translate: -50% -50%;
+    display: grid;
+    gap: var(--space-6);
+    width: 100%;
+    max-width: calc(100% - var(--space-8));
+    padding: var(--space-6);
+    border-radius: var(--radius-3xl);
+    background-color: var(--background);
+    box-shadow: 0 0 0 1px color-mix(in oklch, var(--foreground) 5%, transparent);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    outline: none;
+    transition-property: opacity, scale, overlay, display;
+    transition-duration: 100ms;
+    transition-behavior: allow-discrete;
+
+    &[data-starting-style],
+    &[data-ending-style] {
+      opacity: 0;
+      scale: 0.95;
+    }
+
+    @starting-style {
+      opacity: 0;
+      scale: 0.95;
+    }
+
+    @media (width >= 640px) {
+      &[data-size="default"] {
+        max-width: 28rem;
+      }
+
+      &[data-size="lg"] {
+        max-width: 42rem;
+      }
+    }
+
+    &[data-size="xl"] {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+      /* Viewport-relative sizing: a fraction of the window, not a spacing step. */
+      --panel-width: 80vw;
+      --panel-height: 85vh;
+      height: var(--panel-height);
+
+      @media (width >= 640px) {
+        max-width: var(--panel-width);
+      }
+    }
+
+    &[data-size="full"] {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+      --panel-width: 95vw;
+      --panel-height: 95vh;
+      max-width: calc(100% - var(--space-4));
+      height: var(--panel-height);
+
+      @media (width >= 640px) {
+        max-width: var(--panel-width);
+      }
+    }
+  }
+
+  .close {
+    position: absolute;
+    top: var(--space-4);
+    right: var(--space-4);
+  }
+
+  .header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .footer {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: var(--space-2);
+
+    @media (width >= 640px) {
+      flex-direction: row;
+      justify-content: flex-end;
+    }
+  }
+
+  .title {
+    font-size: var(--text-base);
+    line-height: 1;
+    font-weight: var(--weight-medium);
+  }
+
+  .description {
+    font-size: var(--text-sm);
+    color: var(--muted-foreground);
+
+    & a {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    & a:hover {
+      color: var(--foreground);
+    }
+  }
+}

@@ -1,0 +1,138 @@
+/* Popup motion follows the tooltip.module.css pattern (ADR 0003); the sheet
+ * additionally slides in from the side Base UI placed it on (`data-side`). */
+@layer components {
+  .overlay {
+    --scrim: oklch(0% 0 0 / 80%);
+
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background-color: var(--scrim);
+    backdrop-filter: blur(4px);
+    transition-property: opacity, overlay, display;
+    transition-duration: 100ms;
+    transition-behavior: allow-discrete;
+
+    &[data-starting-style],
+    &[data-ending-style] {
+      opacity: 0;
+    }
+
+    @starting-style {
+      opacity: 0;
+    }
+  }
+
+  .popup {
+    /* Distance the sheet travels on entry, along the axis it opens from. */
+    --slide: var(--space-10);
+
+    position: fixed;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--background);
+    background-clip: padding-box;
+    font-size: var(--text-sm);
+    box-shadow: var(--shadow-lg);
+    transition-property: opacity, translate, overlay, display;
+    transition-duration: 200ms;
+    transition-timing-function: ease-in-out;
+    transition-behavior: allow-discrete;
+
+    &[data-starting-style],
+    &[data-ending-style] {
+      opacity: 0;
+    }
+
+    @starting-style {
+      opacity: 0;
+    }
+
+    &[data-side="right"] {
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 75%;
+      max-width: 72rem;
+      border-left: 1px solid var(--border);
+
+      &[data-starting-style],
+      &[data-ending-style] {
+        translate: var(--slide) 0;
+      }
+    }
+
+    &[data-side="left"] {
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 75%;
+      max-width: 72rem;
+      border-right: 1px solid var(--border);
+
+      &[data-starting-style],
+      &[data-ending-style] {
+        translate: calc(-1 * var(--slide)) 0;
+      }
+    }
+
+    &[data-side="top"] {
+      top: 0;
+      left: 0;
+      right: 0;
+      height: auto;
+      border-bottom: 1px solid var(--border);
+
+      &[data-starting-style],
+      &[data-ending-style] {
+        translate: 0 calc(-1 * var(--slide));
+      }
+    }
+
+    &[data-side="bottom"] {
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: auto;
+      border-top: 1px solid var(--border);
+
+      &[data-starting-style],
+      &[data-ending-style] {
+        translate: 0 var(--slide);
+      }
+    }
+  }
+
+  .close {
+    position: absolute;
+    top: var(--space-4);
+    right: var(--space-4);
+  }
+
+  .header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-6);
+  }
+
+  .footer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-6);
+    margin-top: auto;
+  }
+
+  .title {
+    color: var(--foreground);
+    font-size: var(--text-base);
+    font-weight: var(--weight-medium);
+  }
+
+  .description {
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+  }
+}

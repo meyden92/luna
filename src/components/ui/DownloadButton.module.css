@@ -1,0 +1,12 @@
+@layer components {
+  .icon {
+    cursor: pointer;
+    padding: var(--space-1);
+    background-color: var(--muted);
+    transition: background-color 150ms ease;
+
+    &:hover {
+      background-color: var(--muted-strong);
+    }
+  }
+}

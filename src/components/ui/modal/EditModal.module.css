@@ -1,0 +1,28 @@
+@layer components {
+  .mediaSection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4);
+  }
+
+  .image {
+    align-content: center;
+  }
+
+  .privateRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    align-self: flex-start;
+  }
+
+  .separator {
+    margin-block: var(--space-2);
+  }
+
+  .footer {
+    margin-top: var(--space-2);
+  }
+}

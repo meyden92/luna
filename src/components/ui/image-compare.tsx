@@ -12,6 +12,8 @@ import {
 } from 'react';
 import { cn } from '@/libs/utils';
 
+import styles from './image-compare.module.css';
+
 type ImageComparisonContextType = {
   sliderPosition: number;
   setSliderPosition: (pos: number) => void;
@@ -99,7 +101,7 @@ export const Comparison = ({ className, mode = 'drag', onDragStart, onDragEnd, .
         aria-valuemax={100}
         aria-valuemin={0}
         aria-valuenow={sliderPosition}
-        className={cn('relative isolate w-full select-none overflow-hidden', className)}
+        className={cn(styles.root, className)}
         onMouseDown={handleDragStart}
         onMouseLeave={handleDragEnd}
         onMouseMove={handleMouseDrag}
@@ -127,7 +129,7 @@ export const ComparisonItem = ({ className, position, ...props }: ComparisonItem
   return (
     <motion.div
       aria-hidden="true"
-      className={cn('absolute inset-0 h-full w-full object-cover', className)}
+      className={cn(styles.item, className)}
       role="img"
       style={{
         clipPath: position === 'left' ? leftClipPath : rightClipPath,
@@ -148,21 +150,18 @@ export const ComparisonHandle = ({ className, children, ...props }: ComparisonHa
   return (
     <motion.div
       aria-hidden="true"
-      className={cn(
-        '-translate-x-1/2 absolute top-0 z-50 flex h-full w-10 items-center justify-center',
-        mode === 'drag' && 'cursor-grab active:cursor-grabbing',
-        className,
-      )}
+      className={cn(styles.handle, className)}
+      data-mode={mode}
       role="presentation"
       style={{ left }}
       {...props}
     >
       {children ?? (
         <>
-          <div className="-translate-x-1/2 absolute left-1/2 h-full w-1 bg-background" />
+          <div className={styles.handleLine} />
           {mode === 'drag' && (
-            <div className="z-50 flex items-center justify-center rounded-sm bg-background px-0.5 py-1">
-              <GripVerticalIcon className="h-4 w-4 select-none text-muted-foreground" />
+            <div className={styles.handleGrip}>
+              <GripVerticalIcon className={styles.gripIcon} />
             </div>
           )}
         </>

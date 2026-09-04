@@ -1,0 +1,257 @@
+@layer components {
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-8);
+  }
+
+  .spinner {
+    width: var(--space-6);
+    height: var(--space-6);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .spinner {
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  @keyframes spin {
+    to {
+      rotate: 360deg;
+    }
+  }
+
+  .errorState {
+    text-align: center;
+    color: var(--destructive);
+  }
+
+  /* ---- Statistics -------------------------------------------------------- */
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  @media (width >= 768px) {
+    .stats {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .statValue {
+    font-size: var(--text-2xl);
+    line-height: var(--leading-2xl);
+    font-weight: var(--weight-bold);
+  }
+
+  .statValue[data-tone="success"] {
+    color: var(--success);
+  }
+
+  .statValue[data-tone="failed"] {
+    color: var(--destructive);
+  }
+
+  .statLabel {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .statHint {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--muted-foreground);
+  }
+
+  /* ---- Filters ----------------------------------------------------------- */
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+  }
+
+  .searchField {
+    position: relative;
+    flex: 1;
+    min-width: 12.5rem;
+  }
+
+  .searchIcon {
+    position: absolute;
+    top: 50%;
+    left: var(--space-3);
+    translate: 0 -50%;
+    width: var(--space-4);
+    height: var(--space-4);
+    color: var(--muted-foreground);
+  }
+
+  /* Room for the leading search icon. */
+  .searchInput {
+    padding-left: var(--space-10);
+  }
+
+  .statusSelect {
+    width: 11.25rem;
+  }
+
+  .daysSelect {
+    width: 7.5rem;
+  }
+
+  /* ---- Execution list ---------------------------------------------------- */
+  .scroll {
+    height: 37.5rem;
+  }
+
+  /* Badge tinted by execution status; the variant supplies the surface. */
+  .statusBadge[data-status="pending"],
+  .statusBadge[data-status="timeout"] {
+    color: var(--warning);
+  }
+
+  .statusBadge[data-status="running"] {
+    color: var(--info);
+  }
+
+  .statusBadge[data-status="success"] {
+    color: var(--success);
+  }
+
+  .statusBadge[data-status="failed"] {
+    color: var(--destructive);
+  }
+
+  .executionHead {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-2);
+  }
+
+  .timestamp {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .result {
+    margin-bottom: var(--space-2);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .error {
+    margin-bottom: var(--space-2);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--destructive);
+  }
+
+  .meta {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--muted-foreground);
+  }
+
+  /* Flush trigger so the disclosure reads as a link under the metadata. */
+  .disclosure {
+    height: auto;
+    margin-top: var(--space-2);
+    padding: 0;
+  }
+
+  .logPanel {
+    max-height: 16rem;
+    overflow-y: auto;
+    margin-top: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+  }
+
+  .logLine {
+    margin-bottom: var(--space-1);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .logTime {
+    color: var(--muted-foreground);
+  }
+
+  .logLevel {
+    margin-left: var(--space-2);
+    font-weight: var(--weight-semibold);
+  }
+
+  .logLevel[data-level="error"] {
+    color: var(--destructive);
+  }
+
+  .logLevel[data-level="warn"] {
+    color: var(--warning);
+  }
+
+  .logMessage {
+    margin-left: var(--space-2);
+  }
+
+  .logData {
+    margin-top: var(--space-1);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--muted-foreground);
+  }
+
+  .detailsPanel {
+    margin-top: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+  }
+
+  .detailsPre {
+    overflow-x: auto;
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .empty {
+    padding-block: var(--space-8);
+    text-align: center;
+    color: var(--muted-foreground);
+  }
+
+  /* ---- Pagination -------------------------------------------------------- */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: var(--space-6);
+  }
+
+  .paginationCount {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .paginationControls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .pageLabel {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+}

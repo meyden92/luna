@@ -1,0 +1,27 @@
+@layer components {
+  .root {
+    width: 100%;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  /* Object and array renderings carry their own newlines and indentation. */
+  .root[data-shape="tree"] {
+    white-space: pre-wrap;
+  }
+
+  .key {
+    color: var(--info);
+  }
+
+  .removed {
+    background-color: color-mix(in oklab, var(--destructive) 10%, transparent);
+    color: var(--destructive);
+  }
+
+  .added {
+    background-color: color-mix(in oklab, var(--success) 10%, transparent);
+    color: var(--success);
+  }
+}

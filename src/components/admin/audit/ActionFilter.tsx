@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import styles from './ActionFilter.module.css';
 
 interface ActionFilterProps {
   currentAction?: string;
@@ -27,14 +28,14 @@ export default function ActionFilter({ currentAction, onActionChangeAction }: Ac
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="cluster space-2">
       <Select
         value={currentAction || 'all'}
         onValueChange={handleValueChange}
       >
         <SelectTrigger
           id="action-filter"
-          className="flex-grow"
+          className={styles.select}
           aria-label="Filter by action"
         >
           <SelectValue placeholder="All Actions" />
@@ -59,7 +60,7 @@ export default function ActionFilter({ currentAction, onActionChangeAction }: Ac
           onClick={handleClear}
           aria-label="Clear action filter"
         >
-          <X className="h-4 w-4" />
+          <X />
         </Button>
       )}
     </div>

@@ -24,6 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { validateTemplateVariablesInPrompt } from '@/libs/template-variable-validation';
 import type { listGlobalVariables } from '@/server/fns/admin/global-variables';
 import type { TemplateVariable, TemplateVariableOption } from '@/types/template';
+import styles from './template-variable-editor.module.css';
 import { normalizeOption } from './utils/option-utils';
 
 // Re-export types for compatibility
@@ -121,33 +122,23 @@ export function TemplateVariableEditor({
   const hasValidationIssues = missing.length > 0 || invalidDropdowns.length > 0;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Label className="text-base font-medium">Template Variables</Label>
-          {variables.length > 0 && (
-            <Badge
-              variant="outline"
-              className="text-xs"
-            >
-              {enabledVariablesCount} active
-            </Badge>
-          )}
+    <div className="stack space-4">
+      <div className={styles.header}>
+        <div className="cluster space-2">
+          <Label className={styles.heading}>Template Variables</Label>
+          {variables.length > 0 && <Badge variant="outline">{enabledVariablesCount} active</Badge>}
           {hasValidationIssues && (
-            <Badge
-              variant="destructive"
-              className="text-xs"
-            >
-              <AlertCircle className="w-3 h-3 mr-1" />
+            <Badge variant="destructive">
+              <AlertCircle />
               Issues
             </Badge>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="cluster space-2">
           {globalVariables && globalVariables.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger>
-                <LinkIcon className="w-4 h-4 mr-2" />
+                <LinkIcon />
                 Link Global
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -169,16 +160,16 @@ export function TemplateVariableEditor({
             size="sm"
             type="button"
           >
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus />
             Add Variable
           </Button>
         </div>
       </div>
 
       {variables.length === 0 ? (
-        <div className="text-center py-12 border-2 border-dashed rounded-lg bg-muted/10">
-          <p className="text-muted-foreground mb-2">No variables defined</p>
-          <div className="flex justify-center gap-2">
+        <div className={styles.empty}>
+          <p className={styles.emptyText}>No variables defined</p>
+          <div className={styles.emptyActions}>
             <Button
               onClick={addVariable}
               variant="secondary"
@@ -206,7 +197,7 @@ export function TemplateVariableEditor({
           </div>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="stack space-3">
           {variables.map((variable, index) => {
             const isUsed = !unused.includes(variable.name) && !missing.includes(variable.name) && variable.name.trim() !== '';
             const isUnused = unused.includes(variable.name);
@@ -272,57 +263,45 @@ function VariableItem({
   };
 
   return (
-    <div className="border rounded-lg bg-card shadow-sm transition-all hover:shadow-md">
-      <div className="flex items-center gap-3 p-3 border-b bg-muted/30">
+    <div className={styles.item}>
+      <div className={styles.itemHead}>
         <Button
           variant="ghost"
-          size="icon"
-          className="h-6 w-6 shrink-0 text-muted-foreground cursor-grab active:cursor-grabbing"
+          size="icon-xs"
+          className={styles.grip}
           type="button"
         >
-          <GripVertical className="h-4 w-4" />
+          <GripVertical />
         </Button>
 
-        <div className="flex-1 flex items-center gap-3 min-w-0">
-          <span className="font-mono text-xs bg-muted px-2 py-1 rounded border shrink-0">{variable.name || 'unnamed'}</span>
-          <span className="font-medium truncate">{variable.label || 'No Label'}</span>
-          <div className="flex gap-1 flex-wrap">
+        <div className={styles.itemTitle}>
+          <span className={styles.varName}>{variable.name || 'unnamed'}</span>
+          <span className="weight-medium type-truncate">{variable.label || 'No Label'}</span>
+          <div className="cluster space-1">
             <Badge
               variant="outline"
-              className="text-[10px] uppercase"
+              className={styles.typeBadge}
             >
               {variable.type}
             </Badge>
             {variable.globalVariableId && (
               <Badge
-                variant="secondary"
-                className="text-[10px] bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-800"
+                variant="outline"
+                className={styles.toneBadge}
+                data-tone="global"
               >
                 Global
               </Badge>
             )}
-            {variable.required && (
-              <Badge
-                variant="secondary"
-                className="text-[10px]"
-              >
-                Required
-              </Badge>
-            )}
-            {variable.enabled === false && (
-              <Badge
-                variant="destructive"
-                className="text-[10px]"
-              >
-                Disabled
-              </Badge>
-            )}
+            {variable.required && <Badge variant="secondary">Required</Badge>}
+            {variable.enabled === false && <Badge variant="destructive">Disabled</Badge>}
             {isUsed && variable.name.trim() !== '' && (
               <Badge
                 variant="outline"
-                className="text-[10px] bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-800"
+                className={styles.toneBadge}
+                data-tone="used"
               >
-                <CheckCircle2 className="w-3 h-3 mr-1" />
+                <CheckCircle2 />
                 Used
               </Badge>
             )}
@@ -330,38 +309,35 @@ function VariableItem({
               <div title="This variable is defined but not used in the prompt text">
                 <Badge
                   variant="outline"
-                  className="text-[10px] bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-400 dark:border-yellow-800 cursor-help"
+                  className={styles.toneBadge}
+                  data-tone="unused"
                 >
-                  <AlertCircle className="w-3 h-3 mr-1" />
+                  <AlertCircle />
                   Unused
                 </Badge>
               </div>
             )}
             {isInvalid && (
-              <Badge
-                variant="destructive"
-                className="text-[10px]"
-              >
-                <AlertCircle className="w-3 h-3 mr-1" />
+              <Badge variant="destructive">
+                <AlertCircle />
                 Invalid
               </Badge>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className={styles.itemActions}>
           <Button
             variant="ghost"
-            size="icon"
-            className="h-8 w-8"
+            size="icon-sm"
             onClick={() => setIsExpanded(!isExpanded)}
             type="button"
           >
-            {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            {isExpanded ? <ChevronDown /> : <ChevronRight />}
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger>
-              <MoreHorizontal className="h-4 w-4" />
+              <MoreHorizontal />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem
@@ -377,7 +353,7 @@ function VariableItem({
                 Move Down
               </DropdownMenuItem>
               <DropdownMenuItem
-                className="text-destructive"
+                className={styles.destructiveItem}
                 onClick={onRemove}
               >
                 Delete Variable
@@ -388,30 +364,23 @@ function VariableItem({
       </div>
 
       {isExpanded && (
-        <div className="p-4 space-y-6 animate-in slide-in-from-top-2 duration-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
+        <div className={`${styles.body} stack space-6`}>
+          <div className={styles.fields}>
+            <div className="stack space-2">
+              <div className={styles.fieldHead}>
                 <Label>Variable Name (ID)</Label>
-                {variable.globalVariableId && (
-                  <Badge
-                    variant="secondary"
-                    className="text-[10px] h-5"
-                  >
-                    Global
-                  </Badge>
-                )}
+                {variable.globalVariableId && <Badge variant="secondary">Global</Badge>}
               </div>
               <Input
                 value={variable.name}
                 onChange={(e) => onUpdate('name', e.target.value)}
                 placeholder="e.g., product_name"
-                className="font-mono"
+                className={styles.mono}
                 disabled={!!variable.globalVariableId}
               />
-              <p className="text-xs text-muted-foreground">Used in prompt as {'{variable_name}'}</p>
+              <p className={styles.hint}>Used in prompt as {'{variable_name}'}</p>
             </div>
-            <div className="space-y-2">
+            <div className="stack space-2">
               <Label>Display Label</Label>
               <Input
                 value={variable.label}
@@ -420,7 +389,7 @@ function VariableItem({
                 disabled={!!variable.globalVariableId}
               />
             </div>
-            <div className="space-y-2">
+            <div className="stack space-2">
               <Label>Type</Label>
               <Select
                 value={variable.type}
@@ -438,8 +407,8 @@ function VariableItem({
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex flex-col gap-3 pt-8">
-              <div className="flex items-center gap-2">
+            <div className={styles.toggles}>
+              <div className={styles.toggle}>
                 <Checkbox
                   id={`req-${variable.id}`}
                   checked={variable.required}
@@ -447,7 +416,7 @@ function VariableItem({
                 />
                 <Label htmlFor={`req-${variable.id}`}>Required field</Label>
               </div>
-              <div className="flex items-center gap-2">
+              <div className={styles.toggle}>
                 <Checkbox
                   id={`en-${variable.id}`}
                   checked={variable.enabled !== false}
@@ -459,26 +428,26 @@ function VariableItem({
           </div>
 
           {variable.type === 'dropdown' && (
-            <div className="border-t pt-4">
-              <div className="flex items-center justify-between mb-4">
+            <div className={styles.section}>
+              <div className={styles.sectionHead}>
                 <div>
-                  <h4 className="text-sm font-medium">Dropdown Options</h4>
-                  <p className="text-xs text-muted-foreground">{variable.options?.length || 0} options configured</p>
+                  <h4 className={styles.sectionTitle}>Dropdown Options</h4>
+                  <p className={styles.hint}>{variable.options?.length || 0} options configured</p>
                 </div>
                 <Sheet
                   open={isSheetOpen}
                   onOpenChange={setIsSheetOpen}
                 >
                   <SheetTrigger>
-                    <Settings2 className="w-4 h-4 mr-2" />
+                    <Settings2 />
                     Manage Options
                   </SheetTrigger>
-                  <SheetContent className="w-full sm:max-w-[50vw] overflow-y-auto">
+                  <SheetContent className={styles.sheet}>
                     <SheetHeader>
                       <SheetTitle>Manage Options for "{variable.label}"</SheetTitle>
                       <SheetDescription>Add, remove, and configure dropdown options.</SheetDescription>
                     </SheetHeader>
-                    <div className="mt-6">
+                    <div className="margin-top-6">
                       <DropdownOptionsEditor
                         options={variable.options || []}
                         onChange={(opts) => onUpdate('options', opts)}
@@ -491,7 +460,7 @@ function VariableItem({
               </div>
 
               {/* Quick preview of options */}
-              <div className="flex flex-wrap gap-2">
+              <div className="cluster space-2">
                 {variable.options?.map((opt, i) => {
                   const n = normalizeOption(opt);
                   return (
@@ -499,7 +468,7 @@ function VariableItem({
                       // biome-ignore lint/suspicious/noArrayIndexKey: Options order is stable enough for preview
                       key={i}
                       variant="secondary"
-                      className="font-normal cursor-pointer hover:bg-secondary/80 transition-colors"
+                      className={styles.optionPreview}
                       onClick={() => handleBadgeClick(i)}
                     >
                       {n.label}
@@ -510,14 +479,14 @@ function VariableItem({
             </div>
           )}
 
-          <div className="border-t pt-4">
-            <Label className="mb-2 block">Preview Image (Optional)</Label>
-            <div className="flex gap-4">
+          <div className={styles.section}>
+            <Label className="margin-bottom-2">Preview Image (Optional)</Label>
+            <div className={styles.previewRow}>
               <Input
                 value={variable.previewUrl || ''}
                 onChange={(e) => onUpdate('previewUrl', e.target.value)}
                 placeholder="https://..."
-                className="flex-1"
+                className={styles.previewInput}
               />
               <PreviewIcon previewUrl={variable.previewUrl} />
             </div>
@@ -590,80 +559,76 @@ export function DropdownOptionsEditor({ options, onChange, focusOptionIndex, onF
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between mb-2">
-        <Label className="text-sm font-medium">Options Configuration</Label>
-        <Badge
-          variant="outline"
-          className="text-xs"
-        >
+    <div className="stack space-6">
+      <div className={styles.optionsHead}>
+        <Label className={styles.optionsHeading}>Options Configuration</Label>
+        <Badge variant="outline">
           {normalizedOptions.length} option{normalizedOptions.length !== 1 ? 's' : ''}
         </Badge>
       </div>
-      <div className="space-y-4">
+      <div className="stack space-4">
         {normalizedOptions.map((option, index) => (
           <div
             // biome-ignore lint/suspicious/noArrayIndexKey: No stable ID available for options
             key={index}
-            className="flex gap-3 p-4 border rounded-lg bg-card relative group"
+            className={styles.option}
           >
-            <div className="flex flex-col gap-1 pt-1">
+            <div className={styles.reorder}>
               <button
                 type="button"
                 onClick={() => moveOption(index, index - 1)}
                 disabled={index === 0}
-                className="p-1 hover:bg-accent rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                className={styles.reorderButton}
                 title="Move up"
               >
-                <ChevronDown className="w-3.5 h-3.5 rotate-180" />
+                <ChevronDown
+                  className={styles.reorderIcon}
+                  data-direction="up"
+                />
               </button>
-              <GripVertical className="w-4 h-4 text-muted-foreground cursor-move" />
+              <GripVertical className={styles.optionGrip} />
               <button
                 type="button"
                 onClick={() => moveOption(index, index + 1)}
                 disabled={index === normalizedOptions.length - 1}
-                className="p-1 hover:bg-accent rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                className={styles.reorderButton}
                 title="Move down"
               >
-                <ChevronDown className="w-3.5 h-3.5" />
+                <ChevronDown className={styles.reorderIcon} />
               </button>
             </div>
 
-            <div className="flex-1 space-y-4">
-              <div className="flex items-center justify-between">
-                <Badge
-                  variant="secondary"
-                  className="text-[10px]"
-                >
-                  Option {index + 1}
-                </Badge>
-                <div className="flex gap-1">
+            <div className={styles.optionBody}>
+              <div className={styles.optionHead}>
+                <Badge variant="secondary">Option {index + 1}</Badge>
+                <div className={styles.optionButtons}>
                   <Button
                     variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                    size="icon-sm"
+                    className={styles.iconButton}
                     onClick={() => duplicateOption(index)}
                     type="button"
                     title="Duplicate"
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus />
                   </Button>
                   <Button
                     variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    size="icon-sm"
+                    className={styles.iconButton}
+                    data-tone="destructive"
                     onClick={() => removeOption(index)}
                     type="button"
                     title="Delete"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X />
                   </Button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-xs">Label</Label>
+              <div className={styles.optionFields}>
+                <div className="stack space-2">
+                  <Label className={styles.smallLabel}>Label</Label>
                   <Input
                     ref={(el) => {
                       labelInputRefs.current[index] = el;
@@ -671,21 +636,21 @@ export function DropdownOptionsEditor({ options, onChange, focusOptionIndex, onF
                     value={option.label}
                     onChange={(e) => updateOption(index, 'label', e.target.value)}
                     placeholder="Display Label"
-                    className="h-8"
+                    className={styles.compactInput}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs">Value</Label>
+                <div className="stack space-2">
+                  <Label className={styles.smallLabel}>Value</Label>
                   <Textarea
                     value={option.value}
                     onChange={(e) => updateOption(index, 'value', e.target.value)}
                     placeholder="Prompt Value"
-                    className="min-h-[60px] resize-y font-mono text-xs"
+                    className={styles.valueArea}
                   />
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className={styles.toggle}>
                 <Checkbox
                   id={`opt-en-${index}`}
                   checked={option.enabled !== false}
@@ -693,20 +658,20 @@ export function DropdownOptionsEditor({ options, onChange, focusOptionIndex, onF
                 />
                 <Label
                   htmlFor={`opt-en-${index}`}
-                  className="text-xs font-normal"
+                  className={styles.smallLabelNormal}
                 >
                   Enabled
                 </Label>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-xs">Preview Image URL</Label>
-                <div className="flex gap-2">
+              <div className="stack space-2">
+                <Label className={styles.smallLabel}>Preview Image URL</Label>
+                <div className={styles.urlRow}>
                   <Input
                     value={option.previewUrl || ''}
                     onChange={(e) => updateOption(index, 'previewUrl', e.target.value)}
                     placeholder="https://..."
-                    className="h-8 flex-1"
+                    className={styles.urlInput}
                   />
                   <PreviewIcon
                     previewUrl={option.previewUrl}
@@ -721,11 +686,11 @@ export function DropdownOptionsEditor({ options, onChange, focusOptionIndex, onF
 
       <Button
         onClick={addOption}
-        className="w-full"
+        className={styles.addOption}
         variant="outline"
         type="button"
       >
-        <Plus className="w-4 h-4 mr-2" />
+        <Plus />
         Add Option
       </Button>
     </div>

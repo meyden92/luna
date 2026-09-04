@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { queryKeys } from '@/libs/query-keys';
 import { getExecution } from '@/server/fns/admin/tasks';
+import styles from './execution-log-dialog.module.css';
 
 interface ExecutionLogDialogProps {
   executionId: string | null;
@@ -25,19 +26,20 @@ interface ExecutionLogEntry {
 }
 
 const getStatusIcon = (status: string) => {
+  const props = { className: styles.statusIcon, 'data-status': status };
   switch (status) {
     case 'success':
-      return <CheckCircle className="h-4 w-4 text-green-600" />;
+      return <CheckCircle {...props} />;
     case 'failed':
-      return <XCircle className="h-4 w-4 text-red-600" />;
+      return <XCircle {...props} />;
     case 'timeout':
-      return <Timer className="h-4 w-4 text-red-600" />;
+      return <Timer {...props} />;
     case 'running':
-      return <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />;
+      return <Loader2 {...props} />;
     case 'pending':
-      return <Clock className="h-4 w-4 text-yellow-600" />;
+      return <Clock {...props} />;
     default:
-      return <AlertCircle className="h-4 w-4 text-gray-600" />;
+      return <AlertCircle {...props} />;
   }
 };
 
@@ -46,8 +48,8 @@ const getStatusBadge = (status: string) => {
     case 'success':
       return (
         <Badge
-          variant="secondary"
-          className="text-green-700 bg-green-100"
+          variant="outline"
+          className={styles.successBadge}
         >
           Success
         </Badge>
@@ -98,9 +100,9 @@ export default function ExecutionLogDialog({ executionId, isOpen, onClose }: Exe
       open={isOpen}
       onOpenChange={onClose}
     >
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent className={styles.dialog}>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className={styles.title}>
             Execution Log Details
             {execution && (
               <>
@@ -112,42 +114,45 @@ export default function ExecutionLogDialog({ executionId, isOpen, onClose }: Exe
         </DialogHeader>
 
         {isLoading && (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin" />
+          <div className={styles.state}>
+            <Loader2
+              className={styles.stateIcon}
+              data-spin="true"
+            />
           </div>
         )}
 
         {error && (
-          <div className="flex items-center justify-center py-8">
-            <div className="text-center">
-              <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">Failed to load execution details</p>
+          <div className={styles.state}>
+            <div>
+              <AlertCircle className={styles.errorIcon} />
+              <p className={styles.errorText}>Failed to load execution details</p>
             </div>
           </div>
         )}
 
         {execution && (
-          <div className="flex flex-col gap-4 overflow-hidden">
+          <div className={styles.body}>
             {/* Basic Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <h4 className="font-semibold">Task Information</h4>
-                <div className="text-sm">
+            <div className={styles.summary}>
+              <div className="stack space-2">
+                <h4 className={styles.sectionTitle}>Task Information</h4>
+                <div className={styles.details}>
                   <p>
                     <strong>Name:</strong> {execution.task.name}
                   </p>
                   <p>
-                    <strong>Function:</strong> <code className="text-xs bg-muted px-1 py-0.5 rounded">{execution.task.taskFunction}</code>
+                    <strong>Function:</strong> <code className={styles.code}>{execution.task.taskFunction}</code>
                   </p>
                   <p>
-                    <strong>ID:</strong> <code className="text-xs bg-muted px-1 py-0.5 rounded">{execution.taskId}</code>
+                    <strong>ID:</strong> <code className={styles.code}>{execution.taskId}</code>
                   </p>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <h4 className="font-semibold">Execution Details</h4>
-                <div className="text-sm">
+              <div className="stack space-2">
+                <h4 className={styles.sectionTitle}>Execution Details</h4>
+                <div className={styles.details}>
                   <p>
                     <strong>Started:</strong> {new Date(execution.startedAt).toLocaleString()}
                   </p>
@@ -177,40 +182,56 @@ export default function ExecutionLogDialog({ executionId, isOpen, onClose }: Exe
 
             {/* Error Details */}
             {execution.error && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-semibold text-red-600">Error Details</h4>
+              <div className="stack space-2">
+                <div className={styles.sectionHead}>
+                  <h4
+                    className={styles.sectionTitle}
+                    data-tone="error"
+                  >
+                    Error Details
+                  </h4>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => copyToClipboard(execution.error!)}
                   >
-                    <Copy className="h-3 w-3 mr-1" />
+                    <Copy />
                     Copy
                   </Button>
                 </div>
-                <div className="bg-red-50 border border-red-200 rounded-md p-3">
-                  <pre className="text-xs text-red-800 whitespace-pre-wrap">{execution.error}</pre>
+                <div
+                  className={styles.payload}
+                  data-tone="error"
+                >
+                  <pre className={styles.payloadPre}>{execution.error}</pre>
                 </div>
               </div>
             )}
 
             {/* Result */}
             {execution.result && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-semibold text-green-600">Result</h4>
+              <div className="stack space-2">
+                <div className={styles.sectionHead}>
+                  <h4
+                    className={styles.sectionTitle}
+                    data-tone="result"
+                  >
+                    Result
+                  </h4>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => copyToClipboard(JSON.stringify(execution.result, null, 2))}
                   >
-                    <Copy className="h-3 w-3 mr-1" />
+                    <Copy />
                     Copy
                   </Button>
                 </div>
-                <div className="bg-green-50 border border-green-200 rounded-md p-3">
-                  <pre className="text-xs text-green-800 whitespace-pre-wrap">{JSON.stringify(execution.result, null, 2)}</pre>
+                <div
+                  className={styles.payload}
+                  data-tone="result"
+                >
+                  <pre className={styles.payloadPre}>{JSON.stringify(execution.result, null, 2)}</pre>
                 </div>
               </div>
             )}
@@ -220,27 +241,22 @@ export default function ExecutionLogDialog({ executionId, isOpen, onClose }: Exe
               const logs: ExecutionLogEntry[] = Array.isArray(execution.logs) ? (execution.logs as unknown as ExecutionLogEntry[]) : [];
               return (
                 logs.length > 0 && (
-                  <div className="space-y-2 flex-1 overflow-hidden">
-                    <h4 className="font-semibold">Execution Logs</h4>
-                    <ScrollArea className="h-64 border rounded-md p-3">
-                      <div className="space-y-2">
+                  <div className={`${styles.logs} stack space-2`}>
+                    <h4 className={styles.sectionTitle}>Execution Logs</h4>
+                    <ScrollArea className={styles.logScroll}>
+                      <div className="stack space-2">
                         {logs.map((log) => (
                           <div
                             key={log.timestamp}
-                            className="text-xs"
+                            className={styles.logLine}
                           >
-                            <div className="flex items-start gap-2">
-                              <Badge
-                                variant={log.level === 'error' ? 'destructive' : 'outline'}
-                                className="text-xs px-1 py-0"
-                              >
-                                {log.level}
-                              </Badge>
-                              <span className="text-muted-foreground">{new Date(log.timestamp).toLocaleTimeString()}</span>
-                              <span className="flex-1">{log.message}</span>
+                            <div className={styles.logHead}>
+                              <Badge variant={log.level === 'error' ? 'destructive' : 'outline'}>{log.level}</Badge>
+                              <span className={styles.logTime}>{new Date(log.timestamp).toLocaleTimeString()}</span>
+                              <span className={styles.logMessage}>{log.message}</span>
                             </div>
                             {log.data != null && (
-                              <div className="ml-16 mt-1 text-muted-foreground">
+                              <div className={styles.logData}>
                                 <pre>{JSON.stringify(log.data, null, 2)}</pre>
                               </div>
                             )}
@@ -254,13 +270,13 @@ export default function ExecutionLogDialog({ executionId, isOpen, onClose }: Exe
             })()}
 
             {/* Raw Execution ID for debugging */}
-            <div className="text-xs text-muted-foreground">
+            <div className={styles.executionId}>
               <strong>Execution ID:</strong> <code>{execution.id}</code>
             </div>
           </div>
         )}
 
-        <div className="flex justify-end">
+        <div className={styles.footer}>
           <Button
             variant="outline"
             onClick={onClose}

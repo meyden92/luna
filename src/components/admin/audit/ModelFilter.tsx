@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import styles from './ModelFilter.module.css';
 
 interface ModelFilterProps {
   currentModel?: string;
@@ -20,14 +21,14 @@ export default function ModelFilter({ currentModel, models, onModelChangeAction 
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="cluster space-2">
       <Select
         value={currentModel || 'all'}
         onValueChange={handleValueChange}
       >
         <SelectTrigger
           id="model-filter"
-          className="flex-grow"
+          className={styles.select}
           aria-label="Filter by model"
         >
           <SelectValue placeholder="All Models" />
@@ -52,7 +53,7 @@ export default function ModelFilter({ currentModel, models, onModelChangeAction 
           onClick={handleClear}
           aria-label="Clear model filter"
         >
-          <X className="h-4 w-4" />
+          <X />
         </Button>
       )}
     </div>

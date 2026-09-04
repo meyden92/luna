@@ -1,0 +1,23 @@
+@layer components {
+  .root {
+    display: flex;
+    justify-content: center;
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .step {
+    gap: var(--space-1);
+    padding-inline: var(--space-2);
+  }
+
+  /* Rendered instead of a link when there is no page in that direction. */
+  .step[data-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}

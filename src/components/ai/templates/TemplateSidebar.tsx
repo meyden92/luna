@@ -10,6 +10,7 @@ import { useModelFieldDefaults } from '@/hooks/use-model-field-defaults';
 import type { TemplateGenerateParams } from '@/hooks/use-template-stream-generation';
 import { getTemplateImageUrl } from '@/libs/utils';
 import { type Template, TemplatePickerDialog } from './TemplatePickerDialog';
+import styles from './TemplateSidebar.module.css';
 import { type TemplateVariable, TemplateVariableSection } from './TemplateVariableSection';
 
 interface TemplateSidebarProps {
@@ -138,72 +139,68 @@ export function TemplateSidebar({ onGenerate }: TemplateSidebarProps) {
             <Button
               onClick={handleGenerate}
               disabled={isGenerateDisabled}
-              className="w-full"
+              className={styles.generateButton}
               size="lg"
             >
-              <Sparkles className="w-4 h-4 mr-2" />
+              <Sparkles className={styles.generateIcon} />
               Generate {imageCount > 1 ? `(${imageCount} images)` : ''}
             </Button>
-            {isGenerateDisabled && <p className="text-xs text-muted-foreground text-center mt-2">{getDisabledReason()}</p>}
+            {isGenerateDisabled && <p className={styles.disabledHint}>{getDisabledReason()}</p>}
           </>
         }
       >
         {/* Template Selection */}
-        <div className="space-y-3">
+        <div>
           {selectedTemplate ? (
-            <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
-              <div className="flex gap-3">
+            <div className={styles.selected}>
+              <div className={styles.selectedRow}>
                 {/* Preview Thumbnail */}
-                <div className="w-16 h-16 rounded-md overflow-hidden bg-muted shrink-0">
+                <div className={styles.thumb}>
                   {getPreviewImage() ? (
                     <img
                       src={getPreviewImage()!}
                       alt={selectedTemplate.name}
                       loading="lazy"
-                      className="object-cover w-full h-full"
+                      className={styles.thumbImage}
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <ImageIcon className="w-6 h-6 text-muted-foreground" />
-                    </div>
+                    <ImageIcon className={styles.thumbIcon} />
                   )}
                 </div>
                 {/* Template Info */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-sm truncate">{selectedTemplate.name}</h3>
-                  {selectedTemplate.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{selectedTemplate.description}</p>
-                  )}
+                <div className={styles.info}>
+                  <h3 className={styles.name}>{selectedTemplate.name}</h3>
+                  {selectedTemplate.description && <p className={styles.description}>{selectedTemplate.description}</p>}
                 </div>
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full"
+                className={styles.changeButton}
                 onClick={() => setIsPickerOpen(true)}
               >
-                <LayoutTemplate className="w-4 h-4 mr-2" />
+                <LayoutTemplate className={styles.changeIcon} />
                 Change Template
               </Button>
             </div>
           ) : (
             <div
-              className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+              className={styles.empty}
               onClick={() => setIsPickerOpen(true)}
             >
-              <LayoutTemplate className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
-              <p className="text-sm font-medium">Select a Template</p>
-              <p className="text-xs text-muted-foreground mt-1">Click to browse available templates</p>
+              <LayoutTemplate className={styles.emptyIcon} />
+              <p className={styles.emptyTitle}>Select a Template</p>
+              <p className={styles.emptyHint}>Click to browse available templates</p>
             </div>
           )}
         </div>
 
         {/* Reference Images (only if template requires images) */}
         {selectedTemplate && selectedTemplate.inputImageCount > 0 && (
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">
+          <div className="stack space-2">
+            <Label>
               Reference Images
-              <span className="text-muted-foreground ml-1">({selectedTemplate.inputImageCount} required)</span>
+              <span className={styles.required}>({selectedTemplate.inputImageCount} required)</span>
             </Label>
             <ReferenceImageSection
               images={images}
@@ -216,10 +213,10 @@ export function TemplateSidebar({ onGenerate }: TemplateSidebarProps) {
 
         {/* Image Count Slider - only show if there's a range to choose from */}
         {selectedTemplate && (selectedTemplate.maxImageCount || 4) > (selectedTemplate.minImageCount || 1) && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Images to Generate</Label>
-              <span className="text-sm font-semibold tabular-nums">{imageCount}</span>
+          <div className="stack space-3">
+            <div className={styles.sliderRow}>
+              <Label>Images to Generate</Label>
+              <span className={styles.sliderValue}>{imageCount}</span>
             </div>
             <Slider
               value={[imageCount]}

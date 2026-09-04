@@ -1,0 +1,152 @@
+@layer components {
+  .title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .titleIcon {
+    inline-size: var(--space-5);
+    block-size: var(--space-5);
+    color: var(--primary);
+  }
+
+  .muted {
+    color: var(--muted-foreground);
+  }
+
+  .danger {
+    color: var(--destructive);
+  }
+
+  .required {
+    margin-inline-start: var(--space-1);
+    color: var(--destructive);
+  }
+
+  .previewWrap {
+    position: relative;
+    display: inline-block;
+  }
+
+  .samplePreview {
+    --sample-size: 8rem;
+
+    inline-size: var(--sample-size);
+    block-size: var(--sample-size);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    object-fit: cover;
+  }
+
+  /* Sits on the corner of the thumbnail, half outside it. */
+  .removeSample {
+    position: absolute;
+    inset-block-start: calc(-1 * var(--space-2));
+    inset-inline-end: calc(-1 * var(--space-2));
+    inline-size: var(--space-6);
+    block-size: var(--space-6);
+    border-radius: var(--radius-full);
+  }
+
+  .removeIcon {
+    inline-size: var(--space-3);
+    block-size: var(--space-3);
+  }
+
+  .actionButton {
+    gap: var(--space-2);
+  }
+
+  .buttonIcon {
+    inline-size: var(--space-4);
+    block-size: var(--space-4);
+  }
+
+  .spinner {
+    inline-size: var(--space-4);
+    block-size: var(--space-4);
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+
+  .variableGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  @media (width >= 768px) {
+    .variableGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* Matches the height of the text inputs beside it so rows stay aligned. */
+  .switchRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    block-size: var(--space-10);
+  }
+
+  .errorBox {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--destructive);
+    border-radius: var(--radius-md);
+    background-color: color-mix(in oklab, var(--destructive) 5%, transparent);
+  }
+
+  /* Optical nudge so a 20px icon lines up with the first text line. */
+  .errorIcon {
+    --icon-nudge: 0.125rem;
+
+    flex-shrink: 0;
+    inline-size: var(--space-5);
+    block-size: var(--space-5);
+    margin-block-start: var(--icon-nudge);
+    color: var(--destructive);
+  }
+
+  .resultHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .resultLink {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    color: var(--primary);
+    text-decoration: none;
+  }
+
+  .resultLink:hover {
+    text-decoration: underline;
+  }
+
+  .linkIcon {
+    inline-size: var(--space-4);
+    block-size: var(--space-4);
+  }
+
+  .resultImage {
+    --result-max-height: 30rem;
+
+    inline-size: auto;
+    max-block-size: var(--result-max-height);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+}

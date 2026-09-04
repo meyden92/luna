@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/libs/utils';
 import type { TemplateVariable } from '@/types/template';
+import styles from './autocomplete-textarea.module.css';
 
 interface AutocompleteTextareaProps {
   value: string;
@@ -204,7 +205,7 @@ export function AutocompleteTextarea({
         parts.push(
           <span
             key={`text-${lastIndex}`}
-            className="text-foreground"
+            className={styles.plain}
           >
             {value.substring(lastIndex, index)}
           </span>,
@@ -216,7 +217,7 @@ export function AutocompleteTextarea({
         parts.push(
           <span
             key={index}
-            className="bg-destructive/20 text-destructive rounded-sm px-0.5 -mx-0.5 border border-destructive/30"
+            className={styles.tokenInvalid}
           >
             {match[0]}
           </span>,
@@ -225,7 +226,7 @@ export function AutocompleteTextarea({
         parts.push(
           <span
             key={index}
-            className="text-primary font-medium bg-primary/10 rounded-sm px-0.5 -mx-0.5"
+            className={styles.tokenValid}
           >
             {match[0]}
           </span>,
@@ -240,7 +241,7 @@ export function AutocompleteTextarea({
       parts.push(
         <span
           key={`text-${lastIndex}`}
-          className="text-foreground"
+          className={styles.plain}
         >
           {value.substring(lastIndex)}
         </span>,
@@ -256,20 +257,15 @@ export function AutocompleteTextarea({
   };
 
   return (
-    <div className="space-y-2">
-      <div className="relative group">
+    <div className="stack space-2">
+      <div className={styles.editor}>
         {/* Container for Backdrop and Textarea */}
-        <div className="relative min-h-[80px] w-full">
+        <div className={styles.field}>
           {/* Backdrop for highlighting */}
           <div
             ref={backdropRef}
             inert={true}
-            className={cn(
-              'absolute inset-0 w-full h-full overflow-hidden whitespace-pre-wrap break-words',
-              'px-3 py-3 text-base md:text-sm font-mono pointer-events-none',
-              'bg-transparent', // Removed text-transparent from container
-              className,
-            )}
+            className={cn(styles.backdrop, className)}
             aria-hidden="true"
           >
             {renderHighlights()}
@@ -282,11 +278,7 @@ export function AutocompleteTextarea({
             onKeyDown={handleKeyDown}
             onScroll={handleScroll}
             placeholder={placeholder}
-            className={cn(
-              'relative z-10 bg-transparent hover:bg-transparent focus-visible:bg-transparent text-transparent caret-foreground font-mono resize-y',
-              'focus-visible:ring-1 focus-visible:ring-ring focus-visible:translate-y-0 focus-visible:shadow-none',
-              className,
-            )}
+            className={cn(styles.input, className)}
             spellCheck={false}
             onClick={(e) => {
               e.stopPropagation();
@@ -298,30 +290,30 @@ export function AutocompleteTextarea({
             type="button"
             variant="ghost"
             size="icon"
-            className="absolute top-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity z-20"
+            className={styles.expand}
             onClick={() => setIsExpandDialogOpen(true)}
             title="Expand editor"
           >
-            <Maximize2 className="h-4 w-4" />
+            <Maximize2 />
           </Button>
         </div>
 
         {showAutocomplete && (
           <div
-            className="absolute z-50"
+            className={styles.popupAnchor}
             style={{
               top: `${autocompletePosition.top}px`,
               left: `${autocompletePosition.left}px`,
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="border rounded-md bg-popover shadow-md w-[250px] max-h-[300px] overflow-y-auto flex flex-col">
-              <div className="p-2 text-xs font-semibold text-muted-foreground border-b bg-muted/50">
-                Variables {filterText && <span className="font-normal opacity-70">(filtering: "{filterText}")</span>}
+            <div className={styles.popup}>
+              <div className={cn('type-xs weight-semibold', styles.popupHeader)}>
+                Variables {filterText && <span className={styles.filterHint}>(filtering: "{filterText}")</span>}
               </div>
-              <div className="p-1 flex-1">
+              <div className={styles.popupList}>
                 {filteredVariables.length === 0 ? (
-                  <div className="p-2 text-xs text-muted-foreground text-center">No matching variables</div>
+                  <div className={cn('type-xs', styles.popupEmpty)}>No matching variables</div>
                 ) : (
                   filteredVariables.map((variable, index) => (
                     <button
@@ -331,15 +323,13 @@ export function AutocompleteTextarea({
                         e.stopPropagation();
                         insertVariable(variable.name);
                       }}
-                      className={cn(
-                        'w-full text-left px-3 py-2 rounded transition-colors cursor-pointer flex flex-col gap-1',
-                        index === activeIndex ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50',
-                      )}
+                      className={styles.option}
+                      data-active={index === activeIndex ? '' : undefined}
                       type="button"
                       onMouseEnter={() => setActiveIndex(index)}
                     >
-                      <span className="font-mono text-xs font-medium">{`{${variable.name}}`}</span>
-                      <span className="text-[10px] text-muted-foreground line-clamp-1">{variable.label}</span>
+                      <span className="type-mono type-xs weight-medium">{`{${variable.name}}`}</span>
+                      <span className={cn('type-xs type-truncate', styles.optionLabel)}>{variable.label}</span>
                     </button>
                   ))
                 )}
@@ -350,11 +340,11 @@ export function AutocompleteTextarea({
       </div>
 
       {/* Helper text and variable list */}
-      <div className="flex items-start gap-2 text-sm text-muted-foreground">
-        <div className="flex-1">
-          <p className="flex items-center gap-1.5">
+      <div className={cn('type-sm', styles.helper)}>
+        <div className={styles.helperText}>
+          <p className={styles.helperLine}>
             <span>
-              Type <kbd className="px-1 py-0.5 text-xs border rounded bg-muted font-mono">{'{'}</kbd> to insert variables
+              Type <kbd className={cn('type-xs', styles.kbd)}>{'{'}</kbd> to insert variables
             </span>
           </p>
         </div>
@@ -362,7 +352,7 @@ export function AutocompleteTextarea({
           <button
             type="button"
             onClick={() => setShowVariableList(!showVariableList)}
-            className="text-xs underline hover:text-foreground transition-colors"
+            className={cn('type-xs', styles.toggle)}
           >
             {showVariableList ? 'Hide' : 'Show'} variables ({enabledVariables.length})
           </button>
@@ -371,19 +361,19 @@ export function AutocompleteTextarea({
 
       {/* Variable list panel */}
       {showVariableList && enabledVariables.length > 0 && (
-        <div className="border rounded-md bg-muted/30 p-3">
-          <div className="text-xs font-semibold mb-2 text-muted-foreground">Available Variables</div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className={styles.panel}>
+          <div className={cn('type-xs weight-semibold', styles.panelTitle)}>Available Variables</div>
+          <div className={styles.panelGrid}>
             {enabledVariables.map((variable) => (
               <button
                 key={variable.id || variable.name}
                 onClick={() => insertVariable(variable.name)}
-                className="text-left px-2 py-1.5 rounded bg-background border hover:bg-accent hover:border-accent-foreground/20 transition-colors cursor-pointer group"
+                className={styles.chip}
                 type="button"
               >
-                <div className="flex flex-col gap-0.5">
-                  <span className="font-mono text-xs text-foreground group-hover:text-accent-foreground">{`{${variable.name}}`}</span>
-                  <span className="text-[10px] text-muted-foreground">{variable.label}</span>
+                <div className={styles.chipBody}>
+                  <span className={cn('type-xs', styles.chipName)}>{`{${variable.name}}`}</span>
+                  <span className={cn('type-xs', styles.chipLabel)}>{variable.label}</span>
                 </div>
               </button>
             ))}

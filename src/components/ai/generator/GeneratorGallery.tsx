@@ -2,7 +2,7 @@ import { generationDownloadFilename } from '@/components/ai/shared/GenerationCar
 import { GenerationGallery as SharedGenerationGallery } from '@/components/ai/shared/GenerationGallery';
 import type { GenerationQueueItem } from '@/hooks/stores/image-generation-queue-store';
 import { useImageGenerationHistory } from '@/hooks/use-ai-generation-history';
-import { cn } from '@/libs/utils';
+import styles from './GeneratorGallery.module.css';
 import { GeneratorLightbox } from './GeneratorLightbox';
 
 function getResultImageUrl(generation: GenerationQueueItem) {
@@ -50,8 +50,11 @@ export function GeneratorGallery({ onRetry, onCancel }: GeneratorGalleryProps) {
             getResultBatchIndex(firstResult?.index),
           ),
           placeholder: (
-            <div className={cn('w-full h-full flex items-center justify-center p-4', isProcessing ? 'bg-muted/50' : 'bg-muted')}>
-              <p className="text-xs text-muted-foreground text-center line-clamp-4">{truncatedPrompt}</p>
+            <div
+              className={styles.placeholder}
+              data-processing={isProcessing ? '' : undefined}
+            >
+              <p className={styles.placeholderText}>{truncatedPrompt}</p>
             </div>
           ),
         };

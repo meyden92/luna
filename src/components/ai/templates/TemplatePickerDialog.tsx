@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { queryKeys } from '@/libs/query-keys';
 import { getTemplateImageUrl } from '@/libs/utils';
 import { listAiTemplates } from '@/server/fns/ai';
+import styles from './TemplatePickerDialog.module.css';
 
 interface Template {
   id: string;
@@ -79,39 +80,38 @@ export function TemplatePickerDialog({ isOpen, onOpenChange, onTemplateSelect, s
       onOpenChange={onOpenChange}
     >
       <DialogContent size="xl">
-        <DialogHeader className="shrink-0">
-          <DialogTitle className="flex items-center justify-between pr-8">
-            <div className="flex items-center gap-2">
-              <LayoutTemplate className="w-5 h-5" />
+        <DialogHeader className={styles.header}>
+          <DialogTitle className={styles.title}>
+            <div className={styles.titleMain}>
+              <LayoutTemplate className={styles.titleIcon} />
               <span>Select Template</span>
             </div>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon-sm"
               onClick={() => refetch()}
               disabled={isFetching}
-              className="h-8 w-8 p-0"
             >
-              <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+              <RefreshCw className={isFetching ? styles.spinning : undefined} />
             </Button>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 overflow-y-auto -mx-6 px-6">
+        <div className={styles.scroll}>
           {isLoading && (
-            <div className="flex items-center justify-center h-64">
-              <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
+            <div className={styles.state}>
+              <Loader2 className={styles.stateSpinner} />
             </div>
           )}
 
           {error && (
-            <div className="flex flex-col items-center justify-center h-64 text-center">
-              <LayoutTemplate className="w-16 h-16 text-muted-foreground mb-4" />
-              <p className="text-base text-muted-foreground">Failed to load templates</p>
+            <div className={styles.state}>
+              <LayoutTemplate className={styles.stateIcon} />
+              <p className={styles.stateText}>Failed to load templates</p>
               <Button
                 variant="outline"
                 size="sm"
-                className="mt-4"
+                className="margin-top-4"
                 onClick={() => refetch()}
               >
                 Try Again
@@ -120,15 +120,15 @@ export function TemplatePickerDialog({ isOpen, onOpenChange, onTemplateSelect, s
           )}
 
           {data && data.templates.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-64 text-center">
-              <LayoutTemplate className="w-16 h-16 text-muted-foreground mb-4" />
-              <p className="text-base text-muted-foreground">No templates available</p>
-              <p className="text-sm text-muted-foreground mt-2">Templates will appear here when created</p>
+            <div className={styles.state}>
+              <LayoutTemplate className={styles.stateIcon} />
+              <p className={styles.stateText}>No templates available</p>
+              <p className={styles.stateHint}>Templates will appear here when created</p>
             </div>
           )}
 
           {data && data.templates.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-4">
+            <div className={styles.grid}>
               {data.templates.map((template) => {
                 const previewImages = getPreviewImages(template);
                 const isSelected = selectedTemplateId === template.id;
@@ -136,36 +136,32 @@ export function TemplatePickerDialog({ isOpen, onOpenChange, onTemplateSelect, s
                 return (
                   <div
                     key={template.id}
-                    className={`
-                      relative group cursor-pointer rounded-xl border-2 transition-all overflow-hidden bg-card
-                      ${isSelected ? 'border-primary ring-2 ring-primary/30' : 'border-border hover:border-primary/50'}
-                    `}
+                    className={styles.card}
+                    data-selected={isSelected ? '' : undefined}
                     onClick={() => handleTemplateClick(template)}
                   >
-                    {/* Preview Image */}
-                    <div className="aspect-video bg-muted relative">
+                    <div className={styles.preview}>
                       {previewImages.length > 0 ? (
                         <img
                           src={previewImages[0]!}
                           alt={template.name}
                           loading="lazy"
-                          className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-transform duration-200"
+                          className={styles.previewImage}
                         />
                       ) : (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <ImageIcon className="w-12 h-12 text-muted-foreground" />
+                        <div className={styles.previewFallback}>
+                          <ImageIcon className={styles.previewFallbackIcon} />
                         </div>
                       )}
                     </div>
 
-                    {/* Template Info */}
-                    <div className="p-3 space-y-1">
-                      <h3 className="font-semibold text-sm truncate">{template.name}</h3>
-                      {template.description && <p className="text-xs text-muted-foreground line-clamp-2">{template.description}</p>}
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+                    <div className={styles.info}>
+                      <h3 className={styles.name}>{template.name}</h3>
+                      {template.description && <p className={styles.description}>{template.description}</p>}
+                      <div className={styles.meta}>
                         {template.inputImageCount > 0 && (
-                          <span className="flex items-center gap-1">
-                            <ImageIcon className="w-3 h-3" />
+                          <span className={styles.metaItem}>
+                            <ImageIcon className={styles.metaIcon} />
                             {template.inputImageCount} image{template.inputImageCount > 1 ? 's' : ''}
                           </span>
                         )}

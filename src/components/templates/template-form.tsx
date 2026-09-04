@@ -28,8 +28,10 @@ import { Textarea } from '@/components/ui/textarea';
 import type { editingModelField } from '@/db/schema/ai';
 import { queryKeys } from '@/libs/query-keys';
 import { validateTemplateVariablesInPrompt } from '@/libs/template-variable-validation';
+import { cn } from '@/libs/utils';
 import type { TemplateFormValues } from '@/schemas/template-schema';
 import { createAdminTemplate, updateAdminTemplate } from '@/server/fns/admin/templates';
+import styles from './template-form.module.css';
 
 type EditingModelField = typeof editingModelField.$inferSelect;
 interface TemplateFormProps {
@@ -99,37 +101,40 @@ function ValidationSummary() {
 
   if (hasValidationIssues || hasWarnings) {
     return (
-      <Card className={hasValidationIssues ? 'border-destructive' : 'border-yellow-500'}>
-        <CardContent className="p-4">
-          <div className="space-y-3">
+      <Card
+        className={styles.statusCard}
+        data-status={hasValidationIssues ? 'error' : 'warning'}
+      >
+        <CardContent className="pad-4">
+          <div className="stack space-3">
             {hasValidationIssues && (
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <p className="font-semibold text-sm">Validation Issues</p>
+              <div className={styles.issueRow}>
+                <AlertCircle className={styles.statusIcon} />
+                <div className={cn(styles.issueBody, 'stack space-2')}>
+                  <p className="weight-semibold type-sm">Validation Issues</p>
                   {missing.length > 0 && (
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Undefined variables in prompt:</span>{' '}
-                      <span className="font-mono text-destructive">{missing.join(', ')}</span>
+                    <div className="type-sm">
+                      <span className={styles.muted}>Undefined variables in prompt:</span>{' '}
+                      <span className={cn('type-mono', styles.danger)}>{missing.join(', ')}</span>
                     </div>
                   )}
                   {invalidDropdowns.length > 0 && (
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Invalid dropdown configuration:</span>{' '}
-                      <span className="font-mono text-destructive">{invalidDropdowns.join(', ')}</span>
+                    <div className="type-sm">
+                      <span className={styles.muted}>Invalid dropdown configuration:</span>{' '}
+                      <span className={cn('type-mono', styles.danger)}>{invalidDropdowns.join(', ')}</span>
                     </div>
                   )}
                 </div>
               </div>
             )}
             {!hasValidationIssues && hasWarnings && (
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 shrink-0" />
-                <div className="flex-1">
-                  <p className="font-semibold text-sm">Warnings</p>
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Unused variables:</span>{' '}
-                    <span className="font-mono text-yellow-700">{unused.join(', ')}</span>
+              <div className={styles.issueRow}>
+                <AlertCircle className={styles.statusIcon} />
+                <div className={styles.issueBody}>
+                  <p className="weight-semibold type-sm">Warnings</p>
+                  <div className="type-sm">
+                    <span className={styles.muted}>Unused variables:</span>{' '}
+                    <span className={cn('type-mono', styles.warn)}>{unused.join(', ')}</span>
                   </div>
                 </div>
               </div>
@@ -142,11 +147,14 @@ function ValidationSummary() {
 
   if (variables.length > 0 && prompt.trim() !== '') {
     return (
-      <Card className="border-green-500 bg-green-50/50 dark:bg-green-950/20">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
-            <p className="font-semibold text-sm text-green-900 dark:text-green-100">All variables are properly configured</p>
+      <Card
+        className={styles.statusCard}
+        data-status="ok"
+      >
+        <CardContent className="pad-4">
+          <div className="cluster">
+            <CheckCircle2 className={styles.okIcon} />
+            <p className={cn('weight-semibold type-sm', styles.okText)}>All variables are properly configured</p>
           </div>
         </CardContent>
       </Card>
@@ -173,13 +181,13 @@ function PromptField() {
               onChange={onChange}
               variables={variables}
               placeholder="A cinematic shot of {subject} in {style} style... (Type '{' to see variables)"
-              className="min-h-[120px] font-mono text-sm"
+              className={styles.promptInput}
               expandDialogTitle="Edit Prompt"
             />
           </FormControl>
           <FormDescription>
-            {missing.length > 0 && <span className="text-destructive block">Undefined variables in prompt: {missing.join(', ')}</span>}
-            {unused.length > 0 && <span className="text-yellow-600 block">Unused variables: {unused.join(', ')}</span>}
+            {missing.length > 0 && <span className={styles.errorLine}>Undefined variables in prompt: {missing.join(', ')}</span>}
+            {unused.length > 0 && <span className={styles.warnLine}>Unused variables: {unused.join(', ')}</span>}
           </FormDescription>
           <FormMessage />
         </FormItem>
@@ -232,7 +240,7 @@ function ModelFieldsSection({ models }: { models: TemplateFormProps['models'] })
   const selectedModel = models.find((m) => m.id === selectedModelId);
 
   if (!selectedModel?.fields || selectedModel.fields.length === 0) {
-    return <p className="text-sm text-muted-foreground">No configurable settings for this model.</p>;
+    return <p className={cn('type-sm', styles.muted)}>No configurable settings for this model.</p>;
   }
 
   return (
@@ -245,7 +253,7 @@ function ModelFieldsSection({ models }: { models: TemplateFormProps['models'] })
             <FormItem>
               <FormLabel>
                 {field.label}
-                {field.isRequired && <span className="text-destructive ml-1">*</span>}
+                {field.isRequired && <span className={styles.required}>*</span>}
               </FormLabel>
               <FormControl>
                 {field.type === 'enum' && field.enumOptions ? (
@@ -396,22 +404,22 @@ export function TemplateForm({ initialData, mode, models, globalVariables = [] }
   return (
     <Form
       config={formConfig}
-      className="space-y-8"
+      className="stack space-8"
     >
       {Object.keys(fieldErrors).length > 0 && (
-        <Card className="border-destructive">
+        <Card className={styles.errorBorder}>
           <CardHeader>
-            <CardTitle className="text-destructive">Validation Errors</CardTitle>
+            <CardTitle className={styles.errorTitle}>Validation Errors</CardTitle>
             <CardDescription>Please fix the following fields before saving.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
+            <div className="stack space-2">
               {Object.entries(fieldErrors).map(([field, messages]) => (
                 <div
                   key={field}
-                  className="text-sm"
+                  className="type-sm"
                 >
-                  <span className="font-semibold">{field}:</span> {messages.join(', ')}
+                  <span className="weight-semibold">{field}:</span> {messages.join(', ')}
                 </div>
               ))}
             </div>
@@ -422,15 +430,15 @@ export function TemplateForm({ initialData, mode, models, globalVariables = [] }
       {/* Validation Summary Card */}
       <ValidationSummary />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className={styles.layout}>
         {/* Left Column: Main Info */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className={cn(styles.mainColumn, 'stack space-8')}>
           <Card>
             <CardHeader>
               <CardTitle>Basic Information</CardTitle>
               <CardDescription>General details about the template.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="stack space-4">
               <FormField
                 name="name"
                 renderFieldAction={({ value, onChange, onBlur }) => (
@@ -457,7 +465,7 @@ export function TemplateForm({ initialData, mode, models, globalVariables = [] }
                     <FormControl>
                       <Textarea
                         placeholder="Describe what this template generates..."
-                        className="resize-none"
+                        className={styles.noResize}
                         value={value ?? ''}
                         onChange={(e) => onChange(e.target.value)}
                         onBlur={onBlur}
@@ -468,7 +476,7 @@ export function TemplateForm({ initialData, mode, models, globalVariables = [] }
                 )}
               />
 
-              <div className="grid grid-cols-1 gap-4">
+              <div className="stack space-4">
                 <FormField
                   name="editingModelId"
                   renderFieldAction={({ value, onChange }) => {
@@ -510,10 +518,10 @@ export function TemplateForm({ initialData, mode, models, globalVariables = [] }
               <CardTitle>Prompt Configuration</CardTitle>
               <CardDescription>Define the prompt structure and variables.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="stack space-6">
               <PromptField />
 
-              <div className="border-t pt-6">
+              <div className={styles.sectionDivider}>
                 <VariablesField
                   mode={mode}
                   globalVariables={globalVariables}
@@ -526,13 +534,13 @@ export function TemplateForm({ initialData, mode, models, globalVariables = [] }
         </div>
 
         {/* Right Column: Settings & Preview */}
-        <div className="space-y-8">
+        <div className="stack space-8">
           <Card>
             <CardHeader>
               <CardTitle>Preview Image</CardTitle>
               <CardDescription>Template preview shown to users when browsing</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="stack space-3">
               <FormField
                 name="previewImage"
                 renderFieldAction={({ value, onChange }) => (
@@ -548,9 +556,9 @@ export function TemplateForm({ initialData, mode, models, globalVariables = [] }
                   </FormItem>
                 )}
               />
-              <div className="text-xs text-muted-foreground space-y-1 pt-2 border-t">
-                <p className="font-medium">Recommended:</p>
-                <ul className="list-disc list-inside space-y-0.5 ml-1">
+              <div className={cn('stack space-1 type-xs', styles.recommendations)}>
+                <p className="weight-medium">Recommended:</p>
+                <ul className={styles.recommendationList}>
                   <li>Dimensions: 512x512px or higher</li>
                   <li>Aspect ratio: Square (1:1)</li>
                   <li>Format: JPG, PNG, or WebP</li>
@@ -563,24 +571,22 @@ export function TemplateForm({ initialData, mode, models, globalVariables = [] }
             <CardHeader>
               <CardTitle>Generation Settings</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-muted/50 p-3 rounded-md text-sm space-y-2">
-                <p className="font-semibold text-foreground">Available Variables</p>
-                <p className="text-muted-foreground">Use these variables in text fields below to inject dynamic values:</p>
-                <div className="space-y-1 pt-1">
-                  <div className="flex items-start gap-2">
-                    <code className="text-xs bg-background px-1.5 py-0.5 rounded border font-mono whitespace-nowrap">
-                      {'{template_prompt}'}
-                    </code>
-                    <span className="text-xs text-muted-foreground">The final generated prompt with all variables filled</span>
+            <CardContent className="stack space-4">
+              <div className={cn('stack space-2 type-sm', styles.variablesPanel)}>
+                <p className={cn('weight-semibold', styles.strong)}>Available Variables</p>
+                <p className={styles.muted}>Use these variables in text fields below to inject dynamic values:</p>
+                <div className={cn('stack space-1', styles.variableRows)}>
+                  <div className={styles.variableRow}>
+                    <code className={styles.variableCode}>{'{template_prompt}'}</code>
+                    <span className={cn('type-xs', styles.muted)}>The final generated prompt with all variables filled</span>
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground pt-2 border-t">Click any variable code to copy it</p>
+                <p className={cn('type-xs', styles.panelNote)}>Click any variable code to copy it</p>
               </div>
 
               <ModelFieldsSection models={models} />
 
-              <div className="space-y-4 pt-4 border-t">
+              <div className={cn('stack space-4', styles.countsSection)}>
                 <FormField
                   name="inputImageCount"
                   renderFieldAction={({ value, onChange }) => (
@@ -600,7 +606,7 @@ export function TemplateForm({ initialData, mode, models, globalVariables = [] }
                     </FormItem>
                   )}
                 />
-                <div className="grid grid-cols-2 gap-4">
+                <div className={styles.pairGrid}>
                   <FormField
                     name="minImageCount"
                     renderFieldAction={({ value, onChange }) => (
@@ -646,13 +652,13 @@ export function TemplateForm({ initialData, mode, models, globalVariables = [] }
             <CardHeader>
               <CardTitle>Visibility</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="stack space-4">
               <FormField
                 name="isActive"
                 renderFieldAction={({ value, onChange }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Active</FormLabel>
+                  <FormItem className={styles.switchRow}>
+                    <div className="stack space-1">
+                      <FormLabel className="type-base">Active</FormLabel>
                       <FormDescription>Visible to users</FormDescription>
                     </div>
                     <FormControl>
@@ -669,10 +675,10 @@ export function TemplateForm({ initialData, mode, models, globalVariables = [] }
 
           <Button
             type="submit"
-            className="w-full"
+            className={styles.submit}
             disabled={isSubmitting}
           >
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isSubmitting && <Loader2 className={styles.spinner} />}
             {mode === 'create' ? 'Create Template' : 'Save Changes'}
           </Button>
         </div>

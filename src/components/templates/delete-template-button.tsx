@@ -11,9 +11,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import { deleteAdminTemplate } from '@/server/fns/admin/templates';
+import styles from './delete-template-button.module.css';
 
 interface DeleteTemplateButtonProps {
   templateId: string;
@@ -38,8 +39,15 @@ export function DeleteTemplateButton({ templateId, templateName }: DeleteTemplat
       open={open}
       onOpenChange={setOpen}
     >
-      <AlertDialogTrigger className={`${buttonVariants({ variant: 'destructive', size: 'sm' })} p-0`}>
-        <Trash2 className="w-4 h-4" />
+      <AlertDialogTrigger
+        render={
+          <Button
+            variant="destructive"
+            size="icon-sm"
+          />
+        }
+      >
+        <Trash2 className={styles.icon} />
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
@@ -54,7 +62,7 @@ export function DeleteTemplateButton({ templateId, templateName }: DeleteTemplat
           <AlertDialogAction
             onClick={handleDelete}
             disabled={isPending}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            variant="destructive"
           >
             {isPending ? 'Deleting...' : 'Delete Template'}
           </AlertDialogAction>

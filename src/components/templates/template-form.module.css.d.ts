@@ -1,0 +1,37 @@
+declare const styles: {
+  readonly "countsSection": string;
+  readonly "danger": string;
+  readonly "errorBorder": string;
+  readonly "errorLine": string;
+  readonly "errorTitle": string;
+  readonly "issueBody": string;
+  readonly "issueRow": string;
+  readonly "layout": string;
+  readonly "mainColumn": string;
+  readonly "muted": string;
+  readonly "noResize": string;
+  readonly "okIcon": string;
+  readonly "okText": string;
+  readonly "pairGrid": string;
+  readonly "panelNote": string;
+  readonly "promptInput": string;
+  readonly "recommendationList": string;
+  readonly "recommendations": string;
+  readonly "required": string;
+  readonly "sectionDivider": string;
+  readonly "spin": string;
+  readonly "spinner": string;
+  readonly "statusCard": string;
+  readonly "statusIcon": string;
+  readonly "strong": string;
+  readonly "submit": string;
+  readonly "switchRow": string;
+  readonly "variableCode": string;
+  readonly "variableRow": string;
+  readonly "variableRows": string;
+  readonly "variablesPanel": string;
+  readonly "warn": string;
+  readonly "warnLine": string;
+};
+export = styles;
+

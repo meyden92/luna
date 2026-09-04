@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Progress } from '@/components/ui/progress';
 import { useVideoEditorStore } from '@/hooks/stores/video-editor-store';
 import { downloadBlob, exportVideo } from '@/libs/video-editor/ffmpeg-video';
+import styles from './ExportDialog.module.css';
 
 interface ExportDialogProps {
   open: boolean;
@@ -102,27 +103,27 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         </DialogHeader>
 
         {(status === 'preparing' || status === 'exporting') && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <Loader2Icon className="size-4 animate-spin" />
+          <div className={styles.progress}>
+            <div className={styles.status}>
+              <Loader2Icon className={styles.spinner} />
               <span>{status === 'preparing' ? 'Loading FFmpeg (first run downloads ~30 MB)…' : `Encoding… ${progress}%`}</span>
             </div>
             <Progress
               value={progress}
-              className="h-2"
+              className={styles.bar}
             />
           </div>
         )}
 
         {status === 'done' && blob && (
-          <div className="flex flex-col items-center gap-4 py-2">
-            <CheckCircle2Icon className="size-10 text-green-500" />
-            <p className="text-xs text-muted-foreground">{(blob.size / (1024 * 1024)).toFixed(1)} MB · MP4</p>
+          <div className={styles.done}>
+            <CheckCircle2Icon className={styles.doneIcon} />
+            <p className={styles.fileMeta}>{(blob.size / (1024 * 1024)).toFixed(1)} MB · MP4</p>
             <Button
               onClick={handleDownload}
-              className="w-full"
+              className={styles.fullWidth}
             >
-              <DownloadIcon className="size-4" />
+              <DownloadIcon className={styles.icon} />
               Download
             </Button>
           </div>
@@ -132,7 +133,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="w-full"
+            className={styles.fullWidth}
           >
             Close
           </Button>

@@ -1,0 +1,171 @@
+@layer components {
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    height: 100%;
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background: var(--background);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* ---- Source header ---------------------------------------------------- */
+  .sourceHead {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  /* Allows the title to truncate instead of pushing the reset button out. */
+  .sourceIdentity {
+    min-width: 0;
+  }
+
+  .sourceLabel {
+    font-family: var(--font-mono);
+    font-feature-settings: "ss01", "zero";
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--foreground-subtle);
+  }
+
+  .sourceTitle {
+    margin-top: var(--space-1);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    font-weight: var(--weight-normal);
+    line-height: 1;
+    letter-spacing: -0.01em;
+    color: var(--foreground);
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    font-family: var(--font-mono);
+    font-feature-settings: "ss01", "zero";
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--foreground-subtle);
+  }
+
+  .chip {
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--muted);
+  }
+
+  /* ---- Sections --------------------------------------------------------- */
+  .sectionIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+    color: var(--primary-strong);
+  }
+
+  .sectionTitle {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--foreground);
+  }
+
+  /* ---- Option grids ----------------------------------------------------- */
+  .optionGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-2);
+  }
+
+  .sizeGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+  }
+
+  .optionButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    height: var(--space-8);
+    padding-inline: var(--space-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--muted);
+    color: var(--muted-foreground);
+    cursor: pointer;
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    font-weight: var(--weight-medium);
+    transition:
+      border-color 150ms ease,
+      background-color 150ms ease,
+      color 150ms ease;
+  }
+
+  .optionButton:hover {
+    border-color: var(--input);
+    color: var(--foreground);
+  }
+
+  .optionButton[data-active] {
+    border-color: var(--primary);
+    background: var(--accent);
+    color: var(--accent-foreground);
+  }
+
+  .optionIcon {
+    width: var(--space-3);
+    height: var(--space-3);
+  }
+
+  /* ---- Colour rows ------------------------------------------------------ */
+  /* Swatch column sized to the native colour input, hex field takes the rest. */
+  .colorRow {
+    display: grid;
+    grid-template-columns: 3.25rem 1fr;
+    gap: var(--space-2);
+  }
+
+  .colorInput {
+    height: 2.25rem;
+    padding: var(--space-1);
+  }
+
+  /* ---- Fields ----------------------------------------------------------- */
+  .fieldLabel {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--muted-foreground);
+  }
+
+  .sliderHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .sliderValue {
+    font-family: var(--font-mono);
+    font-feature-settings: "ss01", "zero";
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--foreground-subtle);
+  }
+
+  .resetIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+}

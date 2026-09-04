@@ -1,5 +1,6 @@
 import { useCallback, useRef } from 'react';
 import type { CropBox } from '@/hooks/stores/video-editor-store';
+import styles from './CropOverlay.module.css';
 
 type Handle = 'move' | 'n' | 's' | 'e' | 'w' | 'nw' | 'ne' | 'sw' | 'se';
 
@@ -47,29 +48,29 @@ export function CropOverlay({ crop, aspectRatio, onChange }: CropOverlayProps) {
   return (
     <div
       ref={containerRef}
-      className="absolute inset-0 pointer-events-none"
+      className={styles.root}
     >
       {/* Dim overlays: top, left, right, bottom */}
       <div
-        className="absolute left-0 right-0 bg-black/55"
-        style={{ top: 0, height: pct(crop.y) }}
+        className={styles.scrim}
+        style={{ top: 0, left: 0, right: 0, height: pct(crop.y) }}
       />
       <div
-        className="absolute left-0 bg-black/55"
-        style={{ top: pct(crop.y), height: pct(crop.h), width: pct(crop.x) }}
+        className={styles.scrim}
+        style={{ top: pct(crop.y), left: 0, height: pct(crop.h), width: pct(crop.x) }}
       />
       <div
-        className="absolute right-0 bg-black/55"
-        style={{ top: pct(crop.y), height: pct(crop.h), left: pct(crop.x + crop.w) }}
+        className={styles.scrim}
+        style={{ top: pct(crop.y), right: 0, height: pct(crop.h), left: pct(crop.x + crop.w) }}
       />
       <div
-        className="absolute left-0 right-0 bg-black/55"
-        style={{ top: pct(crop.y + crop.h), bottom: 0 }}
+        className={styles.scrim}
+        style={{ top: pct(crop.y + crop.h), left: 0, right: 0, bottom: 0 }}
       />
 
       {/* Crop box */}
       <div
-        className="absolute border-2 border-white/90 shadow-[0_0_0_1px_rgba(0,0,0,0.4)] pointer-events-auto cursor-move"
+        className={styles.box}
         style={{
           left: pct(crop.x),
           top: pct(crop.y),
@@ -78,51 +79,16 @@ export function CropOverlay({ crop, aspectRatio, onChange }: CropOverlayProps) {
         }}
         onPointerDown={onPointerDown('move')}
       >
-        {/* Edge handles */}
-        <Handle
-          className="top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 cursor-ns-resize"
-          onPointerDown={onPointerDown('n')}
-        />
-        <Handle
-          className="bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 cursor-ns-resize"
-          onPointerDown={onPointerDown('s')}
-        />
-        <Handle
-          className="top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize"
-          onPointerDown={onPointerDown('w')}
-        />
-        <Handle
-          className="top-1/2 right-0 translate-x-1/2 -translate-y-1/2 cursor-ew-resize"
-          onPointerDown={onPointerDown('e')}
-        />
-        {/* Corner handles */}
-        <Handle
-          className="top-0 left-0 -translate-x-1/2 -translate-y-1/2 cursor-nwse-resize"
-          onPointerDown={onPointerDown('nw')}
-        />
-        <Handle
-          className="top-0 right-0 translate-x-1/2 -translate-y-1/2 cursor-nesw-resize"
-          onPointerDown={onPointerDown('ne')}
-        />
-        <Handle
-          className="bottom-0 left-0 -translate-x-1/2 translate-y-1/2 cursor-nesw-resize"
-          onPointerDown={onPointerDown('sw')}
-        />
-        <Handle
-          className="bottom-0 right-0 translate-x-1/2 translate-y-1/2 cursor-nwse-resize"
-          onPointerDown={onPointerDown('se')}
-        />
+        {(['n', 's', 'w', 'e', 'nw', 'ne', 'sw', 'se'] as const).map((handle) => (
+          <div
+            key={handle}
+            className={styles.handle}
+            data-handle={handle}
+            onPointerDown={onPointerDown(handle)}
+          />
+        ))}
       </div>
     </div>
-  );
-}
-
-function Handle({ className, onPointerDown }: { className: string; onPointerDown: (e: React.PointerEvent) => void }) {
-  return (
-    <div
-      onPointerDown={onPointerDown}
-      className={`absolute size-3 rounded-sm bg-white border border-black/30 pointer-events-auto ${className}`}
-    />
   );
 }
 

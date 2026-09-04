@@ -5,13 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
-import { cn, formatSize } from '@/libs/utils';
+import { formatSize } from '@/libs/utils';
 import type {
   BeautifierBackgroundStyle,
   BeautifierConfig,
   BeautifierConfigUpdate,
   BeautifierSourceFile,
 } from '@/schemas/beautifier-schema';
+import styles from './beautifier-controls.module.css';
 
 interface BeautifierControlsProps {
   source: BeautifierSourceFile;
@@ -48,10 +49,10 @@ function NumberField({
   onCommit: (value: number) => void;
 }) {
   return (
-    <div className="space-y-2">
+    <div className="stack space-2">
       <Label
         htmlFor={id}
-        className="text-[12px] text-luna-ink-3"
+        className={styles.fieldLabel}
       >
         {label}
       </Label>
@@ -109,10 +110,10 @@ function SliderField({
   onChange: (value: number) => void;
 }) {
   return (
-    <div className="space-y-2.5">
-      <div className="flex items-center justify-between gap-3">
-        <Label className="text-[12px] text-luna-ink-3">{label}</Label>
-        <span className="font-mono text-[11px] text-luna-ink-4">
+    <div className="stack space-2">
+      <div className={styles.sliderHead}>
+        <Label className={styles.fieldLabel}>{label}</Label>
+        <span className={styles.sliderValue}>
           {value}
           {suffix}
         </span>
@@ -134,12 +135,12 @@ function SliderField({
 
 function SectionHeader({ icon: Icon, title }: { icon: LucideIcon; title: string }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="cluster space-2">
       <Icon
-        className="h-4 w-4 text-luna-accent-2"
+        className={styles.sectionIcon}
         aria-hidden
       />
-      <h2 className="text-[13px] font-semibold text-luna-ink">{title}</h2>
+      <h2 className={styles.sectionTitle}>{title}</h2>
     </div>
   );
 }
@@ -148,14 +149,12 @@ export function BeautifierControls({ source, config, onConfigChange, onReset }: 
   const sourceDimensions = source.width && source.height ? `${source.width} x ${source.height}` : 'Dimensions pending';
 
   return (
-    <aside className="flex h-full flex-col gap-4 rounded-[12px] border border-luna-line bg-luna-bg p-4 shadow-[var(--luna-shadow-sm)]">
-      <div className="space-y-2">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-luna-ink-4">Source</p>
-            <h1 className="mt-1 truncate font-serif text-[30px] font-normal leading-none text-luna-ink">
-              {source.title || 'Untitled image'}
-            </h1>
+    <aside className={styles.panel}>
+      <div className="stack space-2">
+        <div className={styles.sourceHead}>
+          <div className={styles.sourceIdentity}>
+            <p className={styles.sourceLabel}>Source</p>
+            <h1 className={styles.sourceTitle}>{source.title || 'Untitled image'}</h1>
           </div>
           <Button
             type="button"
@@ -165,41 +164,37 @@ export function BeautifierControls({ source, config, onConfigChange, onReset }: 
             aria-label="Reset settings"
             onClick={onReset}
           >
-            <RotateCcw className="h-4 w-4" />
+            <RotateCcw className={styles.resetIcon} />
           </Button>
         </div>
-        <div className="flex flex-wrap gap-2 font-mono text-[10.5px] text-luna-ink-4">
-          <span className="rounded-md border border-luna-line bg-luna-bg-2 px-2 py-1">{source.contentType}</span>
-          <span className="rounded-md border border-luna-line bg-luna-bg-2 px-2 py-1">{formatSize(source.size, { trim: true })}</span>
-          <span className="rounded-md border border-luna-line bg-luna-bg-2 px-2 py-1">{sourceDimensions}</span>
+        <div className={styles.chips}>
+          <span className={styles.chip}>{source.contentType}</span>
+          <span className={styles.chip}>{formatSize(source.size, { trim: true })}</span>
+          <span className={styles.chip}>{sourceDimensions}</span>
         </div>
       </div>
 
       <Separator />
 
-      <section className="space-y-4">
+      <section className="stack">
         <SectionHeader
           icon={Square}
           title="Canvas"
         />
-        <div className="grid grid-cols-3 gap-2">
+        <div className={styles.optionGrid}>
           {SIZE_PRESETS.map((preset) => (
             <button
               key={preset.label}
               type="button"
-              className={cn(
-                'h-8 rounded-lg border px-2 text-[12px] font-medium transition-colors',
-                config.width === preset.width && config.height === preset.height
-                  ? 'border-luna-accent bg-luna-accent-soft text-luna-accent-2'
-                  : 'border-luna-line bg-luna-bg-2 text-luna-ink-3 hover:border-luna-line-2 hover:text-luna-ink',
-              )}
+              className={styles.optionButton}
+              data-active={(config.width === preset.width && config.height === preset.height) || undefined}
               onClick={() => onConfigChange({ width: preset.width, height: preset.height })}
             >
               {preset.label}
             </button>
           ))}
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className={styles.sizeGrid}>
           <NumberField
             id="beautifier-width"
             label="Width"
@@ -221,17 +216,17 @@ export function BeautifierControls({ source, config, onConfigChange, onReset }: 
 
       <Separator />
 
-      <section className="space-y-4">
+      <section className="stack">
         <SectionHeader
           icon={Palette}
           title="Background"
         />
-        <div className="grid grid-cols-[3.25rem_1fr] gap-2">
+        <div className={styles.colorRow}>
           <Input
             aria-label="Background color"
             type="color"
             value={config.backgroundColor}
-            className="h-9 p-1"
+            className={styles.colorInput}
             onChange={(event) => onConfigChange({ backgroundColor: event.target.value })}
           />
           <HexField
@@ -240,20 +235,16 @@ export function BeautifierControls({ source, config, onConfigChange, onReset }: 
             onCommit={(backgroundColor) => onConfigChange({ backgroundColor })}
           />
         </div>
-        <div className="grid grid-cols-3 gap-2">
+        <div className={styles.optionGrid}>
           {BACKGROUNDS.map((background) => (
             <button
               key={background.value}
               type="button"
-              className={cn(
-                'flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2 text-[12px] font-medium transition-colors',
-                config.backgroundStyle === background.value
-                  ? 'border-luna-accent bg-luna-accent-soft text-luna-accent-2'
-                  : 'border-luna-line bg-luna-bg-2 text-luna-ink-3 hover:border-luna-line-2 hover:text-luna-ink',
-              )}
+              className={styles.optionButton}
+              data-active={config.backgroundStyle === background.value || undefined}
               onClick={() => onConfigChange({ backgroundStyle: background.value })}
             >
-              <Grid2X2 className="h-3 w-3" />
+              <Grid2X2 className={styles.optionIcon} />
               {background.label}
             </button>
           ))}
@@ -262,17 +253,17 @@ export function BeautifierControls({ source, config, onConfigChange, onReset }: 
 
       <Separator />
 
-      <section className="space-y-4">
+      <section className="stack">
         <SectionHeader
           icon={ImageIcon}
           title="Frame"
         />
-        <div className="grid grid-cols-[3.25rem_1fr] gap-2">
+        <div className={styles.colorRow}>
           <Input
             aria-label="Frame color"
             type="color"
             value={config.frameColor}
-            className="h-9 p-1"
+            className={styles.colorInput}
             onChange={(event) => onConfigChange({ frameColor: event.target.value })}
           />
           <HexField

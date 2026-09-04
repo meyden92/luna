@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useVideoEditorStore } from '@/hooks/stores/video-editor-store';
 import { CropOverlay } from './CropOverlay';
+import styles from './PreviewArea.module.css';
 import { registerVideoEl } from './video-ref';
 
 const ASPECT_MAP: Record<string, number | null> = {
@@ -85,16 +86,16 @@ export function PreviewArea() {
   const normalizedAspect = cropAspectRatio ? cropAspectRatio / videoAspect : null;
 
   return (
-    <div className="flex-1 min-h-0 flex items-center justify-center px-4 py-2 overflow-hidden">
+    <div className={styles.root}>
       <div
-        className="relative inline-block max-h-full max-w-full"
+        className={styles.frame}
         style={{ aspectRatio: `${videoWidth || 16} / ${videoHeight || 9}`, height: '100%' }}
       >
         {objectUrl && (
           <video
             ref={videoRef}
             src={objectUrl}
-            className="block h-full w-full bg-black rounded-sm shadow-lg"
+            className={styles.video}
             controls={false}
             playsInline
             preload="metadata"

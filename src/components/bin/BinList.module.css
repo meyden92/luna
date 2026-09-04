@@ -1,0 +1,281 @@
+@layer components {
+  /* Zero-snippets state, shown instead of the whole list. */
+  .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-block: var(--space-16);
+    text-align: center;
+  }
+
+  .emptyIcon {
+    margin-bottom: var(--space-4);
+    padding: var(--space-4);
+    border-radius: var(--radius-full);
+    background: color-mix(in oklab, var(--muted) 60%, transparent);
+    color: var(--muted-foreground);
+  }
+
+  .emptyIcon svg {
+    width: var(--space-8);
+    height: var(--space-8);
+  }
+
+  .emptyTitle {
+    margin-bottom: var(--space-2);
+    font-size: var(--text-xl);
+    line-height: var(--leading-xl);
+    font-weight: var(--weight-semibold);
+  }
+
+  .emptyText {
+    max-width: 24rem;
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  /* ---- Toolbar ---------------------------------------------------------- */
+  .toolbar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+  }
+
+  @media (width >= 640px) {
+    .toolbar {
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+
+  .search {
+    position: relative;
+    flex: 1;
+  }
+
+  .searchIcon {
+    position: absolute;
+    left: var(--space-3);
+    top: 50%;
+    translate: 0 -50%;
+    width: var(--space-4);
+    height: var(--space-4);
+    color: var(--muted-foreground);
+    pointer-events: none;
+  }
+
+  .searchInput {
+    padding-left: var(--space-8);
+  }
+
+  .filter {
+    width: 100%;
+  }
+
+  @media (width >= 640px) {
+    .filter {
+      width: 11.25rem;
+    }
+  }
+
+  .viewToggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .viewButton {
+    width: var(--space-10);
+    height: var(--space-10);
+    padding: 0;
+  }
+
+  .viewButton svg {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  /* ---- Card list -------------------------------------------------------- */
+  .cardList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .card {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid color-mix(in oklab, var(--border) 50%, transparent);
+    border-radius: var(--radius-lg);
+    background: color-mix(in oklab, var(--card) 30%, transparent);
+    transition:
+      border-color 200ms ease,
+      background-color 200ms ease;
+  }
+
+  .card:hover {
+    border-color: var(--border);
+    background: color-mix(in oklab, var(--card) 60%, transparent);
+  }
+
+  .cardBody {
+    padding: var(--space-4);
+    cursor: pointer;
+  }
+
+  .cardHead {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: var(--space-2);
+  }
+
+  .identity {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+
+  .languageIcon {
+    padding: var(--space-2);
+    border-radius: var(--radius-md);
+    background: color-mix(in oklab, var(--primary) 10%, transparent);
+    color: var(--primary);
+  }
+
+  .languageIcon svg {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  .identityText {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .cardTitle {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: var(--weight-medium);
+    transition: color 200ms ease;
+  }
+
+  .card:hover .cardTitle {
+    color: var(--primary);
+  }
+
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-1);
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .metaDate {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .metaDate svg {
+    width: var(--space-3);
+    height: var(--space-3);
+  }
+
+  /* Row actions stay hidden until the card is hovered or holds focus. */
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    opacity: 0;
+    transition: opacity 200ms ease;
+  }
+
+  .card:hover .actions,
+  .actions:focus-within {
+    opacity: 1;
+  }
+
+  .preview {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  /* ---- Icon buttons ----------------------------------------------------- */
+  .iconButton {
+    width: var(--space-8);
+    height: var(--space-8);
+    padding: 0;
+  }
+
+  .iconButton svg {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  .iconButton[data-tone="primary"]:hover {
+    background: color-mix(in oklab, var(--primary) 10%, transparent);
+  }
+
+  .iconButton[data-tone="success"]:hover {
+    background: color-mix(in oklab, var(--success) 10%, transparent);
+  }
+
+  .iconButton[data-tone="info"]:hover {
+    background: color-mix(in oklab, var(--info) 10%, transparent);
+  }
+
+  .iconButton[data-tone="danger"]:hover {
+    background: color-mix(in oklab, var(--destructive) 10%, transparent);
+  }
+
+  .iconButton[aria-disabled="true"] {
+    opacity: 0.5;
+  }
+
+  .copiedIcon {
+    color: var(--success);
+  }
+
+  /* ---- Table view ------------------------------------------------------- */
+  .alignRight {
+    text-align: right;
+  }
+
+  .titleCell {
+    max-width: 12.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: var(--weight-medium);
+  }
+
+  .row {
+    cursor: pointer;
+  }
+
+  .rowActions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-1);
+  }
+
+  .placeholder {
+    color: var(--muted-foreground);
+  }
+}

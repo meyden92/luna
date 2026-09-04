@@ -22,6 +22,7 @@ import { useBinView } from '@/hooks/use-bin-view';
 import { SUPPORTED_LANGUAGES } from '@/libs/languages';
 import { queryKeys } from '@/libs/query-keys';
 import { createBin } from '@/server/fns/bins';
+import styles from './BinUploader.module.css';
 
 const BinFormSchema = z.object({
   title: z.string().min(3).max(40),
@@ -82,7 +83,7 @@ const BinUploader = () => {
   return (
     <Form
       config={formConfig}
-      className="flex flex-col gap-6 w-full"
+      className="stack space-6"
       aria-label="Upload code snippet form"
     >
       {(form) => {
@@ -94,9 +95,9 @@ const BinUploader = () => {
             <FormField
               name="title"
               renderFieldAction={({ value, onChange, onBlur }) => (
-                <FormItem className="w-full space-y-2">
-                  <FormLabel className="text-sm font-medium flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
+                <FormItem className={styles.field}>
+                  <FormLabel className={styles.label}>
+                    <FileText />
                     Snippet Title
                   </FormLabel>
                   <FormControl>
@@ -105,13 +106,11 @@ const BinUploader = () => {
                       value={value ?? ''}
                       onChange={(e) => onChange(e.target.value)}
                       onBlur={onBlur}
-                      className="h-11 bg-background/50 dark:bg-background/30 border-2 border-border/50 hover:border-border focus:border-primary transition-all duration-200 placeholder:text-muted-foreground/60"
+                      className={styles.input}
                       aria-label="Snippet Title"
                     />
                   </FormControl>
-                  <FormDescription className="text-xs text-muted-foreground">
-                    Give your snippet a descriptive name (3-40 characters)
-                  </FormDescription>
+                  <FormDescription className={styles.hint}>Give your snippet a descriptive name (3-40 characters)</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -130,12 +129,10 @@ const BinUploader = () => {
             <FormField
               name="isPublic"
               renderFieldAction={({ value, onChange }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border border-border/50 bg-background/50 p-4">
-                  <div className="space-y-1">
+                <FormItem className={styles.switchRow}>
+                  <div className={styles.switchText}>
                     <FormLabel>Public share link</FormLabel>
-                    <FormDescription className="text-xs text-muted-foreground">
-                      Allow anyone with the link to view this snippet.
-                    </FormDescription>
+                    <FormDescription className={styles.hint}>Allow anyone with the link to view this snippet.</FormDescription>
                   </div>
                   <FormControl>
                     <Switch
@@ -151,50 +148,48 @@ const BinUploader = () => {
             <FormField
               name="snippet"
               renderFieldAction={({ value, onChange, onBlur }) => (
-                <FormItem className="w-full space-y-2">
-                  <FormLabel className="text-sm font-medium flex items-center gap-2">
-                    <Code2 className="h-4 w-4 text-muted-foreground" />
+                <FormItem className={styles.field}>
+                  <FormLabel className={styles.label}>
+                    <Code2 />
                     Code Snippet
                   </FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Paste your code here..."
-                      className="min-h-[280px] font-mono text-sm bg-background/50 dark:bg-background/30 border-2 border-border/50 hover:border-border focus:border-primary transition-all duration-200 placeholder:text-muted-foreground/60 resize-y"
+                      className={styles.textarea}
                       aria-label="Code Snippet"
                       value={value ?? ''}
                       onChange={(e) => onChange(e.target.value)}
                       onBlur={onBlur}
                     />
                   </FormControl>
-                  <FormDescription className="text-xs text-muted-foreground">
-                    Paste your code snippet here (minimum 10 characters)
-                  </FormDescription>
+                  <FormDescription className={styles.hint}>Paste your code snippet here (minimum 10 characters)</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <div className="flex items-center gap-3 pt-2">
+            <div className={styles.actions}>
               <Button
                 type="submit"
-                className="px-8 h-10 font-medium shadow-sm hover:shadow-md transition-all duration-200"
+                className={styles.submit}
                 disabled={isPending || form.state.isSubmitting}
                 aria-busy={isPending}
               >
                 {isPending ? (
                   <>
-                    <span className="animate-spin h-4 w-4 mr-2 rounded-full border-2 border-current border-t-transparent" />
+                    <span className={styles.spinner} />
                     Uploading...
                   </>
                 ) : (
                   <>
-                    <Upload className="h-4 w-4 mr-2" />
+                    <Upload className={styles.buttonIcon} />
                     Upload Snippet
                   </>
                 )}
               </Button>
               <FormReset
-                className="px-6 h-10"
+                className={styles.reset}
                 disabled={isPending}
               >
                 Clear

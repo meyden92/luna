@@ -1,0 +1,14 @@
+@layer components {
+  /* Follows the pointer while a media-pool item is dragged onto a track. */
+  .dragPreview {
+    padding: var(--space-2);
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-md);
+    background: color-mix(in oklab, var(--primary) 20%, transparent);
+    box-shadow: var(--shadow-lg);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+    opacity: 0.9;
+  }
+}

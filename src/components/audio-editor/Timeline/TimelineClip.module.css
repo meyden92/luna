@@ -1,0 +1,161 @@
+@layer components {
+  .clip {
+    position: absolute;
+    top: var(--space-1);
+    bottom: var(--space-1);
+    overflow: hidden;
+    border: 1px solid color-mix(in oklab, var(--primary) 50%, transparent);
+    border-radius: var(--radius-md);
+    background: color-mix(in oklab, var(--primary) 20%, transparent);
+    cursor: pointer;
+  }
+
+  .clip[data-selected="true"] {
+    outline: 2px solid var(--primary);
+    outline-offset: -1px;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .clip[data-dragging="true"] {
+    cursor: grabbing;
+  }
+
+  /* Title strip doubles as the drag handle. */
+  .handle {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    height: var(--space-5);
+    padding-inline: var(--space-1);
+    background: color-mix(in oklab, var(--primary) 30%, transparent);
+    cursor: grab;
+  }
+
+  .handle:active {
+    cursor: grabbing;
+  }
+
+  .handleIcon {
+    width: var(--space-3);
+    height: var(--space-3);
+    color: color-mix(in oklab, var(--primary-foreground) 70%, transparent);
+  }
+
+  .handleName {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: color-mix(in oklab, var(--primary-foreground) 90%, transparent);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    font-weight: var(--weight-medium);
+  }
+
+  .handleDuration {
+    margin-left: auto;
+    color: color-mix(in oklab, var(--primary-foreground) 60%, transparent);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .waveform {
+    position: absolute;
+    inset-inline: 0;
+    top: var(--space-5);
+    bottom: 0;
+    padding-inline: 2px;
+  }
+
+  .trimHandle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: var(--space-2);
+    cursor: ew-resize;
+    transition: background-color 150ms ease;
+  }
+
+  .trimHandle[data-side="start"] {
+    left: 0;
+  }
+
+  .trimHandle[data-side="end"] {
+    right: 0;
+  }
+
+  .trimHandle:hover {
+    background: color-mix(in oklab, var(--primary) 40%, transparent);
+  }
+
+  .trimHandle[data-active="true"] {
+    background: color-mix(in oklab, var(--primary) 50%, transparent);
+  }
+
+  /* Fade ramps darken the clip towards its edge. */
+  .fade {
+    position: absolute;
+    top: var(--space-5);
+    bottom: 0;
+    pointer-events: none;
+  }
+
+  .fade[data-side="in"] {
+    left: 0;
+    background: linear-gradient(to right, rgb(0 0 0 / 0.5), transparent);
+  }
+
+  .fade[data-side="out"] {
+    right: 0;
+    background: linear-gradient(to left, rgb(0 0 0 / 0.5), transparent);
+  }
+
+  /* Square brackets that mark the trimmable edges of a selected clip. */
+  .bracket {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 0.375rem;
+    pointer-events: none;
+  }
+
+  .bracket[data-side="start"] {
+    left: 0;
+    border-left: 2px solid var(--primary);
+  }
+
+  .bracket[data-side="end"] {
+    right: 0;
+    border-right: 2px solid var(--primary);
+  }
+
+  .bracket::before,
+  .bracket::after {
+    content: "";
+    position: absolute;
+    width: 0.375rem;
+    height: 0;
+  }
+
+  .bracket::before {
+    top: 0;
+    border-top: 2px solid var(--primary);
+  }
+
+  .bracket::after {
+    bottom: 0;
+    border-bottom: 2px solid var(--primary);
+  }
+
+  .bracket[data-side="start"]::before,
+  .bracket[data-side="start"]::after {
+    left: 0;
+  }
+
+  .bracket[data-side="end"]::before,
+  .bracket[data-side="end"]::after {
+    right: 0;
+  }
+}

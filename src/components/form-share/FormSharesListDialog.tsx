@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import { queryKeys } from '@/libs/query-keys';
 import { deleteFormShare, listFormShares } from '@/server/fns/form-shares';
+import styles from './FormSharesListDialog.module.css';
 
 const SHARE_STATUS_LABEL: Record<'active' | 'expired' | 'pending', string> = {
   active: 'Active',
@@ -50,45 +51,40 @@ function ShareRow({ share, onDeleted }: { share: FormShareItem; onDeleted: () =>
   const status = getShareStatus(share);
 
   return (
-    <div className="flex items-center gap-3 rounded-lg border p-3">
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-medium truncate">{share.title || 'Untitled'}</span>
+    <div className={styles.row}>
+      <div className={styles.rowMain}>
+        <div className={styles.titleRow}>
+          <span className={styles.title}>{share.title || 'Untitled'}</span>
           <span
-            className={`text-xs px-1.5 py-0.5 rounded-full ${
-              status === 'expired'
-                ? 'bg-destructive/10 text-destructive'
-                : status === 'pending'
-                  ? 'bg-yellow-500/10 text-yellow-600'
-                  : 'bg-green-500/10 text-green-600'
-            }`}
+            className={styles.status}
+            data-status={status}
           >
             {SHARE_STATUS_LABEL[status]}
           </span>
         </div>
-        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+        <div className={styles.rowMeta}>
           <span>{`${share._count.fields} fields`}</span>
-          <span className="flex items-center gap-1">
-            <Eye className="h-3 w-3" />
+          <span className={styles.metaItem}>
+            <Eye />
             {share.maxViews ? `${share.viewCount} / ${share.maxViews}` : share.viewCount}
           </span>
           {share.expiresInMs && (
-            <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
+            <span className={styles.metaItem}>
+              <Clock />
               {status === 'pending' ? 'Starts on first view' : share.expiresAt ? share.expiresAt.toLocaleString() : null}
             </span>
           )}
         </div>
       </div>
 
-      <div className="flex items-center gap-1 shrink-0">
+      <div className={styles.rowActions}>
         <Button
           variant="ghost"
           size="icon-sm"
           onClick={handleCopyLink}
           title="Copy link"
         >
-          {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+          {copied ? <Check className={styles.copiedIcon} /> : <Copy />}
         </Button>
         <Button
           variant="ghost"
@@ -97,7 +93,7 @@ function ShareRow({ share, onDeleted }: { share: FormShareItem; onDeleted: () =>
           disabled={isDeleting}
           title="Delete"
         >
-          {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+          {isDeleting ? <Loader2 className={styles.spinner} /> : <Trash2 />}
         </Button>
       </div>
     </div>
@@ -128,13 +124,13 @@ export function FormSharesListDialog({ open, onOpenChange }: { open: boolean; on
           <DialogDescription>View and manage your shared form data.</DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto pr-1">
+        <div className={styles.list}>
           {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div className={styles.loading}>
+              <Loader2 className={`${styles.spinner} ${styles.listSpinner}`} />
             </div>
           ) : shares.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No form shares yet.</p>
+            <p className={styles.emptyText}>No form shares yet.</p>
           ) : (
             shares.map((share) => (
               <ShareRow

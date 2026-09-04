@@ -1,0 +1,53 @@
+@layer components {
+  .form {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-height: 0;
+  }
+
+  .field {
+    margin-bottom: var(--space-3);
+  }
+
+  .switchRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  .switchText {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .switchHint {
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  /* The code field takes the remaining dialog height rather than growing it. */
+  .contentField {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .codeArea {
+    flex: 1;
+    min-height: 0;
+    resize: none;
+    font-family: var(--font-mono);
+    font-feature-settings: "ss01", "zero";
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+}

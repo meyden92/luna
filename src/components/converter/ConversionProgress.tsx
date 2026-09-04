@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import styles from './ConversionProgress.module.css';
 
 interface ConversionProgressProps {
   progress: number;
@@ -22,15 +23,15 @@ export function ConversionProgress({ progress, status, onCancel }: ConversionPro
         <CardTitle>Conversion in Progress</CardTitle>
         <CardDescription>{STATUS_TEXT[status]}</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
+      <CardContent className="stack">
+        <div className="stack space-2">
+          <div className={styles.row}>
             <span>Progress</span>
-            <span className="font-medium">{progress}%</span>
+            <span className="weight-medium">{progress}%</span>
           </div>
           <Progress
             value={progress}
-            className="h-2"
+            className={styles.bar}
           />
         </div>
 
@@ -38,7 +39,7 @@ export function ConversionProgress({ progress, status, onCancel }: ConversionPro
           <Button
             onClick={onCancel}
             variant="outline"
-            className="w-full"
+            className={styles.cancel}
           >
             Cancel
           </Button>

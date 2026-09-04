@@ -1,0 +1,43 @@
+@layer components {
+  .details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .row {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .label {
+    color: var(--muted-foreground);
+  }
+
+  .value {
+    font-weight: var(--weight-medium);
+  }
+
+  .valueUpper {
+    font-weight: var(--weight-medium);
+    text-transform: uppercase;
+  }
+
+  .fieldLabel {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+  }
+
+  .hint {
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .convert {
+    width: 100%;
+  }
+}

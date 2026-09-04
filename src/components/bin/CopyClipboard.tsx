@@ -11,7 +11,7 @@ const CopyClipboard = (props: { text: string }) => {
       onClick={() => {
         copy(props.text);
       }}
-      className="ml-auto flex items-center gap-1"
+      className="margin-left-auto cluster space-1"
     >
       {copied ? <Check /> : <ClipboardCopy />}
       {copied ? 'Copied!' : 'Copy to clipboard'}

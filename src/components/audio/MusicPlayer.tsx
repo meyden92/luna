@@ -2,10 +2,10 @@ import { Link } from '@tanstack/react-router';
 import { AudioLines, Music } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useRef, useState } from 'react';
-import { cn } from '@/libs/utils';
 import { buttonVariants } from '../ui/button';
 import { ScrollArea } from '../ui/scroll-area';
 import AudioPlayerControls, { type AudioData } from './AudioPlayerControls';
+import styles from './MusicPlayer.module.css';
 import MusicVisualizer from './MusicVisualizer';
 
 interface File {
@@ -50,16 +50,13 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ files }) => {
 
   if (files.length === 0) {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-5 px-6 text-center">
-        <div className="rounded-full border border-border bg-muted/30 p-5">
-          <Music
-            className="h-10 w-10 text-muted-foreground"
-            aria-hidden="true"
-          />
+      <div className={styles.empty}>
+        <div className={styles.emptyIcon}>
+          <Music aria-hidden="true" />
         </div>
-        <div className="space-y-2">
-          <h2 className="text-2xl font-semibold">No audio yet</h2>
-          <p className="max-w-sm text-sm text-muted-foreground">Upload an audio file from your dashboard to start listening.</p>
+        <div className="stack space-2">
+          <h2 className="type-2xl weight-semibold">No audio yet</h2>
+          <p className={styles.emptyText}>Upload an audio file from your dashboard to start listening.</p>
         </div>
         <Link
           to="/dashboard"
@@ -72,11 +69,11 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ files }) => {
   }
 
   return (
-    <div className="flex flex-col h-full w-full">
-      <div className="grow flex overflow-hidden">
-        <ScrollArea className="w-1/6 h-full p-4">
-          <h2 className="text-xl font-bold mb-4">Tracks</h2>
-          <ul className="space-y-1">
+    <div className={styles.root}>
+      <div className={styles.body}>
+        <ScrollArea className={styles.playlist}>
+          <h2 className="type-xl weight-bold margin-bottom-4">Tracks</h2>
+          <ul className="stack space-1">
             {files.map((file, index) => {
               const isCurrentTrack = currentTrackIndex === index;
               const isNowPlaying = isCurrentTrack && isPlaying;
@@ -85,18 +82,16 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ files }) => {
                 <li key={file.id}>
                   <button
                     type="button"
-                    className={cn(
-                      'flex w-full items-center justify-between gap-2 rounded-md p-2 text-left text-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                      isCurrentTrack && 'bg-primary/50',
-                    )}
+                    className={styles.trackButton}
+                    data-active={isCurrentTrack}
                     onClick={() => handleTrackSelect(index)}
                     aria-current={isCurrentTrack ? 'true' : undefined}
                   >
-                    <span className="min-w-0 truncate">{file.title}</span>
+                    <span className={styles.trackTitle}>{file.title}</span>
                     {isNowPlaying && (
                       <AudioLines
                         aria-label="Now playing"
-                        className="h-4 w-4 shrink-0 animate-pulse"
+                        className={styles.nowPlayingIcon}
                       />
                     )}
                   </button>
@@ -107,7 +102,7 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ files }) => {
         </ScrollArea>
 
         {/* Middle - Enhanced Animation */}
-        <div className="w-full flex items-center justify-center relative overflow-hidden">
+        <div className={styles.stage}>
           <MusicVisualizer
             audioDataRef={audioDataRef}
             isPlaying={isPlaying}

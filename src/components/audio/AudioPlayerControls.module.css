@@ -1,0 +1,201 @@
+@layer components {
+  /* Player bar pinned under the playlist/visualiser. */
+  .root {
+    padding: var(--space-4);
+    border-top: 1px solid var(--border);
+    background: var(--card);
+  }
+
+  /* ---- Progress --------------------------------------------------------- */
+  .progress {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+  }
+
+  .time {
+    min-width: var(--space-10);
+    color: var(--muted-foreground);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .scrubber {
+    position: relative;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    height: var(--space-5);
+  }
+
+  .track {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: var(--space-2);
+    overflow: hidden;
+    border-radius: var(--radius-full);
+    background: var(--muted);
+  }
+
+  .buffered,
+  .played {
+    position: absolute;
+    height: 100%;
+    border-radius: var(--radius-full);
+  }
+
+  .buffered {
+    background: color-mix(in oklab, var(--primary) 20%, transparent);
+    transition: width 300ms ease;
+  }
+
+  .played {
+    background: var(--primary);
+    transition: width 150ms ease;
+  }
+
+  .thumb {
+    position: absolute;
+    top: 50%;
+    width: var(--space-4);
+    height: var(--space-4);
+    translate: 0 -50%;
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-full);
+    background: var(--background);
+    box-shadow: var(--shadow-md);
+    transition:
+      scale 150ms ease,
+      box-shadow 150ms ease;
+  }
+
+  .thumb:hover {
+    scale: 1.1;
+  }
+
+  .scrubber:hover .thumb {
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* The real control: a transparent range input laid over the painted track. */
+  .seek {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  /* ---- Status line ------------------------------------------------------ */
+  .status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: var(--space-5);
+    margin-bottom: var(--space-3);
+  }
+
+  .statusItem {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .statusItem[data-tone="primary"] {
+    color: var(--primary);
+  }
+
+  .statusItem svg {
+    width: var(--space-3);
+    height: var(--space-3);
+  }
+
+  .spinner {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      rotate: 360deg;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spinner {
+      animation: none;
+    }
+  }
+
+  /* ---- Transport -------------------------------------------------------- */
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+  }
+
+  .navButton {
+    width: var(--space-10);
+    height: var(--space-10);
+    border-radius: var(--radius-full);
+  }
+
+  .navButton svg {
+    width: var(--space-5);
+    height: var(--space-5);
+  }
+
+  .playButton {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-md);
+    transition: box-shadow 200ms ease;
+  }
+
+  .playButton:hover {
+    box-shadow: var(--shadow-lg);
+  }
+
+  .playButton svg {
+    width: var(--space-6);
+    height: var(--space-6);
+  }
+
+  /* Optically centres the play triangle inside the round button. */
+  .playIcon {
+    margin-left: 0.125rem;
+  }
+
+  .volume {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-left: var(--space-6);
+  }
+
+  .volumeIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+    color: var(--muted-foreground);
+  }
+
+  .volumeSlider {
+    width: 6rem;
+  }
+
+  /* react-h5-audio-player only supplies the <audio> element and its behaviour;
+     every visible control above is ours, so its own chrome stays out of view. */
+  .hiddenPlayer {
+    display: none;
+  }
+}

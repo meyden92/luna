@@ -1,0 +1,58 @@
+@layer components {
+  /* Success card: a wash of the success role rather than a fixed green. */
+  .card {
+    border-color: color-mix(in oklab, var(--success) 35%, transparent);
+    background: color-mix(in oklab, var(--success) 8%, transparent);
+  }
+
+  .checkIcon {
+    width: var(--space-5);
+    height: var(--space-5);
+    color: var(--success);
+  }
+
+  .stats {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .row {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .savedRow {
+    border-top: 1px solid var(--border);
+    padding-top: var(--space-2);
+  }
+
+  .label {
+    color: var(--muted-foreground);
+  }
+
+  .value {
+    font-weight: var(--weight-medium);
+  }
+
+  .savedValue {
+    color: var(--success);
+    font-weight: var(--weight-medium);
+  }
+
+  .download {
+    width: 100%;
+    gap: var(--space-2);
+  }
+
+  .download svg {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  .again {
+    width: 100%;
+  }
+}

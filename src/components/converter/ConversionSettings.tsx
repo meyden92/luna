@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { AudioFormat, QualityPreset } from '@/types/converter';
 import { SUPPORTED_AUDIO_FORMATS } from '@/types/converter';
+import styles from './ConversionSettings.module.css';
 
 interface ConversionSettingsProps {
   file: File;
@@ -34,24 +35,24 @@ export function ConversionSettings({
   const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
 
   return (
-    <div className="space-y-4">
+    <div className="stack">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">File Information</CardTitle>
+          <CardTitle className="type-base">File Information</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">File:</span>
-              <span className="font-medium">{file.name}</span>
+          <div className={styles.details}>
+            <div className={styles.row}>
+              <span className={styles.label}>File:</span>
+              <span className={styles.value}>{file.name}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Size:</span>
-              <span className="font-medium">{fileSizeMB} MB</span>
+            <div className={styles.row}>
+              <span className={styles.label}>Size:</span>
+              <span className={styles.value}>{fileSizeMB} MB</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Format:</span>
-              <span className="font-medium uppercase">{fileFormat}</span>
+            <div className={styles.row}>
+              <span className={styles.label}>Format:</span>
+              <span className={styles.valueUpper}>{fileFormat}</span>
             </div>
           </div>
         </CardContent>
@@ -59,12 +60,12 @@ export function ConversionSettings({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Conversion Settings</CardTitle>
+          <CardTitle className="type-base">Conversion Settings</CardTitle>
           <CardDescription>Choose output format and quality preset</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Output Format</label>
+        <CardContent className="stack">
+          <div className="stack space-2">
+            <label className={styles.fieldLabel}>Output Format</label>
             <Select
               value={selectedFormat}
               onValueChange={(val) => val && onFormatChange(val as AudioFormat)}
@@ -85,8 +86,8 @@ export function ConversionSettings({
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Quality Preset</label>
+          <div className="stack space-2">
+            <label className={styles.fieldLabel}>Quality Preset</label>
             <Select
               value={selectedPreset}
               onValueChange={(val) => val && onPresetChange(val as QualityPreset)}
@@ -100,7 +101,7 @@ export function ConversionSettings({
                 <SelectItem value="small">Small Size</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground">{PRESET_DESCRIPTIONS[selectedPreset]}</p>
+            <p className={styles.hint}>{PRESET_DESCRIPTIONS[selectedPreset]}</p>
           </div>
         </CardContent>
       </Card>
@@ -108,7 +109,7 @@ export function ConversionSettings({
       <Button
         onClick={onConvert}
         disabled={isLoading}
-        className="w-full"
+        className={styles.convert}
         size="lg"
       >
         {isLoading ? 'Converting...' : 'Convert to Audio'}

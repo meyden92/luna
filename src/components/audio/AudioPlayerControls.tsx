@@ -5,6 +5,7 @@ import 'react-h5-audio-player/lib/styles.css';
 import { HardDrive, Loader2, Pause, Play, SkipBack, SkipForward, Volume2, Wifi } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Slider } from '../ui/slider';
+import styles from './AudioPlayerControls.module.css';
 
 interface File {
   id: string;
@@ -432,28 +433,28 @@ const AudioPlayerControls: React.FC<AudioPlayerControlsProps> = ({
   const showNavigation = isMultiFileMode && files && files.length > 1;
 
   return (
-    <div className="bg-card border-t border-border p-4">
+    <div className={styles.root}>
       {/* Progress Bar */}
-      <div className="flex items-center gap-3 mb-4">
-        <span className="text-sm font-mono min-w-10 text-muted-foreground tabular-nums">{formatTime(currentTime)}</span>
-        <div className="flex-1 relative h-5 flex items-center group">
+      <div className={styles.progress}>
+        <span className={styles.time}>{formatTime(currentTime)}</span>
+        <div className={styles.scrubber}>
           {/* Track background */}
-          <div className="absolute left-0 right-0 h-2 bg-muted rounded-full overflow-hidden">
+          <div className={styles.track}>
             {/* Buffered progress */}
             <div
-              className="absolute h-full bg-primary/20 rounded-full transition-all duration-300"
+              className={styles.buffered}
               style={{ width: `${Math.min(bufferedProgress, 100)}%` }}
             />
             {/* Current progress */}
             <div
-              className="absolute h-full bg-primary rounded-full transition-all duration-150"
+              className={styles.played}
               style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
             />
           </div>
 
           {/* Thumb */}
           <div
-            className="absolute top-1/2 w-4 h-4 bg-background border-2 border-primary rounded-full shadow-md -translate-y-1/2 transition-transform hover:scale-110 group-hover:shadow-lg"
+            className={styles.thumb}
             style={{ left: `calc(${duration > 0 ? (currentTime / duration) * 100 : 0}% - 8px)` }}
           />
 
@@ -464,33 +465,36 @@ const AudioPlayerControls: React.FC<AudioPlayerControlsProps> = ({
             max={duration || 100}
             value={currentTime}
             onChange={(e) => handleSeek([Number.parseFloat(e.target.value)])}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+            className={styles.seek}
             step={1}
           />
         </div>
-        <span className="text-sm font-mono min-w-10 text-muted-foreground tabular-nums">{formatTime(duration)}</span>
+        <span className={styles.time}>{formatTime(duration)}</span>
       </div>
 
       {/* Status indicators */}
-      <div className="flex items-center justify-between mb-3 min-h-5">
-        <div className="flex items-center gap-2">
+      <div className={styles.status}>
+        <div className="cluster space-2">
           {isBuffering && (
-            <div className="flex items-center gap-1.5 text-xs text-primary">
-              <Loader2 className="h-3 w-3 animate-spin" />
+            <div
+              className={styles.statusItem}
+              data-tone="primary"
+            >
+              <Loader2 className={styles.spinner} />
               <span>Buffering...</span>
             </div>
           )}
 
           {!isBuffering && loadSource !== 'loading' && (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <div className={styles.statusItem}>
               {loadSource === 'cache' ? (
                 <>
-                  <HardDrive className="h-3 w-3" />
+                  <HardDrive />
                   <span>Cached</span>
                 </>
               ) : (
                 <>
-                  <Wifi className="h-3 w-3" />
+                  <Wifi />
                   <span>Streaming</span>
                 </>
               )}
@@ -498,21 +502,19 @@ const AudioPlayerControls: React.FC<AudioPlayerControlsProps> = ({
           )}
         </div>
 
-        {bufferedProgress > 0 && bufferedProgress < 100 && (
-          <div className="text-xs text-muted-foreground">{Math.round(bufferedProgress)}% loaded</div>
-        )}
+        {bufferedProgress > 0 && bufferedProgress < 100 && <div className={styles.statusItem}>{Math.round(bufferedProgress)}% loaded</div>}
       </div>
 
       {/* Control Buttons */}
-      <div className="flex items-center justify-center gap-3">
+      <div className={styles.controls}>
         {showNavigation && (
           <Button
             variant="ghost"
             size="icon"
             onClick={handleClickPrevious}
-            className="h-10 w-10 rounded-full"
+            className={styles.navButton}
           >
-            <SkipBack className="h-5 w-5" />
+            <SkipBack />
           </Button>
         )}
 
@@ -521,10 +523,10 @@ const AudioPlayerControls: React.FC<AudioPlayerControlsProps> = ({
           size="icon"
           onClick={togglePlayPause}
           disabled={!currentTrack}
-          className="h-14 w-14 rounded-full shadow-md hover:shadow-lg transition-shadow"
+          className={styles.playButton}
           aria-label={isPlaying ? 'Pause' : 'Play'}
         >
-          {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 ml-0.5" />}
+          {isPlaying ? <Pause /> : <Play className={styles.playIcon} />}
         </Button>
 
         {showNavigation && (
@@ -532,27 +534,27 @@ const AudioPlayerControls: React.FC<AudioPlayerControlsProps> = ({
             variant="ghost"
             size="icon"
             onClick={handleClickNext}
-            className="h-10 w-10 rounded-full"
+            className={styles.navButton}
           >
-            <SkipForward className="h-5 w-5" />
+            <SkipForward />
           </Button>
         )}
 
-        <div className="flex items-center gap-2 ml-6">
-          <Volume2 className="h-4 w-4 text-muted-foreground" />
+        <div className={styles.volume}>
+          <Volume2 className={styles.volumeIcon} />
           <Slider
             value={[volume]}
             onValueChange={handleVolumeChange}
             max={1}
             min={0}
             step={0.01}
-            className="w-24"
+            className={styles.volumeSlider}
           />
         </div>
       </div>
 
       {/* Hidden AudioPlayer */}
-      <div className="hidden">
+      <div className={styles.hiddenPlayer}>
         <AudioPlayer
           ref={audioPlayerRef}
           src={currentTrack?.url}

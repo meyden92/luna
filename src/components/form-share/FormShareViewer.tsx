@@ -2,6 +2,7 @@ import { Check, Clock, Copy, Eye } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import styles from './FormShareViewer.module.css';
 import { SensitiveFieldValue } from './SensitiveFieldValue';
 
 type FormField = {
@@ -60,7 +61,7 @@ function CountdownTimer({ expiresAt }: { expiresAt: string }) {
     display = `${minutes}m ${seconds}s remaining`;
   }
 
-  return <span className="tabular-nums">{display}</span>;
+  return <span className={styles.countdown}>{display}</span>;
 }
 
 function FieldValue({ field, shareId, viewToken }: { field: FormField; shareId: string; viewToken: string | null }) {
@@ -90,7 +91,7 @@ function FieldValue({ field, shareId, viewToken }: { field: FormField; shareId: 
           href={value}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-primary underline underline-offset-2 hover:text-primary/80 break-all"
+          className={styles.link}
         >
           {value}
         </a>
@@ -101,27 +102,27 @@ function FieldValue({ field, shareId, viewToken }: { field: FormField; shareId: 
       return (
         <a
           href={`mailto:${value}`}
-          className="text-primary underline underline-offset-2 hover:text-primary/80 break-all"
+          className={styles.link}
         >
           {value}
         </a>
       );
     }
 
-    return <span className="break-all">{value}</span>;
+    return <span className={styles.plainValue}>{value}</span>;
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <code className="flex-1 rounded bg-muted px-3 py-2 text-sm font-mono break-all">{renderValue()}</code>
+    <div className={styles.valueRow}>
+      <code className={styles.value}>{renderValue()}</code>
       <Button
         variant="ghost"
         size="icon-sm"
         onClick={handleCopy}
-        className="shrink-0"
+        className={styles.copyButton}
         title="Copy"
       >
-        {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+        {copied ? <Check className={styles.copiedIcon} /> : <Copy />}
       </Button>
     </div>
   );
@@ -141,40 +142,40 @@ export function FormShareViewer({ shareId, title, fields, expiresAt, maxViews, v
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <h1 className="text-2xl font-semibold">{title || 'Shared form data'}</h1>
+    <div className={styles.root}>
+      <div className={styles.header}>
+        <h1 className={styles.title}>{title || 'Shared form data'}</h1>
         <Button
           variant="outline"
           size="sm"
           onClick={handleCopyAll}
-          className="gap-1.5 self-start"
+          className={styles.copyAll}
         >
-          {copiedAll ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+          {copiedAll ? <Check className={styles.copiedIcon} /> : <Copy />}
           Copy all
         </Button>
       </div>
 
-      <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+      <div className={styles.meta}>
         {expiresAt && (
-          <div className="flex items-center gap-1.5">
-            <Clock className="h-4 w-4" />
+          <div className={styles.metaItem}>
+            <Clock />
             <CountdownTimer expiresAt={expiresAt} />
           </div>
         )}
         {maxViews && (
-          <div className="flex items-center gap-1.5">
-            <Eye className="h-4 w-4" />
+          <div className={styles.metaItem}>
+            <Eye />
             <span>{`${maxViews - viewCount} views remaining`}</span>
           </div>
         )}
       </div>
 
-      <div className="space-y-3">
+      <div className={styles.fieldList}>
         {sortedFields.map((field) => (
           <Card key={field.id}>
-            <CardContent className="p-4 space-y-1.5">
-              <label className="text-sm font-medium text-muted-foreground">{field.label}</label>
+            <CardContent className={styles.fieldBody}>
+              <label className={styles.fieldLabel}>{field.label}</label>
               <FieldValue
                 field={field}
                 shareId={shareId}

@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 import WaveSurfer from 'wavesurfer.js';
+import { resolveCssColor } from '@/libs/css-color';
+import styles from './WaveformDisplay.module.css';
 
 interface WaveformDisplayProps {
   fileUrl: string;
@@ -9,13 +11,7 @@ interface WaveformDisplayProps {
   progressColor?: string;
 }
 
-export function WaveformDisplay({
-  fileUrl,
-  width,
-  height = 60,
-  waveColor = 'hsl(var(--primary) / 0.5)',
-  progressColor = 'hsl(var(--primary))',
-}: WaveformDisplayProps) {
+export function WaveformDisplay({ fileUrl, width, height = 60, waveColor, progressColor }: WaveformDisplayProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const loadedUrlRef = useRef<string | null>(null);
@@ -39,10 +35,14 @@ export function WaveformDisplay({
       wavesurferRef.current = null;
     }
 
+    // wavesurfer paints on a canvas, so the accent has to be resolved to a
+    // concrete colour rather than handed the light-dark() token expression.
+    const accent = resolveCssColor('--primary', '#10b981');
+
     const ws = WaveSurfer.create({
       container: containerRef.current,
-      waveColor,
-      progressColor,
+      waveColor: waveColor ?? `color-mix(in oklab, ${accent} 50%, transparent)`,
+      progressColor: progressColor ?? accent,
       height,
       width,
       normalize: true,
@@ -91,7 +91,7 @@ export function WaveformDisplay({
   return (
     <div
       ref={containerRef}
-      className="overflow-hidden"
+      className={styles.root}
       style={{ width, height }}
     />
   );

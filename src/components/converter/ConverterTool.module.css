@@ -1,0 +1,64 @@
+@layer components {
+  .root {
+    min-height: calc(100vh - 4rem);
+    padding: var(--space-4);
+    background-image: linear-gradient(
+      to bottom right,
+      var(--background),
+      var(--background) 50%,
+      color-mix(in oklab, var(--primary) 5%, transparent)
+    );
+  }
+
+  .shell {
+    max-width: 42rem;
+    margin-inline: auto;
+  }
+
+  .card {
+    border: none;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .header {
+    background-image: linear-gradient(
+      to right,
+      color-mix(in oklab, var(--primary) 10%, transparent),
+      color-mix(in oklab, var(--primary) 5%, transparent)
+    );
+  }
+
+  .body {
+    padding-top: var(--space-6);
+  }
+
+  .error {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    text-align: center;
+  }
+
+  .errorText {
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  /* Bare button styled as an inline link. */
+  .retry {
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--primary);
+    font: inherit;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+  }
+
+  .retry:hover {
+    text-decoration: underline;
+  }
+}

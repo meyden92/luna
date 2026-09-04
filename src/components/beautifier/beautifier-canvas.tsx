@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import type { BeautifierConfig, BeautifierSourceFile } from '@/schemas/beautifier-schema';
+import styles from './beautifier-canvas.module.css';
 
 interface BeautifierCanvasProps {
   source: BeautifierSourceFile;
@@ -179,25 +180,17 @@ function BeautifierCanvasComponent({ source, config, onCanvasReady }: Beautifier
   }, [config, renderCanvas]);
 
   return (
-    <div className="relative flex h-full min-h-[360px] items-center justify-center overflow-hidden rounded-[12px] border border-luna-line bg-luna-bg-3 p-4 shadow-[var(--luna-shadow-md)] lg:min-h-[calc(100dvh-13rem)]">
+    <div className={styles.stage}>
       <div
-        className="absolute inset-0 opacity-55"
-        style={{
-          backgroundImage:
-            'linear-gradient(135deg, color-mix(in oklab, var(--luna-bg) 70%, transparent), transparent 46%), linear-gradient(45deg, color-mix(in oklab, var(--luna-accent) 8%, transparent), transparent 42%)',
-        }}
+        className={styles.wash}
         aria-hidden
       />
-      <div className="relative flex max-h-full w-full items-center justify-center">
+      <div className={styles.frame}>
         <canvas
           ref={canvasRef}
-          className="block h-auto max-h-[calc(100dvh-16rem)] w-full max-w-full rounded-[8px] shadow-[0_24px_70px_-35px_rgba(15,21,17,0.45)]"
+          className={styles.canvas}
         />
-        {renderError ? (
-          <div className="absolute inset-0 flex items-center justify-center rounded-[8px] bg-luna-bg/90 px-6 text-center text-sm text-luna-ink-3">
-            {renderError}
-          </div>
-        ) : null}
+        {renderError ? <div className={styles.error}>{renderError}</div> : null}
       </div>
     </div>
   );

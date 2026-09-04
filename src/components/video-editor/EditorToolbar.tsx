@@ -12,8 +12,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { hasPendingVideoEdits, useVideoEditorStore } from '@/hooks/stores/video-editor-store';
-import { cn } from '@/libs/utils';
 import { formatTime } from '@/libs/video-editor/ffmpeg-video';
+import styles from './EditorToolbar.module.css';
 
 export function EditorToolbar() {
   const [discardOpen, setDiscardOpen] = useState(false);
@@ -38,33 +38,33 @@ export function EditorToolbar() {
 
   return (
     <>
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-border/50">
+      <div className={styles.root}>
         <ModeButton
-          icon={<ScissorsIcon className="size-4" />}
+          icon={<ScissorsIcon />}
           label="Trim"
           shortcut="1"
           active={mode === 'trim'}
           onClick={() => setMode('trim')}
         />
         <ModeButton
-          icon={<SlashIcon className="size-4" />}
+          icon={<SlashIcon />}
           label="Cut"
           shortcut="2"
           active={mode === 'cut'}
           onClick={() => setMode('cut')}
         />
         <ModeButton
-          icon={<CropIcon className="size-4" />}
+          icon={<CropIcon />}
           label="Crop"
           shortcut="3"
           active={mode === 'crop'}
           onClick={() => setMode('crop')}
         />
 
-        <div className="flex-1 text-center text-xs text-muted-foreground truncate px-4">
-          {fileName && <span className="truncate">{fileName}</span>}
+        <div className={styles.fileInfo}>
+          {fileName && <span>{fileName}</span>}
           {duration > 0 && (
-            <span className="ml-3 font-mono text-[11px] opacity-80">
+            <span className={styles.dimensions}>
               {formatTime(duration)} · {videoWidth}×{videoHeight}
             </span>
           )}
@@ -76,7 +76,7 @@ export function EditorToolbar() {
           onClick={resetEdits}
           title="Reset all edits"
         >
-          <RotateCcwIcon className="size-4" />
+          <RotateCcwIcon className={styles.icon} />
           Reset
         </Button>
         <Button
@@ -86,7 +86,7 @@ export function EditorToolbar() {
           aria-label="Close editor"
           title="Close editor"
         >
-          <XIcon className="size-4" />
+          <XIcon className={styles.icon} />
         </Button>
       </div>
 
@@ -134,25 +134,12 @@ function ModeButton({
       type="button"
       onClick={onClick}
       title={shortcut ? `${label} (${shortcut})` : label}
-      className={cn(
-        'inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors border',
-        active
-          ? 'bg-primary/15 text-primary border-primary/40'
-          : 'text-muted-foreground hover:text-foreground border-transparent hover:border-border/60 hover:bg-accent/50',
-      )}
+      className={styles.mode}
+      data-active={active}
     >
       {icon}
       {label}
-      {shortcut && (
-        <span
-          className={cn(
-            'ml-1 rounded border px-1 font-mono text-[10px] leading-tight',
-            active ? 'border-primary/40 text-primary/70' : 'border-border/60 text-muted-foreground/70',
-          )}
-        >
-          {shortcut}
-        </span>
-      )}
+      {shortcut && <span className={styles.modeKey}>{shortcut}</span>}
     </button>
   );
 }

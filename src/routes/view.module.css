@@ -51,8 +51,7 @@
     color: var(--muted-foreground);
   }
 
-  /* Copied from the global .luna-pulse-dot rule (base.css) so this file drops
-     the global class. --dotSize is the 6px dot, off the 4px spacing steps. */
+  /* --dotSize is the 6px dot, off the 4px spacing steps. */
   .pulseDot {
     --dotSize: 0.375rem;
     width: var(--dotSize);
@@ -127,7 +126,6 @@
     box-shadow: var(--shadow-lg);
   }
 
-  /* Copied from the global .luna-pic-corners rule (base.css). */
   .picCorners {
     pointer-events: none;
     position: absolute;
@@ -487,8 +485,8 @@
     background: var(--primary);
   }
 
-  /* Copied from the global .luna-sep-rule rule (base.css); 26px top margin
-     sits between the space-6 and space-8 steps, snapped down to space-6. */
+  /* 26px top margin sits between the space-6 and space-8 steps, snapped down
+     to space-6. */
   .sepHeading {
     position: relative;
     margin-top: var(--space-6);

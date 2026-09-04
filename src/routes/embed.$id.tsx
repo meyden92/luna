@@ -6,6 +6,7 @@ import VideoContainer from '@/components/file-viewer/VideoContainer';
 import type { PublicEmbedFile } from '@/libs/oembed';
 import { queryKeys } from '@/libs/query-keys';
 import { getPublicEmbedFile } from '@/server/fns/oembed';
+import styles from './embed.module.css';
 
 const publicEmbedFileQueryOptions = (id: string) => ({
   queryKey: [...queryKeys.platform.file(id), 'public-embed'] as const,
@@ -24,11 +25,7 @@ export const Route = createFileRoute('/embed/$id')({
   head: ({ loaderData }) => ({
     meta: [{ title: loaderData?.file.title?.trim() || 'LunaShare embed' }, { name: 'robots', content: 'noindex, nofollow' }],
   }),
-  notFoundComponent: () => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-luna-bg px-4 text-center text-sm text-luna-ink-3">
-      This embed is unavailable.
-    </div>
-  ),
+  notFoundComponent: () => <div className={`${styles.unavailable} type-sm`}>This embed is unavailable.</div>,
   component: EmbedPage,
 });
 
@@ -38,7 +35,7 @@ function EmbedPage() {
   if (!file) throw notFound();
 
   return (
-    <main className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-luna-bg p-3">
+    <main className={styles.root}>
       <EmbedPreview file={file} />
     </main>
   );
@@ -47,7 +44,7 @@ function EmbedPage() {
 function EmbedPreview({ file }: { file: PublicEmbedFile }) {
   if (file.contentType.startsWith('image/')) {
     return (
-      <div className="relative flex h-full w-full items-center justify-center">
+      <div className={styles.image}>
         <ImageContainer
           src={file.cdnUrl}
           width={file.metadata?.width ?? undefined}
@@ -59,7 +56,7 @@ function EmbedPreview({ file }: { file: PublicEmbedFile }) {
 
   if (file.contentType.startsWith('video/')) {
     return (
-      <div className="w-full max-w-4xl">
+      <div className={styles.video}>
         <VideoContainer
           src={file.cdnUrl}
           title={file.title || 'Untitled Video'}
@@ -70,7 +67,7 @@ function EmbedPreview({ file }: { file: PublicEmbedFile }) {
 
   if (file.contentType.startsWith('audio/')) {
     return (
-      <div className="w-full max-w-3xl">
+      <div className={styles.audio}>
         <AudioContainer
           src={file.cdnUrl}
           title={file.title || 'Untitled Audio'}
@@ -88,5 +85,5 @@ function EmbedPreview({ file }: { file: PublicEmbedFile }) {
     );
   }
 
-  return <p className="px-4 text-center text-sm text-luna-ink-3">This file has no in-browser preview.</p>;
+  return <p className={`${styles.fallback} type-sm`}>This file has no in-browser preview.</p>;
 }

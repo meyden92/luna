@@ -1,0 +1,15 @@
+@layer components {
+  /* The document and body must both be full height so the shell below can hand a
+     bounded height to the scrolling main region. */
+  .document,
+  .body {
+    height: 100%;
+  }
+
+  /* Fixed-height page shell: header chrome on top, the scrolling main under it. */
+  .shell {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+}

@@ -11,10 +11,10 @@ import { ThemeProvider } from '@/components/layout/theme-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { queryKeys } from '@/libs/query-keys';
 import { getRuntimeConfig, runtimeConfigScript } from '@/libs/runtime-config';
-import { cn } from '@/libs/utils';
 import type { RootRouteContext } from '@/route-context';
 import { getCurrentSession } from '@/server/fns/session';
 import { getInitialTheme } from '@/server/fns/theme';
+import styles from './root.module.css';
 import '@/styles/globals.css';
 import '@fontsource-variable/geist';
 import '@fontsource-variable/geist-mono';
@@ -65,7 +65,7 @@ function RootComponent() {
   return (
     <html
       lang="en"
-      className={cn('h-full')}
+      className={styles.document}
       suppressHydrationWarning
     >
       <head>
@@ -77,7 +77,7 @@ function RootComponent() {
         />
         <HeadContent />
       </head>
-      <body className="antialiased h-full font-sans">
+      <body className={styles.body}>
         <Suspense>
           <QueryClientProvider client={queryClient}>
             <ThemeProvider
@@ -93,7 +93,7 @@ function RootComponent() {
                 >
                   Skip to content
                 </a>
-                <div className="h-screen flex flex-col">
+                <div className={styles.shell}>
                   <ImpersonationBar />
                   <Navigation />
                   <MainContent>

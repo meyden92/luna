@@ -1,0 +1,121 @@
+@layer components {
+  .root {
+    min-height: 100vh;
+    padding-inline: var(--space-4);
+    padding-block: var(--space-8);
+    background: var(--background);
+  }
+
+  .page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    max-width: 64rem;
+    margin-inline: auto;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: fit-content;
+    color: var(--muted-foreground);
+    transition: color 150ms ease;
+  }
+
+  .brand:hover {
+    color: var(--foreground);
+  }
+
+  .panel {
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--card);
+    color: var(--card-foreground);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+  }
+
+  .heading {
+    /* Long unbroken titles must not push the panel wider than its column. */
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .title {
+    overflow-wrap: break-word;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--space-4);
+    row-gap: var(--space-1);
+    color: var(--muted-foreground);
+  }
+
+  .metaItem {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .metaIcon {
+    /* Between the 12px and 16px steps: sized to the surrounding small text. */
+    --meta-icon-size: 0.875rem;
+
+    width: var(--meta-icon-size);
+    height: var(--meta-icon-size);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .badge {
+    width: fit-content;
+  }
+
+  .actionIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  .empty {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--card);
+    box-shadow: var(--shadow-sm);
+  }
+
+  @media (width >= 640px) {
+    .panel {
+      padding: var(--space-6);
+    }
+
+    .header {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .brand {
+      transition: none;
+    }
+  }
+}

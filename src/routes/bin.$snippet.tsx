@@ -11,6 +11,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { queryKeys } from '@/libs/query-keys';
 import { getSnippetById } from '@/server/fns/dashboard/snippets';
+import styles from './bin.module.css';
 
 const snippetQuery = (id: string) =>
   queryOptions({
@@ -29,11 +30,11 @@ function BinDetailPage() {
   const { data } = useSuspenseQuery(snippetQuery(snippetId));
 
   return (
-    <main className="min-h-screen bg-background px-4 py-8">
-      <div className="mx-auto flex max-w-5xl flex-col gap-6">
+    <main className={styles.root}>
+      <div className={styles.page}>
         <Link
           to="/"
-          className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          className={`${styles.brand} type-sm`}
         >
           <Brandmark size={20} />
           LunaShare
@@ -76,26 +77,26 @@ function SnippetDisplay({ data }: { data: Awaited<ReturnType<typeof getSnippetBy
   };
 
   return (
-    <section className="rounded-lg border bg-card p-4 shadow-sm sm:p-6">
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0 space-y-2">
-          <h1 className="break-words text-3xl font-bold">{snippet.title}</h1>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5" />
+    <section className={styles.panel}>
+      <div className={styles.header}>
+        <div className={styles.heading}>
+          <h1 className={`${styles.title} type-3xl weight-bold`}>{snippet.title}</h1>
+          <div className={`${styles.meta} type-sm`}>
+            <span className={styles.metaItem}>
+              <Calendar className={styles.metaIcon} />
               Created {format(new Date(snippet.createdAt), 'PP')}
             </span>
-            <span className="inline-flex items-center gap-1.5">
-              <UserRound className="h-3.5 w-3.5" />
+            <span className={styles.metaItem}>
+              <UserRound className={styles.metaIcon} />
               {snippet.author.name || 'Unknown author'}
             </span>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={styles.actions}>
           {snippet.language && (
             <Badge
               variant="secondary"
-              className="w-fit"
+              className={styles.badge}
             >
               {snippet.language}
             </Badge>
@@ -108,7 +109,7 @@ function SnippetDisplay({ data }: { data: Awaited<ReturnType<typeof getSnippetBy
               size="sm"
               onClick={copyShareLink}
             >
-              <Copy className="h-4 w-4" />
+              <Copy className={styles.actionIcon} />
               Copy link
             </Button>
           )}
@@ -136,7 +137,7 @@ function SnippetEmptyState({
   actionTo: '/bin' | '/login';
 }) {
   return (
-    <Empty className="rounded-lg border bg-card shadow-sm">
+    <Empty className={styles.empty}>
       <EmptyHeader>
         <EmptyMedia variant="icon">{icon}</EmptyMedia>
         <EmptyTitle>{title}</EmptyTitle>

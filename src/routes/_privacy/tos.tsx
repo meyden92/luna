@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import styles from './tos.module.css';
 
 export const Route = createFileRoute('/_privacy/tos')({
   head: () => ({ meta: [{ title: 'Terms of Service | LunaShare' }] }),
@@ -13,13 +14,13 @@ const LAST_UPDATED = new Date('2025-03-09').toLocaleDateString('en-US', {
 
 function ToSPage() {
   return (
-    <section className="max-w-4xl mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-4">Terms of Service</h1>
-      <p className="text-sm text-gray-600 mb-6">Last Updated: {LAST_UPDATED}</p>
+    <section className={styles.doc}>
+      <h1>Terms of Service</h1>
+      <p className={styles.updated}>Last Updated: {LAST_UPDATED}</p>
 
-      <div className="space-y-8">
+      <div className={styles.sections}>
         <Section title="1. Agreement to Terms">
-          <p className="mb-3">
+          <p>
             Welcome to Lunashare. These Terms of Service ("Terms") govern your access to and use of the Lunashare platform, including our
             website, mobile applications, and all related services (collectively, the "Service"). By accessing or using the Service, you
             agree to be bound by these Terms. If you do not agree to these Terms, you may not access or use the Service.
@@ -31,7 +32,7 @@ function ToSPage() {
         </Section>
 
         <Section title="2. Eligibility">
-          <p className="mb-3">
+          <p>
             You must be at least 13 years old to use the Service. If you are under 18 years old, you must have permission from a parent or
             guardian to use the Service, and they must agree to these Terms on your behalf. By using the Service, you represent and warrant
             that you meet these eligibility requirements.
@@ -39,7 +40,7 @@ function ToSPage() {
         </Section>
 
         <Section title="3. User Accounts">
-          <p className="mb-3">
+          <p>
             To access certain features of the Service, you may need to create an account. You are responsible for maintaining the
             confidentiality of your account credentials and for all activities that occur under your account. You agree to:
           </p>
@@ -58,12 +59,12 @@ function ToSPage() {
         </Section>
 
         <Section title="4. Intellectual Property Rights">
-          <p className="mb-3">
+          <p>
             <strong>Our Content:</strong> The Service and its contents, including but not limited to text, graphics, user interface, logos,
             button icons, images, audio clips, digital downloads, data compilations, and software, are owned by us or our licensors and are
             protected by copyright, trademark, and other intellectual property laws.
           </p>
-          <p className="mb-3">
+          <p>
             <strong>Your License to Use Our Service:</strong> Subject to your compliance with these Terms, we grant you a limited,
             non-exclusive, non-transferable, and revocable license to access and use the Service for personal, non-commercial purposes.
           </p>
@@ -75,9 +76,7 @@ function ToSPage() {
         </Section>
 
         <Section title="5. User Content Guidelines">
-          <p className="mb-3">
-            You are solely responsible for your User Content and the consequences of sharing it. You represent and warrant that:
-          </p>
+          <p>You are solely responsible for your User Content and the consequences of sharing it. You represent and warrant that:</p>
           <List
             items={[
               'You own or have the necessary rights to share your User Content',
@@ -85,7 +84,7 @@ function ToSPage() {
               'Your User Content complies with all applicable laws and regulations',
             ]}
           />
-          <p className="mb-3">Prohibited content includes, but is not limited to:</p>
+          <p>Prohibited content includes, but is not limited to:</p>
           <List
             items={[
               'Content that infringes copyright, trademark, or other intellectual property rights',
@@ -102,17 +101,17 @@ function ToSPage() {
         </Section>
 
         <Section title="6. Music and Audio Content">
-          <p className="mb-3">
+          <p>
             <strong>User-Generated Music:</strong> If you upload original music or audio content, you retain all ownership rights to your
             original compositions. By uploading such content, you grant Lunashare a non-exclusive, worldwide, royalty-free license to use,
             reproduce, distribute, and display your content solely for the purpose of providing and promoting the Service.
           </p>
-          <p className="mb-3">
+          <p>
             <strong>AI-Generated Content:</strong> If you create content using our AI tools, you are responsible for ensuring that such use
             complies with all applicable laws and third-party rights. You retain ownership of the output generated through your use of our
             AI features, subject to our underlying rights in the AI technology.
           </p>
-          <p className="mb-3">
+          <p>
             <strong>Copyright Compliance:</strong> You must not upload, stream, or share any music or audio content unless:
           </p>
           <List
@@ -129,7 +128,7 @@ function ToSPage() {
         </Section>
 
         <Section title="7. Digital Millennium Copyright Act (DMCA)">
-          <p className="mb-3">
+          <p>
             If you believe that your copyrighted work has been used or displayed on our Service in a way that constitutes copyright
             infringement, please send a notification containing the following information to our designated copyright agent:
           </p>
@@ -144,25 +143,19 @@ function ToSPage() {
             ]}
           />
           <p>
-            Our designated copyright agent can be reached at:{' '}
-            <a
-              href="mailto:copyright@lunashare.com"
-              className="text-blue-600 hover:underline"
-            >
-              copyright@lunashare.com
-            </a>
+            Our designated copyright agent can be reached at: <a href="mailto:copyright@lunashare.com">copyright@lunashare.com</a>
           </p>
         </Section>
 
         <Section title="8. Privacy">
-          <p className="mb-3">
+          <p>
             Our Privacy Policy explains how we collect, use, and protect your personal information. By using our Service, you agree to our
             collection and use of information as described in our Privacy Policy.
           </p>
         </Section>
 
         <Section title="9. Third-Party Services and Links">
-          <p className="mb-3">
+          <p>
             Our Service may contain links to third-party websites or services that are not owned or controlled by us. We have no control
             over and assume no responsibility for the content, privacy policies, or practices of any third-party websites or services. You
             acknowledge and agree that we shall not be responsible or liable for any damage or loss caused by your use of any such websites
@@ -171,7 +164,7 @@ function ToSPage() {
         </Section>
 
         <Section title="10. Termination">
-          <p className="mb-3">
+          <p>
             We may terminate or suspend your account and access to the Service immediately, without prior notice or liability, for any
             reason, including if you breach these Terms. Upon termination, your right to use the Service will immediately cease.
           </p>
@@ -183,7 +176,7 @@ function ToSPage() {
         </Section>
 
         <Section title="11. Disclaimer of Warranties">
-          <p className="mb-3">
+          <p>
             THE SERVICE IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
             INCLUDING, BUT NOT LIMITED TO, IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, OR
             COURSE OF PERFORMANCE.
@@ -195,7 +188,7 @@ function ToSPage() {
         </Section>
 
         <Section title="12. Limitation of Liability">
-          <p className="mb-3">
+          <p>
             TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL WE BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL,
             CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOSS OF PROFITS, DATA, USE, GOODWILL, OR OTHER INTANGIBLE LOSSES, RESULTING FROM:
           </p>
@@ -213,7 +206,7 @@ function ToSPage() {
         </Section>
 
         <Section title="13. Indemnification">
-          <p className="mb-3">
+          <p>
             You agree to defend, indemnify, and hold harmless us and our affiliates, officers, directors, employees, and agents from and
             against any and all claims, damages, obligations, losses, liabilities, costs, or debt, and expenses (including but not limited
             to attorney's fees) arising from:
@@ -230,7 +223,7 @@ function ToSPage() {
         </Section>
 
         <Section title="14. Changes to Terms">
-          <p className="mb-3">
+          <p>
             We reserve the right, at our sole discretion, to modify or replace these Terms at any time. We will provide notice of any
             changes by updating the "Last Updated" date at the top of these Terms. Your continued use of the Service after any such changes
             constitutes your acceptance of the new Terms.
@@ -244,7 +237,7 @@ function ToSPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h2 className="text-2xl font-semibold mb-3">{title}</h2>
+      <h2>{title}</h2>
       {children}
     </div>
   );
@@ -252,7 +245,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function List({ items }: { items: string[] }) {
   return (
-    <ul className="list-disc pl-6 mb-3 space-y-1">
+    <ul>
       {items.map((item) => (
         <li key={item}>{item}</li>
       ))}

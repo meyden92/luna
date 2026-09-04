@@ -1,7 +1,7 @@
 @layer components {
-  /* Footer sits at the bottom even on short pages; 4rem is the app header. */
+  /* Height of the fixed app header, subtracted from the viewport below it. */
   .root {
-    --app-header-height: 4rem;
+    --app-header-height: var(--space-16);
 
     display: flex;
     flex-direction: column;

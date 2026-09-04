@@ -10,14 +10,14 @@
   }
 
   .icon {
-    width: 1rem;
-    height: 1rem;
+    width: var(--space-4);
+    height: var(--space-4);
     margin-right: var(--space-2);
   }
 
   .iconXs {
-    width: 0.75rem;
-    height: 0.75rem;
+    width: var(--space-3);
+    height: var(--space-3);
     margin-right: var(--space-1);
   }
 
@@ -244,7 +244,7 @@
   }
 
   .editIcon {
-    width: 1rem;
-    height: 1rem;
+    width: var(--space-4);
+    height: var(--space-4);
   }
 }

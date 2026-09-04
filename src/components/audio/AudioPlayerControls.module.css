@@ -190,7 +190,7 @@
   }
 
   .volumeSlider {
-    width: 6rem;
+    width: var(--space-24);
   }
 
   /* react-h5-audio-player only supplies the <audio> element and its behaviour;

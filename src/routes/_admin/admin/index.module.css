@@ -58,8 +58,8 @@
   }
 
   .icon {
-    width: 2rem;
-    height: 2rem;
+    width: var(--space-8);
+    height: var(--space-8);
     margin-bottom: var(--space-2);
   }
 

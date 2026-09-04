@@ -26,13 +26,13 @@
     }
 
     &[data-size="sm"] {
-      height: 2rem;
-      min-width: 2rem;
+      height: var(--space-8);
+      min-width: var(--space-8);
     }
 
     &[data-size="lg"] {
-      height: 2.5rem;
-      min-width: 2.5rem;
+      height: var(--space-10);
+      min-width: var(--space-10);
     }
 
     &[data-variant="outline"] {
@@ -66,8 +66,8 @@
     }
 
     & svg {
-      width: 1rem;
-      height: 1rem;
+      width: var(--space-4);
+      height: var(--space-4);
       flex-shrink: 0;
       pointer-events: none;
     }

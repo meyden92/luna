@@ -1,12 +1,12 @@
 @layer components {
   .icon {
-    width: 1rem;
-    height: 1rem;
+    width: var(--space-4);
+    height: var(--space-4);
   }
 
   .iconLg {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: var(--space-5);
+    height: var(--space-5);
   }
 
   .danger {
@@ -96,14 +96,14 @@
 
   /* ---- Section headings -------------------------------------------------- */
   .warningIcon {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: var(--space-5);
+    height: var(--space-5);
     color: var(--warning);
   }
 
   .dangerIcon {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: var(--space-5);
+    height: var(--space-5);
     color: var(--destructive);
   }
 
@@ -144,8 +144,8 @@
   .fileIconInfo,
   .fileIconDanger {
     flex-shrink: 0;
-    width: 1rem;
-    height: 1rem;
+    width: var(--space-4);
+    height: var(--space-4);
   }
 
   .fileIconInfo {

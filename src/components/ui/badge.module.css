@@ -5,7 +5,7 @@
     justify-content: center;
     flex-shrink: 0;
     width: fit-content;
-    height: 1.5rem;
+    height: var(--space-6);
     gap: var(--space-1);
     padding-inline: var(--space-2);
     border: 1px solid transparent;
@@ -24,8 +24,8 @@
     & > svg {
       flex-shrink: 0;
       pointer-events: none;
-      width: 0.75rem;
-      height: 0.75rem;
+      width: var(--space-3);
+      height: var(--space-3);
     }
 
     /* An icon at an edge sits closer to it than a word does. */

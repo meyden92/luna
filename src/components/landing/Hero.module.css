@@ -1,5 +1,15 @@
 @layer components {
   .root {
+    /* Hero one-offs with no step on the scale: the tick-mark square and its
+       inset from the top, the accent underline bar, the stage height, the
+       floating upload card width and the accent bloom radius. */
+    --tick-size: 10px;
+    --tick-inset: 44px;
+    --underline-height: 10px;
+    --stage-height: 32.5rem;
+    --upload-card-width: 15.625rem;
+    --glow-blur: 34px;
+
     position: relative;
     max-inline-size: 80rem;
     margin-inline: auto;
@@ -12,9 +22,9 @@
   .root::after {
     content: "";
     position: absolute;
-    top: 44px;
-    width: 10px;
-    height: 10px;
+    top: var(--tick-inset);
+    width: var(--tick-size);
+    height: var(--tick-size);
     border-color: var(--input);
     pointer-events: none;
   }
@@ -108,7 +118,7 @@
     bottom: 6%;
     left: 0;
     z-index: -1;
-    height: 10px;
+    height: var(--underline-height);
     border-radius: 2px;
     background: color-mix(in oklab, var(--primary) 22%, transparent);
     transform: skewY(-1deg);
@@ -226,7 +236,7 @@
   .stage {
     position: relative;
     display: none;
-    height: 32.5rem;
+    height: var(--stage-height);
 
     @media (width >= 1024px) {
       display: block;
@@ -238,7 +248,7 @@
     inset: 8%;
     z-index: 0;
     background: radial-gradient(closest-side, color-mix(in oklab, var(--primary) 22%, transparent), transparent 70%);
-    filter: blur(34px);
+    filter: blur(var(--glow-blur));
   }
 
   .scene {
@@ -274,7 +284,7 @@
     bottom: var(--space-5);
     left: var(--space-4);
     z-index: 5;
-    width: 15.625rem;
+    width: var(--upload-card-width);
     overflow: hidden;
     border: 1px solid var(--border);
     border-radius: var(--radius-xl);
@@ -332,7 +342,7 @@
   .uploadTrack {
     position: relative;
     overflow: hidden;
-    height: 4px;
+    height: var(--space-1);
     margin-inline: var(--space-3);
     margin-bottom: var(--space-3);
     border-radius: var(--radius-full);

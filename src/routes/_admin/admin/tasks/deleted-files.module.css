@@ -1,17 +1,17 @@
 @layer components {
   .icon {
-    width: 1rem;
-    height: 1rem;
+    width: var(--space-4);
+    height: var(--space-4);
   }
 
   .iconLg {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: var(--space-5);
+    height: var(--space-5);
   }
 
   .iconSm {
-    width: 0.75rem;
-    height: 0.75rem;
+    width: var(--space-3);
+    height: var(--space-3);
   }
 
   .danger {
@@ -172,8 +172,8 @@
 
   .fileIcon {
     flex-shrink: 0;
-    width: 1rem;
-    height: 1rem;
+    width: var(--space-4);
+    height: var(--space-4);
     color: var(--destructive);
   }
 

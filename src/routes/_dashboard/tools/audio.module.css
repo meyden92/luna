@@ -1,7 +1,7 @@
 @layer components {
-  /* Full editor height below the fixed 4rem app header. */
+  /* Height of the fixed app header, subtracted from the viewport below it. */
   .root {
-    --app-header-height: 4rem;
+    --app-header-height: var(--space-16);
 
     height: calc(100vh - var(--app-header-height));
   }

@@ -44,7 +44,7 @@
     }
 
     &[data-size="sm"] {
-      height: 2rem;
+      height: var(--space-8);
     }
 
     &:hover {
@@ -79,8 +79,8 @@
   }
 
   .icon {
-    width: 1rem;
-    height: 1rem;
+    width: var(--space-4);
+    height: var(--space-4);
     color: var(--muted-foreground);
     pointer-events: none;
   }
@@ -190,15 +190,15 @@
     position: absolute;
     right: var(--space-2);
     display: flex;
-    width: 1rem;
-    height: 1rem;
+    width: var(--space-4);
+    height: var(--space-4);
     align-items: center;
     justify-content: center;
     pointer-events: none;
 
     & svg {
-      width: 1rem;
-      height: 1rem;
+      width: var(--space-4);
+      height: var(--space-4);
     }
   }
 
@@ -221,8 +221,8 @@
     cursor: default;
 
     & svg {
-      width: 1rem;
-      height: 1rem;
+      width: var(--space-4);
+      height: var(--space-4);
     }
   }
 }

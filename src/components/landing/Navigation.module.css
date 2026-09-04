@@ -33,11 +33,14 @@
     }
   }
 
+  /* Bar height sits between the 4rem and 5rem steps by design. */
   .bar {
+    --bar-height: 4.625rem;
+
     position: relative;
     z-index: 10;
     display: flex;
-    height: 4.625rem;
+    height: var(--bar-height);
     align-items: center;
     gap: var(--space-8);
     margin-inline: auto;

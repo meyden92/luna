@@ -1,5 +1,10 @@
 @layer components {
   .root {
+    /* Art one-offs with no step on the scale: the accent bloom radius and the
+       orbit artwork width. */
+    --glow-blur: 34px;
+    --orbit-width: 21.25rem;
+
     position: relative;
     max-inline-size: 80rem;
     margin-inline: auto;
@@ -128,12 +133,12 @@
     inset: 14%;
     z-index: 0;
     background: radial-gradient(closest-side, color-mix(in oklab, var(--primary) 24%, transparent), transparent 70%);
-    filter: blur(34px);
+    filter: blur(var(--glow-blur));
   }
 
   .orbit {
     position: relative;
-    width: 21.25rem;
+    width: var(--orbit-width);
     max-width: 100%;
     border: 1px solid var(--border);
     border-radius: var(--radius-3xl);

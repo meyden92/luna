@@ -27,7 +27,7 @@
   }
 
   .noteInput {
-    min-height: 6rem;
+    min-height: var(--space-24);
   }
 
   .counterRow {

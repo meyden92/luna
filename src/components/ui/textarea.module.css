@@ -2,7 +2,7 @@
   .root {
     display: block;
     width: 100%;
-    min-height: 4rem;
+    min-height: var(--space-16);
     /* Grows with its content instead of scrolling inside a fixed box. */
     field-sizing: content;
     resize: none;

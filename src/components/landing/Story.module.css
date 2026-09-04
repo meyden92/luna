@@ -179,15 +179,15 @@
   }
 
   .panel::before {
-    top: 8px;
-    left: 8px;
+    top: var(--space-2);
+    left: var(--space-2);
     border-top: 1px solid var(--input);
     border-left: 1px solid var(--input);
   }
 
   .panel::after {
-    right: 8px;
-    bottom: 8px;
+    right: var(--space-2);
+    bottom: var(--space-2);
     border-right: 1px solid var(--input);
     border-bottom: 1px solid var(--input);
   }

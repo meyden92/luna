@@ -1,12 +1,15 @@
 /*
  * Entry stylesheet. The layer statement fixes the cascade order (ADR 0003): a
  * utility on a component root wins over the component's own module without
- * `!important`. The root document repeats the statement in an inline <style>
- * ahead of every stylesheet, because the first sheet to name a layer ranks it.
+ * `!important`. The Vite config prepends the same statement to every CSS Module,
+ * because the first sheet to name a layer ranks it and a module can load first.
+ * Each imported file wraps itself in its layer rather than relying on
+ * `@import … layer()`: the dev style collector also serves the files raw, and
+ * an unlayered copy of the reset would outrank every module on first paint.
  */
 @layer reset, base, components, utilities;
 
-@import "./reset.css" layer(reset);
+@import "./reset.css";
 @import "./tokens.css";
-@import "./base.css" layer(base);
-@import "./utilities.css" layer(utilities);
+@import "./base.css";
+@import "./utilities.css";

@@ -2,17 +2,37 @@ import path from 'node:path';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import viteReact from '@vitejs/plugin-react';
 import { nitro } from 'nitro/vite';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 
 // Native/node-only packages that must never be bundled into the client and stay
 // external in the SSR server build. Without the client exclusion Vite happily
 // pre-bundles a database driver for the client when something transitively
 // imports `src/db/client`, which then crashes the browser at runtime inside the
 // driver's Node-version check (`process.versions.node.replace(...)`).
+// Cascade layer order, duplicated from src/styles/globals.css. The first
+// stylesheet the browser parses fixes the rank of every layer it names, and in
+// dev (route-collected sheet) and chunked builds a component module can come
+// before the entry stylesheet; without this the reset would outrank every
+// module until hydration. Prepending the statement to each module makes the
+// order the same whichever sheet loads first.
+const CSS_LAYER_ORDER = '@layer reset, base, components, utilities;\n';
+
+function cssLayerOrder(): Plugin {
+  return {
+    name: 'lunashare:css-layer-order',
+    enforce: 'pre',
+    transform(code, id) {
+      if (!id.endsWith('.module.css')) return null;
+      return { code: CSS_LAYER_ORDER + code, map: null };
+    },
+  };
+}
+
 const SERVER_ONLY_PACKAGES = ['pg', '@aws-sdk/client-s3', '@aws-sdk/lib-storage', '@aws-sdk/s3-request-presigner', 'sharp', 'replicate'];
 
 export default defineConfig({
   plugins: [
+    cssLayerOrder(),
     tanstackStart(),
     // Register the cron TaskManager as a Nitro startup plugin (replaces the old
     // Next.js `instrumentation.ts`).

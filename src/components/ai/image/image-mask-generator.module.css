@@ -51,11 +51,12 @@
     height: auto;
   }
 
-  /* Custom cursors: white on a black outline so they read over any pixel. */
+  /* Custom cursors: --on-scrim over an opaque black hairline (no token for
+     opaque black) so they read over any pixel. */
   .brushCursor {
     position: absolute;
     pointer-events: none;
-    border: 2px solid oklch(1 0 0);
+    border: 2px solid var(--on-scrim);
     border-radius: var(--radius-full);
     transform: translate(-50%, -50%);
     box-shadow: 0 0 0 1px oklch(0 0 0);
@@ -74,7 +75,7 @@
   .crosshairVertical,
   .crosshairHorizontal {
     position: absolute;
-    background: oklch(1 0 0);
+    background: var(--on-scrim);
     box-shadow: 0 0 0 1px oklch(0 0 0);
   }
 

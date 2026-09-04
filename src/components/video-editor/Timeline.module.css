@@ -46,13 +46,12 @@
     background-position: center;
   }
 
-  /* Scrim over the frames outside the trim range: deliberately absolute black,
-     since it darkens video content rather than a themed surface. */
+  /* Darkens the frames outside the trim range. */
   .dim {
     position: absolute;
     top: 0;
     bottom: 0;
-    background: rgb(0 0 0 / 0.6);
+    background: var(--scrim);
     pointer-events: none;
   }
 

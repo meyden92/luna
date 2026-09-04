@@ -1,9 +1,5 @@
 @layer components {
-  /* The filmstrip lives on the lightbox scrim, so its chrome is fixed values
-     rather than Appearance roles. */
   .scroller {
-    --on-scrim: oklch(1 0 0);
-
     height: 100%;
     padding: var(--space-2);
     overflow-y: auto;

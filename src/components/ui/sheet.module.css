@@ -2,12 +2,10 @@
  * additionally slides in from the side Base UI placed it on (`data-side`). */
 @layer components {
   .overlay {
-    --scrim: oklch(0% 0 0 / 80%);
-
     position: fixed;
     inset: 0;
     z-index: 50;
-    background-color: var(--scrim);
+    background-color: var(--scrim-strong);
     backdrop-filter: blur(4px);
     transition-property: opacity, overlay, display;
     transition-duration: 100ms;

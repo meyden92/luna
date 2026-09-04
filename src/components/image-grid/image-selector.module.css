@@ -88,9 +88,8 @@
     bottom: var(--space-1);
     padding: var(--space-1);
     border-radius: var(--radius-sm);
-    /* Scrim badge sitting on the thumbnail, so it stays dark in both themes. */
-    background: color-mix(in oklab, oklch(0 0 0) 70%, transparent);
-    color: oklch(1 0 0);
+    background: var(--scrim-strong);
+    color: var(--on-scrim);
     opacity: 0;
     transition: opacity 150ms ease;
   }

@@ -1,17 +1,12 @@
 @layer components {
-  /* The fallback covers the same near-black scrim as the lightbox itself, so
-     its surface and text are fixed values rather than Appearance roles. */
   .root {
-    --scrim: oklch(0 0 0 / 0.95);
-    --on-scrim: oklch(1 0 0);
-
     position: fixed;
     inset: 0;
     z-index: 50;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--scrim);
+    background: var(--scrim-strong);
   }
 
   .panel {

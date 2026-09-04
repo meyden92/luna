@@ -10,14 +10,6 @@
     cursor: zoom-in;
   }
 
-  /* The overlay chrome sits over arbitrary imagery, so its colours are fixed
-     values rather than Appearance roles. */
-  .zoomButton,
-  .overlay {
-    --scrim: oklch(0 0 0 / 0.55);
-    --on-scrim: oklch(1 0 0);
-  }
-
   .zoomButton {
     position: absolute;
     right: var(--space-3);
@@ -47,7 +39,7 @@
     z-index: 60;
     overflow: auto;
     overscroll-behavior: contain;
-    background: oklch(0 0 0 / 0.92);
+    background: var(--scrim-strong);
     backdrop-filter: blur(4px);
   }
 
@@ -63,12 +55,12 @@
     justify-content: center;
     border: 1px solid color-mix(in oklab, var(--on-scrim) 10%, transparent);
     border-radius: var(--radius-full);
-    background: oklch(0 0 0 / 0.6);
+    background: var(--scrim);
     color: var(--on-scrim);
     transition: background-color 150ms ease;
 
     &:hover {
-      background: oklch(0 0 0 / 0.8);
+      background: var(--scrim-strong);
     }
   }
 

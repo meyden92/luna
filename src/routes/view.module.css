@@ -135,7 +135,7 @@
       position: absolute;
       width: 14px;
       height: 14px;
-      border-color: rgb(255 255 255 / 0.7);
+      border-color: color-mix(in oklab, var(--on-scrim) 70%, transparent);
       pointer-events: none;
     }
 

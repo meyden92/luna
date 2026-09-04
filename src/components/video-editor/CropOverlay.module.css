@@ -1,9 +1,4 @@
 @layer components {
-  /*
-   * The overlay sits on top of arbitrary video frames, so its scrim, box and
-   * handles use plain black and white rather than themed roles — they must read
-   * against whatever the video shows, not against the app surface.
-   */
   .root {
     container-type: inline-size;
     position: absolute;
@@ -21,13 +16,13 @@
 
   .scrim {
     position: absolute;
-    background: rgb(0 0 0 / 0.55);
+    background: var(--scrim);
   }
 
   .box {
     position: absolute;
-    border: 2px solid rgb(255 255 255 / 0.9);
-    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.4);
+    border: 2px solid color-mix(in oklab, var(--on-scrim) 90%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--scrim) 67%, transparent);
     cursor: move;
     pointer-events: auto;
   }
@@ -36,9 +31,9 @@
     position: absolute;
     width: var(--handle-size);
     height: var(--handle-size);
-    border: 1px solid rgb(0 0 0 / 0.3);
+    border: 1px solid color-mix(in oklab, var(--scrim) 50%, transparent);
     border-radius: var(--radius-sm);
-    background: rgb(255 255 255);
+    background: var(--on-scrim);
     pointer-events: auto;
   }
 

@@ -1,12 +1,5 @@
 @layer components {
-  /* Overlay chrome sits on arbitrary artwork, so its colours are deliberately
-     absolute rather than theme-following. */
   .card {
-    --scrim: rgb(0 0 0 / 0.6);
-    --scrim-strong: rgb(0 0 0 / 0.8);
-    --scrim-hover: rgb(0 0 0 / 0.3);
-    --on-scrim: oklch(1 0 0);
-
     position: relative;
     overflow: hidden;
     border-radius: var(--radius-xl);
@@ -40,7 +33,7 @@
   }
 
   .card:hover .veil {
-    background: var(--scrim-hover);
+    background: color-mix(in oklab, var(--scrim) 50%, transparent);
   }
 
   .tag {

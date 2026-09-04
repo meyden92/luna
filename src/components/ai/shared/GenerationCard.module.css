@@ -1,10 +1,5 @@
 @layer components {
-  /* Scrim colours: overlays sit on arbitrary artwork, so they are deliberately
-     absolute rather than theme-following. */
   .card {
-    --scrim: rgb(0 0 0 / 0.4);
-    --scrim-strong: rgb(0 0 0 / 0.55);
-    --on-scrim: oklch(1 0 0);
     --action-size: 1.75rem;
 
     position: relative;
@@ -72,7 +67,7 @@
     inset: 0;
     display: grid;
     place-items: center;
-    background: var(--scrim-strong);
+    background: var(--scrim);
     color: var(--on-scrim);
     font-size: var(--text-sm);
     line-height: var(--leading-sm);
@@ -97,7 +92,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: var(--scrim);
+    background: color-mix(in oklab, var(--scrim) 67%, transparent);
   }
 
   .processingLabel {

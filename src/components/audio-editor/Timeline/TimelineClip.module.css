@@ -104,12 +104,12 @@
 
   .fade[data-side="in"] {
     left: 0;
-    background: linear-gradient(to right, rgb(0 0 0 / 0.5), transparent);
+    background: linear-gradient(to right, var(--scrim), transparent);
   }
 
   .fade[data-side="out"] {
     right: 0;
-    background: linear-gradient(to left, rgb(0 0 0 / 0.5), transparent);
+    background: linear-gradient(to left, var(--scrim), transparent);
   }
 
   /* Square brackets that mark the trimmable edges of a selected clip. */

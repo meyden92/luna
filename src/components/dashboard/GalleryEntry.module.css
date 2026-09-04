@@ -83,13 +83,11 @@
     color: var(--foreground-subtle);
   }
 
-  /* Overlay chrome sits on photography, so it uses fixed light/dark values
-     rather than theme roles. */
   .shade {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background: linear-gradient(to top, rgb(0 0 0 / 0.6), rgb(0 0 0 / 0.1), transparent);
+    background: linear-gradient(to top, var(--scrim), color-mix(in oklab, var(--scrim) 17%, transparent), transparent);
     opacity: 0;
     transition: opacity 150ms ease;
   }
@@ -222,10 +220,10 @@
     padding-inline: var(--space-2);
     padding-block: 3px;
     border-radius: var(--radius-full);
-    background: rgb(0 0 0 / 0.55);
+    background: var(--scrim);
     font-family: var(--font-mono);
     font-size: var(--text-xs);
-    color: #fff;
+    color: var(--on-scrim);
     backdrop-filter: blur(4px);
     transition: opacity 150ms ease;
   }
@@ -266,7 +264,7 @@
     white-space: nowrap;
     font-family: var(--font-mono);
     font-size: var(--text-xs);
-    color: #fff;
+    color: var(--on-scrim);
   }
 
   .captionMeta {
@@ -275,7 +273,7 @@
     gap: var(--space-1);
     font-family: var(--font-mono);
     font-size: var(--text-xs);
-    color: rgb(255 255 255 / 0.72);
+    color: color-mix(in oklab, var(--on-scrim) 72%, transparent);
   }
 
   .folderChip {

@@ -23,9 +23,8 @@
     left: var(--space-2);
     padding: var(--space-1) var(--space-2);
     border-radius: var(--radius-sm);
-    /* Scrim over the rendered grid, so it stays dark in both themes. */
-    background: color-mix(in oklab, oklch(0 0 0) 70%, transparent);
-    color: oklch(1 0 0);
+    background: var(--scrim-strong);
+    color: var(--on-scrim);
     font-size: var(--text-xs);
     line-height: var(--leading-xs);
     pointer-events: none;

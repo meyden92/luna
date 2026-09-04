@@ -1,13 +1,5 @@
 @layer components {
-  /*
-   * The viewport guides, crosshair and corner ticks sit on top of arbitrary
-   * user imagery, so they cannot follow the Appearance — they are a fixed light
-   * colour in both themes. Same for the modal scrim.
-   */
   .overlay {
-    --guide: oklch(1 0 0);
-    --scrim: color-mix(in oklab, oklch(0 0 0) 90%, transparent);
-
     position: fixed;
     inset: 0;
     z-index: 50;
@@ -15,7 +7,7 @@
     align-items: center;
     justify-content: center;
     padding: var(--space-4);
-    background: var(--scrim);
+    background: var(--scrim-strong);
   }
 
   .dialog {
@@ -175,7 +167,7 @@
     place-items: center;
     width: var(--space-6);
     height: var(--space-6);
-    border: 2px solid var(--guide);
+    border: 2px solid var(--on-scrim);
     border-radius: var(--radius-full);
     background: color-mix(in oklab, var(--primary) 20%, transparent);
   }
@@ -197,7 +189,7 @@
 
   .guide {
     position: absolute;
-    background: color-mix(in oklab, var(--guide) 30%, transparent);
+    background: color-mix(in oklab, var(--on-scrim) 30%, transparent);
   }
 
   .guide[data-axis="x"] {
@@ -235,7 +227,7 @@
     width: var(--space-3);
     height: var(--space-3);
     pointer-events: none;
-    border: 0 solid var(--guide);
+    border: 0 solid var(--on-scrim);
   }
 
   .corner[data-corner^="top"] {

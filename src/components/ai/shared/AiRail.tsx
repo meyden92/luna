@@ -13,8 +13,8 @@ interface AiRailProps {
 /**
  * Left settings rail for the AI workspace. A self-contained flex column:
  * a pinned header, an independently scrolling body, and a pinned footer.
- * Height containment starts at 768px so the rail flows naturally (no
- * zero-height collapse) on mobile, where the page scrolls as a whole.
+ * Height containment follows the AI layout's container query; when space is
+ * limited, the settings and results flow together in the enclosing scroller.
  */
 export function AiRail({ title, footer, children }: AiRailProps) {
   return (

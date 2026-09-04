@@ -1,69 +1,68 @@
 @layer components {
+  .title {
+    margin-bottom: var(--space-6);
+    font-family: var(--font-display);
+    font-size: var(--text-page-title);
+    line-height: var(--leading-page-title);
+    letter-spacing: var(--tracking-heading);
+    text-wrap: balance;
+  }
+
   .grid {
+    --tile-min: 14rem;
+
     display: grid;
-    grid-template-columns: repeat(1, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(min(var(--tile-min), 100%), 1fr));
     gap: var(--space-4);
   }
 
-  @media (width >= 640px) {
-    .grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
-  @media (width >= 1024px) {
-    .grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-
-  @media (width >= 1280px) {
-    .grid {
-      grid-template-columns: repeat(4, 1fr);
-    }
-  }
-
-  /* Destination cards rotate through the chart palette so each tile reads distinctly. */
+  /* Share icon/title/description rows so longer names do not misalign neighbours. */
   .tile {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    display: grid;
+    grid-row: span 3;
+    grid-template-rows: subgrid;
     padding: var(--space-6);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
-    color: var(--primary-foreground);
-    text-align: center;
-    transition: filter 0.15s ease;
-  }
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background: var(--card);
+    color: var(--foreground);
+    box-shadow: var(--shadow-sm);
+    transition:
+      border-color 150ms ease,
+      background-color 150ms ease;
 
-  .tile:hover {
-    filter: brightness(0.92);
-  }
-
-  .tile[data-tone="1"] {
-    background: var(--chart-1);
-  }
-  .tile[data-tone="2"] {
-    background: var(--chart-2);
-  }
-  .tile[data-tone="3"] {
-    background: var(--chart-3);
-  }
-  .tile[data-tone="4"] {
-    background: var(--chart-4);
-  }
-  .tile[data-tone="5"] {
-    background: var(--chart-5);
+    &:hover {
+      border-color: var(--primary-strong);
+      background: var(--accent);
+    }
   }
 
   .icon {
-    width: var(--space-8);
-    height: var(--space-8);
-    margin-bottom: var(--space-2);
+    width: var(--space-10);
+    height: var(--space-10);
+    padding: var(--space-2);
+    border-radius: var(--radius-lg);
+    background: var(--primary-tint);
+    color: var(--primary-strong);
+  }
+
+  .tileTitle {
+    font-size: var(--text-section-title);
+    line-height: var(--leading-section-title);
+    font-weight: var(--weight-semibold);
+    text-wrap: balance;
   }
 
   .description {
-    opacity: 0.9;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+    text-wrap: balance;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tile {
+      transition: none;
+    }
   }
 }

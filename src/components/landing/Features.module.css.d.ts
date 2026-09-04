@@ -1,6 +1,5 @@
 declare const styles: {
   readonly "cell": string;
-  readonly "cellDivided": string;
   readonly "description": string;
   readonly "eyebrow": string;
   readonly "grid": string;

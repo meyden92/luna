@@ -133,4 +133,11 @@
     color: var(--muted-foreground);
     font-size: var(--text-sm);
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    .overlay,
+    .popup {
+      transition-duration: 0.01ms;
+    }
+  }
 }

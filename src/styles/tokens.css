@@ -14,10 +14,10 @@
   --foreground: light-dark(oklch(0.18 0.01 155), oklch(0.94 0.005 155));
   /* Secondary body text: navigation labels, sidebar items. */
   --foreground-2: light-dark(oklch(0.29 0.011 170), oklch(0.86 0.006 155));
-  /* Faintest legible text: placeholders, hints, disabled labels. */
-  --foreground-subtle: light-dark(oklch(0.61 0.008 170), oklch(0.43 0.01 155));
+  /* Readable supporting metadata and hints. Disabled controls use opacity. */
+  --foreground-subtle: light-dark(oklch(0.52 0.008 170), oklch(0.7 0.01 155));
 
-  --card: var(--background);
+  --card: light-dark(oklch(0.995 0.003 95), oklch(0.205 0.012 155));
   --card-foreground: var(--foreground);
   --popover: light-dark(oklch(0.985 0.005 95), oklch(0.21 0.012 155));
   --popover-foreground: var(--foreground);
@@ -35,7 +35,7 @@
   --muted: light-dark(oklch(0.955 0.006 95), oklch(0.21 0.012 155));
   /* Two steps off the background: wells, hatch fills, pressed states. */
   --muted-strong: light-dark(oklch(0.923 0.008 95), oklch(0.24 0.013 155));
-  --muted-foreground: light-dark(oklch(0.47 0.01 170), oklch(0.62 0.008 155));
+  --muted-foreground: light-dark(oklch(0.47 0.01 170), oklch(0.73 0.008 155));
 
   --accent: light-dark(oklch(0.965 0.03 162), oklch(0.21 0.05 162));
   --accent-foreground: light-dark(oklch(0.6 0.155 162), oklch(0.76 0.165 162));
@@ -124,6 +124,13 @@
   --weight-medium: 500;
   --weight-semibold: 600;
   --weight-bold: 700;
+
+  /* Application headings share a hierarchy; the landing hero keeps its display scale. */
+  --text-page-title: var(--text-4xl);
+  --leading-page-title: var(--leading-4xl);
+  --text-section-title: var(--text-xl);
+  --leading-section-title: var(--leading-xl);
+  --tracking-heading: -0.02em;
 
   /* ---- Shadow ---------------------------------------------------------- */
   --shadow-color-1: light-dark(rgb(15 21 17 / 0.04), rgb(0 0 0 / 0.4));

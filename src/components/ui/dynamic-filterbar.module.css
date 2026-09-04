@@ -375,4 +375,11 @@
       transform: translateY(calc(-1 * var(--space-2)));
     }
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    .operatorPopup,
+    .sortPopup {
+      transition-duration: 0.01ms;
+    }
+  }
 }

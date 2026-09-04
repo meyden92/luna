@@ -94,4 +94,10 @@
       left: calc(-1 * var(--space-1));
     }
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    .popup {
+      transition-duration: 0.01ms;
+    }
+  }
 }

@@ -11,4 +11,10 @@
       height: 0;
     }
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    .panel {
+      transition-duration: 0.01ms;
+    }
+  }
 }

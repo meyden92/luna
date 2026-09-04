@@ -37,4 +37,17 @@
     height: var(--space-5);
     margin-right: var(--space-3);
   }
+
+  @media (width < 64rem) {
+    .nav {
+      flex-direction: row;
+      overflow-x: auto;
+      padding: var(--space-1);
+    }
+
+    .link {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+  }
 }

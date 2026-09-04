@@ -1,6 +1,8 @@
 @layer components {
   .root {
+    container: ai-layout / inline-size;
     display: flex;
+    min-width: 0;
     flex-direction: column;
     overflow: hidden;
     border: 1px solid var(--border);
@@ -19,7 +21,7 @@
     flex-wrap: wrap;
     align-items: center;
     gap: var(--space-4);
-    padding: var(--space-3) var(--space-7);
+    padding: var(--space-3) var(--space-5);
     border-bottom: 1px solid var(--border);
     background: var(--background);
   }
@@ -139,7 +141,7 @@
 
     @media (width >= 768px) {
       flex: 1;
-      overflow: hidden;
+      overflow-y: auto;
     }
   }
 }

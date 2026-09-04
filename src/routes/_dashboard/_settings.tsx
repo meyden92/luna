@@ -21,7 +21,7 @@ function SettingsLayout() {
   return (
     <div className={cn('stack space-6', styles.root)}>
       <div className="stack space-1">
-        <h2 className={cn('type-2xl weight-bold', styles.title)}>Settings</h2>
+        <h2 className={styles.title}>Settings</h2>
         <p className={styles.subtitle}>Manage your account settings and set e-mail preferences.</p>
       </div>
       <Separator />

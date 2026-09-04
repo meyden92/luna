@@ -1,5 +1,4 @@
 import { ImageIcon, Link2, MegaphoneOff, Share2, Sparkles, Star } from 'lucide-react';
-import { cn } from '@/libs/utils';
 import styles from './Features.module.css';
 
 const FEATURES = [
@@ -39,12 +38,12 @@ export default function Features() {
         <span className={styles.headline}>Features That Actually Matter</span>
       </div>
       <div className={styles.grid}>
-        {FEATURES.map((feature, index) => {
+        {FEATURES.map((feature) => {
           const Ic = feature.icon;
           return (
             <div
               key={feature.tag}
-              className={cn(styles.cell, index > 0 && styles.cellDivided)}
+              className={styles.cell}
             >
               <div className={styles.icon}>
                 <Ic size={18} />

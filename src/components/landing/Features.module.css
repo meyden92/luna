@@ -9,6 +9,8 @@
 
   .header {
     display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
     align-items: baseline;
     justify-content: space-between;
     padding-top: var(--space-5);
@@ -27,6 +29,7 @@
     font-size: var(--text-3xl);
     letter-spacing: -0.01em;
     color: var(--foreground);
+    text-wrap: balance;
   }
 
   .grid {
@@ -40,20 +43,28 @@
     }
 
     @media (width >= 1024px) {
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
     }
   }
 
   .cell {
     position: relative;
     padding-block: var(--space-5);
-    padding-right: var(--space-5);
+    padding-inline: var(--space-5);
+    border-bottom: 1px solid var(--border);
   }
 
-  /* Every cell but the first carries the dividing rule on its left. */
-  .cellDivided {
-    padding-left: var(--space-5);
-    border-left: 1px solid var(--border);
+  /* Dividers follow the actual columns instead of the item's array index. */
+  @media (640px <= width < 1024px) {
+    .cell:nth-child(2n) {
+      border-left: 1px solid var(--border);
+    }
+  }
+
+  @media (width >= 1024px) {
+    .cell:not(:nth-child(3n + 1)) {
+      border-left: 1px solid var(--border);
+    }
   }
 
   .icon {
@@ -79,6 +90,7 @@
     font-weight: var(--weight-semibold);
     letter-spacing: -0.01em;
     color: var(--foreground);
+    text-wrap: balance;
   }
 
   .description {
@@ -87,25 +99,24 @@
     color: var(--muted-foreground);
   }
 
-  /* Ordinal tag parked in the cell's top-right; it hugs the grid edge on the
-     last column so it never overhangs the section. */
+  /* Ordinal tags share the same inset in every column. */
   .tag {
     position: absolute;
     top: var(--space-5);
-    right: 0;
+    right: var(--space-5);
     font-family: var(--font-mono);
     font-size: var(--text-xs);
     letter-spacing: 0.1em;
     color: var(--foreground-subtle);
   }
 
-  @media (width >= 1024px) {
-    .tag {
-      right: var(--space-5);
+  @media (prefers-reduced-motion: reduce) {
+    .icon {
+      transition: none;
     }
 
-    .cell:last-child .tag {
-      right: 0;
+    .cell:hover .icon {
+      transform: none;
     }
   }
 }

@@ -3,6 +3,8 @@ declare const styles: {
   readonly "grid": string;
   readonly "icon": string;
   readonly "tile": string;
+  readonly "tileTitle": string;
+  readonly "title": string;
 };
 export = styles;
 

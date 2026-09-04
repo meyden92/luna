@@ -31,11 +31,11 @@
     user-select: none;
     outline: none;
     transition:
-      background-color 300ms ease-out,
-      border-color 300ms ease-out,
-      color 300ms ease-out,
-      box-shadow 300ms ease-out,
-      transform 300ms ease-out;
+      background-color 150ms ease-out,
+      border-color 150ms ease-out,
+      color 150ms ease-out,
+      box-shadow 150ms ease-out,
+      transform 150ms ease-out;
 
     & svg {
       flex-shrink: 0;
@@ -54,15 +54,6 @@
 
     &:has([data-icon="inline-end"]) {
       padding-inline-end: var(--button-pad-hug);
-    }
-
-    /* The lift is the button's whole hover signature; the link variant opts out. */
-    &:hover {
-      transform: translateY(-1px);
-    }
-
-    &:active {
-      transform: none;
     }
 
     &:focus-visible {
@@ -168,7 +159,6 @@
     text-underline-offset: 4px;
 
     &:hover {
-      transform: none;
       text-decoration: underline;
     }
   }
@@ -217,5 +207,17 @@
 
   .root:is([data-size="icon-lg"], .iconLg) {
     --button-height: 2.5rem;
+  }
+
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .root:is([data-variant="default"], .default):is([data-size="lg"], .lg):hover:not(:active) {
+      transform: translateY(-1px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .root {
+      transition: none;
+    }
   }
 }

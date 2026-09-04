@@ -196,4 +196,14 @@
   .radioItem[data-highlighted] .shortcut {
     color: var(--accent-foreground);
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    .popup,
+    .item,
+    .subTrigger,
+    .checkboxItem,
+    .radioItem {
+      transition-duration: 0.01ms;
+    }
+  }
 }

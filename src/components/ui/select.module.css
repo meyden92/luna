@@ -225,4 +225,12 @@
       height: var(--space-4);
     }
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    .trigger,
+    .popup,
+    .item {
+      transition-duration: 0.01ms;
+    }
+  }
 }

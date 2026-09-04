@@ -82,4 +82,10 @@
   .description {
     color: var(--muted-foreground);
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    .popup {
+      transition-duration: 0.01ms;
+    }
+  }
 }

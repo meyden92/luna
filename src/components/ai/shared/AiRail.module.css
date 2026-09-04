@@ -1,6 +1,5 @@
 @layer components {
-  /* Height containment starts at md so the rail flows (never collapses to zero
-     height) on mobile, where the page scrolls as a whole. */
+  /* The rail flows with the results until the AI layout has room for two columns. */
   .rail {
     position: relative;
     display: flex;
@@ -19,7 +18,7 @@
     opacity: 0.4;
   }
 
-  @media (width >= 768px) {
+  @container ai-layout (width >= 52rem) {
     .rail {
       height: 100%;
       min-height: 0;
@@ -83,7 +82,7 @@
     padding: var(--space-4) var(--space-5) var(--space-5);
   }
 
-  @media (width >= 768px) {
+  @container ai-layout (width >= 52rem) {
     .body {
       min-height: 0;
       flex: 1;

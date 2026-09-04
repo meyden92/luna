@@ -14,8 +14,8 @@ interface AiWorkspaceProps {
 
 /**
  * Two-column AI workspace: a fixed settings rail and an independently
- * scrolling results pane. From 768px up the grid fills its bounded parent and
- * each column scrolls on its own; below that it stacks and scrolls as one page.
+ * scrolling results pane. When the enclosing AI layout has room for both,
+ * each column scrolls on its own; otherwise the columns stack and scroll together.
  */
 export function AiWorkspace({ rail, title, subtitle, children }: AiWorkspaceProps) {
   return (

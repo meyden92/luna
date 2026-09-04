@@ -4,6 +4,12 @@
  * co-located CSS Module (ADR 0003); new global classes do not belong here.
  */
 @layer base {
+  html {
+    scrollbar-gutter: stable;
+    scrollbar-color: var(--input) transparent;
+    scrollbar-width: thin;
+  }
+
   body {
     background-color: var(--background);
     color: var(--foreground);
@@ -11,7 +17,6 @@
     font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    scrollbar-gutter: stable;
     background-image:
       radial-gradient(ellipse 900px 500px at 85% -10%, color-mix(in oklab, var(--primary) 9%, transparent), transparent 60%),
       radial-gradient(ellipse 700px 400px at -10% 30%, color-mix(in oklab, var(--primary) 5%, transparent), transparent 60%);
@@ -37,6 +42,7 @@
 
   * {
     outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
+    scrollbar-width: thin;
   }
 
   :focus-visible {
@@ -50,21 +56,6 @@
 
   ::selection {
     background: var(--primary-tint);
-  }
-
-  ::-webkit-scrollbar {
-    width: 11px;
-    height: 11px;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: var(--input);
-    border-radius: var(--radius-md);
-    border: 3px solid var(--background);
-  }
-
-  ::-webkit-scrollbar-track {
-    background: transparent;
   }
 
   /* Keyboard-only "skip to content" link: hidden until it receives focus. */

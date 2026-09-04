@@ -14,7 +14,12 @@
   }
 
   .title {
-    letter-spacing: -0.025em;
+    font-family: var(--font-display);
+    font-size: var(--text-page-title);
+    line-height: var(--leading-page-title);
+    font-weight: var(--weight-normal);
+    letter-spacing: var(--tracking-heading);
+    text-wrap: balance;
   }
 
   .subtitle {

@@ -23,8 +23,8 @@
 
   .title {
     margin: 0;
-    font-size: var(--text-lg);
-    line-height: var(--leading-lg);
+    font-size: var(--text-section-title);
+    line-height: var(--leading-section-title);
     font-weight: var(--weight-semibold);
   }
 

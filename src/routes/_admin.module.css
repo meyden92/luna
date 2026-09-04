@@ -1,5 +1,5 @@
 @layer components {
-  /* Two-column admin shell: a fixed sidebar beside a scrolling content column. */
+  /* Desktop sidebar; narrow screens place the same navigation above the content. */
   .root {
     display: flex;
     min-height: 100%;
@@ -38,5 +38,29 @@
     flex: 1;
     padding: 0 var(--space-8) var(--space-8);
     overflow-x: hidden;
+  }
+
+  @media (width < 64rem) {
+    .root {
+      flex-direction: column;
+    }
+
+    .sidebar {
+      width: 100%;
+      border-right: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand {
+      margin-block: 0 var(--space-3);
+    }
+
+    .breadcrumbs {
+      padding: var(--space-4);
+    }
+
+    .main {
+      padding-inline: var(--space-4);
+    }
   }
 }

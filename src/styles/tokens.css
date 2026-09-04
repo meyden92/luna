@@ -128,29 +128,6 @@
   --shadow-sm: 0 1px 0 var(--shadow-color-1), 0 1px 2px var(--shadow-color-1);
   --shadow-md: 0 1px 0 var(--shadow-color-1), 0 10px 24px -12px var(--shadow-color-2);
   --shadow-lg: 0 30px 60px -30px var(--shadow-color-3), 0 10px 20px -10px var(--shadow-color-4);
-
-  /* ---- Transitional aliases -------------------------------------------- */
-  /* The luna palette is folded into the roles above. These names exist only so
-     unmigrated files still resolve; the contract ticket (#74) deletes them. */
-  --luna-bg: var(--background);
-  --luna-bg-2: var(--muted);
-  --luna-bg-3: var(--muted-strong);
-  --luna-ink: var(--foreground);
-  --luna-ink-2: var(--foreground-2);
-  --luna-ink-3: var(--muted-foreground);
-  --luna-ink-4: var(--foreground-subtle);
-  --luna-line: var(--border);
-  --luna-line-2: var(--input);
-  --luna-accent: var(--primary);
-  --luna-accent-2: var(--primary-strong);
-  --luna-accent-tint: var(--primary-tint);
-  --luna-accent-soft: var(--accent);
-  --luna-warn: var(--warning);
-  --luna-radius: var(--radius-xl);
-  --luna-radius-sm: var(--radius-lg);
-  --luna-shadow-sm: var(--shadow-sm);
-  --luna-shadow-md: var(--shadow-md);
-  --luna-shadow-lg: var(--shadow-lg);
 }
 
 /* Appearance: next-themes writes the resolved choice here; without it the

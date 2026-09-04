@@ -1,0 +1,152 @@
+@layer components {
+  .root {
+    display: flex;
+    min-height: 100%;
+  }
+
+  /* Sign-in column: full width on small screens, the left half from lg up. */
+  .signin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding-inline: var(--space-6);
+    padding-block: var(--space-16);
+  }
+
+  .form {
+    --stack-gap: var(--space-8);
+
+    width: 100%;
+    max-width: 375px;
+  }
+
+  .intro {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    text-align: center;
+  }
+
+  /* Display headings scale with the viewport; the caps sit between type steps. */
+  .title {
+    --title-max: 2.625rem;
+
+    font-family: var(--font-display);
+    font-weight: var(--weight-normal);
+    font-size: clamp(var(--text-3xl), 3.2vw, var(--title-max));
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--foreground);
+  }
+
+  .brand {
+    font-style: italic;
+    color: var(--primary-strong);
+  }
+
+  /* Dark keeps the brighter primary; primary-strong is too dim on the dark ground. */
+  [data-theme="dark"] .brand {
+    color: var(--primary);
+  }
+
+  .subtitle {
+    font-size: var(--text-sm);
+    line-height: 1.6;
+    color: var(--muted-foreground);
+  }
+
+  .fields {
+    --stack-gap: var(--space-5);
+  }
+
+  .submit {
+    width: 100%;
+  }
+
+  .icon {
+    width: var(--space-4);
+    height: var(--space-4);
+    margin-right: var(--space-2);
+  }
+
+  .spinner {
+    animation: spin 1s linear infinite;
+  }
+
+  /* Brand panel: only rendered from lg up. */
+  .panel {
+    display: none;
+    position: relative;
+    overflow: hidden;
+    border-left: 1px solid var(--border);
+    background: var(--muted);
+  }
+
+  /* Fades the backdrop art out towards the top so the headline stays readable. */
+  .panelScrim {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(to top, var(--muted), color-mix(in oklab, var(--muted) 70%, transparent) 50%, transparent);
+  }
+
+  .panelBody {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: var(--space-4);
+    height: 100%;
+    padding: var(--space-12);
+  }
+
+  .panelTitle {
+    --panel-title-max: 3.25rem;
+
+    font-family: var(--font-display);
+    font-weight: var(--weight-normal);
+    font-size: clamp(var(--text-4xl), 3.6vw, var(--panel-title-max));
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    color: var(--foreground);
+  }
+
+  .panelAccent {
+    font-style: italic;
+    color: var(--primary-strong);
+  }
+
+  [data-theme="dark"] .panelAccent {
+    color: var(--primary);
+  }
+
+  @media (width >= 1024px) {
+    .signin {
+      width: 50%;
+    }
+
+    .intro {
+      align-items: flex-start;
+      text-align: left;
+    }
+
+    .panel {
+      display: block;
+      width: 50%;
+    }
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spinner {
+      animation-duration: 2s;
+    }
+  }
+}

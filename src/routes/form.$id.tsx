@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { FormShareViewer } from '@/components/form-share/FormShareViewer';
 import { queryKeys } from '@/libs/query-keys';
 import { claimFormShareView, type FormShareClaim, getFormShareForView } from '@/server/fns/platform';
+import styles from './form.module.css';
 
 const formShareQueryOptions = (id: string) => ({
   queryKey: queryKeys.platform.formShare(id),
@@ -58,15 +59,13 @@ function ShareStatePage({
   action?: string;
 }) {
   return (
-    <section className="min-h-screen bg-background px-4 py-10">
-      <div className="mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center text-center">
-        <div className="mb-8">
-          <p className="text-sm font-semibold tracking-wide text-primary">LunaShare</p>
-        </div>
-        <div className="space-y-3 rounded-lg border bg-card p-6 shadow-sm">
-          <h1 className="text-2xl font-semibold">{title}</h1>
-          <p className="text-sm text-muted-foreground">{description}</p>
-          <p className="text-sm text-muted-foreground">{action}</p>
+    <section className={styles.state}>
+      <div className={styles.stateBody}>
+        <p className={`${styles.wordmark} type-sm`}>LunaShare</p>
+        <div className={styles.card}>
+          <h1 className="type-2xl weight-semibold">{title}</h1>
+          <p className={`${styles.cardText} type-sm`}>{description}</p>
+          <p className={`${styles.cardText} type-sm`}>{action}</p>
         </div>
       </div>
     </section>
@@ -165,7 +164,7 @@ function FormViewPage() {
   }
 
   return (
-    <section className="container mx-auto py-10 px-4">
+    <section className={`${styles.viewer} container`}>
       <FormShareViewer
         shareId={share.id}
         title={share.title}

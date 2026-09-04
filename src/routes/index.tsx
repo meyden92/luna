@@ -5,6 +5,7 @@ import Hero from '@/components/landing/Hero';
 import MoonlitCta from '@/components/landing/MoonlitCta';
 import Stats from '@/components/landing/Stats';
 import Story from '@/components/landing/Story';
+import styles from './index.module.css';
 
 export const Route = createFileRoute('/')({
   component: Home,
@@ -12,7 +13,7 @@ export const Route = createFileRoute('/')({
 
 function Home() {
   return (
-    <div className="min-h-screen">
+    <div className={styles.root}>
       <main>
         <Hero />
         <Features />

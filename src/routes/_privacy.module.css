@@ -1,0 +1,16 @@
+@layer components {
+  .root {
+    max-width: 80rem;
+    margin-inline: auto;
+  }
+
+  /* Recessed panel the legal documents sit on. */
+  .panel {
+    margin-block: var(--space-2);
+    padding-inline: var(--space-2);
+    padding-block: var(--space-5);
+    border: 1px solid var(--border);
+    background: var(--muted);
+    box-shadow: var(--shadow-sm);
+  }
+}

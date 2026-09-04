@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/tanstack-form';
 import { authClient } from '@/libs/auth/auth-client';
 import { signInSchema } from '@/schemas/credentials-schema';
+import styles from './login.module.css';
 
 type LoginSearch = {
   redirect?: string;
@@ -68,20 +69,20 @@ function LoginPage() {
   // Split screen from lg up: sign-in on the left, brand panel on the right.
   // Below lg the brand panel drops out and the sign-in column stays centred.
   return (
-    <div className="flex min-h-full">
-      <div className="flex w-full items-center justify-center px-6 py-16 lg:w-1/2">
-        <div className="w-full max-w-[375px] space-y-8">
-          <div className="flex flex-col items-center space-y-3 text-center lg:items-start lg:text-left">
+    <div className={styles.root}>
+      <div className={styles.signin}>
+        <div className={`${styles.form} stack`}>
+          <div className={styles.intro}>
             <Brandmark size={44} />
-            <h1 className="font-serif text-[clamp(30px,3.2vw,42px)] font-normal leading-[1.05] tracking-[-0.02em] text-luna-ink">
-              Welcome back to <span className="italic text-luna-accent-2 dark:text-luna-accent">LunaShare</span>
+            <h1 className={styles.title}>
+              Welcome back to <span className={styles.brand}>LunaShare</span>
             </h1>
-            <p className="text-[14.5px] leading-[1.6] text-luna-ink-3">Login to your account</p>
+            <p className={styles.subtitle}>Login to your account</p>
           </div>
 
           <FormWithSchema
             config={formConfig}
-            className="space-y-5"
+            className={`${styles.fields} stack`}
           >
             <FormField
               name="username"
@@ -127,10 +128,14 @@ function LoginPage() {
                 <Button
                   type="submit"
                   disabled={isSubmitting || !isReady}
-                  className="w-full"
+                  className={styles.submit}
                   size="lg"
                 >
-                  {isSubmitting || !isReady ? <Loader2 className="mr-2 size-4 animate-spin" /> : <LogIn className="mr-2 size-4" />}
+                  {isSubmitting || !isReady ? (
+                    <Loader2 className={`${styles.icon} ${styles.spinner}`} />
+                  ) : (
+                    <LogIn className={styles.icon} />
+                  )}
                   Login
                 </Button>
               )}
@@ -139,15 +144,15 @@ function LoginPage() {
         </div>
       </div>
 
-      <div className="relative hidden overflow-hidden border-l border-luna-line bg-luna-bg-2 lg:block lg:w-1/2">
+      <div className={styles.panel}>
         <NightBandBackdrop />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-luna-bg-2 via-luna-bg-2/70 to-transparent" />
+        <div className={styles.panelScrim} />
 
-        <div className="relative flex h-full flex-col justify-end gap-4 p-[52px_48px]">
-          <h2 className="font-serif text-[clamp(34px,3.6vw,52px)] font-normal leading-[1.02] tracking-[-0.02em] text-luna-ink">
+        <div className={styles.panelBody}>
+          <h2 className={styles.panelTitle}>
             Share simply,
             <br />
-            <em className="italic text-luna-accent-2 dark:text-luna-accent">sleep easy</em>.
+            <em className={styles.panelAccent}>sleep easy</em>.
           </h2>
         </div>
       </div>

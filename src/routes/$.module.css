@@ -1,0 +1,154 @@
+@layer components {
+  .root {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .emblem {
+    /* No spacing token reaches 8rem; the halo is a deliberate one-off. */
+    --halo-size: 8rem;
+
+    position: relative;
+    margin-bottom: var(--space-8);
+  }
+
+  .glyph {
+    position: relative;
+    z-index: 10;
+    padding: var(--space-6);
+    color: var(--primary);
+  }
+
+  .haloLayer {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+  }
+
+  .halo {
+    width: var(--halo-size);
+    height: var(--halo-size);
+    border-radius: var(--radius-full);
+    background: var(--foreground);
+    opacity: 0.2;
+    animation: pulseFade 2.4s ease-in-out 400ms infinite;
+  }
+
+  /* The page copy sits below the emblem's optical centre. */
+  .content {
+    transform: translateY(var(--space-12));
+  }
+
+  .title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    text-align: center;
+  }
+
+  .card {
+    --halo-size: 8rem;
+    --halo-size-sm: 6rem;
+
+    position: relative;
+    overflow: hidden;
+    max-width: 28rem;
+    padding: var(--space-6);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: color-mix(in oklab, var(--background) 70%, transparent);
+    backdrop-filter: blur(12px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* Two soft discs bleeding out of opposite corners. */
+  .card::before,
+  .card::after {
+    content: "";
+    position: absolute;
+    border-radius: var(--radius-full);
+    background: var(--ring);
+    opacity: 0.2;
+  }
+
+  .card::before {
+    top: calc(var(--space-10) * -1);
+    right: calc(var(--space-10) * -1);
+    width: var(--halo-size);
+    height: var(--halo-size);
+  }
+
+  .card::after {
+    bottom: calc(var(--space-10) * -1);
+    left: calc(var(--space-10) * -1);
+    width: var(--halo-size-sm);
+    height: var(--halo-size-sm);
+  }
+
+  .inner {
+    position: relative;
+  }
+
+  .message {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+  }
+
+  .messageIcon {
+    flex-shrink: 0;
+    padding: var(--space-2);
+    border-radius: var(--radius-full);
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .messageText {
+    font-weight: var(--weight-medium);
+    line-height: 1.625;
+    color: var(--foreground);
+  }
+
+  .actions {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--space-8);
+  }
+
+  .footnote {
+    margin-top: var(--space-8);
+    text-align: center;
+    color: var(--foreground);
+  }
+
+  @keyframes pulseFade {
+    0%,
+    100% {
+      opacity: 0.2;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.05;
+      transform: scale(1.08);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .halo {
+      animation: none;
+    }
+  }
+}

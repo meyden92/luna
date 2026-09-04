@@ -1,0 +1,74 @@
+@layer components {
+  /*
+   * A long legal document: the root styles its own descendants so the markup
+   * stays plain prose instead of carrying a class on every paragraph.
+   */
+  .doc {
+    max-width: 56rem;
+    margin-inline: auto;
+    padding-inline: var(--space-4);
+    padding-block: var(--space-8);
+
+    & h1 {
+      margin-bottom: var(--space-4);
+      font-size: var(--text-3xl);
+      line-height: var(--leading-3xl);
+      font-weight: var(--weight-bold);
+    }
+
+    & h2 {
+      margin-bottom: var(--space-3);
+      font-size: var(--text-2xl);
+      line-height: var(--leading-2xl);
+      font-weight: var(--weight-semibold);
+    }
+
+    & h3 {
+      margin-top: var(--space-4);
+      margin-bottom: var(--space-2);
+      font-size: var(--text-xl);
+      line-height: var(--leading-xl);
+      font-weight: var(--weight-medium);
+    }
+
+    & p {
+      margin-bottom: var(--space-3);
+    }
+
+    & ul {
+      list-style: disc;
+      padding-left: var(--space-6);
+      margin-bottom: var(--space-3);
+    }
+
+    & li + li {
+      margin-top: var(--space-1);
+    }
+
+    & .updated {
+      margin-bottom: var(--space-6);
+      font-size: var(--text-sm);
+      line-height: var(--leading-sm);
+      color: var(--muted-foreground);
+    }
+
+    & a {
+      color: var(--info);
+    }
+
+    & a:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .sections {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  /* The section gap already separates blocks; a trailing margin double-spaces it. */
+  .sections > * > :last-child {
+    margin-bottom: 0;
+  }
+}

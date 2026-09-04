@@ -7,15 +7,12 @@
     margin-bottom: var(--space-6);
   }
 
+  /* The public snippet page leans on the accent for its heading in dark mode. */
   .title {
     text-align: center;
     font-size: var(--text-3xl);
     line-height: var(--leading-3xl);
     font-weight: var(--weight-bold);
-  }
-
-  /* The public snippet page leans on the accent for its heading in dark mode. */
-  [data-theme="dark"] .title {
-    color: var(--primary);
+    color: light-dark(var(--foreground), var(--primary));
   }
 }

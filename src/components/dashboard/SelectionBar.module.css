@@ -3,8 +3,8 @@
      panel in dark. The inversion is genuine, so it is written per Appearance. */
   .bar {
     --bar-button-height: 1.875rem;
-    /* Hover wash for the inverted bar: a light film, not an Appearance colour. */
-    --bar-hover: oklch(1 0 0 / 0.12);
+    /* Hover wash for the inverted bar: a light film over the ink surface. */
+    --bar-hover: light-dark(color-mix(in oklab, var(--on-scrim) 12%, transparent), color-mix(in oklab, var(--on-scrim) 7%, transparent));
 
     position: fixed;
     bottom: var(--space-6);
@@ -17,19 +17,16 @@
     padding-left: var(--space-4);
     padding-right: var(--space-2);
     border-radius: var(--radius-xl);
-    background: var(--foreground);
-    color: var(--background);
+    background: light-dark(var(--foreground), var(--muted-strong));
+    color: light-dark(var(--background), var(--foreground));
     box-shadow: var(--shadow-lg);
     transform: translateX(-50%);
     animation: selection-bar-in 200ms ease both;
   }
 
+  /* The dark panel gains an outline the light ink surface does not need. */
   [data-theme="dark"] .bar {
-    --bar-hover: oklch(1 0 0 / 0.07);
-
     border: 1px solid var(--input);
-    background: var(--muted-strong);
-    color: var(--foreground);
   }
 
   @keyframes selection-bar-in {
@@ -85,7 +82,7 @@
 
   /* Lightened destructive so it stays legible on the ink bar. */
   .buttonDanger:hover {
-    color: color-mix(in oklab, var(--destructive) 60%, #fff);
+    color: color-mix(in oklab, var(--destructive) 60%, var(--on-scrim));
   }
 
   .icon {

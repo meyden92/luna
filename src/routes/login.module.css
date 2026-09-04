@@ -41,14 +41,10 @@
     color: var(--foreground);
   }
 
+  /* Dark keeps the brighter primary; primary-strong is too dim on the dark ground. */
   .brand {
     font-style: italic;
-    color: var(--primary-strong);
-  }
-
-  /* Dark keeps the brighter primary; primary-strong is too dim on the dark ground. */
-  [data-theme="dark"] .brand {
-    color: var(--primary);
+    color: light-dark(var(--primary-strong), var(--primary));
   }
 
   .subtitle {
@@ -115,11 +111,7 @@
 
   .panelAccent {
     font-style: italic;
-    color: var(--primary-strong);
-  }
-
-  [data-theme="dark"] .panelAccent {
-    color: var(--primary);
+    color: light-dark(var(--primary-strong), var(--primary));
   }
 
   @media (width >= 1024px) {

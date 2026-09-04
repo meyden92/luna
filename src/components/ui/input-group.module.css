@@ -30,7 +30,8 @@
 
     &:has([data-slot][aria-invalid="true"]) {
       border-color: var(--destructive);
-      box-shadow: 0 0 0 2px color-mix(in oklab, var(--destructive) 20%, transparent);
+      box-shadow: 0 0 0 2px
+        light-dark(color-mix(in oklab, var(--destructive) 20%, transparent), color-mix(in oklab, var(--destructive) 40%, transparent));
     }
 
     /* A textarea or a stacked addon makes the group grow instead of sitting on
@@ -61,10 +62,6 @@
     &:has(> [data-align="inline-end"]) > input {
       padding-right: var(--space-2);
     }
-  }
-
-  [data-theme="dark"] .root:has([data-slot][aria-invalid="true"]) {
-    box-shadow: 0 0 0 2px color-mix(in oklab, var(--destructive) 40%, transparent);
   }
 
   .addon {

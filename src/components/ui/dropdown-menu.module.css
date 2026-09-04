@@ -135,12 +135,11 @@
       }
 
       &[data-highlighted] {
-        background-color: color-mix(in oklch, var(--destructive) 10%, transparent);
+        background-color: light-dark(
+          color-mix(in oklch, var(--destructive) 10%, transparent),
+          color-mix(in oklch, var(--destructive) 20%, transparent)
+        );
         color: var(--destructive);
-
-        [data-theme="dark"] & {
-          background-color: color-mix(in oklch, var(--destructive) 20%, transparent);
-        }
       }
     }
   }

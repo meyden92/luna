@@ -123,11 +123,7 @@
   .selectButton[data-active="true"] {
     border-color: var(--primary);
     background: var(--accent);
-    color: var(--primary-strong);
-  }
-
-  [data-theme="dark"] .selectButton[data-active="true"] {
-    color: var(--primary);
+    color: light-dark(var(--primary-strong), var(--primary));
   }
 
   .selectIcon {
@@ -178,11 +174,7 @@
     flex-direction: column;
     align-items: center;
     gap: var(--space-3);
-    color: var(--primary-strong);
-
-    [data-theme="dark"] & {
-      color: var(--primary);
-    }
+    color: light-dark(var(--primary-strong), var(--primary));
   }
 
   .dropIconWell {
@@ -239,13 +231,9 @@
   }
 
   .segment[data-active="true"] {
-    background: var(--background);
+    background: light-dark(var(--background), var(--muted-strong));
     color: var(--foreground);
     box-shadow: var(--shadow-sm);
-
-    [data-theme="dark"] & {
-      background: var(--muted-strong);
-    }
   }
 
   .segmentIcon {

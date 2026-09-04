@@ -12,13 +12,13 @@ export function NightBandBackdrop() {
         src="/decor/night-band-light.webp"
         alt=""
         aria-hidden="true"
-        className={cn(styles.band, styles.light)}
+        className={cn(styles.band, styles.dayImage)}
       />
       <img
         src="/decor/night-band.webp"
         alt=""
         aria-hidden="true"
-        className={cn(styles.band, styles.dark)}
+        className={cn(styles.band, styles.nightImage)}
       />
     </>
   );

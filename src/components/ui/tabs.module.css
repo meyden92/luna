@@ -93,12 +93,8 @@
 
   /* Pill treatment: the selected tab lifts onto the page surface. */
   .list[data-variant="default"] .trigger[data-active] {
-    background-color: var(--background);
-  }
-
-  [data-theme="dark"] .list[data-variant="default"] .trigger[data-active] {
-    border-color: var(--input);
-    background-color: color-mix(in oklab, var(--input) 30%, transparent);
+    border-color: light-dark(transparent, var(--input));
+    background-color: light-dark(var(--background), color-mix(in oklab, var(--input) 30%, transparent));
   }
 
   /* Underline treatment: no fill, a rule on the edge the list runs along. */

@@ -1,7 +1,7 @@
 declare const styles: {
   readonly "band": string;
-  readonly "dark": string;
-  readonly "light": string;
+  readonly "dayImage": string;
+  readonly "nightImage": string;
 };
 export = styles;
 

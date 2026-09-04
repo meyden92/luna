@@ -46,13 +46,7 @@
   .eyebrow,
   .emphasis,
   .assuranceIcon {
-    color: var(--primary-strong);
-  }
-
-  [data-theme="dark"] .eyebrow,
-  [data-theme="dark"] .emphasis,
-  [data-theme="dark"] .assuranceIcon {
-    color: var(--primary);
+    color: light-dark(var(--primary-strong), var(--primary));
   }
 
   .eyebrow {

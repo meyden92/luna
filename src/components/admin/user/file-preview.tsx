@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { file } from '@/db/schema/files';
 import { formatSize, getCDNImage } from '@/libs/utils';
+import styles from './file-preview.module.css';
 
 type File = typeof file.$inferSelect;
 interface FilePreviewProps {
@@ -21,51 +22,56 @@ export default function FilePreview({ file }: FilePreviewProps) {
   const isPdf = file.contentType === 'application/pdf';
 
   return (
-    <div className="space-y-4">
+    <div className="stack space-4">
       {/* File Info */}
-      <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+      <div className={styles.info}>
         <div>
-          <label className="text-sm font-medium text-muted-foreground">File ID</label>
-          <p className="font-mono text-sm">{file.id}</p>
+          <label className={styles.infoLabel}>File ID</label>
+          <p
+            className={styles.infoValue}
+            data-mono="true"
+          >
+            {file.id}
+          </p>
         </div>
         <div>
-          <label className="text-sm font-medium text-muted-foreground">Size</label>
-          <p className="text-sm">{formatSize(file.size, ADMIN_FILE_SIZE_OPTIONS)}</p>
+          <label className={styles.infoLabel}>Size</label>
+          <p className={styles.infoValue}>{formatSize(file.size, ADMIN_FILE_SIZE_OPTIONS)}</p>
         </div>
         <div>
-          <label className="text-sm font-medium text-muted-foreground">Type</label>
-          <p className="text-sm">{file.contentType}</p>
+          <label className={styles.infoLabel}>Type</label>
+          <p className={styles.infoValue}>{file.contentType}</p>
         </div>
         <div>
-          <label className="text-sm font-medium text-muted-foreground">Created</label>
-          <p className="text-sm">{new Date(file.createdAt).toLocaleDateString()}</p>
+          <label className={styles.infoLabel}>Created</label>
+          <p className={styles.infoValue}>{new Date(file.createdAt).toLocaleDateString()}</p>
         </div>
       </div>
 
       {/* File Preview */}
-      <div className="flex justify-center items-center min-h-[300px] max-h-[40vh] bg-muted/30 rounded-lg overflow-hidden">
+      <div className={styles.stage}>
         {isImage && !imageError ? (
           <img
             src={fileUrl}
             alt={file.title}
-            className="max-w-full max-h-full object-contain"
+            className={styles.image}
             onError={() => setImageError(true)}
           />
         ) : isVideo ? (
           <video
             src={fileUrl}
             controls
-            className="max-w-full max-h-full"
+            className={styles.video}
             preload="metadata"
           >
             Your browser does not support the video tag.
           </video>
         ) : isAudio ? (
-          <div className="w-full max-w-md">
+          <div className={styles.audioWrap}>
             <audio
               src={fileUrl}
               controls
-              className="w-full"
+              className={styles.audio}
               preload="metadata"
             >
               Your browser does not support the audio tag.
@@ -74,20 +80,20 @@ export default function FilePreview({ file }: FilePreviewProps) {
         ) : isPdf ? (
           <iframe
             src={fileUrl}
-            className="w-full h-[40vh] border-0"
+            className={styles.pdf}
             title={file.title}
           />
         ) : (
-          <div className="text-center text-muted-foreground">
-            <FileIcon className="h-16 w-16 mx-auto mb-4" />
+          <div className={styles.unsupported}>
+            <FileIcon className={styles.unsupportedIcon} />
             <p>Preview not available for this file type</p>
-            <p className="text-sm mt-2">{file.contentType}</p>
+            <p className={styles.unsupportedType}>{file.contentType}</p>
           </div>
         )}
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2 justify-center">
+      <div className={styles.actions}>
         <Button
           variant="outline"
           render={
@@ -98,7 +104,7 @@ export default function FilePreview({ file }: FilePreviewProps) {
             />
           }
         >
-          <ExternalLink className="h-4 w-4 mr-2" />
+          <ExternalLink />
           Open in New Tab
         </Button>
         <Button
@@ -110,7 +116,7 @@ export default function FilePreview({ file }: FilePreviewProps) {
             />
           }
         >
-          <Download className="h-4 w-4 mr-2" />
+          <Download />
           Download
         </Button>
       </div>

@@ -12,6 +12,7 @@ import { useAppMutation } from '@/hooks/use-app-mutation';
 import { useConfirmation } from '@/hooks/use-confirmation';
 import { formatSize } from '@/libs/utils';
 import { deleteAdminUser, reactivateUser as reactivateUserFn, suspendUser as suspendUserFn } from '@/server/fns/admin/users';
+import styles from './user-danger-zone.module.css';
 
 type User = typeof user.$inferSelect;
 interface UserDangerZoneProps {
@@ -47,7 +48,7 @@ function DeleteUserDialog({
       <Button
         variant="destructive"
         size="sm"
-        className="w-full"
+        className={styles.actionButton}
         onClick={() => setIsOpen(true)}
       >
         Delete User Account
@@ -67,7 +68,7 @@ function DeleteUserDialog({
               from storage. This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
+          <div className="stack space-2">
             <Label htmlFor="delete-user-confirmation">Type {user.email} to confirm.</Label>
             <Input
               id="delete-user-confirmation"
@@ -162,18 +163,19 @@ export default function UserDangerZone({ user, fileCount, totalSize }: UserDange
   };
 
   return (
-    <Card className="border-destructive/20">
-      <CardContent className="pt-6">
-        <h3 className="text-lg font-medium text-destructive mb-4">Danger Zone</h3>
-        <div className="space-y-4">
-          <div className="p-4 border border-destructive/20 rounded-lg">
-            <h4 className="font-medium flex items-center gap-2 mb-2">
-              <Trash2 className="h-4 w-4 text-destructive" />
+    <Card className={styles.card}>
+      <CardContent className={styles.body}>
+        <h3 className={styles.heading}>Danger Zone</h3>
+        <div className="stack space-4">
+          <div
+            className={styles.action}
+            data-tone="delete"
+          >
+            <h4 className={styles.actionTitle}>
+              <Trash2 className={styles.actionIcon} />
               Delete Account
             </h4>
-            <p className="text-sm text-muted-foreground mb-4">
-              Permanently delete this user and all their files. This action cannot be undone.
-            </p>
+            <p className={styles.actionText}>Permanently delete this user and all their files. This action cannot be undone.</p>
             <DeleteUserDialog
               user={user}
               fileCount={fileCount}
@@ -183,20 +185,21 @@ export default function UserDangerZone({ user, fileCount, totalSize }: UserDange
             />
           </div>
 
-          <div className="p-4 border border-amber-500/20 rounded-lg">
-            <h4 className="font-medium flex items-center gap-2 mb-2 text-amber-600">
-              <Ban className="h-4 w-4" />
+          <div
+            className={styles.action}
+            data-tone="suspend"
+          >
+            <h4 className={styles.actionTitle}>
+              <Ban className={styles.actionIcon} />
               Suspend Account
             </h4>
-            <p className="text-sm text-muted-foreground mb-4">
-              Temporarily suspend this account. The user will not be able to login or upload files.
-            </p>
+            <p className={styles.actionText}>Temporarily suspend this account. The user will not be able to login or upload files.</p>
             {user.banned ? (
               <Button
                 variant="outline"
                 onClick={handleReactivateUser}
                 size="sm"
-                className="w-full border-amber-500/50 text-amber-600 hover:bg-amber-50"
+                className={styles.suspendButton}
               >
                 Reactivate Account
               </Button>
@@ -205,7 +208,7 @@ export default function UserDangerZone({ user, fileCount, totalSize }: UserDange
                 variant="outline"
                 onClick={handleSuspendUser}
                 size="sm"
-                className="w-full border-amber-500/50 text-amber-600 hover:bg-amber-50"
+                className={styles.suspendButton}
               >
                 Suspend Account
               </Button>

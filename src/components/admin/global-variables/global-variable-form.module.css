@@ -1,0 +1,97 @@
+@layer components {
+  .optionsSection {
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--border);
+  }
+
+  .optionsHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-4);
+  }
+
+  .optionsTitle {
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+    font-weight: var(--weight-medium);
+  }
+
+  .optionsCount {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .sheet {
+    width: 100%;
+    overflow-y: auto;
+  }
+
+  @media (width >= 640px) {
+    .sheet {
+      max-width: 50vw;
+    }
+  }
+
+  .optionPreview {
+    font-weight: var(--weight-normal);
+    cursor: pointer;
+  }
+
+  .form {
+    max-width: 42rem;
+  }
+
+  .pair {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (width >= 768px) {
+    .pair {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* Switch field: label and description on the left, control on the right. */
+  .switchField {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  .switchText {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .switchLabel {
+    font-size: var(--text-base);
+    line-height: var(--leading-base);
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-4);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .buttonSpinner {
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  @keyframes spin {
+    to {
+      rotate: 360deg;
+    }
+  }
+}

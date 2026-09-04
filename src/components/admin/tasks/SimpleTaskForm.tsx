@@ -13,6 +13,7 @@ import { queryKeys } from '@/libs/query-keys';
 import { createAdminTask, getAdminTask, listTaskFunctions, updateAdminTask } from '@/server/fns/admin/tasks';
 import type { TaskFormData } from '@/types/tasks';
 import CronBuilder from './cron-builder';
+import styles from './SimpleTaskForm.module.css';
 
 interface TaskFormProps {
   taskId?: string;
@@ -129,9 +130,9 @@ export default function SimpleTaskForm({ taskId, onSuccess, onCancel }: TaskForm
 
   if (functionsLoading || (isEditing && taskLoading)) {
     return (
-      <Card className="w-full max-w-2xl mx-auto">
-        <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
+      <Card className={styles.card}>
+        <CardContent className={styles.loading}>
+          <Loader2 className={styles.spinner} />
         </CardContent>
       </Card>
     );
@@ -140,20 +141,20 @@ export default function SimpleTaskForm({ taskId, onSuccess, onCancel }: TaskForm
   const availableFunctions = functionsData?.functions || [];
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className={styles.card}>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          {isEditing ? <Save className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+        <CardTitle className={styles.title}>
+          {isEditing ? <Save className={styles.titleIcon} /> : <Plus className={styles.titleIcon} />}
           {isEditing ? 'Edit Task' : 'Create New Task'}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <form
           onSubmit={handleSubmit}
-          className="space-y-6"
+          className="stack space-6"
         >
           {/* Basic Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className={styles.pair}>
             <div>
               <Label htmlFor="name">Task Name</Label>
               <Input
@@ -171,7 +172,7 @@ export default function SimpleTaskForm({ taskId, onSuccess, onCancel }: TaskForm
                 <Input
                   value={formData.taskFunction}
                   disabled
-                  className="bg-muted cursor-not-allowed"
+                  className={styles.lockedInput}
                 />
               ) : (
                 <Select
@@ -194,7 +195,7 @@ export default function SimpleTaskForm({ taskId, onSuccess, onCancel }: TaskForm
                   </SelectContent>
                 </Select>
               )}
-              {isEditing && <p className="text-sm text-muted-foreground mt-1">Task function cannot be changed when editing</p>}
+              {isEditing && <p className={styles.hint}>Task function cannot be changed when editing</p>}
             </div>
           </div>
 
@@ -226,14 +227,14 @@ export default function SimpleTaskForm({ taskId, onSuccess, onCancel }: TaskForm
               placeholder='["arg1", "arg2"] or leave empty for no arguments'
               rows={3}
             />
-            {argsError && <p className="text-sm text-destructive mt-1">{argsError}</p>}
-            <p className="text-sm text-muted-foreground mt-1">
+            {argsError && <p className={styles.fieldError}>{argsError}</p>}
+            <p className={styles.hint}>
               Arguments to pass to the task function as JSON array. Leave empty if the function takes no arguments.
             </p>
           </div>
 
           {/* Configuration */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className={styles.triple}>
             <div>
               <Label htmlFor="timeout">Timeout (ms)</Label>
               <Input
@@ -259,7 +260,7 @@ export default function SimpleTaskForm({ taskId, onSuccess, onCancel }: TaskForm
               />
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className={styles.switchRow}>
               <Label htmlFor="enabled">Enabled</Label>
               <Switch
                 id="enabled"
@@ -270,14 +271,14 @@ export default function SimpleTaskForm({ taskId, onSuccess, onCancel }: TaskForm
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-2 pt-6">
+          <div className={styles.actions}>
             {onCancel && (
               <Button
                 type="button"
                 variant="outline"
                 onClick={onCancel}
               >
-                <X className="h-4 w-4 mr-2" />
+                <X />
                 Cancel
               </Button>
             )}
@@ -285,7 +286,7 @@ export default function SimpleTaskForm({ taskId, onSuccess, onCancel }: TaskForm
               type="submit"
               disabled={mutation.isPending}
             >
-              {mutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {mutation.isPending && <Loader2 className={styles.buttonSpinner} />}
               {isEditing ? 'Update Task' : 'Create Task'}
             </Button>
           </div>

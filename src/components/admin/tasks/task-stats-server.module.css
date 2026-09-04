@@ -1,0 +1,111 @@
+@layer components {
+  .successBadge {
+    border-color: color-mix(in oklab, var(--success) 35%, transparent);
+    background-color: color-mix(in oklab, var(--success) 12%, transparent);
+    color: var(--success);
+  }
+
+  .overview {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  @media (width >= 768px) {
+    .overview {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (width >= 1024px) {
+    .overview {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+
+  /* StatCard replaces its own defaults with whatever it is handed, so these
+     two carry the full glyph and value treatment, not just the tint. */
+  .runningIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+    color: var(--info);
+  }
+
+  .runningValue {
+    font-size: var(--text-2xl);
+    line-height: var(--leading-2xl);
+    font-weight: var(--weight-bold);
+    color: var(--info);
+  }
+
+  .scheduledIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+    color: var(--success);
+  }
+
+  .scheduledValue {
+    font-size: var(--text-2xl);
+    line-height: var(--leading-2xl);
+    font-weight: var(--weight-bold);
+    color: var(--success);
+  }
+
+  .panels {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (width >= 1024px) {
+    .panels {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .period {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .rowSide {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .count {
+    font-weight: var(--weight-medium);
+  }
+
+  .share {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .rank {
+    width: var(--space-6);
+    height: var(--space-6);
+    padding: 0;
+  }
+
+  .taskName {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+  }
+
+  .taskId {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--muted-foreground);
+  }
+}

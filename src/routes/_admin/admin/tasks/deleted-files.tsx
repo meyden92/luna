@@ -21,8 +21,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import { queryKeys } from '@/libs/query-keys';
 import { getCdnUrl } from '@/libs/runtime-config';
-import { formatSize } from '@/libs/utils';
+import { cn, formatSize } from '@/libs/utils';
 import { listDeletedFiles, permanentlyDeleteFiles, restoreDeletedFiles } from '@/server/fns/admin/deleted-files';
+import styles from './deleted-files.module.css';
 
 type DeletedFile = Awaited<ReturnType<typeof listDeletedFiles>>[number];
 
@@ -82,23 +83,23 @@ function FilePreviewContent({ file }: { file: DeletedFile }) {
 
   if (contentType.startsWith('image/')) {
     return (
-      <div className="max-w-md">
+      <div className={styles.preview}>
         <img
           src={fileUrl}
           alt={file.title}
-          className="max-w-full max-h-96 object-contain rounded-lg"
+          className={styles.previewMedia}
         />
-        <div className="text-xs text-muted-foreground mt-2">Image preview may not work for deleted files in S3</div>
+        <div className={cn(styles.previewNote, 'type-xs margin-top-2')}>Image preview may not work for deleted files in S3</div>
       </div>
     );
   }
   if (contentType.startsWith('video/')) {
     return (
-      <div className="max-w-md">
+      <div className={styles.preview}>
         <video
           src={fileUrl}
           controls
-          className="max-w-full max-h-96 rounded-lg"
+          className={styles.previewMedia}
           preload="metadata"
         >
           <track
@@ -110,17 +111,17 @@ function FilePreviewContent({ file }: { file: DeletedFile }) {
           />
           Your browser does not support the video element.
         </video>
-        <div className="text-xs text-muted-foreground mt-2">Video preview may not work for deleted files in S3</div>
+        <div className={cn(styles.previewNote, 'type-xs margin-top-2')}>Video preview may not work for deleted files in S3</div>
       </div>
     );
   }
   if (contentType.startsWith('audio/')) {
     return (
-      <div className="max-w-md">
+      <div className={styles.preview}>
         <audio
           src={fileUrl}
           controls
-          className="w-full"
+          className={styles.previewAudio}
           preload="metadata"
         >
           <track
@@ -132,25 +133,25 @@ function FilePreviewContent({ file }: { file: DeletedFile }) {
           />
           Your browser does not support the audio element.
         </audio>
-        <div className="text-xs text-muted-foreground mt-2">Audio preview may not work for deleted files in S3</div>
+        <div className={cn(styles.previewNote, 'type-xs margin-top-2')}>Audio preview may not work for deleted files in S3</div>
       </div>
     );
   }
   if (contentType.startsWith('text/') || contentType === 'application/json' || contentType === 'application/xml') {
     return (
-      <div className="max-w-md max-h-96 overflow-auto">
-        <div className="text-sm font-medium mb-2">Text File Preview:</div>
-        <pre className="text-xs bg-muted p-3 rounded-lg overflow-auto whitespace-pre-wrap">
+      <div className={styles.previewScroll}>
+        <div className="type-sm weight-medium margin-bottom-2">Text File Preview:</div>
+        <pre className={cn(styles.previewText, 'type-xs type-mono')}>
           <TextFileContent fileUrl={fileUrl} />
         </pre>
-        <div className="text-xs text-muted-foreground mt-2">Text preview may not work for deleted files in S3</div>
+        <div className={cn(styles.previewNote, 'type-xs margin-top-2')}>Text preview may not work for deleted files in S3</div>
       </div>
     );
   }
   return (
-    <div className="max-w-md p-4 text-center text-muted-foreground">
-      <div className="text-sm font-medium mb-2">Preview not available</div>
-      <div className="text-xs">File type "{contentType}" cannot be previewed inline.</div>
+    <div className={styles.previewEmpty}>
+      <div className="type-sm weight-medium margin-bottom-2">Preview not available</div>
+      <div className="type-xs">File type "{contentType}" cannot be previewed inline.</div>
     </div>
   );
 }
@@ -275,38 +276,38 @@ function DeletedFilesPage() {
     .reduce((sum, f) => sum + f.size, 0);
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container pad-y-8">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">Deleted Files Management</CardTitle>
+          <CardTitle className="type-2xl weight-bold">Deleted Files Management</CardTitle>
           <CardDescription>
             Manage soft-deleted files grouped by user with options for permanent deletion from database and S3 storage
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="stack space-6">
           <Alert>
-            <InfoIcon className="h-4 w-4" />
+            <InfoIcon className={styles.icon} />
             <AlertTitle>Permanent Deletion Tool</AlertTitle>
             <AlertDescription>
               This tool manages soft-deleted files that are marked as deleted but still exist in S3 storage.
-              <strong className="text-destructive"> Permanent deletion cannot be undone.</strong>
+              <strong className={styles.danger}> Permanent deletion cannot be undone.</strong>
               Files will be removed from both the database and S3 storage permanently.
             </AlertDescription>
           </Alert>
 
-          <div className="flex flex-col sm:flex-row gap-4 items-start">
+          <div className={styles.toolbar}>
             <Button
               onClick={() => refetchDeletedFiles()}
               disabled={isAnyActionExecuting}
               variant="outline"
-              className="flex items-center gap-2"
+              className="cluster space-2"
             >
-              <RefreshCw className={`h-4 w-4 ${isFetchExecuting ? 'animate-spin' : ''}`} />
+              <RefreshCw className={cn(styles.icon, isFetchExecuting && styles.spinning)} />
               {isFetchExecuting ? 'Loading...' : 'Refresh Deleted Files'}
             </Button>
 
             {totalDeletedFiles > 0 && (
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className={styles.actions}>
                 <Button
                   onClick={handleSelectAllFiles}
                   variant="outline"
@@ -320,9 +321,9 @@ function DeletedFilesPage() {
                   variant="outline"
                   size="sm"
                   disabled={selectedFiles.length === 0 || isAnyActionExecuting}
-                  className="flex items-center gap-2"
+                  className="cluster space-2"
                 >
-                  <RotateCcw className="h-4 w-4" />
+                  <RotateCcw className={styles.icon} />
                   {isRestoreExecuting ? 'Restoring...' : `Restore (${selectedFiles.length})`}
                 </Button>
                 <Button
@@ -330,9 +331,9 @@ function DeletedFilesPage() {
                   variant="destructive"
                   size="sm"
                   disabled={selectedFiles.length === 0 || isAnyActionExecuting}
-                  className="flex items-center gap-2"
+                  className="cluster space-2"
                 >
-                  <TrashIcon className="h-4 w-4" />
+                  <TrashIcon className={styles.icon} />
                   {isDeleteExecuting ? 'Deleting...' : `Permanently Delete (${selectedFiles.length})`}
                 </Button>
               </div>
@@ -342,35 +343,45 @@ function DeletedFilesPage() {
           {totalDeletedFiles > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Database className="h-5 w-5" />
+                <CardTitle className="type-lg cluster space-2">
+                  <Database className={styles.iconLg} />
                   Deleted Files Overview
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-3 bg-red-50 dark:bg-red-950/20 rounded-lg">
-                    <div className="text-2xl font-bold text-red-600 dark:text-red-400">{totalDeletedFiles}</div>
-                    <div className="text-sm text-muted-foreground">Total Deleted Files</div>
+                <div className={styles.statGrid}>
+                  <div
+                    className={styles.statTile}
+                    data-tone="danger"
+                  >
+                    <div className={cn(styles.statValue, 'type-2xl weight-bold')}>{totalDeletedFiles}</div>
+                    <div className={cn(styles.statLabel, 'type-sm')}>Total Deleted Files</div>
                   </div>
-                  <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{groupedFiles.length}</div>
-                    <div className="text-sm text-muted-foreground">Affected Users</div>
+                  <div
+                    className={styles.statTile}
+                    data-tone="info"
+                  >
+                    <div className={cn(styles.statValue, 'type-2xl weight-bold')}>{groupedFiles.length}</div>
+                    <div className={cn(styles.statLabel, 'type-sm')}>Affected Users</div>
                   </div>
-                  <div className="text-center p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
-                    <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                      {formatSize(totalDeletedSize, TRIMMED_SIZE_OPTIONS)}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Total Size</div>
+                  <div
+                    className={styles.statTile}
+                    data-tone="warning"
+                  >
+                    <div className={cn(styles.statValue, 'type-2xl weight-bold')}>{formatSize(totalDeletedSize, TRIMMED_SIZE_OPTIONS)}</div>
+                    <div className={cn(styles.statLabel, 'type-sm')}>Total Size</div>
                   </div>
-                  <div className="text-center p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{selectedFiles.length}</div>
-                    <div className="text-sm text-muted-foreground">Selected Files</div>
+                  <div
+                    className={styles.statTile}
+                    data-tone="accent"
+                  >
+                    <div className={cn(styles.statValue, 'type-2xl weight-bold')}>{selectedFiles.length}</div>
+                    <div className={cn(styles.statLabel, 'type-sm')}>Selected Files</div>
                   </div>
                 </div>
                 {selectedFiles.length > 0 && (
-                  <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-                    <p className="text-sm font-medium">
+                  <div className={cn(styles.selectionNote, 'margin-top-4')}>
+                    <p className="type-sm weight-medium">
                       Selected: {selectedFiles.length} files ({formatSize(selectedFilesSize, TRIMMED_SIZE_OPTIONS)})
                     </p>
                   </div>
@@ -380,7 +391,7 @@ function DeletedFilesPage() {
           )}
 
           {groupedFiles.length > 0 ? (
-            <div className="space-y-4">
+            <div className="stack space-4">
               {groupedFiles.map((userGroup) => {
                 const userFileIds = userGroup.files.map((f) => f.id);
                 const allUserFilesSelected = userFileIds.every((id) => selectedFiles.includes(id));
@@ -389,24 +400,24 @@ function DeletedFilesPage() {
                 return (
                   <Card key={userGroup.userId}>
                     <CardHeader
-                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      className={styles.groupHeader}
                       onClick={() => toggleUserExpanded(userGroup.userId)}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <User className="h-5 w-5" />
+                      <div className={styles.groupRow}>
+                        <div className="cluster space-3">
+                          <User className={styles.iconLg} />
                           <div>
-                            <CardTitle className="text-lg">{userGroup.userName}</CardTitle>
+                            <CardTitle className="type-lg">{userGroup.userName}</CardTitle>
                             <CardDescription>{userGroup.userEmail}</CardDescription>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-right">
-                            <div className="flex items-center gap-2">
+                        <div className="cluster space-4">
+                          <div className={styles.groupMeta}>
+                            <div className="cluster space-2">
                               <Badge variant="secondary">{userGroup.files.length} files</Badge>
                               <Badge variant="outline">{formatSize(userGroup.totalSize, TRIMMED_SIZE_OPTIONS)}</Badge>
                             </div>
-                            <div className="text-xs text-muted-foreground mt-1">
+                            <div className={cn(styles.metaHint, 'type-xs margin-top-1')}>
                               {someUserFilesSelected && `${userFileIds.filter((id) => selectedFiles.includes(id)).length} selected`}
                             </div>
                           </div>
@@ -426,42 +437,42 @@ function DeletedFilesPage() {
                     </CardHeader>
 
                     {expandedUsers.has(userGroup.userId) && (
-                      <CardContent className="pt-0">
-                        <div className="max-h-96 overflow-y-auto border rounded-lg">
-                          <div className="divide-y">
+                      <CardContent className={styles.groupBody}>
+                        <div className={styles.fileList}>
+                          <div>
                             {userGroup.files.map((file) => (
                               <div
                                 key={file.id}
-                                className="p-3 hover:bg-muted/50 transition-colors"
+                                className={styles.fileRow}
                               >
-                                <div className="flex items-start gap-3">
+                                <div className={styles.fileRowInner}>
                                   <input
                                     type="checkbox"
                                     checked={selectedFiles.includes(file.id)}
                                     onChange={() => handleFileToggle(file.id)}
-                                    className="mt-1"
+                                    className="margin-top-1"
                                   />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <FileIcon className="h-4 w-4 text-red-600 flex-shrink-0" />
-                                      <span className="font-medium text-sm truncate">{file.title}</span>
+                                  <div className={styles.fileMain}>
+                                    <div className="cluster space-2 margin-bottom-1">
+                                      <FileIcon className={styles.fileIcon} />
+                                      <span className="weight-medium type-sm type-truncate">{file.title}</span>
                                       <Badge
                                         variant="outline"
-                                        className="text-xs"
+                                        className="type-xs"
                                       >
                                         {file.contentType}
                                       </Badge>
                                     </div>
-                                    <div className="text-xs text-muted-foreground space-y-1">
+                                    <div className={cn(styles.fileMeta, 'type-xs')}>
                                       <div>Size: {formatSize(file.size, TRIMMED_SIZE_OPTIONS)}</div>
                                       <div>Uploaded: {formatDate(file.createdAt)}</div>
                                       <div>Deleted: {file.deletedAt ? formatDate(file.deletedAt) : 'Unknown'}</div>
-                                      <div className="font-mono text-xs bg-muted px-2 py-1 rounded truncate">
+                                      <div className={cn(styles.s3Key, 'type-mono type-xs type-truncate')}>
                                         S3 Key: {file.ownerId}/{file.url}
                                       </div>
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-1 ml-2">
+                                  <div className={styles.rowActions}>
                                     {canPreviewFile(file.contentType) ? (
                                       <Popover
                                         open={previewOpen && previewFile?.id === file.id}
@@ -482,20 +493,20 @@ function DeletedFilesPage() {
                                                 setPreviewOpen(true);
                                               }}
                                               disabled={isAnyActionExecuting}
-                                              className="h-8 w-8 p-0"
+                                              className={styles.iconButton}
                                               title="Preview file"
                                             />
                                           }
                                         >
-                                          <Eye className="h-3 w-3" />
+                                          <Eye className={styles.iconSm} />
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-auto max-w-lg">
-                                          <div className="space-y-2">
-                                            <div className="flex items-center justify-between">
-                                              <div className="font-medium text-sm truncate pr-2">{file.title}</div>
+                                        <PopoverContent className={styles.previewPopover}>
+                                          <div className="stack space-2">
+                                            <div className={styles.previewHeader}>
+                                              <div className={cn(styles.previewTitle, 'weight-medium type-sm')}>{file.title}</div>
                                               <Badge
                                                 variant="outline"
-                                                className="text-xs whitespace-nowrap"
+                                                className={cn(styles.badgeNowrap, 'type-xs')}
                                               >
                                                 {file.contentType}
                                               </Badge>
@@ -509,10 +520,10 @@ function DeletedFilesPage() {
                                         size="sm"
                                         variant="outline"
                                         disabled
-                                        className="h-8 w-8 p-0 opacity-50"
+                                        className={cn(styles.iconButton, styles.iconButtonDisabled)}
                                         title="Preview not available for this file type"
                                       >
-                                        <Eye className="h-3 w-3" />
+                                        <Eye className={styles.iconSm} />
                                       </Button>
                                     )}
                                     <Button
@@ -520,20 +531,20 @@ function DeletedFilesPage() {
                                       variant="outline"
                                       onClick={() => handleIndividualAction(file.id, file, 'restore')}
                                       disabled={isAnyActionExecuting}
-                                      className="h-8 w-8 p-0"
+                                      className={styles.iconButton}
                                       title="Restore file"
                                     >
-                                      <RotateCcw className="h-3 w-3" />
+                                      <RotateCcw className={styles.iconSm} />
                                     </Button>
                                     <Button
                                       size="sm"
                                       variant="destructive"
                                       onClick={() => handleIndividualAction(file.id, file, 'delete')}
                                       disabled={isAnyActionExecuting}
-                                      className="h-8 w-8 p-0"
+                                      className={styles.iconButton}
                                       title="Permanently delete file"
                                     >
-                                      <TrashIcon className="h-3 w-3" />
+                                      <TrashIcon className={styles.iconSm} />
                                     </Button>
                                   </div>
                                 </div>
@@ -550,10 +561,10 @@ function DeletedFilesPage() {
           ) : (
             !isFetchExecuting && (
               <Card>
-                <CardContent className="text-center py-8">
-                  <TrashIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-semibold mb-2">No Deleted Files Found</h3>
-                  <p className="text-muted-foreground">There are currently no soft-deleted files in the system.</p>
+                <CardContent className={styles.emptyState}>
+                  <TrashIcon className={styles.emptyIcon} />
+                  <h3 className="type-lg weight-semibold margin-bottom-2">No Deleted Files Found</h3>
+                  <p className={styles.muted}>There are currently no soft-deleted files in the system.</p>
                 </CardContent>
               </Card>
             )
@@ -573,7 +584,7 @@ function DeletedFilesPage() {
                 <>
                   {`Are you sure you want to permanently delete ${confirmDialog.count} file(s) (${formatSize(confirmDialog.totalSize, TRIMMED_SIZE_OPTIONS)})?`}
                   <br />
-                  <strong className="text-destructive">
+                  <strong className={styles.danger}>
                     This action cannot be undone. Files will be removed from both the database and S3 storage permanently.
                   </strong>
                 </>
@@ -581,7 +592,7 @@ function DeletedFilesPage() {
                 <>
                   {`Are you sure you want to restore ${confirmDialog.count} file(s) (${formatSize(confirmDialog.totalSize, TRIMMED_SIZE_OPTIONS)})?`}
                   <br />
-                  <span className="text-muted-foreground">Files will be restored to the user's gallery and will be accessible again.</span>
+                  <span className={styles.muted}>Files will be restored to the user's gallery and will be accessible again.</span>
                 </>
               )}
             </AlertDialogDescription>
@@ -591,7 +602,7 @@ function DeletedFilesPage() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmAction}
-              className={confirmDialog.type === 'delete' ? 'bg-red-600 hover:bg-red-700' : ''}
+              className={confirmDialog.type === 'delete' ? styles.destructiveAction : undefined}
             >
               {confirmDialog.type === 'delete' ? 'Permanently Delete' : 'Restore Files'}
             </AlertDialogAction>

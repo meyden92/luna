@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { queryKeys } from '@/libs/query-keys';
 import { storageQuotaMiBToBytes } from '@/libs/storage-quota';
-import { formatSize, getAvatarUrl } from '@/libs/utils';
+import { cn, formatSize, getAvatarUrl } from '@/libs/utils';
 import { listAdminUsersWithFiles } from '@/server/fns/admin/users';
+import styles from './index.module.css';
 
 const PAGE_SIZE = 25;
 
@@ -79,24 +80,24 @@ function AdminUsersPage() {
   };
 
   const SortIcon = ({ field }: { field: SearchState['sort'] }) => {
-    if (search.sort !== field) return <ArrowUpDown className="ml-1 h-3 w-3" />;
-    return search.order === 'asc' ? <ArrowUp className="ml-1 h-3 w-3" /> : <ArrowDown className="ml-1 h-3 w-3" />;
+    if (search.sort !== field) return <ArrowUpDown className={styles.sortIcon} />;
+    return search.order === 'asc' ? <ArrowUp className={styles.sortIcon} /> : <ArrowDown className={styles.sortIcon} />;
   };
 
   const startIndex = data.total === 0 ? 0 : (search.page - 1) * PAGE_SIZE + 1;
   const endIndex = Math.min(search.page * PAGE_SIZE, data.total);
 
   return (
-    <div className="p-6">
+    <div className="pad-6">
       <Card>
-        <CardHeader className="gap-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
+        <CardHeader className="space-4">
+          <div className={styles.toolbar}>
+            <div className="cluster space-3">
               <CardTitle>All Registered Users</CardTitle>
               <CreateUserDialog />
             </div>
             <form
-              className="flex w-full gap-2 sm:w-auto"
+              className={styles.searchForm}
               onSubmit={(event) => {
                 event.preventDefault();
                 const formData = new FormData(event.currentTarget);
@@ -109,10 +110,10 @@ function AdminUsersPage() {
                 name="search"
                 defaultValue={search.search ?? ''}
                 placeholder="Search users"
-                className="sm:w-64"
+                className={styles.searchInput}
               />
               <Button type="submit">
-                <Search className="h-4 w-4" />
+                <Search className={styles.icon} />
                 Search
               </Button>
               {search.search && (
@@ -126,7 +127,7 @@ function AdminUsersPage() {
               )}
             </form>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className={cn(styles.muted, 'type-sm')}>
             Showing {startIndex}-{endIndex} of {data.total} users
           </p>
         </CardHeader>
@@ -138,7 +139,7 @@ function AdminUsersPage() {
                   <Button
                     type="button"
                     variant="ghost"
-                    className="h-auto p-0 font-medium"
+                    className={styles.sortButton}
                     onClick={() => handleSort('email')}
                   >
                     Email
@@ -149,7 +150,7 @@ function AdminUsersPage() {
                   <Button
                     type="button"
                     variant="ghost"
-                    className="h-auto p-0 font-medium"
+                    className={styles.sortButton}
                     onClick={() => handleSort('name')}
                   >
                     Username
@@ -157,28 +158,28 @@ function AdminUsersPage() {
                   </Button>
                 </TableHead>
                 <TableHead
-                  className="text-right"
+                  className={styles.alignEnd}
                   aria-sort={sortDirection('files')}
                 >
                   <Button
                     type="button"
                     variant="ghost"
-                    className="ml-auto h-auto p-0 font-medium"
+                    className={cn(styles.sortButton, styles.sortButtonEnd)}
                     onClick={() => handleSort('files')}
                   >
                     Uploaded Files
                     <SortIcon field="files" />
                   </Button>
                 </TableHead>
-                <TableHead className="text-right">Filesize</TableHead>
+                <TableHead className={styles.alignEnd}>Filesize</TableHead>
                 <TableHead
-                  className="text-right"
+                  className={styles.alignEnd}
                   aria-sort={sortDirection('role')}
                 >
                   <Button
                     type="button"
                     variant="ghost"
-                    className="ml-auto h-auto p-0 font-medium"
+                    className={cn(styles.sortButton, styles.sortButtonEnd)}
                     onClick={() => handleSort('role')}
                   >
                     Role
@@ -192,7 +193,7 @@ function AdminUsersPage() {
                 <TableRow>
                   <TableCell
                     colSpan={5}
-                    className="py-8 text-center text-muted-foreground"
+                    className={styles.emptyCell}
                   >
                     No users found.
                   </TableCell>
@@ -200,8 +201,8 @@ function AdminUsersPage() {
               ) : (
                 users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
+                    <TableCell className="weight-medium">
+                      <div className={styles.userCell}>
                         <img
                           src={getAvatarUrl(user.image) ?? '/default-avatar.png'}
                           alt={user.name}
@@ -217,29 +218,29 @@ function AdminUsersPage() {
                       </div>
                     </TableCell>
                     <TableCell>{user.name}</TableCell>
-                    <TableCell className="text-right">{user.fileCount}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex flex-col items-end gap-1">
+                    <TableCell className={styles.alignEnd}>{user.fileCount}</TableCell>
+                    <TableCell className={styles.alignEnd}>
+                      <div className={styles.quotaCell}>
                         <span>
                           {formatSize(user.totalSize)} / {formatSize(storageQuotaMiBToBytes(user.storageQuotaMiB))}
                         </span>
                         <Link
                           to="/admin/users/$userid"
                           params={{ userid: user.id }}
-                          className="text-xs text-primary hover:underline"
+                          className={cn(styles.quotaLink, 'type-xs')}
                         >
                           Manage quota
                         </Link>
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">{user.role || 'User'}</TableCell>
+                    <TableCell className={styles.alignEnd}>{user.role || 'User'}</TableCell>
                   </TableRow>
                 ))
               )}
             </TableBody>
           </Table>
           {data.totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between gap-3">
+            <div className={cn(styles.pagination, 'margin-top-4')}>
               <Button
                 type="button"
                 variant="outline"
@@ -247,10 +248,10 @@ function AdminUsersPage() {
                 onClick={() => updateSearch({ page: search.page - 1 })}
                 disabled={search.page <= 1}
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className={styles.icon} />
                 Previous
               </Button>
-              <span className="text-sm text-muted-foreground">
+              <span className={cn(styles.muted, 'type-sm')}>
                 Page {search.page} of {data.totalPages}
               </span>
               <Button
@@ -261,7 +262,7 @@ function AdminUsersPage() {
                 disabled={search.page >= data.totalPages}
               >
                 Next
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className={styles.icon} />
               </Button>
             </div>
           )}

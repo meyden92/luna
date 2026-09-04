@@ -27,8 +27,8 @@ function EditGenerationModelPage() {
   const { data: model } = useSuspenseQuery(generationModelQueryOptions(id));
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <h1 className="text-2xl font-bold mb-6">Edit Model</h1>
+    <div className="container pad-y-8">
+      <h1 className="type-2xl weight-bold margin-bottom-6">Edit Model</h1>
       <ModelForm model={model} />
     </div>
   );

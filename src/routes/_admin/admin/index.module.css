@@ -1,0 +1,69 @@
+@layer components {
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: var(--space-4);
+  }
+
+  @media (width >= 640px) {
+    .grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (width >= 1024px) {
+    .grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media (width >= 1280px) {
+    .grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  /* Destination cards rotate through the chart palette so each tile reads distinctly. */
+  .tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    color: var(--primary-foreground);
+    text-align: center;
+    transition: filter 0.15s ease;
+  }
+
+  .tile:hover {
+    filter: brightness(0.92);
+  }
+
+  .tile[data-tone="1"] {
+    background: var(--chart-1);
+  }
+  .tile[data-tone="2"] {
+    background: var(--chart-2);
+  }
+  .tile[data-tone="3"] {
+    background: var(--chart-3);
+  }
+  .tile[data-tone="4"] {
+    background: var(--chart-4);
+  }
+  .tile[data-tone="5"] {
+    background: var(--chart-5);
+  }
+
+  .icon {
+    width: 2rem;
+    height: 2rem;
+    margin-bottom: var(--space-2);
+  }
+
+  .description {
+    opacity: 0.9;
+  }
+}

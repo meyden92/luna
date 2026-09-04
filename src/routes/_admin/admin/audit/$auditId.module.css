@@ -1,0 +1,100 @@
+@layer components {
+  .root {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .backLink {
+    display: inline-block;
+    margin-bottom: var(--space-2);
+    color: var(--info);
+  }
+
+  .backLink:hover {
+    color: color-mix(in oklab, var(--info) 80%, var(--foreground));
+  }
+
+  .body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .timeline {
+    flex-shrink: 0;
+  }
+
+  .detail {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .infoGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (width >= 768px) {
+    .infoGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (width >= 1024px) {
+    .infoGrid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  /* Label/value pairs; the label column is fixed so values line up. */
+  .fieldList {
+    --label-width: 7.5rem;
+    display: grid;
+    grid-template-columns: var(--label-width) 1fr;
+    row-gap: var(--space-2);
+  }
+
+  .fieldLabel {
+    font-weight: var(--weight-medium);
+    color: var(--muted-foreground);
+  }
+
+  .fieldValue {
+    color: var(--foreground);
+  }
+
+  .fieldValueTruncated {
+    overflow: hidden;
+    color: var(--foreground);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .recordLink {
+    color: var(--primary);
+  }
+
+  .recordLink:hover {
+    color: var(--primary-strong);
+  }
+
+  .changes {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .changesPanel {
+    height: 100%;
+  }
+}

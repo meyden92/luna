@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { queryKeys } from '@/libs/query-keys';
 import { getAuditLog } from '@/server/fns/admin/audit';
 import type { AuditLog, FieldChange } from '@/types/audit';
+import styles from './$auditId.module.css';
 
 const auditLogQueryOptions = (id: string) =>
   queryOptions({
@@ -35,21 +36,21 @@ function AuditDetailPage() {
   const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLog>(initialAuditLog);
 
   return (
-    <div className="space-y-6 max-w-full overflow-x-hidden">
-      <div className="flex items-center justify-between">
+    <div className={`${styles.root} stack space-6`}>
+      <div className={styles.header}>
         <div>
           <Link
             to="/admin/audit"
-            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mb-2 inline-block"
+            className={styles.backLink}
           >
             &larr; Back to Audit Logs
           </Link>
-          <h1 className="text-3xl font-bold">Audit Detail</h1>
+          <h1 className="type-3xl weight-bold">Audit Detail</h1>
         </div>
       </div>
 
-      <div className="space-y-6 flex flex-col overflow-x-hidden max-w-full">
-        <div className="flex-shrink-0">
+      <div className={styles.body}>
+        <div className={styles.timeline}>
           <AuditTimeline
             auditLogs={relatedAuditLogs}
             selectedAuditId={selectedAuditLog.id}
@@ -57,22 +58,22 @@ function AuditDetailPage() {
           />
         </div>
 
-        <div className="flex-1 space-y-6">
+        <div className={styles.detail}>
           <Card>
             <CardHeader>
               <CardTitle>Audit Information</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <dl className="grid grid-cols-[120px_1fr] gap-y-2 text-sm">
-                  <dt className="font-medium text-muted-foreground">ID:</dt>
-                  <dd className="text-foreground">{selectedAuditLog.id}</dd>
+              <div className={styles.infoGrid}>
+                <dl className={`${styles.fieldList} type-sm`}>
+                  <dt className={styles.fieldLabel}>ID:</dt>
+                  <dd className={styles.fieldValue}>{selectedAuditLog.id}</dd>
 
-                  <dt className="font-medium text-muted-foreground">Model:</dt>
-                  <dd className="text-foreground">{selectedAuditLog.model}</dd>
+                  <dt className={styles.fieldLabel}>Model:</dt>
+                  <dd className={styles.fieldValue}>{selectedAuditLog.model}</dd>
 
-                  <dt className="font-medium text-muted-foreground">Action:</dt>
-                  <dd className="text-foreground">
+                  <dt className={styles.fieldLabel}>Action:</dt>
+                  <dd className={styles.fieldValue}>
                     <Badge
                       variant={
                         selectedAuditLog.action === 'create'
@@ -88,39 +89,39 @@ function AuditDetailPage() {
                     </Badge>
                   </dd>
 
-                  <dt className="font-medium text-muted-foreground">Record ID:</dt>
-                  <dd className="text-foreground">
+                  <dt className={styles.fieldLabel}>Record ID:</dt>
+                  <dd className={styles.fieldValue}>
                     <Link
                       to="/admin/audit"
                       search={{ model: selectedAuditLog.model, recordId: selectedAuditLog.recordId }}
-                      className="text-primary hover:text-primary/80"
+                      className={styles.recordLink}
                     >
                       {selectedAuditLog.recordId}
                     </Link>
                   </dd>
 
-                  <dt className="font-medium text-muted-foreground">User:</dt>
-                  <dd className="text-foreground">{selectedAuditLog.user?.name ?? 'System'}</dd>
+                  <dt className={styles.fieldLabel}>User:</dt>
+                  <dd className={styles.fieldValue}>{selectedAuditLog.user?.name ?? 'System'}</dd>
 
-                  <dt className="font-medium text-muted-foreground">Timestamp:</dt>
-                  <dd className="text-foreground">{new Date(selectedAuditLog.timestamp).toLocaleString()}</dd>
+                  <dt className={styles.fieldLabel}>Timestamp:</dt>
+                  <dd className={styles.fieldValue}>{new Date(selectedAuditLog.timestamp).toLocaleString()}</dd>
                 </dl>
 
                 {selectedAuditLog.summary && (
-                  <dl className="grid grid-cols-[120px_1fr] gap-y-2 text-sm">
-                    <dt className="font-medium text-muted-foreground">Summary:</dt>
-                    <dd className="text-foreground">{selectedAuditLog.summary}</dd>
+                  <dl className={`${styles.fieldList} type-sm`}>
+                    <dt className={styles.fieldLabel}>Summary:</dt>
+                    <dd className={styles.fieldValue}>{selectedAuditLog.summary}</dd>
                   </dl>
                 )}
 
                 {selectedAuditLog.metadata && (
-                  <dl className="grid grid-cols-[120px_1fr] gap-y-2 text-sm">
-                    <dt className="font-medium text-muted-foreground">IP Address:</dt>
-                    <dd className="text-foreground">{selectedAuditLog.metadata.ipAddress || 'N/A'}</dd>
+                  <dl className={`${styles.fieldList} type-sm`}>
+                    <dt className={styles.fieldLabel}>IP Address:</dt>
+                    <dd className={styles.fieldValue}>{selectedAuditLog.metadata.ipAddress || 'N/A'}</dd>
 
-                    <dt className="font-medium text-muted-foreground">User Agent:</dt>
+                    <dt className={styles.fieldLabel}>User Agent:</dt>
                     <dd
-                      className="text-foreground text-xs truncate"
+                      className={`${styles.fieldValueTruncated} type-xs`}
                       title={selectedAuditLog.metadata.userAgent}
                     >
                       {selectedAuditLog.metadata.userAgent || 'N/A'}
@@ -131,14 +132,14 @@ function AuditDetailPage() {
             </CardContent>
           </Card>
 
-          <div className="flex-1 min-h-0">
+          <div className={styles.changes}>
             <ChangesPanel
               changes={(selectedAuditLog.fieldChanges as FieldChange[]) || []}
               summary={selectedAuditLog.summary || undefined}
               before={selectedAuditLog.before}
               after={selectedAuditLog.after}
               action={selectedAuditLog.action}
-              className="h-full"
+              className={styles.changesPanel}
             />
           </div>
         </div>

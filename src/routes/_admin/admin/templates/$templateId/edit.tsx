@@ -4,8 +4,9 @@ import { TemplateForm } from '@/components/templates/template-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { queryKeys } from '@/libs/query-keys';
-import { getTemplateImageUrl } from '@/libs/utils';
+import { cn, getTemplateImageUrl } from '@/libs/utils';
 import { getAdminTemplateForEdit } from '@/server/fns/admin/templates';
+import styles from './edit.module.css';
 
 const templateEditQueryOptions = (id: string) =>
   queryOptions({
@@ -32,13 +33,13 @@ function EditTemplatePage() {
 
   if (editingModels.length === 0) {
     return (
-      <div className="max-w-7xl mx-auto pb-8 px-4">
+      <div className={styles.empty}>
         <Card>
           <CardHeader>
             <CardTitle>No Editing Models Available</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-muted-foreground">You need to create at least one editing model before you can edit this template.</p>
+          <CardContent className="stack space-4">
+            <p className={styles.subtitle}>You need to create at least one editing model before you can edit this template.</p>
             <Link to="/admin/models/editing/new">
               <Button>Create Editing Model</Button>
             </Link>
@@ -80,10 +81,10 @@ function EditTemplatePage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">Edit Template</h1>
-        <p className="text-muted-foreground mt-2">Edit template details and configuration.</p>
+    <div className={styles.root}>
+      <div className="margin-bottom-8">
+        <h1 className="type-3xl weight-bold">Edit Template</h1>
+        <p className={cn(styles.subtitle, 'margin-top-2')}>Edit template details and configuration.</p>
       </div>
 
       <TemplateForm

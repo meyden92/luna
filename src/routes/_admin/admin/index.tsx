@@ -1,25 +1,30 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { adminDestinations } from '@/components/admin/admin-destinations';
+import { cn } from '@/libs/utils';
+import styles from './index.module.css';
 
 export const Route = createFileRoute('/_admin/admin/')({
   head: () => ({ meta: [{ title: 'Admin | LunaShare' }] }),
   component: AdminIndexPage,
 });
 
+const CHART_TONES = 5;
+
 function AdminIndexPage() {
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Admin</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {adminDestinations.map(({ name, to, Icon, bgColor, hoverBg, description }) => (
+      <h1 className="type-2xl weight-bold margin-bottom-4">Admin</h1>
+      <div className={styles.grid}>
+        {adminDestinations.map(({ name, to, Icon, description }, index) => (
           <Link
             key={name}
             to={to}
-            className={`${bgColor} ${hoverBg} p-6 rounded-lg shadow-md transition flex flex-col items-center justify-center text-white`}
+            className={styles.tile}
+            data-tone={(index % CHART_TONES) + 1}
           >
-            <Icon className="h-8 w-8 mb-2" />
-            <span className="text-lg font-semibold">{name}</span>
-            <p className="mt-2 text-sm opacity-90">{description}</p>
+            <Icon className={styles.icon} />
+            <span className="type-lg weight-semibold">{name}</span>
+            <p className={cn(styles.description, 'type-sm margin-top-2')}>{description}</p>
           </Link>
         ))}
       </div>

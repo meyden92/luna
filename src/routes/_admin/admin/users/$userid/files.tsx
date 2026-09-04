@@ -5,6 +5,7 @@ import { z } from 'zod';
 import UserFilesTable from '@/components/admin/user/user-files-table';
 import { queryKeys } from '@/libs/query-keys';
 import { getAdminUserFiles } from '@/server/fns/admin/users';
+import styles from './files.module.css';
 
 const searchSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -55,19 +56,19 @@ function UserFilesPage() {
   const { data } = useSuspenseQuery(userFilesQueryOptions(userid, search));
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
+    <div className="container pad-y-8">
+      <div className="stack space-6">
+        <div className={styles.header}>
           <Link
             to="/admin/users/$userid"
             params={{ userid: data.user.id }}
             title="Back to user details"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className={styles.icon} />
           </Link>
           <div>
-            <h1 className="text-2xl font-semibold">{data.user.name}'s Files</h1>
-            <p className="text-muted-foreground">
+            <h1 className="type-2xl weight-semibold">{data.user.name}'s Files</h1>
+            <p className={styles.subtitle}>
               Manage files for user: {data.user.email} ({data.totalFiles} total files)
             </p>
           </div>

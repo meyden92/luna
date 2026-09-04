@@ -3,8 +3,9 @@ import { createFileRoute } from '@tanstack/react-router';
 import { Gauge } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatSize } from '@/libs/utils';
+import { cn, formatSize } from '@/libs/utils';
 import { getAdminEgressTopConsumers } from '@/server/fns/admin/egress';
+import styles from './index.module.css';
 
 export const Route = createFileRoute('/_admin/admin/egress/')({
   head: () => ({ meta: [{ title: 'Egress | LunaShare' }] }),
@@ -15,13 +16,13 @@ function AdminEgressPage() {
   const { data = [] } = useQuery({ queryKey: ['admin', 'egress', 'top-consumers'], queryFn: () => getAdminEgressTopConsumers() });
 
   return (
-    <div className="space-y-6">
+    <div className="stack space-6">
       <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold">
-          <Gauge className="h-6 w-6" />
+        <h1 className="cluster space-2 type-2xl weight-bold">
+          <Gauge className={styles.icon} />
           Egress
         </h1>
-        <p className="text-sm text-muted-foreground">Estimated and measured delivery bandwidth for the current month.</p>
+        <p className={cn(styles.subtitle, 'type-sm')}>Estimated and measured delivery bandwidth for the current month.</p>
       </div>
       <Card>
         <CardHeader>
@@ -34,22 +35,22 @@ function AdminEgressPage() {
               <TableRow>
                 <TableHead>User ID</TableHead>
                 <TableHead>Requests</TableHead>
-                <TableHead className="text-right">Bytes</TableHead>
+                <TableHead className={styles.alignEnd}>Bytes</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {data.map((row) => (
                 <TableRow key={row.ownerId}>
-                  <TableCell className="font-mono text-xs">{row.ownerId}</TableCell>
+                  <TableCell className="type-mono type-xs">{row.ownerId}</TableCell>
                   <TableCell>{row.requestCount}</TableCell>
-                  <TableCell className="text-right">{formatSize(Number(row.bytes))}</TableCell>
+                  <TableCell className={styles.alignEnd}>{formatSize(Number(row.bytes))}</TableCell>
                 </TableRow>
               ))}
               {data.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={3}
-                    className="py-10 text-center text-sm text-muted-foreground"
+                    className={cn(styles.emptyCell, 'type-sm')}
                   >
                     No egress recorded this month.
                   </TableCell>

@@ -1,0 +1,33 @@
+declare const styles: {
+  readonly "actions": string;
+  readonly "badgeSlotLeft": string;
+  readonly "badgeSlotRight": string;
+  readonly "body": string;
+  readonly "card": string;
+  readonly "cardBody": string;
+  readonly "cardHeader": string;
+  readonly "cardTitle": string;
+  readonly "countBadge": string;
+  readonly "description": string;
+  readonly "editButton": string;
+  readonly "editIcon": string;
+  readonly "emptyCard": string;
+  readonly "emptyIcon": string;
+  readonly "grid": string;
+  readonly "header": string;
+  readonly "icon": string;
+  readonly "iconXs": string;
+  readonly "meta": string;
+  readonly "metaSeparator": string;
+  readonly "muted": string;
+  readonly "originBadge": string;
+  readonly "preview": string;
+  readonly "previewFallback": string;
+  readonly "previewFallbackIcon": string;
+  readonly "previewFrame": string;
+  readonly "previewImage": string;
+  readonly "statusBadge": string;
+  readonly "variableBadge": string;
+};
+export = styles;
+

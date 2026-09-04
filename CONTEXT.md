@@ -34,3 +34,16 @@ _Avoid_: Name, nickname, title
 The image shown for a User, chosen by that User. Not one of their shares: it is
 invisible to the file manager and costs nothing against their storage quota.
 _Avoid_: Profile picture, image, pfp
+
+## Presentation
+
+**Appearance**:
+The User's choice between the light and dark rendering of the app, or to follow
+the operating system. The only kind of "theme" LunaShare has.
+_Avoid_: Theme, colour theme, skin
+
+**Design token**:
+One named value on the shared visual scale (a colour role, a spacing step, a
+type size, a radius) that every part of the UI reads from instead of choosing
+its own. Unrelated to a Token, which is an upload credential.
+_Avoid_: Token, variable, CSS variable

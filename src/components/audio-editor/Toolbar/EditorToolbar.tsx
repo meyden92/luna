@@ -8,14 +8,15 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { getTotalAudioDuration, useAudioEditorStore } from '@/hooks/stores/audio-editor-store';
 import { formatTime } from '@/libs/audio-editor/audio-utils';
 import { ExportDialog } from '../Export/ExportDialog';
+import styles from './EditorToolbar.module.css';
 
 function TimeDisplay({ duration }: { duration: number }) {
   const currentTime = useAudioEditorStore((state) => state.currentTime);
 
   return (
-    <div className="px-2 py-1 bg-background rounded-md border border-border font-mono text-sm min-w-24 text-center">
+    <div className={styles.time}>
       {formatTime(currentTime)}
-      <span className="text-muted-foreground mx-1">/</span>
+      <span className={styles.timeSeparator}>/</span>
       {formatTime(duration)}
     </div>
   );
@@ -61,9 +62,9 @@ export function EditorToolbar() {
 
   return (
     <>
-      <div className="h-12 border-b border-border px-4 flex items-center gap-2 bg-muted/30">
+      <div className={styles.bar}>
         {/* Playback controls */}
-        <div className="flex items-center gap-1">
+        <div className={styles.transport}>
           <Tooltip>
             <TooltipTrigger
               render={
@@ -72,7 +73,7 @@ export function EditorToolbar() {
                   size="icon"
                   onClick={handlePlayPause}
                 >
-                  {isPlaying ? <PauseIcon className="size-4" /> : <PlayIcon className="size-4" />}
+                  {isPlaying ? <PauseIcon className={styles.icon} /> : <PlayIcon className={styles.icon} />}
                 </Button>
               }
             />
@@ -87,7 +88,7 @@ export function EditorToolbar() {
                   size="icon"
                   onClick={handleStop}
                 >
-                  <SquareIcon className="size-4" />
+                  <SquareIcon className={styles.icon} />
                 </Button>
               }
             />
@@ -100,11 +101,11 @@ export function EditorToolbar() {
 
         <Separator
           orientation="vertical"
-          className="h-6"
+          className={styles.divider}
         />
 
         {/* Zoom controls */}
-        <div className="flex items-center gap-2">
+        <div className={styles.zoom}>
           <Tooltip>
             <TooltipTrigger
               render={
@@ -113,7 +114,7 @@ export function EditorToolbar() {
                   size="icon-sm"
                   onClick={handleZoomOut}
                 >
-                  <ZoomOutIcon className="size-4" />
+                  <ZoomOutIcon className={styles.icon} />
                 </Button>
               }
             />
@@ -126,7 +127,7 @@ export function EditorToolbar() {
             min={10}
             max={200}
             step={5}
-            className="w-24"
+            className={styles.zoomSlider}
           />
 
           <Tooltip>
@@ -137,7 +138,7 @@ export function EditorToolbar() {
                   size="icon-sm"
                   onClick={handleZoomIn}
                 >
-                  <ZoomInIcon className="size-4" />
+                  <ZoomInIcon className={styles.icon} />
                 </Button>
               }
             />
@@ -147,7 +148,7 @@ export function EditorToolbar() {
 
         <Separator
           orientation="vertical"
-          className="h-6"
+          className={styles.divider}
         />
 
         {/* Add track */}
@@ -159,7 +160,7 @@ export function EditorToolbar() {
                 size="sm"
                 onClick={() => addTrack()}
               >
-                <PlusIcon className="size-4 mr-1" />
+                <PlusIcon className={styles.iconLead} />
                 Add Track
               </Button>
             }
@@ -168,7 +169,7 @@ export function EditorToolbar() {
         </Tooltip>
 
         {/* Spacer */}
-        <div className="flex-1" />
+        <div className={styles.spacer} />
 
         {/* Export */}
         <Button
@@ -177,7 +178,7 @@ export function EditorToolbar() {
           onClick={() => setIsExportOpen(true)}
           disabled={duration === 0}
         >
-          <DownloadIcon className="size-4 mr-1" />
+          <DownloadIcon className={styles.iconLead} />
           Export
         </Button>
       </div>

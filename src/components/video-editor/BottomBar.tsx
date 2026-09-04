@@ -2,8 +2,8 @@ import { PauseIcon, PlayIcon, PlusIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { type CropAspect, useVideoEditorStore } from '@/hooks/stores/video-editor-store';
-import { cn } from '@/libs/utils';
 import { formatTime } from '@/libs/video-editor/ffmpeg-video';
+import styles from './BottomBar.module.css';
 
 interface BottomBarProps {
   onSave: () => void;
@@ -18,7 +18,7 @@ export function BottomBar({ onSave }: BottomBarProps) {
   const canSave = phase === 'ready';
 
   return (
-    <div className="flex items-center gap-4 px-6 py-3 border-t border-border/50">
+    <div className={styles.root}>
       <Button
         variant="outline"
         size="icon"
@@ -26,10 +26,10 @@ export function BottomBar({ onSave }: BottomBarProps) {
         aria-label={isPlaying ? 'Pause' : 'Play'}
         title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
       >
-        {isPlaying ? <PauseIcon className="size-4" /> : <PlayIcon className="size-4" />}
+        {isPlaying ? <PauseIcon /> : <PlayIcon />}
       </Button>
 
-      <div className="flex-1 flex items-center gap-3 min-w-0 overflow-x-auto">
+      <div className={styles.controls}>
         {mode === 'trim' && <TrimControls />}
         {mode === 'cut' && <CutControls />}
         {mode === 'crop' && <CropControls />}
@@ -69,7 +69,7 @@ function TrimControls() {
         min={trimStart + 0.1}
         max={duration}
       />
-      <span className="text-xs text-muted-foreground font-mono">Duration: {formatTime(trimEnd - trimStart)}</span>
+      <span className={styles.readout}>Duration: {formatTime(trimEnd - trimStart)}</span>
     </>
   );
 }
@@ -87,10 +87,10 @@ function CutControls() {
         variant={pendingStart !== null ? 'default' : 'outline'}
         onClick={toggleCut}
       >
-        <PlusIcon className="size-4" />
+        <PlusIcon />
         {pendingStart === null ? 'Mark cut start (C)' : `Mark cut end — start ${formatTime(pendingStart)}`}
       </Button>
-      <span className="text-xs text-muted-foreground font-mono">
+      <span className={styles.readout}>
         {cuts.length} cut{cuts.length === 1 ? '' : 's'} · total removed {formatTime(cuts.reduce((a, c) => a + (c.end - c.start), 0))} /{' '}
         {formatTime(duration)}
       </span>
@@ -152,17 +152,13 @@ function CropControls() {
           key={a.id}
           type="button"
           onClick={() => applyAspect(a.id)}
-          className={cn(
-            'px-3 py-1.5 text-xs font-medium rounded-md border transition-colors whitespace-nowrap',
-            cropAspect === a.id
-              ? 'bg-primary/15 text-primary border-primary/40'
-              : 'text-muted-foreground hover:text-foreground border-transparent hover:border-border/60 hover:bg-accent/50',
-          )}
+          className={styles.aspect}
+          data-active={cropAspect === a.id}
         >
           {a.id === 'original' && aspectLabel ? `Original (${aspectLabel})` : a.label}
         </button>
       ))}
-      <span className="text-xs text-muted-foreground font-mono ml-2 whitespace-nowrap">
+      <span className={`${styles.readout} ${styles.cropReadout}`}>
         {cropW} px × {cropH} px
       </span>
     </>
@@ -187,15 +183,15 @@ function TimeStepper({
   const inc = () => onChange(Math.min(max, value + STEP));
 
   return (
-    <div className="flex items-center gap-1">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <div className="flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1">
-        <span className="text-xs font-mono tabular-nums min-w-[56px] text-center">{formatTime(value)}</span>
-        <div className="flex flex-col">
+    <div className={styles.stepper}>
+      <span className={styles.stepperLabel}>{label}</span>
+      <div className={styles.stepperField}>
+        <span className={styles.stepperValue}>{formatTime(value)}</span>
+        <div className={styles.stepperArrows}>
           <button
             type="button"
             onClick={inc}
-            className="text-[10px] text-muted-foreground hover:text-foreground leading-none"
+            className={styles.stepperArrow}
             aria-label="Increase"
           >
             ▲
@@ -203,7 +199,7 @@ function TimeStepper({
           <button
             type="button"
             onClick={dec}
-            className="text-[10px] text-muted-foreground hover:text-foreground leading-none"
+            className={styles.stepperArrow}
             aria-label="Decrease"
           >
             ▼

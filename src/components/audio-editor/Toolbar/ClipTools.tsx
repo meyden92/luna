@@ -8,6 +8,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { type AudioClip, useAudioEditorStore } from '@/hooks/stores/audio-editor-store';
 import { formatTimeShort } from '@/libs/audio-editor/audio-utils';
+import styles from './ClipTools.module.css';
 
 function SplitClipButton({ clip }: { clip: AudioClip }) {
   const currentTime = useAudioEditorStore((state) => state.currentTime);
@@ -25,7 +26,7 @@ function SplitClipButton({ clip }: { clip: AudioClip }) {
             onClick={() => splitClip(clip.id, currentTime)}
             disabled={!canSplit}
           >
-            <ScissorsIcon className="size-4" />
+            <ScissorsIcon className={styles.icon} />
           </Button>
         }
       />
@@ -53,8 +54,8 @@ export function ClipTools() {
   if (selectedClips.length !== 1) {
     if (selectedClips.length > 1) {
       return (
-        <div className="h-10 border-b border-border px-4 flex items-center gap-4 bg-muted/20">
-          <span className="text-sm text-muted-foreground">{selectedClips.length} clips selected</span>
+        <div className={styles.bar}>
+          <span className={styles.selectionCount}>{selectedClips.length} clips selected</span>
           <Button
             variant="ghost"
             size="sm"
@@ -62,7 +63,7 @@ export function ClipTools() {
           >
             Clear Selection
           </Button>
-          <div className="flex-1" />
+          <div className={styles.spacer} />
           <Tooltip>
             <TooltipTrigger
               render={
@@ -75,7 +76,7 @@ export function ClipTools() {
                     }
                   }}
                 >
-                  <Trash2Icon className="size-4 mr-1" />
+                  <Trash2Icon className={styles.iconLead} />
                   Delete All
                 </Button>
               }
@@ -113,90 +114,90 @@ export function ClipTools() {
   };
 
   return (
-    <div className="h-10 border-b border-border px-4 flex items-center gap-4 bg-muted/20">
-      <span className="text-sm font-medium truncate max-w-32">{clip.name}</span>
+    <div className={styles.bar}>
+      <span className={styles.clipName}>{clip.name}</span>
 
       <Separator
         orientation="vertical"
-        className="h-5"
+        className={styles.divider}
       />
 
       {/* Trim controls */}
-      <div className="flex items-center gap-2">
-        <Label className="text-xs text-muted-foreground">Trim</Label>
+      <div className={styles.group}>
+        <Label className={styles.label}>Trim</Label>
         <Input
           type="text"
           value={formatTimeShort(clip.offset)}
-          className="w-16 h-7 text-xs font-mono"
+          className={styles.timeInput}
           readOnly
           title="Trim start"
         />
-        <span className="text-muted-foreground">-</span>
+        <span className={styles.dash}>-</span>
         <Input
           type="text"
           value={formatTimeShort(clip.trimEnd)}
-          className="w-16 h-7 text-xs font-mono"
+          className={styles.timeInput}
           readOnly
           title="Trim end"
         />
-        <span className="text-xs text-muted-foreground">({formatTimeShort(playDuration)})</span>
+        <span className={styles.value}>({formatTimeShort(playDuration)})</span>
       </div>
 
       <Separator
         orientation="vertical"
-        className="h-5"
+        className={styles.divider}
       />
 
       {/* Volume */}
-      <div className="flex items-center gap-2">
-        <Volume2Icon className="size-4 text-muted-foreground" />
+      <div className={styles.group}>
+        <Volume2Icon className={styles.mutedIcon} />
         <Slider
           value={[clip.volume * 100]}
           onValueChange={handleVolumeChange}
           min={0}
           max={100}
           step={1}
-          className="w-20"
+          className={styles.volumeSlider}
         />
-        <span className="text-xs text-muted-foreground w-8">{Math.round(clip.volume * 100)}%</span>
+        <span className={styles.valueFixed}>{Math.round(clip.volume * 100)}%</span>
       </div>
 
       <Separator
         orientation="vertical"
-        className="h-5"
+        className={styles.divider}
       />
 
       {/* Fades */}
-      <div className="flex items-center gap-2">
-        <Label className="text-xs text-muted-foreground">Fade In</Label>
+      <div className={styles.group}>
+        <Label className={styles.label}>Fade In</Label>
         <Slider
           value={[clip.fadeIn]}
           onValueChange={handleFadeInChange}
           min={0}
           max={Math.min(5, playDuration / 2)}
           step={0.1}
-          className="w-16"
+          className={styles.fadeSlider}
         />
-        <span className="text-xs text-muted-foreground w-8">{clip.fadeIn.toFixed(1)}s</span>
+        <span className={styles.valueFixed}>{clip.fadeIn.toFixed(1)}s</span>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Label className="text-xs text-muted-foreground">Out</Label>
+      <div className={styles.group}>
+        <Label className={styles.label}>Out</Label>
         <Slider
           value={[clip.fadeOut]}
           onValueChange={handleFadeOutChange}
           min={0}
           max={Math.min(5, playDuration / 2)}
           step={0.1}
-          className="w-16"
+          className={styles.fadeSlider}
         />
-        <span className="text-xs text-muted-foreground w-8">{clip.fadeOut.toFixed(1)}s</span>
+        <span className={styles.valueFixed}>{clip.fadeOut.toFixed(1)}s</span>
       </div>
 
-      <div className="flex-1" />
+      <div className={styles.spacer} />
 
       {/* Actions */}
-      <div className="flex items-center gap-1">
+      <div className={styles.actions}>
         <SplitClipButton clip={clip} />
 
         <Tooltip>
@@ -207,7 +208,7 @@ export function ClipTools() {
                 size="icon-sm"
                 onClick={() => removeClip(clip.id)}
               >
-                <Trash2Icon className="size-4" />
+                <Trash2Icon className={styles.icon} />
               </Button>
             }
           />

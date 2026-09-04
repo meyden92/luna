@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAudioEditorStore } from '@/hooks/stores/audio-editor-store';
+import styles from './Timeline.module.css';
 import { TimelinePlayhead } from './TimelinePlayhead';
 import { TimelineRuler } from './TimelineRuler';
 import { TimelineTrack } from './TimelineTrack';
@@ -26,15 +27,15 @@ export function Timeline() {
   return (
     <div
       ref={containerRef}
-      className="flex-1 flex flex-col overflow-hidden bg-background"
+      className={styles.root}
     >
-      <ScrollArea className="flex-1 overflow-auto">
-        <div className="relative min-w-full">
+      <ScrollArea className={styles.scroll}>
+        <div className={styles.surface}>
           {/* Ruler */}
           <TimelineRuler viewportWidth={viewportWidth} />
 
           {/* Tracks container */}
-          <div className="relative">
+          <div className={styles.tracks}>
             {/* Playhead */}
             <TimelinePlayhead />
 
@@ -49,9 +50,9 @@ export function Timeline() {
 
             {/* Empty state placeholder */}
             {tracks.length === 0 && (
-              <div className="h-20 flex flex-col items-center justify-center gap-1 text-center text-muted-foreground text-sm">
+              <div className={styles.empty}>
                 <span>Import audio in the Media Pool to begin.</span>
-                <span className="text-xs">A destination track appears after your first file loads.</span>
+                <span className={styles.emptyHint}>A destination track appears after your first file loads.</span>
               </div>
             )}
           </div>

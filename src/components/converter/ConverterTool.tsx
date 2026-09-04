@@ -6,6 +6,7 @@ import type { AudioFormat, ConversionPhase, ConversionStats, QualityPreset } fro
 import { ConversionProgress } from './ConversionProgress';
 import { ConversionResult } from './ConversionResult';
 import { ConversionSettings } from './ConversionSettings';
+import styles from './ConverterTool.module.css';
 import { FileUploadZone } from './FileUploadZone';
 
 export function ConverterTool() {
@@ -113,14 +114,14 @@ export function ConverterTool() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-background via-background to-primary/5 p-4">
-      <div className="max-w-2xl mx-auto">
-        <Card className="border-none shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5">
-            <CardTitle className="text-2xl">Video to Audio Converter</CardTitle>
+    <div className={styles.root}>
+      <div className={styles.shell}>
+        <Card className={styles.card}>
+          <CardHeader className={styles.header}>
+            <CardTitle className="type-2xl">Video to Audio Converter</CardTitle>
             <CardDescription>Convert video files to audio format entirely in your browser</CardDescription>
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent className={styles.body}>
             {phase === 'idle' && (
               <FileUploadZone
                 onFileSelect={handleFileSelect}
@@ -159,11 +160,12 @@ export function ConverterTool() {
             )}
 
             {phase === 'error' && (
-              <div className="text-center space-y-4">
-                <p className="text-sm text-muted-foreground">Something went wrong during conversion.</p>
+              <div className={styles.error}>
+                <p className={styles.errorText}>Something went wrong during conversion.</p>
                 <button
+                  type="button"
                   onClick={handleReset}
-                  className="text-primary hover:underline text-sm font-medium"
+                  className={styles.retry}
                 >
                   Try Again
                 </button>

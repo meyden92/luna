@@ -1,0 +1,66 @@
+@layer components {
+  .stage {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 22.5rem;
+    overflow: hidden;
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background: var(--muted-strong);
+    box-shadow: var(--shadow-md);
+  }
+
+  @media (width >= 1024px) {
+    .stage {
+      min-height: calc(100dvh - 13rem);
+    }
+  }
+
+  /* Decorative light wash over the stage; purely presentational. */
+  .wash {
+    position: absolute;
+    inset: 0;
+    opacity: 0.55;
+    background-image:
+      linear-gradient(135deg, color-mix(in oklab, var(--background) 70%, transparent), transparent 46%),
+      linear-gradient(45deg, color-mix(in oklab, var(--primary) 8%, transparent), transparent 42%);
+  }
+
+  .frame {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-height: 100%;
+  }
+
+  .canvas {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: calc(100dvh - 16rem);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .error {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-inline: var(--space-6);
+    border-radius: var(--radius-md);
+    background: color-mix(in oklab, var(--background) 90%, transparent);
+    text-align: center;
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+}

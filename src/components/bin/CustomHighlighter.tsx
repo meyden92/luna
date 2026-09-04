@@ -3,6 +3,7 @@ import { useTheme } from 'next-themes';
 import { Highlight, themes } from 'prism-react-renderer';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import styles from './CustomHighlighter.module.css';
 
 interface CodeBlockProps {
   code: string;
@@ -28,10 +29,10 @@ export default function CodeBlock({ code, language = 'text' }: CodeBlockProps) {
   };
 
   return (
-    <div className="relative">
+    <div className={styles.root}>
       <Button
         onClick={copyToClipboard}
-        className="absolute top-2 right-2"
+        className={styles.copyButton}
         aria-label="Copy code"
         title="Copy code to clipboard"
       >
@@ -44,7 +45,7 @@ export default function CodeBlock({ code, language = 'text' }: CodeBlockProps) {
       >
         {({ className, style, tokens, getLineProps, getTokenProps }) => (
           <pre
-            className={`${className} p-4 rounded-lg overflow-auto`}
+            className={`${className} ${styles.pre}`}
             style={style}
           >
             {tokens.map((line, lineIdx) => {
@@ -53,10 +54,10 @@ export default function CodeBlock({ code, language = 'text' }: CodeBlockProps) {
                 <div
                   key={lineKey}
                   {...getLineProps({ line })}
-                  className="table-row"
+                  className={styles.line}
                 >
-                  <span className="table-cell text-right pr-4 select-none opacity-50">{lineIdx + 1}</span>
-                  <span className="table-cell">
+                  <span className={styles.lineNumber}>{lineIdx + 1}</span>
+                  <span className={styles.lineContent}>
                     {line.map((token, tokenIdx) => {
                       const tokenKey = tokenIdx;
                       return (

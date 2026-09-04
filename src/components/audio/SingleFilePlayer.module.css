@@ -1,0 +1,49 @@
+@layer components {
+  .root {
+    width: 100%;
+    max-width: 42rem;
+  }
+
+  .header {
+    text-align: center;
+  }
+
+  .title {
+    margin-bottom: var(--space-2);
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+    font-weight: var(--weight-semibold);
+  }
+
+  .status {
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  /* Level meter: a fixed row of bars whose height comes from the audio data. */
+  .meter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--space-20);
+    margin-bottom: var(--space-4);
+    background: var(--muted);
+  }
+
+  .bars {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-1);
+    height: var(--space-16);
+  }
+
+  .bar {
+    width: var(--space-2);
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    background: var(--primary);
+    transition:
+      height 100ms ease,
+      opacity 100ms ease;
+  }
+}

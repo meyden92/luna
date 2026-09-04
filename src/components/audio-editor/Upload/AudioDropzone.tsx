@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { getTotalAudioDuration, useAudioEditorStore } from '@/hooks/stores/audio-editor-store';
 import { cn } from '@/libs/utils';
 import { useAudioEditor } from '../AudioEditorProvider';
+import styles from './AudioDropzone.module.css';
 
 const ACCEPTED_AUDIO_TYPES = [
   'audio/mpeg',
@@ -137,7 +138,7 @@ export function AudioDropzone({ trackId, className, compact = false }: AudioDrop
           input.click();
         }}
       >
-        <UploadIcon className="size-4 mr-1" />
+        <UploadIcon className={styles.compactIcon} />
         {isLoading ? 'Loading...' : 'Add Audio'}
       </Button>
     );
@@ -145,21 +146,18 @@ export function AudioDropzone({ trackId, className, compact = false }: AudioDrop
 
   return (
     <div
-      className={cn(
-        'relative border-2 border-dashed rounded-lg transition-colors',
-        isDragOver ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50',
-        isLoading && 'opacity-50 pointer-events-none',
-        className,
-      )}
+      className={cn(styles.root, className)}
+      data-drag-over={isDragOver}
+      data-loading={isLoading}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <label className="flex flex-col items-center justify-center gap-3 p-8 cursor-pointer">
-        <UploadIcon className={cn('size-10', isDragOver ? 'text-primary' : 'text-muted-foreground')} />
-        <div className="text-center">
-          <p className="text-sm font-medium">{isLoading ? 'Loading audio...' : 'Drop audio files here'}</p>
-          <p className="text-xs text-muted-foreground mt-1">or click to browse (MP3, WAV, OGG, FLAC)</p>
+      <label className={styles.label}>
+        <UploadIcon className={styles.icon} />
+        <div className={styles.text}>
+          <p className={styles.title}>{isLoading ? 'Loading audio...' : 'Drop audio files here'}</p>
+          <p className={styles.hint}>or click to browse (MP3, WAV, OGG, FLAC)</p>
         </div>
         <input
           type="file"

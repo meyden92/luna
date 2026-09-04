@@ -11,6 +11,7 @@ import { ShortcutPanel } from './ShortcutPanel';
 import { Timeline } from './Timeline';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { VideoDropzone } from './VideoDropzone';
+import styles from './VideoEditorPage.module.css';
 
 export function VideoEditorPage() {
   const phase = useVideoEditorStore((s) => s.phase);
@@ -107,7 +108,7 @@ export function VideoEditorPage() {
 
   if (phase === 'idle' || phase === 'error' || !file) {
     return (
-      <div className="h-full w-full flex flex-col">
+      <div className={styles.root}>
         <VideoDropzone
           onFileSelect={handleFileSelect}
           disabled={phase === 'loading'}
@@ -117,9 +118,9 @@ export function VideoEditorPage() {
   }
 
   return (
-    <div className="h-full w-full flex flex-col bg-gradient-to-b from-[#0b2341] to-[#0a1b30] text-foreground overflow-hidden relative">
+    <div className={styles.editor}>
       <EditorToolbar />
-      <div className="relative flex-1 min-h-0 flex">
+      <div className={styles.stage}>
         <ShortcutPanel
           open={helpOpen}
           onToggle={() => setHelpOpen((v) => !v)}

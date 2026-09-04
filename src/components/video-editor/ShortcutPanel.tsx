@@ -1,5 +1,5 @@
 import { ChevronRightIcon, KeyboardIcon } from 'lucide-react';
-import { cn } from '@/libs/utils';
+import styles from './ShortcutPanel.module.css';
 
 interface ShortcutPanelProps {
   open: boolean;
@@ -23,26 +23,24 @@ const VIDEO_SHORTCUTS: Array<[string, string]> = [
 
 export function ShortcutPanel({ open, onToggle, shortcuts = VIDEO_SHORTCUTS, title = 'Shortcuts' }: ShortcutPanelProps) {
   return (
-    <div className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 z-20">
+    <div className={styles.root}>
       <div
-        className={cn(
-          'pointer-events-auto flex items-stretch transition-transform duration-200',
-          open ? 'translate-x-3' : '-translate-x-[calc(100%-2rem)]',
-        )}
+        className={styles.panel}
+        data-open={open}
       >
-        <div className="rounded-r-lg border border-l-0 border-border/60 bg-background/90 backdrop-blur-sm shadow-md py-3 px-4 min-w-[14rem]">
-          <div className="flex items-center gap-2 text-xs font-medium text-foreground mb-2">
-            <KeyboardIcon className="size-3.5" />
+        <div className={styles.card}>
+          <div className={styles.title}>
+            <KeyboardIcon />
             {title}
           </div>
-          <dl className="space-y-1.5">
+          <dl className={styles.list}>
             {shortcuts.map(([keys, label]) => (
               <div
                 key={keys}
-                className="flex items-center justify-between gap-3 text-[11px]"
+                className={styles.row}
               >
-                <dt className="font-mono text-muted-foreground whitespace-nowrap">{keys}</dt>
-                <dd className="text-foreground/90 text-right">{label}</dd>
+                <dt className={styles.keys}>{keys}</dt>
+                <dd className={styles.label}>{label}</dd>
               </div>
             ))}
           </dl>
@@ -52,9 +50,9 @@ export function ShortcutPanel({ open, onToggle, shortcuts = VIDEO_SHORTCUTS, tit
           type="button"
           onClick={onToggle}
           aria-label={open ? 'Hide shortcuts' : 'Show shortcuts'}
-          className="self-center rounded-r-md border border-l-0 border-border/60 bg-background/90 backdrop-blur-sm px-1 py-4 hover:bg-accent transition-colors"
+          className={styles.toggle}
         >
-          <ChevronRightIcon className={cn('size-3.5 transition-transform', open && 'rotate-180')} />
+          <ChevronRightIcon />
         </button>
       </div>
     </div>

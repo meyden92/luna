@@ -12,6 +12,7 @@ import { useBeautifierStore } from '@/hooks/stores/beautifier-store';
 import { queryKeys } from '@/libs/query-keys';
 import type { BeautifierSourceFile } from '@/schemas/beautifier-schema';
 import { saveBeautifiedImage } from '@/server/fns/beautifier';
+import styles from './beautifier-editor.module.css';
 
 interface BeautifierEditorProps {
   source: BeautifierSourceFile;
@@ -116,29 +117,29 @@ export function BeautifierEditor({ source }: BeautifierEditorProps) {
   }, [source]);
 
   return (
-    <div className="pb-10 pl-1 pr-1 xl:pr-10">
-      <header className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div className="min-w-0">
+    <div className={styles.root}>
+      <header className={styles.header}>
+        <div className={styles.headerMain}>
           <Link
             to="/dashboard"
-            className="mb-3 inline-flex items-center gap-1.5 text-[13px] font-medium text-luna-ink-3 transition-colors hover:text-luna-ink"
+            className={styles.backLink}
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
+            <ArrowLeft className={styles.backIcon} />
             Gallery
           </Link>
-          <div className="flex flex-wrap items-baseline gap-3">
-            <h1 className="m-0 font-serif text-[44px] font-normal leading-none tracking-[-0.01em] text-luna-ink">Beautify</h1>
-            <span className="font-mono text-xs text-luna-ink-4">
+          <div className={styles.titleRow}>
+            <h1 className={styles.title}>Beautify</h1>
+            <span className={styles.dimensions}>
               {config.width} x {config.height} PNG
             </span>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="cluster space-2">
           {savedFile ? (
             <Badge
               variant="outline"
-              className="h-8 border-luna-accent/40 bg-luna-accent-soft text-luna-accent-2"
+              className={styles.savedBadge}
             >
               Saved
             </Badge>
@@ -148,7 +149,7 @@ export function BeautifierEditor({ source }: BeautifierEditorProps) {
             variant="outline"
             onClick={handleDownload}
           >
-            <Download className="h-4 w-4" />
+            <Download className={styles.buttonIcon} />
             Download
           </Button>
           <Button
@@ -156,7 +157,7 @@ export function BeautifierEditor({ source }: BeautifierEditorProps) {
             onClick={() => saveMutation.mutate()}
             disabled={saveMutation.isPending}
           >
-            {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {saveMutation.isPending ? <Loader2 className={styles.spinner} /> : <Save className={styles.buttonIcon} />}
             Save to gallery
           </Button>
           {savedFile ? (
@@ -170,14 +171,14 @@ export function BeautifierEditor({ source }: BeautifierEditorProps) {
                 />
               }
             >
-              <ExternalLink className="h-4 w-4" />
+              <ExternalLink className={styles.buttonIcon} />
               View
             </Button>
           ) : null}
         </div>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <div className={styles.layout}>
         <BeautifierCanvas
           source={source}
           config={config}

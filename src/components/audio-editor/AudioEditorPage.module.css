@@ -1,0 +1,21 @@
+@layer components {
+  .page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  /* Editor workspace: media pool, track list and timeline share one row and
+     scroll internally rather than growing the page. */
+  .workspace {
+    position: relative;
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .mediaPool {
+    width: 12rem;
+    flex-shrink: 0;
+  }
+}

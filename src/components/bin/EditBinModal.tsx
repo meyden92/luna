@@ -21,6 +21,7 @@ import { useBinEdit } from '@/hooks/use-bin-edit';
 import { SUPPORTED_LANGUAGES } from '@/libs/languages';
 import { queryKeys } from '@/libs/query-keys';
 import { updateBin } from '@/server/fns/bins';
+import styles from './EditBinModal.module.css';
 
 const BinEditSchema = z.object({
   title: z.string().min(3).max(40),
@@ -106,7 +107,7 @@ export function EditBinModal() {
 
         <Form
           config={formConfig}
-          className="flex min-h-0 flex-1 flex-col gap-3"
+          className={styles.form}
         >
           {(form) => {
             // Store form ref for external access
@@ -117,7 +118,7 @@ export function EditBinModal() {
                 <FormField
                   name="title"
                   renderFieldAction={({ value, onChange, onBlur }) => (
-                    <FormItem className="mb-3">
+                    <FormItem className={styles.field}>
                       <FormLabel>Snippet Title</FormLabel>
                       <FormControl>
                         <Input
@@ -140,16 +141,16 @@ export function EditBinModal() {
                   options={SUPPORTED_LANGUAGES.map((lang) => ({ value: lang.value, label: lang.label }))}
                   optional
                   disabled={isPending}
-                  className="mb-3"
+                  className={styles.field}
                 />
 
                 <FormField
                   name="isPublic"
                   renderFieldAction={({ value, onChange }) => (
-                    <FormItem className="mb-3 flex items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-1">
+                    <FormItem className={styles.switchRow}>
+                      <div className={styles.switchText}>
                         <FormLabel>Public share link</FormLabel>
-                        <p className="text-sm text-muted-foreground">Allow anyone with the link to view this snippet.</p>
+                        <p className={styles.switchHint}>Allow anyone with the link to view this snippet.</p>
                       </div>
                       <FormControl>
                         <Switch
@@ -165,12 +166,12 @@ export function EditBinModal() {
                 <FormField
                   name="content"
                   renderFieldAction={({ value, onChange, onBlur }) => (
-                    <FormItem className="flex min-h-0 flex-1 flex-col">
+                    <FormItem className={styles.contentField}>
                       <FormLabel>Content</FormLabel>
                       <FormControl>
                         <Textarea
                           placeholder="Paste your code here..."
-                          className="min-h-0 flex-1 resize-none font-mono text-sm"
+                          className={styles.codeArea}
                           value={value ?? ''}
                           onChange={(e) => onChange(e.target.value)}
                           onBlur={onBlur}

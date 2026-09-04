@@ -1,0 +1,112 @@
+@layer components {
+  .root {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    z-index: 20;
+    translate: 0 -50%;
+    pointer-events: none;
+  }
+
+  /* Closed, the card slides off the left edge and leaves the toggle showing. */
+  .panel {
+    display: flex;
+    align-items: stretch;
+    translate: calc(-100% + var(--space-8)) 0;
+    pointer-events: auto;
+    transition: translate 200ms ease;
+  }
+
+  .panel[data-open="true"] {
+    translate: var(--space-3) 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .panel {
+      transition: none;
+    }
+  }
+
+  .card {
+    min-width: 14rem;
+    padding-block: var(--space-3);
+    padding-inline: var(--space-4);
+    border: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
+    border-left: none;
+    border-start-end-radius: var(--radius-lg);
+    border-end-end-radius: var(--radius-lg);
+    background: color-mix(in oklab, var(--background) 90%, transparent);
+    backdrop-filter: blur(4px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+    color: var(--foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    font-weight: var(--weight-medium);
+  }
+
+  .title svg {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .keys {
+    color: var(--muted-foreground);
+    font-family: var(--font-mono);
+    font-feature-settings: "ss01", "zero";
+    white-space: nowrap;
+  }
+
+  .label {
+    color: color-mix(in oklab, var(--foreground) 90%, transparent);
+    text-align: right;
+  }
+
+  .toggle {
+    align-self: center;
+    padding-inline: var(--space-1);
+    padding-block: var(--space-4);
+    border: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
+    border-left: none;
+    border-start-end-radius: var(--radius-md);
+    border-end-end-radius: var(--radius-md);
+    background: color-mix(in oklab, var(--background) 90%, transparent);
+    backdrop-filter: blur(4px);
+    transition: background-color 150ms ease;
+  }
+
+  .toggle:hover {
+    background: var(--accent);
+  }
+
+  .toggle svg {
+    width: 0.875rem;
+    height: 0.875rem;
+    transition: rotate 200ms ease;
+  }
+
+  .panel[data-open="true"] .toggle svg {
+    rotate: 180deg;
+  }
+}

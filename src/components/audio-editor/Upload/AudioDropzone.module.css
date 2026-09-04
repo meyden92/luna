@@ -1,0 +1,67 @@
+@layer components {
+  .root {
+    position: relative;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-lg);
+    transition:
+      border-color 150ms ease,
+      background-color 150ms ease;
+  }
+
+  .root:hover {
+    border-color: color-mix(in oklab, var(--primary) 50%, transparent);
+  }
+
+  .root[data-drag-over="true"] {
+    border-color: var(--primary);
+    background: color-mix(in oklab, var(--primary) 10%, transparent);
+  }
+
+  .root[data-loading="true"] {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    padding: var(--space-8);
+    cursor: pointer;
+  }
+
+  .icon {
+    width: var(--space-10);
+    height: var(--space-10);
+    color: var(--muted-foreground);
+  }
+
+  .root[data-drag-over="true"] .icon {
+    color: var(--primary);
+  }
+
+  .text {
+    text-align: center;
+  }
+
+  .title {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+  }
+
+  .hint {
+    margin-top: var(--space-1);
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .compactIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+    margin-right: var(--space-1);
+  }
+}

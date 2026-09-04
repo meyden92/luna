@@ -5,6 +5,7 @@ import { getExtension } from '@/libs/converter/format-presets';
 import { downloadBlob } from '@/libs/converter/video-converter';
 import { formatSize } from '@/libs/utils';
 import type { ConversionStats } from '@/types/converter';
+import styles from './ConversionResult.module.css';
 
 interface ConversionResultProps {
   file: File;
@@ -26,31 +27,31 @@ export function ConversionResult({ file, stats, blob, onConvertAnother }: Conver
   };
 
   return (
-    <div className="space-y-4">
-      <Card className="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/20">
+    <div className="stack">
+      <Card className={styles.card}>
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="size-5 text-green-600 dark:text-green-400" />
+          <div className="cluster space-2">
+            <CheckCircle2 className={styles.checkIcon} />
             <CardTitle>Conversion Complete!</CardTitle>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Original File:</span>
-              <span className="font-medium">
+        <CardContent className="stack">
+          <div className={styles.stats}>
+            <div className={styles.row}>
+              <span className={styles.label}>Original File:</span>
+              <span className={styles.value}>
                 {formatSize(stats.originalSize, CONVERSION_SIZE_OPTIONS)} ({stats.originalFormat})
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Converted File:</span>
-              <span className="font-medium">
+            <div className={styles.row}>
+              <span className={styles.label}>Converted File:</span>
+              <span className={styles.value}>
                 {formatSize(stats.convertedSize, CONVERSION_SIZE_OPTIONS)} ({stats.convertedFormat.toUpperCase()})
               </span>
             </div>
-            <div className="border-t pt-2 flex justify-between">
-              <span className="text-muted-foreground">Space Saved:</span>
-              <span className="font-medium text-green-600 dark:text-green-400">
+            <div className={`${styles.row} ${styles.savedRow}`}>
+              <span className={styles.label}>Space Saved:</span>
+              <span className={styles.savedValue}>
                 {formatSize(savedBytes, CONVERSION_SIZE_OPTIONS)} ({savingPercent}%)
               </span>
             </div>
@@ -58,10 +59,10 @@ export function ConversionResult({ file, stats, blob, onConvertAnother }: Conver
 
           <Button
             onClick={handleDownload}
-            className="w-full gap-2"
+            className={styles.download}
             size="lg"
           >
-            <Download className="size-4" />
+            <Download />
             Download Audio File
           </Button>
         </CardContent>
@@ -70,7 +71,7 @@ export function ConversionResult({ file, stats, blob, onConvertAnother }: Conver
       <Button
         onClick={onConvertAnother}
         variant="outline"
-        className="w-full"
+        className={styles.again}
       >
         Convert Another File
       </Button>

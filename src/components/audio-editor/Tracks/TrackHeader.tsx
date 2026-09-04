@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { type Track, useAudioEditorStore } from '@/hooks/stores/audio-editor-store';
-import { cn } from '@/libs/utils';
+import styles from './TrackHeader.module.css';
 
 interface TrackHeaderProps {
   track: Track;
@@ -30,18 +30,16 @@ export function TrackHeader({ track }: TrackHeaderProps) {
 
   return (
     <div
-      className={cn(
-        'h-20 border-b border-border p-2 flex flex-col gap-1.5',
-        track.isMuted && 'opacity-50',
-        hasSoloedTrack && !track.isSolo && 'opacity-40',
-      )}
+      className={styles.root}
+      data-muted={track.isMuted}
+      data-dimmed={hasSoloedTrack && !track.isSolo}
     >
       {/* Top row: Track name + delete */}
-      <div className="flex items-center gap-1">
+      <div className={styles.row}>
         <Input
           value={track.name}
           onChange={(e) => updateTrack(track.id, { name: e.target.value })}
-          className="h-5 flex-1 text-xs px-1.5 bg-transparent border-transparent hover:border-border focus:border-border"
+          className={styles.nameInput}
         />
         <Tooltip>
           <TooltipTrigger
@@ -51,7 +49,7 @@ export function TrackHeader({ track }: TrackHeaderProps) {
                 size="icon-xs"
                 onClick={() => removeTrack(track.id)}
               >
-                <Trash2Icon className="size-3" />
+                <Trash2Icon className={styles.icon} />
               </Button>
             }
           />
@@ -60,7 +58,7 @@ export function TrackHeader({ track }: TrackHeaderProps) {
       </div>
 
       {/* Bottom row: M S buttons + volume */}
-      <div className="flex items-center gap-1.5">
+      <div className={styles.controls}>
         {/* Mute */}
         <Tooltip>
           <TooltipTrigger
@@ -70,7 +68,7 @@ export function TrackHeader({ track }: TrackHeaderProps) {
                 size="icon-xs"
                 onClick={() => updateTrack(track.id, { isMuted: !track.isMuted })}
               >
-                {track.isMuted ? <VolumeXIcon className="size-3" /> : <span className="text-[10px] font-bold">M</span>}
+                {track.isMuted ? <VolumeXIcon className={styles.icon} /> : <span className={styles.toggleLetter}>M</span>}
               </Button>
             }
           />
@@ -86,7 +84,7 @@ export function TrackHeader({ track }: TrackHeaderProps) {
                 size="icon-xs"
                 onClick={() => updateTrack(track.id, { isSolo: !track.isSolo })}
               >
-                <span className="text-[10px] font-bold">S</span>
+                <span className={styles.toggleLetter}>S</span>
               </Button>
             }
           />
@@ -102,7 +100,7 @@ export function TrackHeader({ track }: TrackHeaderProps) {
                 size="icon-xs"
                 onClick={() => autoAlignTrack(track.id)}
               >
-                <AlignLeftIcon className="size-3" />
+                <AlignLeftIcon className={styles.icon} />
               </Button>
             }
           />
@@ -110,7 +108,7 @@ export function TrackHeader({ track }: TrackHeaderProps) {
         </Tooltip>
 
         {/* Volume icon */}
-        <Volume2Icon className="size-3 text-muted-foreground shrink-0" />
+        <Volume2Icon className={styles.volumeIcon} />
 
         {/* Volume slider */}
         <Slider
@@ -119,11 +117,11 @@ export function TrackHeader({ track }: TrackHeaderProps) {
           min={0}
           max={100}
           step={1}
-          className="flex-1 min-w-16"
+          className={styles.volumeSlider}
         />
 
         {/* Volume percentage */}
-        <span className="text-[10px] text-muted-foreground w-7 text-right tabular-nums">{volumePercent}%</span>
+        <span className={styles.volumeValue}>{volumePercent}%</span>
       </div>
     </div>
   );

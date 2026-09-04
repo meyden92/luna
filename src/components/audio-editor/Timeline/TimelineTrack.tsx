@@ -1,8 +1,8 @@
 import { useDroppable } from '@dnd-kit/core';
 import { getAudioClipsForTrack, getTotalAudioDuration, type Track, useAudioEditorStore } from '@/hooks/stores/audio-editor-store';
 import { secondsToPixels } from '@/libs/audio-editor/audio-utils';
-import { cn } from '@/libs/utils';
 import { TimelineClip } from './TimelineClip';
+import styles from './TimelineTrack.module.css';
 
 interface TimelineTrackProps {
   track: Track;
@@ -43,17 +43,17 @@ export function TimelineTrack({ track, viewportWidth }: TimelineTrackProps) {
   return (
     <div
       ref={setNodeRef}
-      className={cn('relative h-20 border-b border-border transition-colors', isOver && 'bg-primary/10', track.isMuted && 'opacity-50')}
+      className={styles.track}
+      data-over={isOver}
+      data-muted={track.isMuted}
       style={{ width: totalWidth }}
       onClick={handleClick}
       data-track-bg
     >
       {/* Grid lines */}
       <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: `repeating-linear-gradient(to right, transparent, transparent ${secondsToPixels(1, pixelsPerSecond) - 1}px, hsl(var(--border) / 0.3) ${secondsToPixels(1, pixelsPerSecond)}px)`,
-        }}
+        className={styles.grid}
+        style={{ '--grid-step': `${secondsToPixels(1, pixelsPerSecond)}px` } as React.CSSProperties}
         data-track-bg
       />
 

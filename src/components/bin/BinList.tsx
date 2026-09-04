@@ -15,8 +15,8 @@ import { useBinView } from '@/hooks/use-bin-view';
 import { useConfirmation } from '@/hooks/use-confirmation';
 import { useClipboard } from '@/hooks/use-copy-to-clipboard';
 import { queryKeys } from '@/libs/query-keys';
-import { cn } from '@/libs/utils';
 import { deleteBin } from '@/server/fns/bins';
+import styles from './BinList.module.css';
 import { EditBinModal } from './EditBinModal';
 import { SnippetViewDialog } from './SnippetViewDialog';
 
@@ -47,7 +47,8 @@ function CopySnippetButton({ content }: { content: string }) {
           <Button
             size="sm"
             variant="ghost"
-            className="h-8 w-8 p-0 hover:bg-green-500/10"
+            className={styles.iconButton}
+            data-tone="success"
             onClick={(e) => {
               e.stopPropagation();
               copy(content);
@@ -55,7 +56,7 @@ function CopySnippetButton({ content }: { content: string }) {
           />
         }
       >
-        {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+        {copied ? <Check className={styles.copiedIcon} /> : <Copy />}
       </TooltipTrigger>
       <TooltipContent>{copied ? 'Copied!' : 'Copy snippet'}</TooltipContent>
     </Tooltip>
@@ -171,12 +172,12 @@ function BinList({ bins }: { bins: Bin[] }) {
 
   if (bins.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="rounded-full bg-muted/30 p-4 mb-4">
-          <Code2 className="h-8 w-8 text-muted-foreground" />
+      <div className={styles.empty}>
+        <div className={styles.emptyIcon}>
+          <Code2 />
         </div>
-        <h2 className="text-xl font-semibold mb-2">No snippets yet</h2>
-        <p className="text-muted-foreground text-sm max-w-sm">Start by uploading your first code snippet using the form above</p>
+        <h2 className={styles.emptyTitle}>No snippets yet</h2>
+        <p className={styles.emptyText}>Start by uploading your first code snippet using the form above</p>
       </div>
     );
   }
@@ -184,21 +185,21 @@ function BinList({ bins }: { bins: Bin[] }) {
   return (
     <TooltipProvider>
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <div className={styles.toolbar}>
+        <div className={styles.search}>
+          <Search className={styles.searchIcon} />
           <Input
             placeholder="Search snippets..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className={styles.searchInput}
           />
         </div>
         <Select
           value={languageFilter}
           onValueChange={(value) => setLanguageFilter(value ?? 'all')}
         >
-          <SelectTrigger className="w-full sm:w-[180px]">
+          <SelectTrigger className={styles.filter}>
             <SelectValue placeholder="Filter by language" />
           </SelectTrigger>
           <SelectContent>
@@ -213,19 +214,19 @@ function BinList({ bins }: { bins: Bin[] }) {
             ))}
           </SelectContent>
         </Select>
-        <div className="flex items-center gap-1">
+        <div className={styles.viewToggle}>
           <Tooltip>
             <TooltipTrigger
               render={
                 <Button
                   size="sm"
                   variant={viewMode === 'cards' ? 'default' : 'ghost'}
-                  className="h-9 w-9 p-0"
+                  className={styles.viewButton}
                   onClick={() => setViewMode('cards')}
                 />
               }
             >
-              <LayoutGrid className="h-4 w-4" />
+              <LayoutGrid />
             </TooltipTrigger>
             <TooltipContent>Card view</TooltipContent>
           </Tooltip>
@@ -235,12 +236,12 @@ function BinList({ bins }: { bins: Bin[] }) {
                 <Button
                   size="sm"
                   variant={viewMode === 'table' ? 'default' : 'ghost'}
-                  className="h-9 w-9 p-0"
+                  className={styles.viewButton}
                   onClick={() => setViewMode('table')}
                 />
               }
             >
-              <List className="h-4 w-4" />
+              <List />
             </TooltipTrigger>
             <TooltipContent>Table view</TooltipContent>
           </Tooltip>
@@ -262,26 +263,26 @@ function BinList({ bins }: { bins: Bin[] }) {
 
       {/* Card view */}
       {filteredBins.length > 0 && viewMode === 'cards' && (
-        <div className="space-y-3">
+        <div className={styles.cardList}>
           {filteredBins.map((bin) => (
             <div
               key={bin.id}
-              className="group relative rounded-lg border border-border/50 hover:border-border transition-all duration-200 overflow-hidden bg-card/30 hover:bg-card/60"
+              className={styles.card}
             >
               <div
-                className="p-4 cursor-pointer"
+                className={styles.cardBody}
                 onClick={() => handleViewBin(bin)}
               >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="rounded-md bg-primary/10 p-2">
-                      <Code2 className="h-4 w-4 text-primary" />
+                <div className={styles.cardHead}>
+                  <div className={styles.identity}>
+                    <div className={styles.languageIcon}>
+                      <Code2 />
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-medium truncate group-hover:text-primary transition-colors">{bin.title}</h3>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
+                    <div className={styles.identityText}>
+                      <h3 className={styles.cardTitle}>{bin.title}</h3>
+                      <div className={styles.meta}>
+                        <div className={styles.metaDate}>
+                          <Calendar />
                           <span>{format(new Date(bin.createdAt), 'PP')}</span>
                         </div>
                         {bin.language && <Badge variant="outline">{bin.language}</Badge>}
@@ -290,7 +291,7 @@ function BinList({ bins }: { bins: Bin[] }) {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className={styles.actions}>
                     <CopySnippetButton content={bin.content} />
                     <Tooltip>
                       <TooltipTrigger
@@ -298,7 +299,8 @@ function BinList({ bins }: { bins: Bin[] }) {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-8 w-8 p-0 hover:bg-primary/10"
+                            className={styles.iconButton}
+                            data-tone="primary"
                             onClick={(e) => {
                               e.stopPropagation();
                               window.open(`/bin/${bin.id}`, '_blank', 'noopener');
@@ -306,7 +308,7 @@ function BinList({ bins }: { bins: Bin[] }) {
                           />
                         }
                       >
-                        <ExternalLink className="h-4 w-4" />
+                        <ExternalLink />
                       </TooltipTrigger>
                       <TooltipContent>Open in new tab</TooltipContent>
                     </Tooltip>
@@ -316,7 +318,8 @@ function BinList({ bins }: { bins: Bin[] }) {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className={cn('h-8 w-8 p-0 hover:bg-primary/10', !bin.isPublic && 'opacity-50')}
+                            className={styles.iconButton}
+                            data-tone="primary"
                             onClick={(e) => {
                               e.stopPropagation();
                               copyShareLink(bin);
@@ -325,7 +328,7 @@ function BinList({ bins }: { bins: Bin[] }) {
                           />
                         }
                       >
-                        <Copy className="h-4 w-4" />
+                        <Copy />
                       </TooltipTrigger>
                       <TooltipContent>{bin.isPublic ? 'Copy share link' : 'Make public to share'}</TooltipContent>
                     </Tooltip>
@@ -335,7 +338,8 @@ function BinList({ bins }: { bins: Bin[] }) {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-8 w-8 p-0 hover:bg-blue-500/10"
+                            className={styles.iconButton}
+                            data-tone="info"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEditBin(bin);
@@ -343,7 +347,7 @@ function BinList({ bins }: { bins: Bin[] }) {
                           />
                         }
                       >
-                        <Edit2 className="h-4 w-4" />
+                        <Edit2 />
                       </TooltipTrigger>
                       <TooltipContent>Edit snippet</TooltipContent>
                     </Tooltip>
@@ -353,7 +357,8 @@ function BinList({ bins }: { bins: Bin[] }) {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-8 w-8 p-0 hover:bg-red-500/10"
+                            className={styles.iconButton}
+                            data-tone="danger"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeleteBin(bin.id);
@@ -361,13 +366,13 @@ function BinList({ bins }: { bins: Bin[] }) {
                           />
                         }
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 />
                       </TooltipTrigger>
                       <TooltipContent>Delete snippet</TooltipContent>
                     </Tooltip>
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground truncate">{bin.content.slice(0, 100)}...</p>
+                <p className={styles.preview}>{bin.content.slice(0, 100)}...</p>
               </div>
             </div>
           ))}
@@ -384,27 +389,27 @@ function BinList({ bins }: { bins: Bin[] }) {
               <TableHead>Visibility</TableHead>
               <TableHead>Lines</TableHead>
               <TableHead>Created</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className={styles.alignRight}>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredBins.map((bin) => (
               <TableRow
                 key={bin.id}
-                className="cursor-pointer"
+                className={styles.row}
                 onClick={() => handleViewBin(bin)}
               >
-                <TableCell className="font-medium max-w-[200px] truncate">{bin.title}</TableCell>
+                <TableCell className={styles.titleCell}>{bin.title}</TableCell>
                 <TableCell>
-                  {bin.language ? <Badge variant="outline">{bin.language}</Badge> : <span className="text-muted-foreground">—</span>}
+                  {bin.language ? <Badge variant="outline">{bin.language}</Badge> : <span className={styles.placeholder}>—</span>}
                 </TableCell>
                 <TableCell>
                   <Badge variant={bin.isPublic ? 'default' : 'secondary'}>{bin.isPublic ? 'Public' : 'Private'}</Badge>
                 </TableCell>
                 <TableCell>{getLineCount(bin.content)}</TableCell>
                 <TableCell>{format(new Date(bin.createdAt), 'PP')}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-1">
+                <TableCell className={styles.alignRight}>
+                  <div className={styles.rowActions}>
                     <CopySnippetButton content={bin.content} />
                     <Tooltip>
                       <TooltipTrigger
@@ -412,7 +417,7 @@ function BinList({ bins }: { bins: Bin[] }) {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-8 w-8 p-0"
+                            className={styles.iconButton}
                             onClick={(e) => {
                               e.stopPropagation();
                               window.open(`/bin/${bin.id}`, '_blank', 'noopener');
@@ -420,7 +425,7 @@ function BinList({ bins }: { bins: Bin[] }) {
                           />
                         }
                       >
-                        <ExternalLink className="h-4 w-4" />
+                        <ExternalLink />
                       </TooltipTrigger>
                       <TooltipContent>Open in new tab</TooltipContent>
                     </Tooltip>
@@ -430,7 +435,7 @@ function BinList({ bins }: { bins: Bin[] }) {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className={cn('h-8 w-8 p-0', !bin.isPublic && 'opacity-50')}
+                            className={styles.iconButton}
                             onClick={(e) => {
                               e.stopPropagation();
                               copyShareLink(bin);
@@ -439,7 +444,7 @@ function BinList({ bins }: { bins: Bin[] }) {
                           />
                         }
                       >
-                        <Link2 className="h-4 w-4" />
+                        <Link2 />
                       </TooltipTrigger>
                       <TooltipContent>{bin.isPublic ? 'Copy share link' : 'Make public to share'}</TooltipContent>
                     </Tooltip>
@@ -449,7 +454,7 @@ function BinList({ bins }: { bins: Bin[] }) {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-8 w-8 p-0"
+                            className={styles.iconButton}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEditBin(bin);
@@ -457,7 +462,7 @@ function BinList({ bins }: { bins: Bin[] }) {
                           />
                         }
                       >
-                        <Edit2 className="h-4 w-4" />
+                        <Edit2 />
                       </TooltipTrigger>
                       <TooltipContent>Edit snippet</TooltipContent>
                     </Tooltip>
@@ -467,7 +472,7 @@ function BinList({ bins }: { bins: Bin[] }) {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="h-8 w-8 p-0"
+                            className={styles.iconButton}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeleteBin(bin.id);
@@ -475,7 +480,7 @@ function BinList({ bins }: { bins: Bin[] }) {
                           />
                         }
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 />
                       </TooltipTrigger>
                       <TooltipContent>Delete snippet</TooltipContent>
                     </Tooltip>

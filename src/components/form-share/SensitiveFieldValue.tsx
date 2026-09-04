@@ -1,8 +1,8 @@
 import { Check, Copy, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/libs/utils';
 import { revealFormShareField } from '@/server/fns/platform';
+import styles from './SensitiveFieldValue.module.css';
 
 const REVEAL_DURATION = 30;
 
@@ -83,22 +83,20 @@ export function SensitiveFieldValue({ shareId, fieldId, viewToken }: { shareId: 
 
   return (
     <div
-      className="space-y-1.5"
+      className={styles.root}
       onMouseEnter={pauseTimer}
       onMouseLeave={resumeTimer}
       onFocus={pauseTimer}
       onBlur={resumeTimer}
     >
-      <div className="flex items-center gap-2">
-        <code className="flex-1 rounded bg-muted px-3 py-2 text-sm font-mono break-all">{revealedValue ?? '\u2022'.repeat(12)}</code>
+      <div className={styles.valueRow}>
+        <code className={styles.value}>{revealedValue ?? '\u2022'.repeat(12)}</code>
 
-        <div className="flex items-center gap-1 shrink-0">
+        <div className={styles.actions}>
           {revealedValue && (
             <span
-              className={cn(
-                'text-xs tabular-nums w-6 text-center',
-                secondsLeft <= 5 ? 'text-destructive animate-pulse' : 'text-muted-foreground',
-              )}
+              className={styles.countdown}
+              data-urgent={secondsLeft <= 5}
             >
               {secondsLeft}s
             </span>
@@ -111,13 +109,7 @@ export function SensitiveFieldValue({ shareId, fieldId, viewToken }: { shareId: 
             disabled={!revealedValue && (!viewToken || isRevealing)}
             title={revealedValue ? 'Hide' : 'Reveal'}
           >
-            {isRevealing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : revealedValue ? (
-              <EyeOff className="h-4 w-4" />
-            ) : (
-              <Eye className="h-4 w-4" />
-            )}
+            {isRevealing ? <Loader2 className={styles.spinner} /> : revealedValue ? <EyeOff /> : <Eye />}
           </Button>
 
           <Button
@@ -127,11 +119,11 @@ export function SensitiveFieldValue({ shareId, fieldId, viewToken }: { shareId: 
             disabled={!revealedValue}
             title="Copy"
           >
-            {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+            {copied ? <Check className={styles.copiedIcon} /> : <Copy />}
           </Button>
         </div>
       </div>
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p className={styles.error}>{error}</p>}
     </div>
   );
 }

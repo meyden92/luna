@@ -1,5 +1,6 @@
-// Ambient module declaration for CSS side-effect imports.
-// TypeScript 6 enables noUncheckedSideEffectImports by default,
-// requiring type declarations for bare `import '*.css'` statements.
-// This file must remain a script (no top-level import/export) for wildcard patterns to work.
-declare module '*.css';
+// Side-effect stylesheet imports (`import '@/styles/globals.css'`, third-party
+// CSS) need a module declaration. CSS Modules deliberately get nothing here:
+// every `*.module.css` has a generated `.d.ts` beside it (`bun run
+// generate:css-types`), so importing a module without one, or a class it does
+// not define, fails typecheck.
+declare module '*.css' {}

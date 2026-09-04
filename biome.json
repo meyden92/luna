@@ -90,7 +90,7 @@
   "css": {
     "formatter": {
       "enabled": true,
-      "indentWidth": 10
+      "indentWidth": 2
     },
     "parser": {
       "tailwindDirectives": true

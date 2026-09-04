@@ -2,7 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
-import { Suspense, useEffect } from 'react';
+import { Suspense } from 'react';
 import { Toaster } from 'sonner';
 import Navigation from '@/components/landing/Navigation';
 import { ImpersonationBar } from '@/components/layout/ImpersonationBar';
@@ -11,7 +11,6 @@ import { ThemeProvider } from '@/components/layout/theme-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { queryKeys } from '@/libs/query-keys';
 import { getRuntimeConfig, runtimeConfigScript } from '@/libs/runtime-config';
-import { themeLoader } from '@/libs/theme-loader';
 import { cn } from '@/libs/utils';
 import type { RootRouteContext } from '@/route-context';
 import { getCurrentSession } from '@/server/fns/session';
@@ -63,10 +62,6 @@ function RootComponent() {
   // browser, so both renders produce identical markup.
   const runtimeConfig = getRuntimeConfig();
 
-  useEffect(() => {
-    themeLoader.applySavedTheme();
-  }, []);
-
   return (
     <html
       lang="en"
@@ -86,7 +81,7 @@ function RootComponent() {
         <Suspense>
           <QueryClientProvider client={queryClient}>
             <ThemeProvider
-              attribute="class"
+              attribute="data-theme"
               defaultTheme={initialTheme === 'default' ? 'system' : initialTheme}
               enableSystem
               disableTransitionOnChange
@@ -94,7 +89,7 @@ function RootComponent() {
               <TooltipProvider delay={200}>
                 <a
                   href="#main-content"
-                  className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="skip-link"
                 >
                   Skip to content
                 </a>

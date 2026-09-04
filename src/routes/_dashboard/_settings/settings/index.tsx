@@ -1,8 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import UserSettings from '@/components/settings/user-profile-settings';
-import ThemeSelector from '@/components/theme-selector/ThemeSelector';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { settingsOverviewQuery } from '@/routes/_dashboard/_settings';
 
@@ -21,15 +19,6 @@ function SettingsGeneralPage() {
         <p className="text-sm text-muted-foreground">This is how others will see you on the site.</p>
       </div>
       <Separator />
-      <Card>
-        <CardHeader>
-          <CardTitle>Appearance</CardTitle>
-          <CardDescription>Choose the visual theme used across the app.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ThemeSelector />
-        </CardContent>
-      </Card>
       <UserSettings
         className="w-full"
         receiveEmails={settings.receiveEmail}

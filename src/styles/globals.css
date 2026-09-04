@@ -1,18 +1,12 @@
 /*
- * Entry stylesheet. The layer statement fixes the cascade order once (ADR 0003):
- * a utility on a component root wins over the component's own module without
- * `!important`. Tailwind is still imported while directories migrate; it uses
- * the same `base`, `components` and `utilities` layer names, so its rules merge
- * into this order. The Tailwind import and the transitional stylesheet leave in
- * the contract ticket (#74).
+ * Entry stylesheet. The layer statement fixes the cascade order (ADR 0003): a
+ * utility on a component root wins over the component's own module without
+ * `!important`. The root document repeats the statement in an inline <style>
+ * ahead of every stylesheet, because the first sheet to name a layer ranks it.
  */
 @layer reset, base, components, utilities;
-
-@import "tailwindcss";
-@import "tw-animate-css";
 
 @import "./reset.css" layer(reset);
 @import "./tokens.css";
 @import "./base.css" layer(base);
 @import "./utilities.css" layer(utilities);
-@import "./tailwind-transition.css";

@@ -91,9 +91,6 @@
     "formatter": {
       "enabled": true,
       "indentWidth": 2
-    },
-    "parser": {
-      "tailwindDirectives": true
     }
   }
 }

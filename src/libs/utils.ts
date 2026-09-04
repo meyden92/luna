@@ -1,11 +1,10 @@
 import type { ClassValue } from 'clsx';
 import { clsx } from 'clsx';
 import { File, FileText, FolderArchive, Music, Video } from 'lucide-react';
-import { twMerge } from 'tailwind-merge';
 import { getCdnUrl } from '@/libs/runtime-config';
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+  return clsx(inputs);
 }
 
 const FORMAT_SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB'] as const;

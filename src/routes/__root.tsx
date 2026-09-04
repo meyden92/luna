@@ -1,3 +1,5 @@
+// Imported before any component so its rules precede theirs in every bundle.
+import '@/styles/globals.css';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from '@tanstack/react-router';
@@ -15,7 +17,6 @@ import type { RootRouteContext } from '@/route-context';
 import { getCurrentSession } from '@/server/fns/session';
 import { getInitialTheme } from '@/server/fns/theme';
 import styles from './root.module.css';
-import '@/styles/globals.css';
 import '@fontsource-variable/geist';
 import '@fontsource-variable/geist-mono';
 import '@fontsource/instrument-serif/400.css';
@@ -69,6 +70,11 @@ function RootComponent() {
       suppressHydrationWarning
     >
       <head>
+        {/* The cascade layer order must be the first stylesheet the browser sees:
+            whichever sheet declares a layer first fixes its rank, and component
+            modules can load before the entry stylesheet in dev and in chunked
+            builds. Keep in sync with styles/globals.css. */}
+        <style>{'@layer reset, base, components, utilities;'}</style>
         {/* Must precede <Scripts /> so the snapshot exists before any module
             initialises against it. */}
         <script

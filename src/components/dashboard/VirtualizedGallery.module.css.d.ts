@@ -1,0 +1,34 @@
+declare const styles: {
+  readonly "empty": string;
+  readonly "emptyGlyph": string;
+  readonly "emptyHint": string;
+  readonly "emptyTitle": string;
+  readonly "errorCard": string;
+  readonly "errorWrap": string;
+  readonly "gallery-spin": string;
+  readonly "grid": string;
+  readonly "groupPosition": string;
+  readonly "header": string;
+  readonly "index": string;
+  readonly "jumpBar": string;
+  readonly "jumpLabel": string;
+  readonly "jumpSelect": string;
+  readonly "meta": string;
+  readonly "rail": string;
+  readonly "railLine": string;
+  readonly "retry": string;
+  readonly "row": string;
+  readonly "rows": string;
+  readonly "rule": string;
+  readonly "section": string;
+  readonly "sentinel": string;
+  readonly "spinner": string;
+  readonly "spinnerWrap": string;
+  readonly "stop": string;
+  readonly "stopLabel": string;
+  readonly "tick": string;
+  readonly "title": string;
+  readonly "viewport": string;
+};
+export = styles;
+

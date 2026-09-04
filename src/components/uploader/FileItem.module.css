@@ -1,0 +1,74 @@
+@layer components {
+  .root {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .thumb {
+    display: flex;
+    flex-shrink: 0;
+    width: var(--space-12);
+    height: var(--space-12);
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    background: var(--muted);
+  }
+
+  .preview {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: 100%;
+    object-fit: cover;
+  }
+
+  .fallbackIcon {
+    width: var(--space-6);
+    height: var(--space-6);
+    color: var(--muted-foreground);
+  }
+
+  .meta {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .name {
+    overflow: hidden;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--foreground);
+  }
+
+  .size {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .error {
+    overflow: hidden;
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--destructive);
+  }
+
+  .actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: var(--space-2);
+  }
+
+  .removeIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+}

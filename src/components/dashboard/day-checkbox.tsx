@@ -1,6 +1,7 @@
 import { startTransition } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { getDaySelectionState, useBulkSelection } from '@/hooks/stores/use-bulk-selection';
+import styles from './day-checkbox.module.css';
 
 interface DayCheckboxProps {
   date: string;
@@ -26,15 +27,15 @@ export function DayCheckbox({ date, fileIds }: DayCheckboxProps) {
   };
 
   return (
-    <div className="ml-3 inline-flex items-center gap-2 rounded-full border border-luna-line bg-luna-bg px-2.5 py-1">
+    <div className={styles.root}>
       <Checkbox
         checked={selectionState === 'checked'}
         indeterminate={selectionState === 'indeterminate'}
         onCheckedChange={handleClick}
-        className="cursor-pointer"
+        className={styles.checkbox}
         aria-label={`Select all in ${date}`}
       />
-      <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-luna-ink-4">Select all</span>
+      <span className={styles.label}>Select all</span>
     </div>
   );
 }

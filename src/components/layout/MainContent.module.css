@@ -1,0 +1,12 @@
+@layer components {
+  /* Nav is fixed and 74px tall. The impersonation bar is in flow above
+     MainContent, so it does not add to the offset. The padding matches the nav
+     height so sticky content docks pixel-perfect under it. */
+  .root {
+    --nav-height: 4.625rem;
+
+    flex: 1;
+    min-height: 0;
+    padding-top: var(--nav-height);
+  }
+}

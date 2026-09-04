@@ -1,0 +1,12 @@
+@layer components {
+  /* Box is sized inline by the `size` prop. */
+  .root {
+    position: relative;
+  }
+
+  .mark {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+}

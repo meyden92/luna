@@ -1,0 +1,76 @@
+@layer components {
+  .root {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .inner {
+    width: 100%;
+    max-inline-size: 48rem;
+  }
+
+  .titleBlock {
+    display: flex;
+    height: 7.5rem;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: var(--space-1);
+  }
+
+  .title {
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+    font-weight: var(--weight-semibold);
+  }
+
+  /* The player keeps its own light chrome from react-h5-audio-player. */
+  .player {
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .details {
+    margin-top: var(--space-6);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    background: var(--muted);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .detailsHeader {
+    margin-bottom: var(--space-4);
+  }
+
+  .songTitle {
+    font-size: var(--text-xl);
+    line-height: var(--leading-xl);
+    font-weight: var(--weight-semibold);
+    color: var(--primary);
+  }
+
+  .artist {
+    margin-top: var(--space-1);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .lyricsHeading {
+    margin-bottom: var(--space-2);
+    font-size: var(--text-base);
+    line-height: var(--leading-base);
+    font-weight: var(--weight-medium);
+    color: var(--foreground);
+  }
+
+  .lyrics {
+    font-weight: var(--weight-normal);
+    line-height: 1.625;
+    white-space: pre-line;
+    color: var(--muted-foreground);
+  }
+}

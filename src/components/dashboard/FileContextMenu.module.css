@@ -1,0 +1,24 @@
+@layer components {
+  .content {
+    width: 16rem;
+  }
+
+  /* Disabled header rows that only label the target of the menu. */
+  .heading {
+    overflow: hidden;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .headingCount {
+    font-weight: var(--weight-medium);
+  }
+
+  .icon {
+    width: var(--space-4);
+    height: var(--space-4);
+    margin-right: var(--space-2);
+  }
+}

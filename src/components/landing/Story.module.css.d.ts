@@ -1,0 +1,35 @@
+declare const styles: {
+  readonly "address": string;
+  readonly "body": string;
+  readonly "dropHint": string;
+  readonly "dropIcon": string;
+  readonly "dropTitle": string;
+  readonly "dropzone": string;
+  readonly "headline": string;
+  readonly "latency": string;
+  readonly "lede": string;
+  readonly "light": string;
+  readonly "lightClose": string;
+  readonly "lightMinimise": string;
+  readonly "lightZoom": string;
+  readonly "lights": string;
+  readonly "panel": string;
+  readonly "queue": string;
+  readonly "queueFill": string;
+  readonly "queueItem": string;
+  readonly "queueName": string;
+  readonly "queueTrack": string;
+  readonly "root": string;
+  readonly "step": string;
+  readonly "stepBadge": string;
+  readonly "stepBadgeFirst": string;
+  readonly "stepBody": string;
+  readonly "stepTitle": string;
+  readonly "steps": string;
+  readonly "story-fill": string;
+  readonly "story-slide-in": string;
+  readonly "titleBar": string;
+  readonly "window": string;
+};
+export = styles;
+

@@ -1,0 +1,452 @@
+@layer components {
+  .root {
+    position: relative;
+    max-inline-size: 80rem;
+    margin-inline: auto;
+    padding-block: var(--space-16) var(--space-10);
+    padding-inline: var(--space-8);
+  }
+
+  /* Hairline tick marks framing the top of the hero. */
+  .root::before,
+  .root::after {
+    content: "";
+    position: absolute;
+    top: 44px;
+    width: 10px;
+    height: 10px;
+    border-color: var(--input);
+    pointer-events: none;
+  }
+
+  .root::before {
+    left: 0;
+    border-top: 1px solid;
+    border-left: 1px solid;
+  }
+
+  .root::after {
+    right: 0;
+    border-top: 1px solid;
+    border-right: 1px solid;
+  }
+
+  .grid {
+    display: grid;
+    align-items: center;
+    gap: var(--space-12);
+
+    @media (width >= 1024px) {
+      grid-template-columns: 1.05fr 0.95fr;
+    }
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding-block: var(--space-1);
+    padding-left: var(--space-2);
+    padding-right: var(--space-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    background: var(--background);
+    font-size: var(--text-xs);
+    color: var(--foreground-2);
+  }
+
+  /* Live dot: a slow halo pulse. */
+  .dot {
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: var(--radius-full);
+    background: var(--primary);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 18%, transparent);
+    animation: hero-pulse 2.4s ease-in-out infinite;
+  }
+
+  .headline {
+    margin-block: var(--space-5) var(--space-4);
+    font-family: var(--font-display);
+    font-size: clamp(3.5rem, 7vw, 6.5rem);
+    font-weight: var(--weight-normal);
+    line-height: 0.96;
+    letter-spacing: -0.02em;
+    color: var(--foreground);
+  }
+
+  /* Each line rises out of its own clipping box, one after the next. */
+  .line {
+    display: block;
+    overflow: hidden;
+  }
+
+  .line > span {
+    display: inline-block;
+    animation: hero-rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  .line:nth-child(2) > span {
+    animation-delay: 0.08s;
+  }
+
+  .line:nth-child(3) > span {
+    animation-delay: 0.16s;
+  }
+
+  /* Accent word: italic, with a skewed highlight swiped behind it. */
+  .highlight {
+    position: relative;
+    font-style: italic;
+    color: var(--primary-strong);
+  }
+
+  .highlight::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 6%;
+    left: 0;
+    z-index: -1;
+    height: 10px;
+    border-radius: 2px;
+    background: color-mix(in oklab, var(--primary) 22%, transparent);
+    transform: skewY(-1deg);
+  }
+
+  .lede {
+    max-inline-size: 48ch;
+    font-size: var(--text-lg);
+    line-height: 1.55;
+    color: var(--foreground-2);
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: var(--space-2);
+    row-gap: var(--space-2);
+    margin-block: var(--space-5) var(--space-6);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding-block: var(--space-2);
+    padding-inline: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    background: var(--background);
+    font-size: var(--text-xs);
+    color: var(--foreground-2);
+    transition: all 150ms ease;
+
+    & > svg {
+      color: var(--primary-strong);
+    }
+
+    &:hover {
+      border-color: var(--input);
+      transform: translateY(-1px);
+    }
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding-block: var(--space-2);
+    padding-inline: var(--space-4);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    transition: all 150ms ease;
+  }
+
+  .pillPrimary {
+    background: var(--primary);
+    color: var(--primary-foreground);
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px -10px color-mix(in oklab, var(--primary) 55%, transparent);
+    }
+  }
+
+  .pillGhost {
+    border: 1px solid var(--border);
+    background: var(--background);
+    color: var(--foreground);
+
+    &:hover {
+      background: var(--muted);
+    }
+  }
+
+  .trust {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-left: auto;
+    font-size: var(--text-xs);
+    color: var(--muted-foreground);
+  }
+
+  .avatars {
+    display: flex;
+  }
+
+  /* Overlapping initials; colours come from the inline palette in the caller. */
+  .avatar {
+    display: inline-flex;
+    width: 1.375rem;
+    height: 1.375rem;
+    align-items: center;
+    justify-content: center;
+    margin-left: calc(var(--space-1) * -1.5);
+    border: 2px solid var(--background);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+
+    &:first-child {
+      margin-left: 0;
+    }
+  }
+
+  /* ---- Stage ------------------------------------------------------------- */
+  .stage {
+    position: relative;
+    display: none;
+    height: 32.5rem;
+
+    @media (width >= 1024px) {
+      display: block;
+    }
+  }
+
+  .glow {
+    position: absolute;
+    inset: 8%;
+    z-index: 0;
+    background: radial-gradient(closest-side, color-mix(in oklab, var(--primary) 22%, transparent), transparent 70%);
+    filter: blur(34px);
+  }
+
+  .scene {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-3xl);
+    box-shadow: var(--shadow-lg);
+    animation: hero-float-scene 6s ease-in-out infinite;
+  }
+
+  .sceneImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .sceneDark {
+    display: none;
+  }
+
+  [data-theme="dark"] .sceneLight {
+    display: none;
+  }
+
+  [data-theme="dark"] .sceneDark {
+    display: block;
+  }
+
+  .uploadCard {
+    position: absolute;
+    bottom: var(--space-5);
+    left: var(--space-4);
+    z-index: 5;
+    width: 15.625rem;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background: color-mix(in oklab, var(--background) 92%, transparent);
+    box-shadow: var(--shadow-lg);
+    backdrop-filter: blur(12px);
+    animation: hero-float-card 7s ease-in-out infinite;
+  }
+
+  .uploadRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding-block: var(--space-3);
+    padding-inline: var(--space-3);
+  }
+
+  .uploadIcon {
+    display: flex;
+    flex-shrink: 0;
+    width: var(--space-8);
+    height: var(--space-8);
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    background: color-mix(in oklab, var(--primary) 16%, var(--background));
+    color: var(--primary-strong);
+  }
+
+  .uploadText {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .uploadName {
+    overflow: hidden;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--foreground);
+  }
+
+  .uploadMeta {
+    margin-top: 2px;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--muted-foreground);
+  }
+
+  .uploadArrow {
+    color: var(--primary-strong);
+  }
+
+  .uploadTrack {
+    position: relative;
+    overflow: hidden;
+    height: 4px;
+    margin-inline: var(--space-3);
+    margin-bottom: var(--space-3);
+    border-radius: var(--radius-full);
+    background: var(--muted-strong);
+  }
+
+  /* Indeterminate sweep: the bar never settles. */
+  .uploadFill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 42%;
+    border-radius: var(--radius-full);
+    background: linear-gradient(to right, var(--primary-strong), var(--primary));
+    animation: hero-progress 3.5s ease-in-out infinite;
+  }
+
+  .privacyChip {
+    position: absolute;
+    top: var(--space-6);
+    right: var(--space-4);
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding-block: var(--space-1);
+    padding-inline: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    background: color-mix(in oklab, var(--background) 92%, transparent);
+    box-shadow: var(--shadow-md);
+    backdrop-filter: blur(12px);
+    animation: hero-float-chip 8s ease-in-out infinite;
+  }
+
+  .privacyLabel {
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    color: var(--foreground);
+  }
+
+  @keyframes hero-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 18%, transparent);
+    }
+    50% {
+      box-shadow: 0 0 0 6px color-mix(in oklab, var(--primary) 0%, transparent);
+    }
+  }
+
+  @keyframes hero-rise {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes hero-float-scene {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  @keyframes hero-float-card {
+    0%,
+    100% {
+      transform: translateY(0) rotate(-2deg);
+    }
+    50% {
+      transform: translateY(-6px) rotate(-2deg);
+    }
+  }
+
+  @keyframes hero-float-chip {
+    0%,
+    100% {
+      transform: translateY(0) rotate(-3deg);
+    }
+    50% {
+      transform: translateY(-5px) rotate(-3deg);
+    }
+  }
+
+  @keyframes hero-progress {
+    0% {
+      width: 10%;
+    }
+    70% {
+      width: 92%;
+    }
+    100% {
+      width: 10%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dot,
+    .line > span,
+    .scene,
+    .uploadCard,
+    .uploadFill,
+    .privacyChip {
+      animation-duration: 0.01ms;
+      animation-iteration-count: 1;
+    }
+  }
+}

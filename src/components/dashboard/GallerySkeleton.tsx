@@ -1,4 +1,5 @@
 import { Skeleton } from '@/components/ui/skeleton';
+import styles from './GallerySkeleton.module.css';
 
 interface GallerySkeletonProps {
   columns?: number;
@@ -15,19 +16,19 @@ const SKELETON_RATIOS = [1.33, 0.75, 1, 1.5, 0.8, 1.2, 0.66, 1.4, 1, 0.9, 1.1, 0
 export function GallerySkeleton({ columns = 4, count = 12 }: GallerySkeletonProps) {
   return (
     <div
-      className="px-4 py-4"
+      className={styles.root}
       role="status"
       aria-busy="true"
       aria-label="Loading gallery"
     >
       {/* Date pill skeleton */}
-      <div className="flex items-center mb-4">
-        <Skeleton className="h-6 w-24 rounded-full" />
+      <div className={styles.heading}>
+        <Skeleton className={styles.pill} />
       </div>
 
       {/* Grid skeleton */}
       <div
-        className="gallery-grid"
+        className={styles.grid}
         style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
       >
         {Array.from({ length: count }).map((_, i) => {
@@ -37,15 +38,15 @@ export function GallerySkeleton({ columns = 4, count = 12 }: GallerySkeletonProp
               // biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton items never reorder
               key={i}
             >
-              <div className="rounded-2xl overflow-hidden border border-border/20">
+              <div className={styles.card}>
                 <Skeleton
-                  className="w-full rounded-none"
+                  className={styles.thumb}
                   style={{ aspectRatio: `1 / ${ratio}` }}
                 />
                 {/* Metadata skeleton below */}
-                <div className="px-3 py-2.5 space-y-1.5">
-                  <Skeleton className="h-3.5 w-3/4 rounded" />
-                  <Skeleton className="h-2.5 w-1/2 rounded" />
+                <div className={styles.meta}>
+                  <Skeleton className={styles.metaTitle} />
+                  <Skeleton className={styles.metaSub} />
                 </div>
               </div>
             </div>

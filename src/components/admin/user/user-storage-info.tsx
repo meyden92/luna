@@ -12,6 +12,7 @@ import { queryKeys } from '@/libs/query-keys';
 import { quotaBytesToMiB } from '@/libs/storage-quota';
 import { formatSize } from '@/libs/utils';
 import { updateAdminUserStorageQuota } from '@/server/fns/admin/users';
+import styles from './user-storage-info.module.css';
 
 interface UserStorageInfoProps {
   userId: string;
@@ -58,36 +59,36 @@ export default function UserStorageInfo({
 
   return (
     <Card>
-      <CardContent className="pt-6">
-        <h3 className="text-lg font-medium flex items-center gap-2 mb-4">
-          <FolderUp className="h-5 w-5 text-primary" />
+      <CardContent className={styles.body}>
+        <h3 className={styles.heading}>
+          <FolderUp className={styles.headingIcon} />
           Storage Usage
         </h3>
-        <div className="space-y-4">
+        <div className="stack space-4">
           <div>
-            <div className="flex justify-between mb-2">
-              <Label className="text-muted-foreground text-sm">Space Used</Label>
-              <span className="text-sm font-medium">
+            <div className={styles.usageHead}>
+              <Label className={styles.fieldLabel}>Space Used</Label>
+              <span className={styles.usageValue}>
                 {formatSize(totalSize)} / {formatSize(quotaBytes)}
               </span>
             </div>
             <Progress
               value={percentageUsed}
-              className="h-2"
+              className={styles.bar}
             />
-            <p className="text-xs text-muted-foreground mt-1">{percentageUsed}% of allocated storage</p>
+            <p className={styles.hint}>{percentageUsed}% of allocated storage</p>
           </div>
           <form
-            className="space-y-2"
+            className="stack space-2"
             onSubmit={handleQuotaSubmit}
           >
             <Label
               htmlFor="storage-quota-gib"
-              className="text-muted-foreground text-sm"
+              className={styles.fieldLabel}
             >
               Storage Quota
             </Label>
-            <div className="flex gap-2">
+            <div className={styles.quotaRow}>
               <Input
                 id="storage-quota-gib"
                 type="number"
@@ -102,16 +103,16 @@ export default function UserStorageInfo({
                 size="icon"
                 disabled={isPending}
               >
-                <Save className="h-4 w-4" />
+                <Save />
                 <span className="sr-only">Save storage quota</span>
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">Quota is entered in GiB.</p>
+            <p className={styles.unitHint}>Quota is entered in GiB.</p>
           </form>
           <div>
-            <Label className="text-muted-foreground text-sm">Files Uploaded</Label>
-            <p className="flex items-center gap-2 mt-1">
-              <FileText className="h-4 w-4 text-muted-foreground" />
+            <Label className={styles.fieldLabel}>Files Uploaded</Label>
+            <p className={styles.fileCount}>
+              <FileText className={styles.fileIcon} />
               {fileCount} files
             </p>
           </div>

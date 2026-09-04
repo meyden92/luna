@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import type { EditingModelFieldInput } from '@/schemas/admin/editing-model-schema';
 import { createEditingModel, type getEditingModel, updateEditingModel } from '@/server/fns/admin/models';
+import styles from './EditingModelForm.module.css';
 
 type EditingModel = Awaited<ReturnType<typeof getEditingModel>>;
 // Form-local field shape: nullable DB columns are edited as plain strings (empty = unset) and
@@ -168,14 +169,14 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-6"
+      className="stack space-6"
     >
       <Card>
         <CardHeader>
           <CardTitle>Model Information</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
+        <CardContent className="stack space-4">
+          <div className="stack space-2">
             <Label htmlFor="label">Display Label</Label>
             <Input
               id="label"
@@ -186,7 +187,7 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="stack space-2">
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
@@ -196,7 +197,7 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="stack space-2">
             <Label htmlFor="apiModelName">API Model Name</Label>
             <Input
               id="apiModelName"
@@ -207,7 +208,7 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="stack space-2">
             <Label htmlFor="imageInputField">Image Input Field</Label>
             <Input
               id="imageInputField"
@@ -218,7 +219,7 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="stack space-2">
             <Label htmlFor="sortOrder">Sort Order</Label>
             <Input
               id="sortOrder"
@@ -228,7 +229,7 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
             />
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className={styles.toggle}>
             <Switch
               id="isActive"
               checked={isActive}
@@ -241,39 +242,40 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className={styles.rowBetween}>
             <CardTitle>Fields</CardTitle>
             <Button
               type="button"
               onClick={addField}
               size="sm"
             >
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus />
               Add Field
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="stack space-4">
           {fields.map((field, index) => (
             <Card
               key={field.id}
-              className={index % 2 === 0 ? 'bg-primary/5' : 'bg-background'}
+              className={styles.fieldCard}
+              data-alt={index % 2 === 0}
             >
-              <CardContent className="pt-6 space-y-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-semibold">Field {index + 1}</h4>
+              <CardContent className={`${styles.fieldBody} stack space-4`}>
+                <div className={styles.fieldHead}>
+                  <h4 className="weight-semibold">Field {index + 1}</h4>
                   <Button
                     type="button"
                     variant="destructive"
                     size="sm"
                     onClick={() => removeField(index)}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 />
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                <div className={styles.twoCol}>
+                  <div className="stack space-2">
                     <Label>Field Name</Label>
                     <Input
                       value={field.name}
@@ -283,7 +285,7 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="stack space-2">
                     <Label>Display Label</Label>
                     <Input
                       value={field.label}
@@ -294,7 +296,7 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="stack space-2">
                   <Label>Type</Label>
                   <Select
                     value={field.type}
@@ -312,7 +314,7 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
                   </Select>
                 </div>
 
-                <div className="space-y-2">
+                <div className="stack space-2">
                   <Label>Field Description</Label>
                   <Textarea
                     value={field.description}
@@ -323,8 +325,8 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
 
                 {field.type === 'string' && (
                   <>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
+                    <div className={styles.twoCol}>
+                      <div className="stack space-2">
                         <Label>Min Length</Label>
                         <Input
                           type="number"
@@ -332,7 +334,7 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
                           onChange={(e) => updateField(index, { minValue: e.target.value })}
                         />
                       </div>
-                      <div className="space-y-2">
+                      <div className="stack space-2">
                         <Label>Max Length</Label>
                         <Input
                           type="number"
@@ -341,14 +343,14 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
                         />
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className={styles.toggle}>
                       <Switch
                         checked={field.isTextarea}
                         onCheckedChange={(checked) => updateField(index, { isTextarea: checked })}
                       />
                       <Label>Render as Textarea</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className={styles.toggle}>
                       <Switch
                         checked={field.showCharCount}
                         onCheckedChange={(checked) => updateField(index, { showCharCount: checked })}
@@ -360,8 +362,8 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
 
                 {field.type === 'number' && (
                   <>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="space-y-2">
+                    <div className={styles.threeCol}>
+                      <div className="stack space-2">
                         <Label>Min Value</Label>
                         <Input
                           type="number"
@@ -369,7 +371,7 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
                           onChange={(e) => updateField(index, { minValue: e.target.value })}
                         />
                       </div>
-                      <div className="space-y-2">
+                      <div className="stack space-2">
                         <Label>Max Value</Label>
                         <Input
                           type="number"
@@ -377,7 +379,7 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
                           onChange={(e) => updateField(index, { maxValue: e.target.value })}
                         />
                       </div>
-                      <div className="space-y-2">
+                      <div className="stack space-2">
                         <Label>Step</Label>
                         <Input
                           type="number"
@@ -386,7 +388,7 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
                         />
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className={styles.toggle}>
                       <Switch
                         checked={field.isSlider}
                         onCheckedChange={(checked) => updateField(index, { isSlider: checked })}
@@ -397,7 +399,7 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
                 )}
 
                 {field.type === 'enum' && (
-                  <div className="space-y-2">
+                  <div className="stack space-2">
                     <Label>Enum Options</Label>
                     <Input
                       value={field.enumOptions}
@@ -407,7 +409,7 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
                   </div>
                 )}
 
-                <div className="space-y-2">
+                <div className="stack space-2">
                   <Label>Default Value</Label>
                   <Input
                     value={field.defaultValue}
@@ -416,15 +418,15 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
                   />
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center space-x-2">
+                <div className={styles.toggleRow}>
+                  <div className={styles.toggle}>
                     <Switch
                       checked={field.isRequired}
                       onCheckedChange={(checked) => updateField(index, { isRequired: checked })}
                     />
                     <Label>Required</Label>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className={styles.toggle}>
                     <Switch
                       checked={field.isReadonly}
                       onCheckedChange={(checked) => updateField(index, { isReadonly: checked })}
@@ -436,18 +438,16 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
             </Card>
           ))}
 
-          {fields.length === 0 && (
-            <p className="text-center text-muted-foreground py-8">No fields added yet. Click "Add Field" to get started.</p>
-          )}
+          {fields.length === 0 && <p className={styles.empty}>No fields added yet. Click "Add Field" to get started.</p>}
 
           {fields.length > 0 && (
-            <div className="flex justify-center pt-4">
+            <div className={styles.addRow}>
               <Button
                 type="button"
                 onClick={addField}
                 size="sm"
               >
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus />
                 Add Field
               </Button>
             </div>
@@ -455,7 +455,7 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
         </CardContent>
       </Card>
 
-      <div className="flex justify-end gap-4">
+      <div className={styles.footer}>
         <Button
           type="button"
           variant="outline"

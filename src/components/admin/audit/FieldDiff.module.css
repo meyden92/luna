@@ -1,0 +1,77 @@
+@layer components {
+  .root {
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background-color: var(--card);
+  }
+
+  .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+  }
+
+  .name {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+  }
+
+  .path {
+    padding-inline: var(--space-1);
+    padding-block: 0.125rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--muted);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--muted-foreground);
+  }
+
+  .split {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .sideLabel {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--muted-foreground);
+  }
+
+  /* Value well; the tinted edge carries the direction of the change. */
+  .valueBox {
+    display: flex;
+    align-items: flex-start;
+    min-height: var(--space-10);
+    padding: var(--space-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+
+  .valueBox[data-side="before"] {
+    border-color: color-mix(in oklab, var(--destructive) 20%, transparent);
+  }
+
+  .valueBox[data-side="after"] {
+    border-color: color-mix(in oklab, var(--success) 20%, transparent);
+  }
+
+  /* The side that holds no value: recessed, with an italic placeholder. */
+  .valueBox[data-side="absent"] {
+    background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+    color: var(--muted-foreground);
+  }
+
+  .absentValue {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-style: italic;
+    color: var(--muted-foreground);
+  }
+}

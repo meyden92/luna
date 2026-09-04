@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { getUserGroups, updateUserGroups } from '@/server/fns/admin/users';
+import styles from './RbacUserGroupAssignment.module.css';
 
 type GroupOption = {
   id: string;
@@ -70,13 +71,13 @@ export default function RbacUserGroupAssignment({ userId }: UserGroupAssignmentP
   }
 
   return (
-    <div className="space-y-3">
-      <Label className="text-muted-foreground text-sm">Access Group Assignments</Label>
-      <div className="grid grid-cols-1 gap-2">
+    <div className="stack space-3">
+      <Label className={styles.label}>Access Group Assignments</Label>
+      <div className={styles.list}>
         {groups.map((group) => (
           <label
             key={group.id}
-            className="flex items-center gap-2 border rounded px-3 py-2"
+            className={styles.option}
           >
             <input
               type="checkbox"
@@ -85,8 +86,8 @@ export default function RbacUserGroupAssignment({ userId }: UserGroupAssignmentP
               onChange={() => toggleGroup(group.id)}
             />
             <div>
-              <div className="text-sm font-medium">{group.name}</div>
-              <div className="text-xs text-muted-foreground font-mono">
+              <div className={styles.name}>{group.name}</div>
+              <div className={styles.key}>
                 {group.key}
                 {requiredKeySet.has(group.key) ? ' (required)' : ''}
               </div>

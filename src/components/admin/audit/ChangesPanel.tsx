@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/libs/utils';
 import type { FieldChange } from '@/types/audit';
+import styles from './ChangesPanel.module.css';
 import { ChangesSummary } from './ChangesSummary';
 import { FieldDiff } from './FieldDiff';
 import { JsonDiff } from './JsonDiff';
@@ -19,6 +20,23 @@ interface ChangesPanelProps {
   after?: any;
   action?: string;
   className?: string;
+}
+
+/** Turn a field key or path segment into a human-readable label. */
+function humanise(key: string): string {
+  return key
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, (str) => str.toUpperCase())
+    .trim();
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className={styles.empty}>
+      <FileText className={styles.emptyIcon} />
+      <p className="type-sm">{message}</p>
+    </div>
+  );
 }
 
 export function ChangesPanel({ changes = [], summary, before, after, action, className }: ChangesPanelProps) {
@@ -56,16 +74,11 @@ export function ChangesPanel({ changes = [], summary, before, after, action, cla
     });
 
     if (filteredFields.length === 0) {
-      return (
-        <div className="text-center py-8 text-muted-foreground">
-          <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">No fields match your search</p>
-        </div>
-      );
+      return <EmptyState message="No fields match your search" />;
     }
 
     return (
-      <div className="space-y-3">
+      <div className="stack space-3">
         {filteredFields.map(([key, value]) => {
           const isChanged = changedFieldPaths.has(key);
           const beforeValue = before?.[key];
@@ -73,59 +86,53 @@ export function ChangesPanel({ changes = [], summary, before, after, action, cla
           return (
             <div
               key={key}
-              className="rounded-lg border bg-card border-border p-4"
+              className={styles.fieldCard}
             >
-              <div className="flex items-center gap-2 mb-3">
-                <span className="font-medium text-sm">
-                  {key
-                    .replace(/([A-Z])/g, ' $1')
-                    .replace(/^./, (str) => str.toUpperCase())
-                    .trim()}
-                </span>
-                <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{key}</code>
-                {isChanged && (
-                  <span className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 px-2 py-0.5 rounded">
-                    Modified
-                  </span>
-                )}
+              <div className={styles.fieldHead}>
+                <span className={styles.fieldName}>{humanise(key)}</span>
+                <code className={styles.fieldPath}>{key}</code>
+                {isChanged && <span className={styles.modifiedTag}>Modified</span>}
               </div>
 
               {isChanged ? (
                 /* Split view for changed fields */
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="space-y-1">
-                    <div className="text-xs text-muted-foreground">Before</div>
-                    <div className="p-2 rounded border border-red-500/20 min-h-[2.5rem] flex items-start">
+                <div className={styles.split}>
+                  <div className="stack space-1">
+                    <div className={styles.sideLabel}>Before</div>
+                    <div
+                      className={styles.valueBox}
+                      data-side="before"
+                    >
                       <JsonDiff
                         before={beforeValue}
                         after={value}
                         side="before"
-                        className="w-full"
                       />
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <div className="text-xs text-muted-foreground">After</div>
-                    <div className="p-2 rounded border border-emerald-500/20 min-h-[2.5rem] flex items-start">
+                  <div className="stack space-1">
+                    <div className={styles.sideLabel}>After</div>
+                    <div
+                      className={styles.valueBox}
+                      data-side="after"
+                    >
                       <JsonDiff
                         before={beforeValue}
                         after={value}
                         side="after"
-                        className="w-full"
                       />
                     </div>
                   </div>
                 </div>
               ) : (
                 /* Single view for unchanged fields */
-                <div className="text-sm">
-                  <div className="text-xs text-muted-foreground mb-1">Current Value</div>
-                  <div className="bg-muted p-2 rounded border border-border">
+                <div className={styles.single}>
+                  <div className={styles.singleLabel}>Current Value</div>
+                  <div className={styles.singleBox}>
                     <JsonDiff
                       before={value}
                       after={value}
                       side="after"
-                      className="w-full text-muted-foreground"
                     />
                   </div>
                 </div>
@@ -138,26 +145,26 @@ export function ChangesPanel({ changes = [], summary, before, after, action, cla
   };
 
   return (
-    <Card className={cn('flex flex-col h-full', className)}>
-      <CardHeader className="pb-3 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            <GitCompare className="h-5 w-5" />
+    <Card className={cn(styles.root, className)}>
+      <CardHeader className={styles.header}>
+        <div className={styles.headerRow}>
+          <CardTitle className={styles.title}>
+            <GitCompare className={styles.titleIcon} />
             {isCreateOperation ? 'Initial Data' : 'Changes Panel'}
           </CardTitle>
           {hasChanges && (
-            <span className="text-sm text-muted-foreground">
+            <span className={styles.count}>
               {changes.length} change{changes.length !== 1 ? 's' : ''}
             </span>
           )}
-          {isCreateOperation && !hasChanges && <span className="text-sm text-muted-foreground">Created</span>}
+          {isCreateOperation && !hasChanges && <span className={styles.count}>Created</span>}
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col p-0 min-h-0">
+      <CardContent className={styles.content}>
         {showContent ? (
           <>
-            <div className="px-6 pb-3 flex-shrink-0">
+            <div className={styles.section}>
               <ChangesSummary
                 changes={changes}
                 summary={summary}
@@ -167,21 +174,21 @@ export function ChangesPanel({ changes = [], summary, before, after, action, cla
             {/* For update operations, show changed fields by default with toggle for all fields */}
             {isUpdateOperation ? (
               <>
-                <div className="px-6 pb-3 flex-shrink-0 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <div className={styles.section}>
+                  <div className={styles.controlsRow}>
+                    <div className={styles.searchWrap}>
+                      <Search className={styles.searchIcon} />
                       <Input
                         placeholder={showAllFields ? 'Search fields...' : 'Search changes...'}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-9"
+                        className={styles.searchInput}
                       />
                     </div>
-                    <div className="flex items-center gap-2 ml-3">
+                    <div className={styles.toggle}>
                       <Label
                         htmlFor="show-all-fields"
-                        className="text-sm text-muted-foreground whitespace-nowrap"
+                        className={styles.toggleLabel}
                       >
                         Show all fields
                       </Label>
@@ -194,11 +201,11 @@ export function ChangesPanel({ changes = [], summary, before, after, action, cla
                     </div>
                   </div>
                 </div>
-                <ScrollArea className="flex-1 px-6 pb-6 min-h-0">
+                <ScrollArea className={styles.scroll}>
                   {showAllFields ? (
                     renderAllDataWithHighlights()
                   ) : (
-                    <div className="space-y-3">
+                    <div className="stack space-3">
                       {filteredChanges.length > 0 ? (
                         filteredChanges.map((change) => (
                           <FieldDiff
@@ -207,10 +214,7 @@ export function ChangesPanel({ changes = [], summary, before, after, action, cla
                           />
                         ))
                       ) : (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">{searchTerm ? 'No changes match your search' : 'No field changes detected'}</p>
-                        </div>
+                        <EmptyState message={searchTerm ? 'No changes match your search' : 'No field changes detected'} />
                       )}
                     </div>
                   )}
@@ -221,10 +225,10 @@ export function ChangesPanel({ changes = [], summary, before, after, action, cla
               <Tabs
                 value={activeTab}
                 onValueChange={setActiveTab}
-                className="flex-1 flex flex-col"
+                className={styles.tabs}
               >
-                <div className="px-6">
-                  <TabsList className="grid w-full grid-cols-2">
+                <div className={styles.tabsWrap}>
+                  <TabsList className={styles.tabsList}>
                     <TabsTrigger value="changes">{isCreateOperation && !hasChanges ? 'Initial Values' : 'Field Changes'}</TabsTrigger>
                     <TabsTrigger value="raw">Raw Data</TabsTrigger>
                   </TabsList>
@@ -232,22 +236,22 @@ export function ChangesPanel({ changes = [], summary, before, after, action, cla
 
                 <TabsContent
                   value="changes"
-                  className="flex-1 mt-0 flex flex-col min-h-0"
+                  className={styles.tabPanel}
                 >
-                  <div className="px-6 pb-3 flex-shrink-0">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <div className={styles.section}>
+                    <div className={styles.searchWrap}>
+                      <Search className={styles.searchIcon} />
                       <Input
                         placeholder="Search changes..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-9"
+                        className={styles.searchInput}
                       />
                     </div>
                   </div>
 
-                  <ScrollArea className="flex-1 px-6 pb-6 min-h-0">
-                    <div className="space-y-3">
+                  <ScrollArea className={styles.scroll}>
+                    <div className="stack space-3">
                       {hasChanges ? (
                         filteredChanges.length > 0 ? (
                           filteredChanges.map((change) => (
@@ -257,43 +261,40 @@ export function ChangesPanel({ changes = [], summary, before, after, action, cla
                             />
                           ))
                         ) : (
-                          <div className="text-center py-8 text-muted-foreground">
-                            <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm">No changes match your search</p>
-                          </div>
+                          <EmptyState message="No changes match your search" />
                         )
                       ) : isCreateOperation && after ? (
-                        <div className="space-y-3">
+                        <div className="stack space-3">
                           {Object.entries(after).map(([key, value]) => (
                             <div
                               key={key}
-                              className="rounded-lg border bg-card p-4"
+                              className={styles.fieldCard}
                             >
-                              <div className="flex items-center gap-2 mb-3">
-                                <span className="font-medium text-sm">
-                                  {key
-                                    .replace(/([A-Z])/g, ' $1')
-                                    .replace(/^./, (str) => str.toUpperCase())
-                                    .trim()}
-                                </span>
-                                <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{key}</code>
+                              <div className={styles.fieldHead}>
+                                <span className={styles.fieldName}>{humanise(key)}</span>
+                                <code className={styles.fieldPath}>{key}</code>
                               </div>
                               {/* Split view for create operations too */}
-                              <div className="grid grid-cols-2 gap-3 text-sm">
-                                <div className="space-y-1">
-                                  <div className="text-xs text-muted-foreground">Original</div>
-                                  <div className="bg-muted/50 text-muted-foreground border-border p-2 rounded border italic min-h-[2.5rem] flex items-center">
-                                    <span className="font-mono text-sm">(no previous value)</span>
+                              <div className={styles.split}>
+                                <div className="stack space-1">
+                                  <div className={styles.sideLabel}>Original</div>
+                                  <div
+                                    className={styles.valueBox}
+                                    data-side="absent"
+                                  >
+                                    <span className={styles.absentValue}>(no previous value)</span>
                                   </div>
                                 </div>
-                                <div className="space-y-1">
-                                  <div className="text-xs text-muted-foreground">Created</div>
-                                  <div className="p-2 rounded border border-emerald-500/20 min-h-[2.5rem] flex items-start">
+                                <div className="stack space-1">
+                                  <div className={styles.sideLabel}>Created</div>
+                                  <div
+                                    className={styles.valueBox}
+                                    data-side="after"
+                                  >
                                     <JsonDiff
                                       before={undefined}
                                       after={value}
                                       side="after"
-                                      className="w-full"
                                     />
                                   </div>
                                 </div>
@@ -302,10 +303,7 @@ export function ChangesPanel({ changes = [], summary, before, after, action, cla
                           ))}
                         </div>
                       ) : (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">No data to display</p>
-                        </div>
+                        <EmptyState message="No data to display" />
                       )}
                     </div>
                   </ScrollArea>
@@ -313,22 +311,22 @@ export function ChangesPanel({ changes = [], summary, before, after, action, cla
 
                 <TabsContent
                   value="raw"
-                  className="flex-1 mt-0 min-h-0"
+                  className={styles.tabPanel}
                 >
-                  <ScrollArea className="flex-1 px-6 pb-6 min-h-0">
-                    <div className="space-y-4">
+                  <ScrollArea className={styles.scroll}>
+                    <div className="stack space-4">
                       {before && (
                         <div>
-                          <h4 className="text-sm font-medium mb-2 text-muted-foreground">Before</h4>
-                          <pre className="text-xs bg-muted p-3 rounded-lg overflow-x-auto">
+                          <h4 className={styles.rawHeading}>Before</h4>
+                          <pre className={styles.pre}>
                             <code>{JSON.stringify(before, null, 2)}</code>
                           </pre>
                         </div>
                       )}
                       {after && (
                         <div>
-                          <h4 className="text-sm font-medium mb-2 text-muted-foreground">After</h4>
-                          <pre className="text-xs bg-muted p-3 rounded-lg overflow-x-auto">
+                          <h4 className={styles.rawHeading}>After</h4>
+                          <pre className={styles.pre}>
                             <code>{JSON.stringify(after, null, 2)}</code>
                           </pre>
                         </div>
@@ -340,11 +338,11 @@ export function ChangesPanel({ changes = [], summary, before, after, action, cla
             )}
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center p-6">
-            <div className="text-center">
-              <FileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-              <p className="text-sm text-muted-foreground">No changes to display</p>
-              <p className="text-xs text-muted-foreground mt-1">Field changes will appear here when available</p>
+          <div className={styles.placeholder}>
+            <div>
+              <FileText className={styles.placeholderIcon} />
+              <p className={styles.placeholderText}>No changes to display</p>
+              <p className={styles.placeholderHint}>Field changes will appear here when available</p>
             </div>
           </div>
         )}

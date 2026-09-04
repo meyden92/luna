@@ -16,6 +16,7 @@ import {
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import { resetUserPasswordSchema } from '@/schemas/credentials-schema';
 import { resetAdminUserPassword } from '@/server/fns/admin/users';
+import styles from './reset-password-dialog.module.css';
 
 /**
  * The administrator half of account recovery: there is no reset link to send.
@@ -43,7 +44,7 @@ export function ResetPasswordDialog({ userId, userName }: { userId: string; user
         variant="outline"
         onClick={() => setOpen(true)}
       >
-        <KeyRound className="mr-2 h-4 w-4" />
+        <KeyRound />
         Reset password
       </Button>
 
@@ -59,7 +60,7 @@ export function ResetPasswordDialog({ userId, userName }: { userId: string; user
 
           <FormWithSchema
             config={config}
-            className="space-y-4"
+            className="stack space-4"
           >
             <FormField
               name="newPassword"
@@ -86,9 +87,9 @@ export function ResetPasswordDialog({ userId, userName }: { userId: string; user
                 <Button
                   type="submit"
                   disabled={isSubmitting || reset.isPending}
-                  className="w-full"
+                  className={styles.submit}
                 >
-                  {isSubmitting || reset.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+                  {isSubmitting || reset.isPending ? <Loader2 className={styles.spinner} /> : null}
                   Reset password
                 </Button>
               )}

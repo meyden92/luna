@@ -6,6 +6,7 @@ import { queryKeys } from '@/libs/query-keys';
 import { getTaskStats, listExecutions } from '@/server/fns/admin/tasks';
 import PeriodSelector from './period-selector';
 import RecentExecutionsServer from './recent-executions-server';
+import styles from './task-monitoring-wrapper.module.css';
 import TaskStatsServer from './task-stats-server';
 
 export default function TaskMonitoringWrapper() {
@@ -25,10 +26,10 @@ export default function TaskMonitoringWrapper() {
 
   if (statsLoading && executionsLoading) {
     return (
-      <div className="space-y-6">
+      <div className="stack space-6">
         <Card>
-          <CardContent className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin" />
+          <CardContent className={styles.loading}>
+            <Loader2 className={styles.spinner} />
           </CardContent>
         </Card>
       </div>
@@ -36,10 +37,10 @@ export default function TaskMonitoringWrapper() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="stack space-6">
       {/* Header with period selector */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Task Monitoring Dashboard</h2>
+      <div className={styles.header}>
+        <h2 className={styles.heading}>Task Monitoring Dashboard</h2>
         <PeriodSelector
           value={statsPeriod}
           onChange={setStatsPeriod}

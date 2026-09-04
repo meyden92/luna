@@ -1,0 +1,43 @@
+@layer components {
+  .filters {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: end;
+    gap: var(--space-4);
+  }
+
+  @media (width >= 768px) {
+    .filters {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .label {
+    display: block;
+    margin-bottom: var(--space-2);
+  }
+
+  .summary {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .pending {
+    margin-left: var(--space-2);
+    font-style: italic;
+  }
+
+  .tableWrap {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+
+  .idColumn {
+    width: 6.25rem;
+  }
+
+  .actionsColumn {
+    text-align: right;
+  }
+}

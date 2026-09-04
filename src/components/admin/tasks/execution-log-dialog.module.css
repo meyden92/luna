@@ -1,0 +1,211 @@
+@layer components {
+  .dialog {
+    display: flex;
+    flex-direction: column;
+    max-width: 56rem;
+    max-height: 90vh;
+  }
+
+  .title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  /* Status glyph in the title, tinted by the outcome it reports. */
+  .statusIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+    color: var(--tone, var(--muted-foreground));
+  }
+
+  .statusIcon[data-status="success"] {
+    --tone: var(--success);
+  }
+
+  .statusIcon[data-status="failed"],
+  .statusIcon[data-status="timeout"] {
+    --tone: var(--destructive);
+  }
+
+  .statusIcon[data-status="running"] {
+    --tone: var(--info);
+  }
+
+  .statusIcon[data-status="pending"] {
+    --tone: var(--warning);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .statusIcon[data-status="running"] {
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  @keyframes spin {
+    to {
+      rotate: 360deg;
+    }
+  }
+
+  .successBadge {
+    border-color: color-mix(in oklab, var(--success) 35%, transparent);
+    background-color: color-mix(in oklab, var(--success) 12%, transparent);
+    color: var(--success);
+  }
+
+  .state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-block: var(--space-8);
+  }
+
+  .stateIcon {
+    width: var(--space-8);
+    height: var(--space-8);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .stateIcon[data-spin="true"] {
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  .errorIcon {
+    width: var(--space-8);
+    height: var(--space-8);
+    margin-inline: auto;
+    margin-bottom: var(--space-2);
+    color: var(--destructive);
+  }
+
+  .errorText {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    overflow: hidden;
+  }
+
+  .summary {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  @media (width >= 768px) {
+    .summary {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .sectionTitle {
+    font-weight: var(--weight-semibold);
+  }
+
+  .sectionTitle[data-tone="error"] {
+    color: var(--destructive);
+  }
+
+  .sectionTitle[data-tone="result"] {
+    color: var(--success);
+  }
+
+  .details {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .code {
+    padding-inline: var(--space-1);
+    padding-block: 0.125rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--muted);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .sectionHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* Tinted well holding the raw error or result payload. */
+  .payload {
+    padding: var(--space-3);
+    border: 1px solid color-mix(in oklab, var(--tone) 35%, transparent);
+    border-radius: var(--radius-md);
+    background-color: color-mix(in oklab, var(--tone) 10%, transparent);
+  }
+
+  .payload[data-tone="error"] {
+    --tone: var(--destructive);
+  }
+
+  .payload[data-tone="result"] {
+    --tone: var(--success);
+  }
+
+  .payloadPre {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    white-space: pre-wrap;
+    color: var(--tone);
+  }
+
+  .logs {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .logScroll {
+    height: 16rem;
+    padding: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+
+  .logLine {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .logHead {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .logTime {
+    color: var(--muted-foreground);
+  }
+
+  .logMessage {
+    flex: 1;
+  }
+
+  /* Indented under the level badge and timestamp. */
+  .logData {
+    margin-top: var(--space-1);
+    margin-left: var(--space-16);
+    color: var(--muted-foreground);
+  }
+
+  .executionId {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--muted-foreground);
+  }
+
+  .footer {
+    display: flex;
+    justify-content: flex-end;
+  }
+}

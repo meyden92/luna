@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/libs/utils';
+import styles from './Pagination.module.css';
 
 interface FilterState {
   search?: string;
@@ -29,22 +30,27 @@ function buildSearch(params: Record<string, string | undefined>): Record<string,
 }
 
 export default function Pagination({ filters, hasPrevious, hasNext, previousCursor, nextCursor }: PaginationProps) {
+  const stepClass = cn(buttonVariants({ variant: 'outline', size: 'sm' }), styles.step);
+
   return (
-    <div className="mt-6 flex justify-center">
-      <nav className="flex items-center gap-1">
+    <div className={cn(styles.root, 'margin-top-6')}>
+      <nav className={styles.nav}>
         {hasPrevious && previousCursor ? (
           <Link
             to="/admin/audit"
             search={buildSearch({ ...filters, cursor: previousCursor, direction: 'previous' })}
-            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'gap-1 px-2.5')}
+            className={stepClass}
           >
-            <ChevronLeft className="h-4 w-4" />
-            <span className="hidden sm:block">Previous</span>
+            <ChevronLeft />
+            <span className="hide-below-sm">Previous</span>
           </Link>
         ) : (
-          <span className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'gap-1 px-2.5 opacity-50 cursor-not-allowed')}>
-            <ChevronLeft className="h-4 w-4" />
-            <span className="hidden sm:block">Previous</span>
+          <span
+            className={stepClass}
+            data-disabled="true"
+          >
+            <ChevronLeft />
+            <span className="hide-below-sm">Previous</span>
           </span>
         )}
 
@@ -52,15 +58,18 @@ export default function Pagination({ filters, hasPrevious, hasNext, previousCurs
           <Link
             to="/admin/audit"
             search={buildSearch({ ...filters, cursor: nextCursor, direction: 'next' })}
-            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'gap-1 px-2.5')}
+            className={stepClass}
           >
-            <span className="hidden sm:block">Next</span>
-            <ChevronRight className="h-4 w-4" />
+            <span className="hide-below-sm">Next</span>
+            <ChevronRight />
           </Link>
         ) : (
-          <span className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'gap-1 px-2.5 opacity-50 cursor-not-allowed')}>
-            <span className="hidden sm:block">Next</span>
-            <ChevronRight className="h-4 w-4" />
+          <span
+            className={stepClass}
+            data-disabled="true"
+          >
+            <span className="hide-below-sm">Next</span>
+            <ChevronRight />
           </span>
         )}
       </nav>

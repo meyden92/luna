@@ -1,4 +1,5 @@
 import { cn } from '@/libs/utils';
+import styles from './JsonDiff.module.css';
 
 interface JsonDiffProps {
   before?: any;
@@ -177,6 +178,17 @@ function deepDiff(before: any, after: any, path: string[] = []): DiffNode[] {
   return result;
 }
 
+/**
+ * Tint for one rendered value: the removal colour on the "before" side, the
+ * addition colour on the "after" side, nothing when the leaf did not change.
+ */
+function highlight(diff: DiffNode | undefined, side: 'before' | 'after'): string | undefined {
+  if (!diff || diff.status === 'unchanged') return undefined;
+  if (side === 'before' && (diff.status === 'removed' || diff.status === 'modified')) return styles.removed;
+  if (side === 'after' && (diff.status === 'added' || diff.status === 'modified')) return styles.added;
+  return undefined;
+}
+
 function formatValue(value: any, maxLength = 100): string {
   if (value === null) return 'null';
   if (value === undefined) return 'undefined';
@@ -207,24 +219,8 @@ function renderJsonWithHighlights(
   if (value === null || value === undefined) {
     // Only highlight leaf nodes, not containers
     const diff = diffs.find((d) => d.path.join('.') === path.join('.') && !d.isObject && !d.isArray);
-    const shouldHighlight = diff && diff.status !== 'unchanged';
 
-    return (
-      <span
-        className={cn(
-          shouldHighlight &&
-            side === 'before' &&
-            (diff.status === 'removed' || diff.status === 'modified') &&
-            'bg-red-500/10 text-red-600 dark:text-red-400',
-          shouldHighlight &&
-            side === 'after' &&
-            (diff.status === 'added' || diff.status === 'modified') &&
-            'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-        )}
-      >
-        {formatValue(value, 50)}
-      </span>
-    );
+    return <span className={highlight(diff, side)}>{formatValue(value, 50)}</span>;
   }
 
   if (typeof value === 'object') {
@@ -243,25 +239,11 @@ function renderJsonWithHighlights(
             const itemPath = [...path, index.toString()];
             // Only highlight primitive values, not objects/arrays
             const diff = diffs.find((d) => d.path.join('.') === itemPath.join('.') && !d.isObject && !d.isArray);
-            const shouldHighlight = diff && diff.status !== 'unchanged';
 
             return (
               <span key={itemPath.join('.')}>
                 {nextIndent}
-                <span
-                  className={cn(
-                    shouldHighlight &&
-                      side === 'before' &&
-                      (diff.status === 'removed' || diff.status === 'modified') &&
-                      'bg-red-500/10 text-red-600 dark:text-red-400',
-                    shouldHighlight &&
-                      side === 'after' &&
-                      (diff.status === 'added' || diff.status === 'modified') &&
-                      'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-                  )}
-                >
-                  {renderJsonWithHighlights(item, diffs, side, itemPath, depth + 1)}
-                </span>
+                <span className={highlight(diff, side)}>{renderJsonWithHighlights(item, diffs, side, itemPath, depth + 1)}</span>
                 {index < value.length - 1 && ','}
                 {'\n'}
               </span>
@@ -284,26 +266,12 @@ function renderJsonWithHighlights(
           const keyPath = [...path, key];
           // Only highlight primitive values, not objects/arrays
           const diff = diffs.find((d) => d.path.join('.') === keyPath.join('.') && !d.isObject && !d.isArray);
-          const shouldHighlight = diff && diff.status !== 'unchanged';
 
           return (
             <span key={key}>
               {nextIndent}
-              <span className="text-blue-600 dark:text-blue-400">"{key}"</span>:{' '}
-              <span
-                className={cn(
-                  shouldHighlight &&
-                    side === 'before' &&
-                    (diff.status === 'removed' || diff.status === 'modified') &&
-                    'bg-red-500/10 text-red-600 dark:text-red-400',
-                  shouldHighlight &&
-                    side === 'after' &&
-                    (diff.status === 'added' || diff.status === 'modified') &&
-                    'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-                )}
-              >
-                {renderJsonWithHighlights(value[key], diffs, side, keyPath, depth + 1)}
-              </span>
+              <span className={styles.key}>"{key}"</span>:{' '}
+              <span className={highlight(diff, side)}>{renderJsonWithHighlights(value[key], diffs, side, keyPath, depth + 1)}</span>
               {index < keys.length - 1 && ','}
               {'\n'}
             </span>
@@ -317,24 +285,8 @@ function renderJsonWithHighlights(
 
   // Primitive value - only highlight leaf nodes
   const diff = diffs.find((d) => d.path.join('.') === path.join('.') && !d.isObject && !d.isArray);
-  const shouldHighlight = diff && diff.status !== 'unchanged';
 
-  return (
-    <span
-      className={cn(
-        shouldHighlight &&
-          side === 'before' &&
-          (diff.status === 'removed' || diff.status === 'modified') &&
-          'bg-red-500/10 text-red-600 dark:text-red-400',
-        shouldHighlight &&
-          side === 'after' &&
-          (diff.status === 'added' || diff.status === 'modified') &&
-          'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-      )}
-    >
-      {formatValue(value, 50)}
-    </span>
-  );
+  return <span className={highlight(diff, side)}>{formatValue(value, 50)}</span>;
 }
 
 export function JsonDiff({ before, after, className, side }: JsonDiffProps) {
@@ -344,27 +296,20 @@ export function JsonDiff({ before, after, className, side }: JsonDiffProps) {
   if (typeof value !== 'object' || value === null || value === undefined) {
     // For primitive values at root level, only highlight if it's actually a changed leaf node
     const diff = diffs.find((d) => d.path.length === 0 && !d.isObject && !d.isArray);
-    const shouldHighlight = diff && diff.status !== 'unchanged';
 
     return (
-      <div className={cn('font-mono text-sm', className)}>
-        <span
-          className={cn(
-            shouldHighlight &&
-              side === 'before' &&
-              (diff?.status === 'removed' || diff?.status === 'modified') &&
-              'bg-red-500/10 text-red-600 dark:text-red-400',
-            shouldHighlight &&
-              side === 'after' &&
-              (diff?.status === 'added' || diff?.status === 'modified') &&
-              'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-          )}
-        >
-          {formatValue(value)}
-        </span>
+      <div className={cn(styles.root, className)}>
+        <span className={highlight(diff, side)}>{formatValue(value)}</span>
       </div>
     );
   }
 
-  return <div className={cn('font-mono text-sm whitespace-pre-wrap', className)}>{renderJsonWithHighlights(value, diffs, side)}</div>;
+  return (
+    <div
+      className={cn(styles.root, className)}
+      data-shape="tree"
+    >
+      {renderJsonWithHighlights(value, diffs, side)}
+    </div>
+  );
 }

@@ -1,0 +1,71 @@
+@layer components {
+  .empty {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--muted-foreground);
+  }
+
+  .emptyIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  .stats {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  /* One count, tinted by the kind of change it reports. */
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .stat[data-type="added"] {
+    --tone: var(--success);
+  }
+
+  .stat[data-type="modified"] {
+    --tone: var(--warning);
+  }
+
+  .stat[data-type="removed"] {
+    --tone: var(--destructive);
+  }
+
+  .badge {
+    display: grid;
+    place-items: center;
+    width: var(--space-6);
+    height: var(--space-6);
+    border-radius: var(--radius-full);
+    background-color: color-mix(in oklab, var(--tone) 10%, transparent);
+  }
+
+  .badgeIcon {
+    width: var(--space-3);
+    height: var(--space-3);
+    color: var(--tone);
+  }
+
+  .value {
+    font-weight: var(--weight-medium);
+    color: var(--tone);
+  }
+
+  .label {
+    margin-left: var(--space-1);
+    color: var(--muted-foreground);
+  }
+
+  .summary {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+}

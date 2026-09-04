@@ -29,6 +29,7 @@ import { useAppMutation } from '@/hooks/use-app-mutation';
 import { queryKeys } from '@/libs/query-keys';
 import { type GlobalVariableFormData, globalVariableFormSchema } from '@/schemas/admin/global-variable-schema';
 import { createGlobalVariable, updateGlobalVariable } from '@/server/fns/admin/global-variables';
+import styles from './global-variable-form.module.css';
 
 type GlobalVariable = typeof globalVariable.$inferSelect;
 type FormValues = GlobalVariableFormData;
@@ -56,11 +57,11 @@ function DropdownOptionsSection({
   const options = useFormWatch('options') || [];
 
   return (
-    <div className="border-t pt-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className={styles.optionsSection}>
+      <div className={styles.optionsHead}>
         <div>
-          <h3 className="text-lg font-medium">Dropdown Options</h3>
-          <p className="text-sm text-muted-foreground">{options.length} options configured</p>
+          <h3 className={styles.optionsTitle}>Dropdown Options</h3>
+          <p className={styles.optionsCount}>{options.length} options configured</p>
         </div>
         <Sheet
           open={isSheetOpen}
@@ -72,16 +73,16 @@ function DropdownOptionsSection({
               size="sm"
               type="button"
             >
-              <Settings2 className="w-4 h-4 mr-2" />
+              <Settings2 />
               Manage Options
             </Button>
           </SheetTrigger>
-          <SheetContent className="w-full sm:max-w-[50vw] overflow-y-auto">
+          <SheetContent className={styles.sheet}>
             <SheetHeader>
               <SheetTitle>Manage Options</SheetTitle>
               <SheetDescription>Add, remove, and configure dropdown options.</SheetDescription>
             </SheetHeader>
-            <div className="mt-6">
+            <div className="margin-top-6">
               <DropdownOptionsEditor
                 options={options}
                 onChange={(opts) => form.setFieldValue('options', opts)}
@@ -94,7 +95,7 @@ function DropdownOptionsSection({
       </div>
 
       {/* Quick preview of options */}
-      <div className="flex flex-wrap gap-2">
+      <div className="cluster space-2">
         {options.map((opt: any, i: number) => {
           const n = normalizeOption(opt);
           return (
@@ -102,7 +103,7 @@ function DropdownOptionsSection({
               // biome-ignore lint/suspicious/noArrayIndexKey: Options order is stable enough for preview
               key={i}
               variant="secondary"
-              className="font-normal cursor-pointer hover:bg-secondary/80 transition-colors"
+              className={styles.optionPreview}
               onClick={() => handleBadgeClick(i)}
             >
               {n.label}
@@ -217,15 +218,15 @@ export function GlobalVariableForm({ initialData, mode }: GlobalVariableFormProp
   return (
     <FormWithSchema
       config={formConfig}
-      className="space-y-8 max-w-2xl"
+      className={`${styles.form} stack space-8`}
     >
       <Card>
         <CardHeader>
           <CardTitle>{mode === 'create' ? 'Create Global Variable' : 'Edit Global Variable'}</CardTitle>
           <CardDescription>Define a variable that can be reused across multiple templates.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <CardContent className="stack space-6">
+          <div className={styles.pair}>
             <FormField
               name="name"
               renderFieldAction={({ value, onChange, onBlur }) => (
@@ -282,7 +283,7 @@ export function GlobalVariableForm({ initialData, mode }: GlobalVariableFormProp
             )}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className={styles.pair}>
             <FormField
               name="type"
               renderFieldAction={({ value, onChange }) => (
@@ -312,9 +313,9 @@ export function GlobalVariableForm({ initialData, mode }: GlobalVariableFormProp
             <FormField
               name="required"
               renderFieldAction={({ value, onChange }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Required</FormLabel>
+                <FormItem className={styles.switchField}>
+                  <div className={styles.switchText}>
+                    <FormLabel className={styles.switchLabel}>Required</FormLabel>
                   </div>
                   <FormControl>
                     <Switch
@@ -339,7 +340,7 @@ export function GlobalVariableForm({ initialData, mode }: GlobalVariableFormProp
           {/* Default Value - conditionally rendered */}
           <DefaultValueField />
 
-          <div className="flex justify-end gap-4">
+          <div className={styles.actions}>
             <FormSubscribe
               selectorAction={(state: any) => ({
                 canSubmit: state.canSubmit,
@@ -363,7 +364,7 @@ export function GlobalVariableForm({ initialData, mode }: GlobalVariableFormProp
                       type="submit"
                       disabled={isBusy || !canSubmit || !isValid}
                     >
-                      {isBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {isBusy && <Loader2 className={styles.buttonSpinner} />}
                       {mode === 'create' ? 'Create Variable' : 'Save Changes'}
                     </Button>
                   </>

@@ -1,0 +1,67 @@
+@layer components {
+  .body {
+    padding-top: var(--space-6);
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-4);
+  }
+
+  .heading {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+    font-weight: var(--weight-medium);
+  }
+
+  .headingIcon {
+    width: var(--space-5);
+    height: var(--space-5);
+    color: var(--primary);
+  }
+
+  /* Activation state of the account. */
+  .statusPill {
+    padding-inline: var(--space-2);
+    padding-block: var(--space-1);
+    border-radius: var(--radius-full);
+    background-color: color-mix(in oklab, var(--tone) 15%, transparent);
+    color: var(--tone);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .statusPill[data-state="active"] {
+    --tone: var(--success);
+  }
+
+  .statusPill[data-state="pending"] {
+    --tone: var(--warning);
+  }
+
+  .pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  .fieldLabel {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .userId {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+}

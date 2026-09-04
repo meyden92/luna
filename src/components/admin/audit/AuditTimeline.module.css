@@ -1,0 +1,213 @@
+@layer components {
+  /* Hairline of the timeline rail and the diameter of its node markers. */
+  .root {
+    --rail-thickness: 2px;
+    --node-size: var(--space-12);
+    overflow: hidden;
+  }
+
+  .body {
+    overflow: hidden;
+  }
+
+  .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-6);
+  }
+
+  .heading {
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+    font-weight: var(--weight-semibold);
+  }
+
+  .count {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .scrollButton {
+    width: var(--space-8);
+    height: var(--space-8);
+    padding: 0;
+  }
+
+  .scrollIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  .viewport {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  /* Drag-to-pan strip; its scrollbar is hidden because the arrows drive it. */
+  .track {
+    position: relative;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    cursor: grab;
+  }
+
+  .track[data-dragging="true"] {
+    cursor: grabbing;
+  }
+
+  .track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .rail {
+    position: absolute;
+    top: var(--space-6);
+    height: var(--rail-thickness);
+    background-color: var(--border);
+  }
+
+  .items {
+    display: flex;
+    align-items: flex-start;
+  }
+
+  /* One entry, tinted by the action it records. */
+  .item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    align-items: center;
+    cursor: pointer;
+    --tone: var(--muted-foreground);
+  }
+
+  .item[data-action="create"] {
+    --tone: var(--success);
+  }
+
+  .item[data-action="update"] {
+    --tone: var(--info);
+  }
+
+  .item[data-action="delete"] {
+    --tone: var(--destructive);
+  }
+
+  .node {
+    position: relative;
+    z-index: 10;
+    display: grid;
+    place-items: center;
+    width: var(--node-size);
+    height: var(--node-size);
+    border: 4px solid color-mix(in oklab, var(--tone) 35%, var(--background));
+    border-radius: var(--radius-full);
+    background-color: var(--background);
+    transition:
+      background-color 200ms,
+      border-color 200ms,
+      box-shadow 200ms,
+      scale 200ms;
+  }
+
+  .item:hover .node {
+    background-color: color-mix(in oklab, var(--tone) 10%, var(--background));
+    scale: 1.05;
+  }
+
+  .item[data-selected="true"] .node {
+    border-color: var(--background);
+    background-color: var(--tone);
+    box-shadow: var(--shadow-lg);
+    scale: 1.1;
+  }
+
+  .nodeIcon {
+    width: var(--space-5);
+    height: var(--space-5);
+    color: var(--tone);
+    transition: color 200ms;
+  }
+
+  /* Knocked out of the filled marker once the entry is selected. */
+  .item[data-selected="true"] .nodeIcon {
+    color: var(--background);
+  }
+
+  .label {
+    margin-top: var(--space-3);
+    text-align: center;
+  }
+
+  .badge {
+    margin-bottom: var(--space-1);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    font-weight: var(--weight-medium);
+  }
+
+  .item[data-selected="true"] .badge {
+    border-color: transparent;
+    background-color: var(--tone);
+    color: var(--background);
+  }
+
+  .meta {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--muted-foreground);
+  }
+
+  .tooltip {
+    position: absolute;
+    top: var(--space-16);
+    left: 50%;
+    z-index: 20;
+    translate: -50% 0;
+    max-width: 12rem;
+    overflow: hidden;
+    padding-inline: var(--space-2);
+    padding-block: var(--space-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background-color: var(--popover);
+    box-shadow: var(--shadow-md);
+    color: var(--popover-foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 200ms;
+  }
+
+  .item:hover .tooltip {
+    opacity: 1;
+  }
+
+  /* Edge fades that hint at content scrolled out of view. */
+  .fade {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 10;
+    width: var(--space-8);
+    pointer-events: none;
+  }
+
+  .fade[data-edge="left"] {
+    left: 0;
+    background-image: linear-gradient(to right, var(--background), transparent);
+  }
+
+  .fade[data-edge="right"] {
+    right: 0;
+    background-image: linear-gradient(to left, var(--background), transparent);
+  }
+}

@@ -1,0 +1,11 @@
+@layer components {
+  .root {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .destructiveItem {
+    color: var(--destructive);
+  }
+}

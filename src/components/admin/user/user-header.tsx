@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import type { user } from '@/db/schema/auth';
 import { authClient } from '@/libs/auth/auth-client';
+import styles from './user-header.module.css';
 
 type User = typeof user.$inferSelect;
 interface UserHeaderProps {
@@ -47,15 +48,15 @@ export default function UserHeader({ user }: UserHeaderProps) {
   };
 
   return (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-6 rounded-lg border">
-      <div className="flex items-center gap-4">
-        <Avatar className="h-16 w-16 border-2 border-primary/10">
-          <AvatarFallback className="text-xl bg-primary/5">{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+    <div className={styles.root}>
+      <div className={styles.identity}>
+        <Avatar className={styles.avatar}>
+          <AvatarFallback className={styles.avatarFallback}>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
         </Avatar>
         <div>
-          <h1 className="text-3xl font-bold">{user.name}</h1>
-          <div className="flex items-center gap-2 text-muted-foreground mt-1">
-            <Mail className="h-4 w-4" />
+          <h1 className={styles.name}>{user.name}</h1>
+          <div className={styles.email}>
+            <Mail className={styles.emailIcon} />
             <span>{user.email}</span>
           </div>
         </div>
@@ -67,7 +68,7 @@ export default function UserHeader({ user }: UserHeaderProps) {
           onClick={handleImpersonate}
           disabled={isImpersonating}
         >
-          {isImpersonating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <UserCheck className="h-4 w-4 mr-2" />}
+          {isImpersonating ? <Loader2 className={styles.spinner} /> : <UserCheck />}
           Impersonate User
         </Button>
       ) : null}

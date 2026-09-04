@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
 import ActionFilter from './ActionFilter';
+import styles from './AuditTable.module.css';
 import AuditTableRows from './AuditTableRows';
 import ModelFilter from './ModelFilter';
 import Pagination from './Pagination';
@@ -98,12 +99,12 @@ export default function AuditTable({ searchParams: initialSearchParams, models, 
   };
 
   return (
-    <div className="p-4 space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 items-end">
+    <div className="stack space-6 pad-4">
+      <div className={styles.filters}>
         <div>
           <Label
             htmlFor="search-filter"
-            className="mb-2 block"
+            className={styles.label}
           >
             Search
           </Label>
@@ -117,7 +118,7 @@ export default function AuditTable({ searchParams: initialSearchParams, models, 
         <div>
           <Label
             htmlFor="model-filter"
-            className="mb-2 block"
+            className={styles.label}
           >
             Model
           </Label>
@@ -131,7 +132,7 @@ export default function AuditTable({ searchParams: initialSearchParams, models, 
         <div>
           <Label
             htmlFor="action-filter"
-            className="mb-2 block"
+            className={styles.label}
           >
             Action Type
           </Label>
@@ -142,26 +143,26 @@ export default function AuditTable({ searchParams: initialSearchParams, models, 
         </div>
       </div>
 
-      <div className="text-sm text-muted-foreground mb-2">
+      <div className={styles.summary}>
         {`Showing ${logs.length} logs`}
         {filters.model && ` for model "${filters.model}"`}
         {filters.recordId && ` for record "${filters.recordId}"`}
         {filters.action && ` with action "${filters.action}"`}
         {filters.search && ` matching "${filters.search}"`}
-        {isPending && <span className="ml-2 italic text-muted-foreground">Updating...</span>}
+        {isPending && <span className={styles.pending}>Updating...</span>}
       </div>
 
-      <div className="rounded-md border">
+      <div className={styles.tableWrap}>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[100px]">ID</TableHead>
+              <TableHead className={styles.idColumn}>ID</TableHead>
               <TableHead>Model</TableHead>
               <TableHead>Action</TableHead>
               <TableHead>Record ID</TableHead>
               <TableHead>User</TableHead>
               <TableHead>Time</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className={styles.actionsColumn}>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <AuditTableRows logs={logs} />

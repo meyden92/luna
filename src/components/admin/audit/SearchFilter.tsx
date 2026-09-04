@@ -2,6 +2,7 @@ import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import styles from './SearchFilter.module.css';
 
 interface SearchFilterProps {
   currentSearch?: string;
@@ -35,7 +36,7 @@ export default function SearchFilter({ currentSearch, onDebouncedChangeAction, o
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex w-full gap-2"
+      className={styles.root}
     >
       <Input
         id="search-filter"
@@ -43,7 +44,7 @@ export default function SearchFilter({ currentSearch, onDebouncedChangeAction, o
         placeholder="Search logs..."
         value={searchValue}
         onChange={handleChange}
-        className="flex-grow"
+        className={styles.input}
         aria-label="Search audit logs"
       />
       <Button
@@ -60,7 +61,7 @@ export default function SearchFilter({ currentSearch, onDebouncedChangeAction, o
           onClick={handleClear}
           aria-label="Clear search"
         >
-          <X className="h-4 w-4" />
+          <X />
         </Button>
       )}
     </form>

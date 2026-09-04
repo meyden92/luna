@@ -1,0 +1,83 @@
+@layer components {
+  .card {
+    width: 100%;
+  }
+
+  .header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0;
+    padding-bottom: var(--space-2);
+  }
+
+  .updatingBadge {
+    background-color: color-mix(in oklab, var(--primary) 10%, transparent);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .updatingSpinner,
+    .loadingSpinner {
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  @keyframes spin {
+    to {
+      rotate: 360deg;
+    }
+  }
+
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 16rem;
+  }
+
+  .loadingSpinner {
+    width: var(--space-8);
+    height: var(--space-8);
+    color: var(--primary);
+  }
+
+  /* Rows whose last run failed open the error dialog on click. */
+  .row[data-failed="true"] {
+    cursor: pointer;
+  }
+
+  .row[data-failed="true"]:hover {
+    background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+  }
+
+  .nameCell {
+    font-weight: var(--weight-medium);
+  }
+
+  .name {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .statusGlyph {
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+  }
+
+  .rowActions {
+    display: flex;
+    gap: var(--space-1);
+  }
+
+  .errorText {
+    margin-top: var(--space-2);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    background-color: var(--muted);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    white-space: pre-wrap;
+  }
+}

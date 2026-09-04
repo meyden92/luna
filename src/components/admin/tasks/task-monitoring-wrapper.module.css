@@ -1,0 +1,37 @@
+@layer components {
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-block: var(--space-8);
+  }
+
+  .spinner {
+    width: var(--space-8);
+    height: var(--space-8);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .spinner {
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  @keyframes spin {
+    to {
+      rotate: 360deg;
+    }
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .heading {
+    font-size: var(--text-2xl);
+    line-height: var(--leading-2xl);
+    font-weight: var(--weight-bold);
+  }
+}

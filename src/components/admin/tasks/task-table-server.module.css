@@ -1,0 +1,92 @@
+@layer components {
+  /* Status glyph, tinted by the state it stands for. */
+  .statusIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+    color: var(--tone, var(--muted-foreground));
+  }
+
+  .statusIcon[data-status="running"] {
+    --tone: var(--info);
+  }
+
+  .statusIcon[data-status="scheduled"] {
+    --tone: var(--success);
+  }
+
+  .statusIcon[data-status="stopped"] {
+    --tone: var(--warning);
+  }
+
+  .statusIcon[data-status="disabled"] {
+    --tone: var(--destructive);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .statusIcon[data-status="running"] {
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  @keyframes spin {
+    to {
+      rotate: 360deg;
+    }
+  }
+
+  .taskCell {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .taskName {
+    font-weight: var(--weight-medium);
+  }
+
+  .taskDescription {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    overflow: hidden;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .functionCode {
+    padding-inline: var(--space-1);
+    padding-block: 0.125rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--muted);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .scheduleCode {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .nextRun {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .placeholder {
+    color: var(--muted-foreground);
+  }
+
+  .lastExecution {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .lastExecutionTime {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--muted-foreground);
+  }
+}

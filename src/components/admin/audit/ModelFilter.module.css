@@ -1,0 +1,6 @@
+@layer components {
+  /* The select takes the row; the clear button keeps its intrinsic width. */
+  .select {
+    flex: 1;
+  }
+}

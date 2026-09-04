@@ -1,0 +1,30 @@
+declare const styles: {
+  readonly "body": string;
+  readonly "code": string;
+  readonly "details": string;
+  readonly "dialog": string;
+  readonly "errorIcon": string;
+  readonly "errorText": string;
+  readonly "executionId": string;
+  readonly "footer": string;
+  readonly "logData": string;
+  readonly "logHead": string;
+  readonly "logLine": string;
+  readonly "logMessage": string;
+  readonly "logScroll": string;
+  readonly "logTime": string;
+  readonly "logs": string;
+  readonly "payload": string;
+  readonly "payloadPre": string;
+  readonly "sectionHead": string;
+  readonly "sectionTitle": string;
+  readonly "spin": string;
+  readonly "state": string;
+  readonly "stateIcon": string;
+  readonly "statusIcon": string;
+  readonly "successBadge": string;
+  readonly "summary": string;
+  readonly "title": string;
+};
+export = styles;
+

@@ -1,0 +1,59 @@
+@layer components {
+  .successBadge {
+    border-color: color-mix(in oklab, var(--success) 35%, transparent);
+    background-color: color-mix(in oklab, var(--success) 12%, transparent);
+    color: var(--success);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .runningIcon {
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  @keyframes spin {
+    to {
+      rotate: 360deg;
+    }
+  }
+
+  /* The whole row opens the execution's log dialog. */
+  .root {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: background-color 150ms;
+  }
+
+  .root:hover {
+    background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+  }
+
+  .identity {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .taskName {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+  }
+
+  .taskMeta {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--muted-foreground);
+  }
+
+  .trigger {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+}

@@ -1,0 +1,293 @@
+@layer components {
+  .root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .header {
+    flex-shrink: 0;
+    padding-bottom: var(--space-3);
+  }
+
+  .headerRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+    font-weight: var(--weight-semibold);
+  }
+
+  .titleIcon {
+    width: var(--space-5);
+    height: var(--space-5);
+  }
+
+  .count {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  /* The card body owns the scroll region, so it drops the card's own padding. */
+  .content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    padding: 0;
+  }
+
+  /* Fixed strips above the scroll region; they keep the card's horizontal gutter. */
+  .section {
+    flex-shrink: 0;
+    padding-inline: var(--space-6);
+    padding-bottom: var(--space-3);
+  }
+
+  .controlsRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .searchWrap {
+    position: relative;
+    flex: 1;
+  }
+
+  .searchIcon {
+    position: absolute;
+    top: 50%;
+    left: var(--space-3);
+    translate: 0 -50%;
+    width: var(--space-4);
+    height: var(--space-4);
+    color: var(--muted-foreground);
+  }
+
+  /* Room for the leading search icon. */
+  .searchInput {
+    padding-left: var(--space-8);
+  }
+
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-left: var(--space-3);
+  }
+
+  .toggleLabel {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+    white-space: nowrap;
+  }
+
+  .scroll {
+    flex: 1;
+    min-height: 0;
+    padding-inline: var(--space-6);
+    padding-bottom: var(--space-6);
+  }
+
+  .empty {
+    padding-block: var(--space-8);
+    text-align: center;
+    color: var(--muted-foreground);
+  }
+
+  .emptyIcon {
+    width: var(--space-8);
+    height: var(--space-8);
+    margin-inline: auto;
+    margin-bottom: var(--space-2);
+    opacity: 0.5;
+  }
+
+  .fieldCard {
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background-color: var(--card);
+  }
+
+  .fieldHead {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+  }
+
+  .fieldName {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+  }
+
+  .fieldPath {
+    padding-inline: var(--space-1);
+    padding-block: 0.125rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--muted);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--muted-foreground);
+  }
+
+  .modifiedTag {
+    padding-inline: var(--space-2);
+    padding-block: 0.125rem;
+    border-radius: var(--radius-sm);
+    background-color: color-mix(in oklab, var(--info) 15%, transparent);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--info);
+  }
+
+  .split {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .sideLabel {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--muted-foreground);
+  }
+
+  /* Before/after wells; the tinted edge carries the direction of the change. */
+  .valueBox {
+    display: flex;
+    align-items: flex-start;
+    min-height: var(--space-10);
+    padding: var(--space-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+
+  .valueBox[data-side="before"] {
+    border-color: color-mix(in oklab, var(--destructive) 20%, transparent);
+  }
+
+  .valueBox[data-side="after"] {
+    border-color: color-mix(in oklab, var(--success) 20%, transparent);
+  }
+
+  /* The "no previous value" placeholder well: recessed and centred. */
+  .valueBox[data-side="absent"] {
+    align-items: center;
+    background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+    color: var(--muted-foreground);
+    font-style: italic;
+  }
+
+  .absentValue {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .single {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .singleLabel {
+    margin-bottom: var(--space-1);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--muted-foreground);
+  }
+
+  .singleBox {
+    padding: var(--space-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background-color: var(--muted);
+    color: var(--muted-foreground);
+  }
+
+  .tabs {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+  }
+
+  .tabsWrap {
+    padding-inline: var(--space-6);
+  }
+
+  .tabsList {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .tabPanel {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    margin-top: 0;
+  }
+
+  .rawHeading {
+    margin-bottom: var(--space-2);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+    color: var(--muted-foreground);
+  }
+
+  .pre {
+    overflow-x: auto;
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    background-color: var(--muted);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .placeholder {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-6);
+    text-align: center;
+  }
+
+  .placeholderIcon {
+    width: var(--space-12);
+    height: var(--space-12);
+    margin-inline: auto;
+    margin-bottom: var(--space-3);
+    color: var(--muted-foreground);
+    opacity: 0.5;
+  }
+
+  .placeholderText {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .placeholderHint {
+    margin-top: var(--space-1);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--muted-foreground);
+  }
+}

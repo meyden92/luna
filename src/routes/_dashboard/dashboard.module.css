@@ -1,0 +1,304 @@
+@layer components {
+  .root {
+    --page-bottom-padding: 8rem;
+
+    padding-inline: var(--space-2);
+    padding-bottom: var(--page-bottom-padding);
+
+    @media (width >= 1280px) {
+      padding-right: var(--space-12);
+    }
+  }
+
+  @keyframes riseIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .riseIn {
+    animation: riseIn 0.5s ease both;
+  }
+
+  .riseInDelay1 {
+    animation-delay: 0.06s;
+  }
+
+  .riseInDelay2 {
+    animation-delay: 0.12s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .riseIn {
+      animation-duration: 0.01ms;
+      animation-iteration-count: 1;
+    }
+  }
+
+  .headerRow {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-4);
+    margin-top: var(--space-2);
+    margin-bottom: var(--space-1);
+  }
+
+  .title {
+    margin: 0;
+    white-space: nowrap;
+    font-size: var(--text-5xl);
+    line-height: var(--leading-5xl);
+  }
+
+  .fileCount {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--foreground-subtle);
+  }
+
+  /* Filter bar + actions row; sticks below the fixed app header. */
+  .toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    position: sticky;
+    top: 4.625rem;
+    z-index: 30;
+    margin-inline: calc(var(--space-1) * -1);
+    padding: var(--space-2) var(--space-1);
+    background: color-mix(in oklab, var(--background) 88%, transparent);
+    backdrop-filter: blur(10px);
+
+    @media (width >= 1280px) {
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+
+  .filterBar {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+
+    @media (width >= 1280px) {
+      justify-content: flex-end;
+    }
+  }
+
+  .selectButton {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    height: 1.875rem;
+    padding-inline: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    font-size: 0.8125rem;
+    font-weight: var(--weight-medium);
+    color: var(--muted-foreground);
+    transition: color 0.15s ease;
+
+    &:hover {
+      border-color: var(--input);
+      color: var(--foreground);
+    }
+  }
+
+  .selectButton[data-active="true"] {
+    border-color: var(--primary);
+    background: var(--accent);
+    color: var(--primary-strong);
+  }
+
+  [data-theme="dark"] .selectButton[data-active="true"] {
+    color: var(--primary);
+  }
+
+  .selectIcon {
+    width: 0.8125rem;
+    height: 0.8125rem;
+  }
+
+  .uploadButton {
+    height: 1.875rem;
+    padding-inline: var(--space-4);
+    border-radius: var(--radius-lg);
+    font-weight: var(--weight-semibold);
+  }
+
+  .uploadIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  .lightboxOverlay {
+    position: fixed;
+    inset-block: 0;
+    z-index: 40;
+    width: 100%;
+    height: 100%;
+  }
+
+  .galleryZone {
+    position: relative;
+    min-height: 40vh;
+  }
+
+  .dropOverlay {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed var(--primary);
+    border-radius: var(--radius-2xl);
+    background: color-mix(in oklab, var(--background) 95%, transparent);
+  }
+
+  .dropContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--primary-strong);
+
+    [data-theme="dark"] & {
+      color: var(--primary);
+    }
+  }
+
+  .dropIconWell {
+    padding: var(--space-4);
+    border-radius: var(--radius-full);
+    background: var(--primary-tint);
+  }
+
+  .dropIcon {
+    width: var(--space-8);
+    height: var(--space-8);
+  }
+
+  .dropTitle {
+    font-size: 1.375rem;
+    color: var(--foreground);
+  }
+
+  .dropSubtitle {
+    font-size: 0.8125rem;
+    color: var(--foreground-subtle);
+  }
+
+  /* Rows/grid segmented toggle plus the density popover trigger. */
+  .viewOptions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .segmentGroup {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--muted);
+  }
+
+  .segment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--space-8);
+    height: 1.75rem;
+    border-radius: var(--radius-md);
+    color: var(--foreground-subtle);
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: var(--foreground);
+    }
+  }
+
+  .segment[data-active="true"] {
+    background: var(--background);
+    color: var(--foreground);
+    box-shadow: var(--shadow-sm);
+
+    [data-theme="dark"] & {
+      background: var(--muted-strong);
+    }
+  }
+
+  .segmentIcon {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+
+  .densityTrigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.875rem;
+    height: 1.875rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    color: var(--muted-foreground);
+    transition: color 0.15s ease;
+
+    &:hover {
+      border-color: var(--input);
+      color: var(--foreground);
+    }
+  }
+
+  .densityPanel {
+    width: 14rem;
+    padding: var(--space-4);
+  }
+
+  .densityHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+  }
+
+  .densityLabel {
+    font-size: 0.8125rem;
+    font-weight: var(--weight-medium);
+    color: var(--foreground);
+  }
+
+  .densityValue {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--foreground-subtle);
+  }
+
+  .densityFooter {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--space-2);
+    font-size: 0.625rem;
+    color: var(--foreground-subtle);
+  }
+}

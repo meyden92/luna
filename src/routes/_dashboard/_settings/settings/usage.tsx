@@ -3,9 +3,10 @@ import { createFileRoute } from '@tanstack/react-router';
 import StackedBarChart from '@/components/charting/StackedBarChart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { formatSize } from '@/libs/utils';
+import { cn, formatSize } from '@/libs/utils';
 import { settingsOverviewQuery } from '@/routes/_dashboard/_settings';
 import { getMyEgressSummary, getMyViewSummary } from '@/server/fns/analytics';
+import styles from './usage.module.css';
 
 export const Route = createFileRoute('/_dashboard/_settings/settings/usage')({
   head: () => ({ meta: [{ title: 'Usage | LunaShare' }] }),
@@ -23,69 +24,75 @@ function SettingsUsagePage() {
   }));
 
   return (
-    <div className="space-y-6">
+    <div className="stack space-6">
       <div>
-        <h3 className="text-lg font-medium">Usage</h3>
-        <p className="text-sm text-muted-foreground">View your usage statistics and limits.</p>
+        <h3 className="type-lg weight-medium">Usage</h3>
+        <p className={cn('type-sm', styles.muted)}>View your usage statistics and limits.</p>
       </div>
       <Separator />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+      <div className={styles.statGrid}>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Files</CardTitle>
+          <CardHeader className={styles.statHeader}>
+            <CardTitle className="type-sm weight-medium">Total Files</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{settings.filecount}</div>
+            <div className="type-2xl weight-bold">{settings.filecount}</div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Storage Used</CardTitle>
+          <CardHeader className={styles.statHeader}>
+            <CardTitle className="type-sm weight-medium">Total Storage Used</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatSize(settings.filesize)}</div>
+            <div className="type-2xl weight-bold">{formatSize(settings.filesize)}</div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Delivery Egress</CardTitle>
+          <CardHeader className={styles.statHeader}>
+            <CardTitle className="type-sm weight-medium">Delivery Egress</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatSize(Number(egress?.bytes ?? 0))}</div>
-            <p className="text-xs text-muted-foreground">{egress?.requestCount ?? 0} delivery request(s) this month</p>
+            <div className="type-2xl weight-bold">{formatSize(Number(egress?.bytes ?? 0))}</div>
+            <p className={cn('type-xs', styles.muted)}>{egress?.requestCount ?? 0} delivery request(s) this month</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Public Views</CardTitle>
+          <CardHeader className={styles.statHeader}>
+            <CardTitle className="type-sm weight-medium">Public Views</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{views?.views ?? 0}</div>
-            <p className="text-xs text-muted-foreground">{views?.uniques ?? 0} privacy-preserving daily visitor(s)</p>
+            <div className="type-2xl weight-bold">{views?.views ?? 0}</div>
+            <p className={cn('type-xs', styles.muted)}>{views?.uniques ?? 0} privacy-preserving daily visitor(s)</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+      <div className={styles.statGrid}>
         <Card>
           <CardHeader>
             <CardTitle>AI Generation</CardTitle>
             <CardDescription>Stats for your template generations.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Total Generations</span>
-                <span className="text-2xl font-bold">{settings.generatorStats.totalGenerations}</span>
+            <div className="stack space-4">
+              <div className={styles.between}>
+                <span className="type-sm weight-medium">Total Generations</span>
+                <span className="type-2xl weight-bold">{settings.generatorStats.totalGenerations}</span>
               </div>
-              <div className="flex justify-between items-center text-green-600">
-                <span className="text-sm">Successful</span>
-                <span className="font-bold">{settings.generatorStats.successfulGenerations}</span>
+              <div
+                className={styles.between}
+                data-tone="success"
+              >
+                <span className="type-sm">Successful</span>
+                <span className="weight-bold">{settings.generatorStats.successfulGenerations}</span>
               </div>
-              <div className="flex justify-between items-center text-red-600">
-                <span className="text-sm">Failed</span>
-                <span className="font-bold">{settings.generatorStats.failedGenerations}</span>
+              <div
+                className={styles.between}
+                data-tone="danger"
+              >
+                <span className="type-sm">Failed</span>
+                <span className="weight-bold">{settings.generatorStats.failedGenerations}</span>
               </div>
             </div>
           </CardContent>
@@ -100,7 +107,7 @@ function SettingsUsagePage() {
             {settings.fileExtensions.length > 0 ? (
               <div>Pie Chart coming soon</div>
             ) : (
-              <div className="flex h-[200px] items-center justify-center text-muted-foreground">No files found</div>
+              <div className={styles.chartEmpty}>No files found</div>
             )}
           </CardContent>
         </Card>
@@ -111,8 +118,8 @@ function SettingsUsagePage() {
           <CardTitle>Upload Activity</CardTitle>
           <CardDescription>Your upload activity over the last 30 days.</CardDescription>
         </CardHeader>
-        <CardContent className="pl-2">
-          <div className="h-[300px] w-full">
+        <CardContent className={styles.chartContent}>
+          <div className={styles.chartFrame}>
             <StackedBarChart
               data={chartData}
               stacked={false}
@@ -147,24 +154,22 @@ function SettingsUsagePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
+          <div className="stack space-2">
             {(egress?.topFiles ?? []).map((row) => (
               <div
                 key={`${row.fileId}-${row.rendition}`}
-                className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
+                className={styles.row}
               >
-                <span className="min-w-0 truncate font-mono text-xs">{row.fileId}</span>
-                <span className="shrink-0 text-muted-foreground">{formatSize(Number(row.bytes))}</span>
+                <span className={cn('type-mono type-xs', styles.rowKey)}>{row.fileId}</span>
+                <span className={styles.rowValue}>{formatSize(Number(row.bytes))}</span>
               </div>
             ))}
-            {egress?.topFiles.length === 0 ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">No delivery data yet.</div>
-            ) : null}
+            {egress?.topFiles.length === 0 ? <div className={styles.empty}>No delivery data yet.</div> : null}
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className={styles.thirdsGrid}>
         <BreakdownCard
           title="Top Referrers"
           empty="No referrer data yet."
@@ -188,23 +193,21 @@ function SettingsUsagePage() {
           <CardDescription>Aggregated file and form-share view rollups.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
+          <div className="stack space-2">
             {(views?.topTargets ?? []).map((target) => (
               <div
                 key={`${target.targetKind}-${target.targetId}`}
-                className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm"
+                className={styles.row}
               >
-                <span className="min-w-0 truncate font-mono text-xs">
+                <span className={cn('type-mono type-xs', styles.rowKey)}>
                   {target.targetKind}:{target.targetId}
                 </span>
-                <span className="shrink-0 text-muted-foreground">
+                <span className={styles.rowValue}>
                   {target.views} view(s), {target.uniques} unique
                 </span>
               </div>
             ))}
-            {views?.topTargets.length === 0 ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">No view analytics yet.</div>
-            ) : null}
+            {views?.topTargets.length === 0 ? <div className={styles.empty}>No view analytics yet.</div> : null}
           </div>
         </CardContent>
       </Card>
@@ -219,17 +222,17 @@ function BreakdownCard({ title, rows, empty }: { title: string; rows: Array<{ ke
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2">
+        <div className="stack space-2">
           {rows.map((row) => (
             <div
               key={row.key}
-              className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm"
+              className={styles.row}
             >
-              <span className="min-w-0 truncate">{row.key}</span>
-              <span className="shrink-0 text-muted-foreground">{row.count}</span>
+              <span className={styles.rowKey}>{row.key}</span>
+              <span className={styles.rowValue}>{row.count}</span>
             </div>
           ))}
-          {rows.length === 0 ? <div className="py-8 text-center text-sm text-muted-foreground">{empty}</div> : null}
+          {rows.length === 0 ? <div className={styles.empty}>{empty}</div> : null}
         </div>
       </CardContent>
     </Card>

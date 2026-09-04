@@ -1,0 +1,103 @@
+@layer components {
+  /* Positive connection state; the badge's own variants carry no success tone. */
+  .ok {
+    border-color: color-mix(in oklab, var(--success) 20%, transparent);
+    background: color-mix(in oklab, var(--success) 10%, transparent);
+    color: var(--primary-strong);
+  }
+
+  .modelGrid {
+    display: grid;
+    gap: var(--space-4);
+
+    @media (width >= 768px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (width >= 1024px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .modelCard {
+    cursor: pointer;
+    transition: background-color 150ms ease;
+
+    &:hover {
+      background: color-mix(in oklab, var(--muted) 50%, transparent);
+    }
+
+    &[data-selected="true"] {
+      box-shadow: 0 0 0 2px var(--primary);
+    }
+  }
+
+  .modelMeta {
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .hint {
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .modelSelect {
+    width: 16rem;
+  }
+
+  .code {
+    overflow: auto;
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    background: var(--muted);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .code[data-density="compact"] {
+    padding: var(--space-2);
+    border-radius: var(--radius-sm);
+  }
+
+  .chatLog {
+    height: 16rem;
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  .responseScroll {
+    height: 16rem;
+  }
+
+  .messageRow {
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .messageRow[data-role="user"] {
+    justify-content: flex-end;
+  }
+
+  .bubble {
+    max-width: 80%;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-lg);
+    background: var(--muted);
+    color: var(--foreground);
+  }
+
+  .bubble[data-role="user"] {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .messageText {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    white-space: pre-wrap;
+  }
+}

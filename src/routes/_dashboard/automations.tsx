@@ -28,6 +28,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { cn } from '@/libs/utils';
 import { type FlowGraph, type FlowNode, flowGraphSchema } from '@/schemas/flow-schema';
 import { createFlow, deleteFlow, listFlowRuns, listFlows, updateFlow } from '@/server/fns/flows';
+import styles from './automations.module.css';
 
 export const Route = createFileRoute('/_dashboard/automations')({
   head: () => ({ meta: [{ title: 'Automations | LunaShare' }] }),
@@ -182,21 +183,21 @@ function AutomationsPage() {
   };
 
   return (
-    <div className="space-y-5 p-4 pb-10 sm:p-6 md:p-10">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div className={styles.root}>
+      <div className={styles.header}>
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold">
-            <GitBranch className="h-6 w-6" />
+          <h1 className={cn('type-2xl weight-bold', styles.title)}>
+            <GitBranch className={styles.titleIcon} />
             Automations
           </h1>
-          <p className="text-sm text-muted-foreground">Build typed workflows with drag-and-wire nodes, then inspect every run.</p>
+          <p className={cn('type-sm', styles.subtitle)}>Build typed workflows with drag-and-wire nodes, then inspect every run.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className={styles.headerActions}>
           <Button
             variant="outline"
             onClick={resetDraft}
           >
-            <Plus className="h-4 w-4" />
+            <Plus className={styles.icon} />
             New draft
           </Button>
           <Button
@@ -204,59 +205,62 @@ function AutomationsPage() {
             disabled={!selectedFlow || deleteMutation.isPending}
             onClick={() => deleteMutation.mutate()}
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className={styles.icon} />
             Archive
           </Button>
           <Button
             onClick={() => (selectedFlow ? updateMutation.mutate() : createMutation.mutate())}
             disabled={createMutation.isPending || updateMutation.isPending}
           >
-            <Save className="h-4 w-4" />
+            <Save className={styles.icon} />
             {selectedFlow ? 'Save flow' : 'Create flow'}
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)_360px]">
-        <Card className="xl:row-span-2">
+      <div className={styles.layout}>
+        <Card className={styles.rowSpan2}>
           <CardHeader>
             <CardTitle>Flows</CardTitle>
             <CardDescription>Enabled flows can run globally or from a token binding.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className={styles.flowList}>
             {flows.map((flow) => (
               <button
                 key={flow.id}
                 type="button"
                 onClick={() => setSelectedFlowId(flow.id)}
-                className={cn(
-                  'w-full rounded-lg border px-3 py-2 text-left text-sm transition-colors hover:bg-muted/50',
-                  selectedFlow?.id === flow.id ? 'border-primary bg-primary/10' : 'border-border/70 bg-background',
-                )}
+                className={styles.flowItem}
+                data-active={selectedFlow?.id === flow.id}
               >
-                <span className="flex items-center justify-between gap-2">
-                  <span className="truncate font-medium">{flow.name}</span>
-                  {flow.enabled ? <Play className="h-3.5 w-3.5 text-primary" /> : <Pause className="h-3.5 w-3.5 text-muted-foreground" />}
+                <span className={styles.flowItemHead}>
+                  <span className={styles.flowItemName}>{flow.name}</span>
+                  {flow.enabled ? (
+                    <Play className={cn(styles.icon, styles.flowStateIcon)} />
+                  ) : (
+                    <Pause
+                      className={cn(styles.icon, styles.flowStateIcon)}
+                      data-tone="muted"
+                    />
+                  )}
                 </span>
-                <span className="mt-1 block text-xs text-muted-foreground">
+                <span className={styles.flowItemMeta}>
                   {flow.triggerType} · v{flow.version}
                 </span>
               </button>
             ))}
-            {flows.length === 0 ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">Create a flow from the canvas draft.</div>
-            ) : null}
+            {flows.length === 0 ? <div className={styles.empty}>Create a flow from the canvas draft.</div> : null}
           </CardContent>
         </Card>
 
-        <Card className="min-h-[660px] xl:col-span-1">
+        <Card className={styles.canvasCard}>
           <CardHeader>
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div className={styles.canvasHeader}>
               <div>
                 <CardTitle>Flow Canvas</CardTitle>
                 <CardDescription>Drag nodes, connect actions, and save the validated graph.</CardDescription>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className={styles.canvasActions}>
                 {actionTypes.map((type) => (
                   <Button
                     key={type}
@@ -264,7 +268,7 @@ function AutomationsPage() {
                     variant="outline"
                     onClick={() => addActionNode(type)}
                   >
-                    <Plus className="h-3.5 w-3.5" />
+                    <Plus className={styles.icon} />
                     {nodeTitle(type)}
                   </Button>
                 ))}
@@ -272,7 +276,7 @@ function AutomationsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="h-[520px] overflow-hidden rounded-lg border bg-muted/20">
+            <div className={styles.canvasFrame}>
               <ReactFlow
                 nodes={nodes}
                 edges={edges}
@@ -293,13 +297,13 @@ function AutomationsPage() {
           </CardContent>
         </Card>
 
-        <Card className="xl:row-span-2">
+        <Card className={styles.rowSpan2}>
           <CardHeader>
             <CardTitle>Inspector</CardTitle>
             <CardDescription>{selectedNode ? selectedNode.data.label : 'Select a node to edit its config.'}</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="space-y-2">
+          <CardContent className={styles.inspectorBody}>
+            <div className={styles.field}>
               <Label htmlFor="flow-name">Name</Label>
               <Input
                 id="flow-name"
@@ -307,13 +311,13 @@ function AutomationsPage() {
                 onChange={(event) => setName(event.target.value)}
               />
             </div>
-            <div className="space-y-2">
+            <div className={styles.field}>
               <Label>Trigger</Label>
               <Select
                 value={triggerType}
                 onValueChange={(value) => updateTriggerType(value as TriggerType)}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className={styles.selectFull}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -328,7 +332,7 @@ function AutomationsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <label className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
+            <label className={styles.toggleRow}>
               <span>{enabled ? 'Enabled' : 'Paused'}</span>
               <Switch
                 checked={enabled}
@@ -343,7 +347,7 @@ function AutomationsPage() {
           </CardContent>
         </Card>
 
-        <Card className="xl:col-span-1">
+        <Card>
           <CardHeader>
             <CardTitle>Recent Runs</CardTitle>
             <CardDescription>{selectedFlow ? selectedFlow.name : 'Create or select a saved flow'}</CardDescription>
@@ -361,7 +365,7 @@ function AutomationsPage() {
               <TableBody>
                 {runs.map((run) => (
                   <TableRow key={run.id}>
-                    <TableCell className="font-medium">{run.status}</TableCell>
+                    <TableCell className="weight-medium">{run.status}</TableCell>
                     <TableCell>{run.triggeredBy}</TableCell>
                     <TableCell>{run.duration ? `${run.duration} ms` : '-'}</TableCell>
                     <TableCell>{new Date(run.startedAt).toLocaleString()}</TableCell>
@@ -371,7 +375,7 @@ function AutomationsPage() {
                   <TableRow>
                     <TableCell
                       colSpan={4}
-                      className="py-8 text-center text-sm text-muted-foreground"
+                      className={styles.runsErrorCell}
                     >
                       No runs recorded.
                     </TableCell>
@@ -382,7 +386,7 @@ function AutomationsPage() {
             {runs.map((run) => (
               <p
                 key={`${run.id}-error`}
-                className="mt-2 text-xs text-destructive"
+                className={styles.runError}
               >
                 {run.error}
               </p>
@@ -395,19 +399,15 @@ function AutomationsPage() {
 }
 
 function NodeInspector({ node, onChange }: { node: FlowNode | null; onChange: (node: FlowNode) => void }) {
-  if (!node) return <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No node selected.</div>;
+  if (!node) return <div className={styles.inspectorEmpty}>No node selected.</div>;
 
   if (node.type === 'trigger') {
-    return (
-      <div className="rounded-lg border bg-muted/20 p-3 text-sm text-muted-foreground">
-        The trigger node follows the flow trigger above.
-      </div>
-    );
+    return <div className={styles.inspectorNote}>The trigger node follows the flow trigger above.</div>;
   }
 
   if (node.type === 'tag') {
     return (
-      <div className="space-y-2">
+      <div className={styles.field}>
         <Label htmlFor="node-tags">Tags</Label>
         <Input
           id="node-tags"
@@ -430,7 +430,7 @@ function NodeInspector({ node, onChange }: { node: FlowNode | null; onChange: (n
 
   if (node.type === 'privacy') {
     return (
-      <label className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
+      <label className={styles.toggleRow}>
         <span>{node.config.private ? 'Make private' : 'Make public'}</span>
         <Switch
           checked={node.config.private}
@@ -442,7 +442,7 @@ function NodeInspector({ node, onChange }: { node: FlowNode | null; onChange: (n
 
   if (node.type === 'route-folder') {
     return (
-      <div className="space-y-2">
+      <div className={styles.field}>
         <Label htmlFor="node-folder">Folder ID</Label>
         <Input
           id="node-folder"
@@ -454,14 +454,14 @@ function NodeInspector({ node, onChange }: { node: FlowNode | null; onChange: (n
   }
 
   return (
-    <div className="space-y-3">
-      <div className="space-y-2">
+    <div className={styles.fieldStack}>
+      <div className={styles.field}>
         <Label>Field</Label>
         <Select
           value={node.config.field}
           onValueChange={(value) => onChange({ ...node, config: { ...node.config, field: value as (typeof conditionFields)[number] } })}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger className={styles.selectFull}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -476,7 +476,7 @@ function NodeInspector({ node, onChange }: { node: FlowNode | null; onChange: (n
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-2">
+      <div className={styles.field}>
         <Label htmlFor="node-contains">Contains</Label>
         <Input
           id="node-contains"
@@ -517,7 +517,7 @@ function toCanvasNode(node: FlowNode): Node<CanvasNodeData> {
       nodeType: node.type,
       summary: nodeSummary(node),
     },
-    className: node.type === 'trigger' ? 'border-primary bg-primary/10' : 'bg-background',
+    className: node.type === 'trigger' ? styles.flowNodeTrigger : styles.flowNodeDefault,
   };
 }
 

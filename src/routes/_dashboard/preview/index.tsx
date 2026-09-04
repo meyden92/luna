@@ -24,6 +24,8 @@ import {
   SwitchField,
   TextareaField,
 } from '@/components/ui/tanstack-form';
+import { cn } from '@/libs/utils';
+import styles from './index.module.css';
 
 const userSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -71,19 +73,19 @@ function PreviewPage() {
   };
 
   return (
-    <div className="container mx-auto py-8 space-y-8">
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold">TanStack Form Component Showcase</h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+    <div className="container pad-y-8 stack space-8">
+      <div className={cn(styles.header, 'stack space-4')}>
+        <h1 className="type-4xl weight-bold">TanStack Form Component Showcase</h1>
+        <p className={cn('type-lg', styles.subtitle)}>
           Explore the comprehensive TanStack Form components with validation, field types, and advanced features.
         </p>
       </div>
 
       <Tabs
         defaultValue="basic"
-        className="w-full"
+        className={styles.full}
       >
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className={styles.tabsList}>
           <TabsTrigger value="basic">Basic Forms</TabsTrigger>
           <TabsTrigger value="validation">Validation</TabsTrigger>
           <TabsTrigger value="async">Async Features</TabsTrigger>
@@ -92,9 +94,9 @@ function PreviewPage() {
 
         <TabsContent
           value="basic"
-          className="space-y-8"
+          className="stack space-8"
         >
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className={styles.formGrid2}>
             <Card>
               <CardHeader>
                 <CardTitle>Simple Contact Form</CardTitle>
@@ -130,7 +132,7 @@ function PreviewPage() {
                     label="This is urgent"
                     description="Check if this requires immediate attention"
                   />
-                  <div className="flex gap-2">
+                  <div className="cluster space-2">
                     <FormSubmit>Send Message</FormSubmit>
                     <FormReset>Clear Form</FormReset>
                   </div>
@@ -158,7 +160,7 @@ function PreviewPage() {
                     onSubmit: handleBasicSubmit,
                   }}
                 >
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className={styles.fieldGrid2}>
                     <InputField
                       name="firstName"
                       label="First Name"
@@ -220,9 +222,9 @@ function PreviewPage() {
 
         <TabsContent
           value="validation"
-          className="space-y-8"
+          className="stack space-8"
         >
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className={styles.formGrid2}>
             <Card>
               <CardHeader>
                 <CardTitle>Zod Schema Validation</CardTitle>
@@ -304,7 +306,7 @@ function PreviewPage() {
                       { value: 'prefer-not-to-say', label: 'Prefer not to say' },
                     ]}
                   />
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className={styles.fieldGrid2}>
                     <CheckboxField
                       name="newsletter"
                       label="Subscribe to Newsletter"
@@ -407,9 +409,9 @@ function PreviewPage() {
 
         <TabsContent
           value="async"
-          className="space-y-8"
+          className="stack space-8"
         >
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className={styles.formGrid2}>
             <Card>
               <CardHeader>
                 <CardTitle>Async Validation</CardTitle>
@@ -518,9 +520,9 @@ function PreviewPage() {
 
         <TabsContent
           value="advanced"
-          className="space-y-8"
+          className="stack space-8"
         >
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className={styles.formGrid2}>
             <Card>
               <CardHeader>
                 <CardTitle>Dynamic Form Arrays</CardTitle>
@@ -545,9 +547,9 @@ function PreviewPage() {
                   <FormArray
                     name="teamMembers"
                     renderItemAction={({ fields, append, remove }) => (
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-lg font-medium">Team Members</h4>
+                      <div className="stack space-4">
+                        <div className={styles.rowBetween}>
+                          <h4 className="type-lg weight-medium">Team Members</h4>
                           <Badge variant="secondary">
                             {fields.length} member{fields.length !== 1 ? 's' : ''}
                           </Badge>
@@ -556,22 +558,22 @@ function PreviewPage() {
                         {fields.map((field: any, index: number) => (
                           <Card
                             key={field.key}
-                            className="p-4"
+                            className={styles.memberCard}
                           >
-                            <div className="flex items-center justify-between mb-4">
-                              <h5 className="font-medium">Member {index + 1}</h5>
+                            <div className={cn(styles.rowBetween, 'margin-bottom-4')}>
+                              <h5 className="weight-medium">Member {index + 1}</h5>
                               {fields.length > 1 && (
                                 <button
                                   type="button"
                                   onClick={() => remove(index)}
-                                  className="text-destructive hover:text-destructive/80"
+                                  className={styles.removeButton}
                                 >
                                   Remove
                                 </button>
                               )}
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className={styles.fieldGrid3}>
                               <InputField
                                 name={`teamMembers.${index}.name`}
                                 label="Name"
@@ -601,7 +603,7 @@ function PreviewPage() {
                         <button
                           type="button"
                           onClick={() => append({ name: '', role: '', email: '' })}
-                          className="w-full p-2 border border-dashed border-muted-foreground/50 rounded-lg hover:border-muted-foreground transition-colors"
+                          className={styles.addButton}
                         >
                           + Add Team Member
                         </button>
@@ -612,7 +614,7 @@ function PreviewPage() {
                   <FormSubscribe
                     selectorAction={(state: any) => state.values.teamMembers?.length || 0}
                     renderAction={(memberCount: number) => (
-                      <div className="text-sm text-muted-foreground">Total team members: {memberCount}</div>
+                      <div className={cn('type-sm', styles.muted)}>Total team members: {memberCount}</div>
                     )}
                   />
 
@@ -698,15 +700,15 @@ function PreviewPage() {
                     selectorAction={(state: any) => state.values.hasAddress}
                     renderAction={(hasAddress: boolean) =>
                       hasAddress ? (
-                        <div className="space-y-4 p-4 border rounded-lg">
-                          <h4 className="font-medium">Address Information</h4>
+                        <div className={cn('stack space-4', styles.addressBox)}>
+                          <h4 className="weight-medium">Address Information</h4>
                           <TextareaField
                             name="address"
                             label="Street Address"
                             placeholder="123 Main St, Apt 4B"
                             rows={2}
                           />
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className={styles.fieldGrid2}>
                             <InputField
                               name="city"
                               label="City"
@@ -744,13 +746,13 @@ function PreviewPage() {
       </Tabs>
 
       {submittedData && (
-        <Card className="mt-8">
+        <Card className={styles.resultCard}>
           <CardHeader>
             <CardTitle>Last Submitted Data</CardTitle>
             <CardDescription>Preview of the most recently submitted form data</CardDescription>
           </CardHeader>
           <CardContent>
-            <pre className="bg-muted p-4 rounded-lg overflow-auto text-sm">{JSON.stringify(submittedData, null, 2)}</pre>
+            <pre className={styles.resultPre}>{JSON.stringify(submittedData, null, 2)}</pre>
           </CardContent>
         </Card>
       )}

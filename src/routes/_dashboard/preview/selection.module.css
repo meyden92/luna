@@ -1,0 +1,22 @@
+@layer components {
+  .root {
+    background: var(--background);
+  }
+
+  .card {
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--card);
+  }
+
+  .well {
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background: color-mix(in oklab, var(--muted) 50%, transparent);
+  }
+
+  .muted {
+    color: var(--muted-foreground);
+  }
+}

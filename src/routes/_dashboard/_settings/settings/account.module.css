@@ -1,0 +1,107 @@
+@layer components {
+  .subtitle {
+    color: var(--muted-foreground);
+  }
+
+  .cardHeader {
+    gap: var(--space-3);
+  }
+
+  /* Title/description stacked with the action cluster below on narrow screens, side by side from md. */
+  .headerRow {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+
+    @media (width >= 768px) {
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+  }
+
+  .titleRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .icon {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .refreshIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+    margin-right: var(--space-2);
+  }
+
+  .refreshIcon[data-spinning="true"] {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .refreshIcon[data-spinning="true"] {
+      animation-duration: 0.01ms;
+      animation-iteration-count: 1;
+    }
+  }
+
+  .emptySessions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 10rem;
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .deviceCell {
+    max-width: 21.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .actionsCell {
+    text-align: right;
+  }
+
+  .status {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--muted-foreground);
+  }
+
+  .status[data-tone="current"] {
+    font-weight: var(--weight-medium);
+    color: var(--success);
+  }
+
+  .status[data-tone="expired"] {
+    font-weight: var(--weight-medium);
+    color: var(--warning);
+  }
+
+  .revokeIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+    margin-right: var(--space-2);
+    color: var(--destructive);
+  }
+}

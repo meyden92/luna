@@ -1,0 +1,125 @@
+@layer components {
+  .header {
+    margin-bottom: var(--space-6);
+  }
+
+  .subtitle {
+    margin-top: var(--space-1);
+    color: var(--muted-foreground);
+  }
+
+  /* Calendar takes the remaining width; the option rail is a fixed column from lg. */
+  .layout {
+    display: grid;
+    gap: var(--space-6);
+
+    @media (width >= 1024px) {
+      grid-template-columns: 1fr 18.75rem;
+    }
+  }
+
+  .calendarCard {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .calendarCardHeader {
+    flex-shrink: 0;
+    padding-bottom: var(--space-2);
+  }
+
+  .calendarCardHeaderRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .calendarCardContent {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .fetching {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .fetchingDot {
+    width: var(--space-2);
+    height: var(--space-2);
+    border-radius: var(--radius-full);
+    background: var(--primary);
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse {
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fetchingDot {
+      animation-duration: 0.01ms;
+      animation-iteration-count: 1;
+    }
+  }
+
+  .rail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .fieldLabel {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .rowBetween {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .infoRow > span:first-child {
+    color: var(--muted-foreground);
+  }
+
+  .errorText {
+    color: var(--destructive);
+  }
+
+  .capitalize {
+    text-transform: capitalize;
+  }
+
+  .infoValue {
+    margin-left: var(--space-2);
+    font-weight: var(--weight-medium);
+  }
+
+  .code {
+    margin-left: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--muted);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .featureList {
+    list-style: disc inside;
+  }
+
+  .swatch {
+    width: var(--space-4);
+    height: var(--space-4);
+    border-radius: var(--radius-sm);
+    background: color-mix(in oklab, var(--swatch-color) 20%, transparent);
+  }
+}

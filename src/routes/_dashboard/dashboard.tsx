@@ -46,6 +46,7 @@ import type { GalleryPage } from '@/libs/gallery-cache';
 import { type GalleryFilters, type GallerySortField, queryKeys } from '@/libs/query-keys';
 import { cn } from '@/libs/utils';
 import { deleteFiles } from '@/server/fns/files';
+import styles from './dashboard.module.css';
 
 export const Route = createFileRoute('/_dashboard/dashboard')({
   head: () => ({ meta: [{ title: 'Dashboard | LunaShare' }] }),
@@ -159,25 +160,20 @@ function ViewOptions() {
   const setLayout = useGalleryView((state) => state.setLayout);
   const setDensity = useGalleryView((state) => state.setDensity);
 
-  const segmentClass = (active: boolean) =>
-    cn(
-      'flex h-7 w-8 items-center justify-center rounded-[7px] transition-colors',
-      active ? 'bg-luna-bg text-luna-ink shadow-sm dark:bg-luna-bg-3' : 'text-luna-ink-4 hover:text-luna-ink',
-    );
-
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex items-center gap-0.5 rounded-[9px] border border-luna-line bg-luna-bg-2 p-0.5">
+    <div className={styles.viewOptions}>
+      <div className={styles.segmentGroup}>
         <button
           type="button"
           title="Justified rows"
           aria-label="Use justified rows layout"
           aria-pressed={layout === 'rows'}
-          className={segmentClass(layout === 'rows')}
+          className={styles.segment}
+          data-active={layout === 'rows'}
           onClick={() => setLayout('rows')}
         >
           <Rows3
-            className="h-3.5 w-3.5"
+            className={styles.segmentIcon}
             aria-hidden
           />
         </button>
@@ -186,11 +182,12 @@ function ViewOptions() {
           title="Grid"
           aria-label="Use grid layout"
           aria-pressed={layout === 'grid'}
-          className={segmentClass(layout === 'grid')}
+          className={styles.segment}
+          data-active={layout === 'grid'}
           onClick={() => setLayout('grid')}
         >
           <LayoutGrid
-            className="h-3.5 w-3.5"
+            className={styles.segmentIcon}
             aria-hidden
           />
         </button>
@@ -200,20 +197,20 @@ function ViewOptions() {
         <PopoverTrigger
           title="Density"
           aria-label="Thumbnail density"
-          className="flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-luna-line text-luna-ink-3 transition-colors hover:border-luna-line-2 hover:text-luna-ink"
+          className={styles.densityTrigger}
         >
           <SlidersHorizontal
-            className="h-3.5 w-3.5"
+            className={styles.segmentIcon}
             aria-hidden
           />
         </PopoverTrigger>
         <PopoverContent
           align="end"
-          className="w-56 p-4"
+          className={styles.densityPanel}
         >
-          <div className="mb-3 flex items-center justify-between">
-            <span className="text-[13px] font-medium text-luna-ink">Density</span>
-            <span className="font-mono text-[11px] text-luna-ink-4">{density}/10</span>
+          <div className={styles.densityHeader}>
+            <span className={styles.densityLabel}>Density</span>
+            <span className={styles.densityValue}>{density}/10</span>
           </div>
           <Slider
             thumbAriaLabel="Thumbnail density"
@@ -226,7 +223,7 @@ function ViewOptions() {
             step={1}
             onValueChange={(value) => setDensity(Array.isArray(value) ? (value[0] ?? 7) : (value as number))}
           />
-          <div className="mt-2 flex justify-between text-[10px] text-luna-ink-4">
+          <div className={styles.densityFooter}>
             <span>Larger</span>
             <span>Smaller</span>
           </div>
@@ -457,20 +454,18 @@ function DashboardPage() {
   const fileCountLabel = `${allGalleryFiles.length}${hasNextPage ? '+' : ''} file${allGalleryFiles.length === 1 && !hasNextPage ? '' : 's'}`;
 
   return (
-    <div className="pl-2 pr-2 pb-32 xl:pr-14">
+    <div className={styles.root}>
       {/* page head */}
-      <div className="luna-up mb-1 mt-2 flex items-baseline gap-4">
-        <h1 className="m-0 whitespace-nowrap font-serif text-[44px] font-normal leading-none tracking-[-0.01em] text-luna-ink">
-          {selectedScopeLabel}
-        </h1>
-        <span className="truncate font-mono text-xs text-luna-ink-4">
+      <div className={cn(styles.headerRow, styles.riseIn)}>
+        <h1 className={cn('type-display', styles.title)}>{selectedScopeLabel}</h1>
+        <span className={styles.fileCount}>
           {fileCountLabel}
           {filters.search ? ` matching “${filters.search}”` : ''}
         </span>
       </div>
 
       {/* toolbar */}
-      <div className="luna-up luna-up-delay-1 sticky top-[4.625rem] z-30 -mx-1 flex flex-col gap-3 bg-luna-bg/88 px-1 py-2.5 backdrop-blur-[10px] xl:flex-row xl:items-center">
+      <div className={cn(styles.toolbar, styles.riseIn, styles.riseInDelay1)}>
         <DynamicFilterBar
           filters={galleryFilters}
           sorters={gallerySorters}
@@ -478,7 +473,7 @@ function DashboardPage() {
           context={filterContext}
           onApply={handleApply}
           onSortChange={handleSortChange}
-          className="min-w-0 flex-1"
+          className={styles.filterBar}
           syncToUrl={true}
           placeholder="Search files or filter by type, folder, privacy, tags..."
           translations={{
@@ -489,36 +484,32 @@ function DashboardPage() {
           }}
         />
 
-        <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+        <div className={styles.actions}>
           <button
             type="button"
             aria-pressed={selectMode}
             onClick={() => setSelectMode(!selectMode)}
-            className={cn(
-              'flex h-[30px] items-center gap-1.5 rounded-lg border px-3 text-[13px] font-medium transition-colors',
-              selectMode
-                ? 'border-luna-accent bg-luna-accent-soft text-luna-accent-2 dark:text-luna-accent'
-                : 'border-luna-line text-luna-ink-3 hover:border-luna-line-2 hover:text-luna-ink',
-            )}
+            className={styles.selectButton}
+            data-active={selectMode}
           >
-            <Check className="h-[13px] w-[13px]" /> Select
+            <Check className={styles.selectIcon} /> Select
           </button>
 
           <ViewOptions />
 
           <Button
             size="sm"
-            className="h-[30px] rounded-[9px] px-3.5 font-semibold"
+            className={styles.uploadButton}
             onClick={() => uploadRef.current?.openSheet()}
           >
-            <Upload className="h-3.5 w-3.5" />
+            <Upload className={styles.uploadIcon} />
             Upload
           </Button>
         </div>
       </div>
 
       {lightBox.isOpen && lightBox.selectedFile ? (
-        <div className="fixed inset-y-0 z-40 size-full">
+        <div className={styles.lightboxOverlay}>
           <LightboxErrorBoundary onClose={lightBox.close}>
             <LightBox
               close={lightBox.close}
@@ -535,20 +526,20 @@ function DashboardPage() {
 
       {/* gallery + upload drop zone */}
       <div
-        className="luna-up luna-up-delay-2 relative min-h-[40vh]"
+        className={cn(styles.galleryZone, styles.riseIn, styles.riseInDelay2)}
         onDragEnter={handleDropZoneDragEnter}
         onDragOver={handleDropZoneDragOver}
         onDragLeave={handleDropZoneDragLeave}
         onDrop={handleDropZoneDrop}
       >
         {isDropZoneDragging && (
-          <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center rounded-[18px] border-2 border-dashed border-luna-accent bg-luna-bg/95">
-            <div className="flex flex-col items-center gap-3 text-luna-accent-2 dark:text-luna-accent">
-              <div className="rounded-full bg-luna-accent-tint p-4">
-                <Upload className="h-8 w-8" />
+          <div className={styles.dropOverlay}>
+            <div className={styles.dropContent}>
+              <div className={styles.dropIconWell}>
+                <Upload className={styles.dropIcon} />
               </div>
-              <span className="font-serif text-[22px] text-luna-ink">Drop files to upload</span>
-              <span className="text-[13px] text-luna-ink-4">Release anywhere inside the workspace</span>
+              <span className={cn('type-display', styles.dropTitle)}>Drop files to upload</span>
+              <span className={styles.dropSubtitle}>Release anywhere inside the workspace</span>
             </div>
           </div>
         )}

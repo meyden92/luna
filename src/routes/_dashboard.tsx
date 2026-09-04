@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { FoldersProvider } from '@/contexts/FoldersContext';
 import { UploadRefContext } from '@/contexts/UploadRefContext';
+import styles from './_dashboard.module.css';
 
 export const Route = createFileRoute('/_dashboard')({
   beforeLoad: ({ context, location }) => {
@@ -38,15 +39,15 @@ function DashboardLayout() {
   return (
     <FoldersProvider>
       <UploadRefContext.Provider value={uploadRef}>
-        <div className="grid grid-cols-1 md:grid-cols-[auto_1fr]">
-          <aside className="sticky top-[4.625rem] hidden h-[calc(100dvh-4.625rem)] self-start md:block">
+        <div className={styles.root}>
+          <aside className={styles.rail}>
             <FolderSidebar
               onFormSharesListOpenChange={setIsFormSharesListOpen}
               onFormBuilderOpenChange={setIsFormBuilderOpen}
             />
           </aside>
-          <div className="relative min-w-0 px-4 pt-4">
-            <div className="mb-3 flex md:hidden">
+          <div className={styles.body}>
+            <div className="cluster margin-bottom-3 hide-from-md">
               <Button
                 type="button"
                 variant="outline"
@@ -54,7 +55,7 @@ function DashboardLayout() {
                 onClick={() => setIsFolderSheetOpen(true)}
                 aria-label="Open folders"
               >
-                <FolderOpen className="h-4 w-4" />
+                <FolderOpen />
                 Folders
               </Button>
             </div>
@@ -68,7 +69,7 @@ function DashboardLayout() {
         >
           <SheetContent
             side="left"
-            className="w-[min(20rem,calc(100vw-1rem))] max-w-none bg-luna-bg p-0 md:hidden"
+            className={styles.sheet}
           >
             <SheetHeader className="sr-only">
               <SheetTitle>Folders</SheetTitle>

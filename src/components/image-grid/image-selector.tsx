@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import type { SelectedImage } from '@/schemas/image-grid';
+import styles from './image-selector.module.css';
 
 interface ImageSelectorProps {
   selectedImages: SelectedImage[];
@@ -88,9 +89,9 @@ export function ImageSelector({ selectedImages, onAddLocalImages, onRemoveImage,
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <Label className="text-lg font-semibold">Select Images ({selectedImages.length})</Label>
+    <div className="stack space-6">
+      <div className={styles.spread}>
+        <Label className="type-lg weight-semibold">Select Images ({selectedImages.length})</Label>
         {selectedImages.length > 0 && (
           <Button
             variant="outline"
@@ -104,19 +105,15 @@ export function ImageSelector({ selectedImages, onAddLocalImages, onRemoveImage,
 
       {/* Selected Images Preview */}
       {selectedImages.length > 0 && (
-        <div className="space-y-2">
-          <Label className="text-sm font-medium text-muted-foreground">Selected Images</Label>
-          <div className="grid grid-cols-6 gap-2 max-h-80 overflow-y-auto">
+        <div className="stack space-2">
+          <Label className={styles.sectionLabel}>Selected Images</Label>
+          <div className={styles.grid}>
             {selectedImages.map((image, index) => (
               <div
                 key={image.id}
-                className={`relative group cursor-move transition-all duration-200 rounded-lg ${
-                  draggedIndex === index ? 'opacity-50 scale-95 rotate-3 z-10' : ''
-                } ${
-                  dragOverIndex === index && draggedIndex !== index
-                    ? 'ring-2 ring-primary ring-offset-2 bg-primary/10'
-                    : 'hover:ring-1 hover:ring-primary/30'
-                }`}
+                className={styles.tile}
+                data-dragging={draggedIndex === index ? '' : undefined}
+                data-dragover={dragOverIndex === index && draggedIndex !== index ? '' : undefined}
                 draggable={true}
                 onDragStart={(e) => handleDragStart(e, index)}
                 onDragOver={(e) => handleDragOver(e, index)}
@@ -125,24 +122,20 @@ export function ImageSelector({ selectedImages, onAddLocalImages, onRemoveImage,
                 onDragEnd={handleDragEnd}
               >
                 {/* Image container */}
-                <div className="relative overflow-hidden rounded border bg-muted">
+                <div className={styles.thumbFrame}>
                   <img
                     src={image.url}
                     alt={image.name}
-                    className="w-full h-16 object-cover pointer-events-none"
+                    className={styles.thumb}
                   />
 
                   {/* Order indicator */}
-                  <div className="absolute top-1 left-1 bg-primary text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
-                    {index + 1}
-                  </div>
+                  <div className={styles.order}>{index + 1}</div>
                 </div>
 
                 {/* Drag handle */}
-                <div className="absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="bg-black/70 rounded p-1">
-                    <GripVertical className="h-3 w-3 text-white" />
-                  </div>
+                <div className={styles.handle}>
+                  <GripVertical className={styles.handleIcon} />
                 </div>
 
                 {/* Remove button */}
@@ -150,7 +143,7 @@ export function ImageSelector({ selectedImages, onAddLocalImages, onRemoveImage,
                   type="button"
                   variant="destructive"
                   size="sm"
-                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                  className={styles.remove}
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -158,39 +151,39 @@ export function ImageSelector({ selectedImages, onAddLocalImages, onRemoveImage,
                   }}
                   onMouseDown={(e) => e.stopPropagation()}
                 >
-                  <X className="h-3 w-3" />
+                  <X className={styles.removeIcon} />
                 </Button>
               </div>
             ))}
           </div>
 
           {selectedImages.length > 1 && (
-            <div className="text-center mt-3 space-y-1">
-              <p className="text-xs text-muted-foreground">💡 Drag images to reorder them in the grid</p>
-              <p className="text-xs text-muted-foreground opacity-75">Numbers show the current order in the grid</p>
+            <div className={`${styles.hints} stack space-1 margin-top-3`}>
+              <p>💡 Drag images to reorder them in the grid</p>
+              <p className={styles.hintFaint}>Numbers show the current order in the grid</p>
             </div>
           )}
         </div>
       )}
 
       {/* Image Upload */}
-      <div className="space-y-4">
+      <div className="stack space-4">
         <input
           id="image-upload"
           type="file"
           accept="image/*"
           multiple
           onChange={handleLocalUpload}
-          className="hidden"
+          className="hide"
         />
 
         <div
-          className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground cursor-pointer hover:bg-muted/50 transition-colors"
+          className={styles.dropzone}
           onClick={() => document.getElementById('image-upload')?.click()}
         >
-          <Upload className="w-12 h-12 mx-auto mb-4" />
-          <p className="text-lg font-medium mb-2">Click to upload images</p>
-          <p className="text-sm">Select multiple images from your device</p>
+          <Upload className={styles.dropzoneIcon} />
+          <p className={styles.dropzoneTitle}>Click to upload images</p>
+          <p className={styles.dropzoneHint}>Select multiple images from your device</p>
         </div>
       </div>
     </div>

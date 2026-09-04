@@ -2,6 +2,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { File, FileText, FolderArchive, Music, Video } from 'lucide-react';
 import { memo, useEffect, useRef } from 'react';
 import { getCDNImage, isPreviewableFile } from '@/libs/utils';
+import styles from './ImagePreviewSidebar.module.css';
 
 interface FileData {
   id: string;
@@ -48,24 +49,21 @@ const Thumbnail = memo(function Thumbnail({ file, userId, index, isActive, onSel
       aria-label={`View ${file.title || 'file'}`}
       aria-current={isActive}
       data-active={isActive}
-      className={`
-        group relative w-full cursor-pointer overflow-hidden rounded-md border-2 transition-all duration-150
-        ${isActive ? 'border-luna-accent opacity-100' : 'border-transparent opacity-55 hover:opacity-85'}
-      `}
+      className={styles.thumb}
     >
-      <div className="relative aspect-video w-full bg-white/5">
+      <div className={styles.frame}>
         {canPreview ? (
           <img
             src={buildCdnUrl(userId, file.url)}
             alt={file.title || 'Thumbnail'}
             sizes="140px"
             loading="lazy"
-            className="absolute inset-0 h-full w-full object-cover"
+            className={styles.image}
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center">
+          <div className={styles.placeholder}>
             <FileIcon
-              className="h-8 w-8 text-white/40"
+              className={styles.placeholderIcon}
               aria-hidden
             />
           </div>
@@ -137,10 +135,10 @@ export default function ImagePreviewSidebar({ images, currentIndex, onImageClick
   return (
     <div
       ref={parentRef}
-      className="h-full overflow-y-auto overflow-x-hidden p-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20"
+      className={styles.scroller}
     >
       <div
-        className="relative w-full"
+        className={styles.list}
         style={{ height: virtualizer.getTotalSize() }}
       >
         {virtualItems.map((virtualRow) => {
@@ -150,7 +148,7 @@ export default function ImagePreviewSidebar({ images, currentIndex, onImageClick
           return (
             <div
               key={file.id}
-              className="absolute left-0 w-full pb-2"
+              className={styles.row}
               style={{ top: virtualRow.start }}
             >
               <Thumbnail
@@ -165,7 +163,7 @@ export default function ImagePreviewSidebar({ images, currentIndex, onImageClick
         })}
       </div>
       {/* Spacer at bottom for better UX */}
-      <div className="h-8 shrink-0" />
+      <div className={styles.spacer} />
     </div>
   );
 }

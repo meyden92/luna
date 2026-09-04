@@ -1,0 +1,20 @@
+@layer components {
+  /* Base UI measures the panel and publishes --collapsible-panel-height, which
+     is what makes a height transition possible from `auto` content. */
+  .panel {
+    overflow: hidden;
+    height: var(--collapsible-panel-height);
+    transition: height 200ms ease-out;
+
+    &[data-starting-style],
+    &[data-ending-style] {
+      height: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .panel {
+      transition-duration: 0.01ms;
+    }
+  }
+}

@@ -1,0 +1,80 @@
+@layer components {
+  .emptyText {
+    text-align: center;
+    color: var(--muted-foreground);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  @media (width >= 768px) {
+    .grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (width >= 1024px) {
+    .grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .cardHead {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  .titleWrap {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .title {
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+  }
+
+  .activeToggle {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .activeLabel {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--muted-foreground);
+  }
+
+  .description {
+    margin-bottom: var(--space-3);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .meta {
+    margin-bottom: var(--space-3);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--muted-foreground);
+  }
+
+  .meta[data-last="true"] {
+    margin-bottom: var(--space-4);
+  }
+
+  .actions {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  .editButton {
+    flex: 1;
+  }
+}

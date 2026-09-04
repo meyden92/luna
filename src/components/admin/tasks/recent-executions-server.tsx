@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ExecutionRow, { type ExecutionHistoryItem } from './execution-row';
+import styles from './recent-executions-server.module.css';
 
 interface RecentExecutionsServerProps {
   executions: ExecutionHistoryItem[];
@@ -11,17 +12,17 @@ export default function RecentExecutionsServer({ executions, hasMore }: RecentEx
     <Card>
       <CardHeader>
         <CardTitle>Recent Executions</CardTitle>
-        <p className="text-sm text-muted-foreground">
+        <p className={styles.subtitle}>
           Last {executions.length} executions{hasMore ? ' • More available' : ''}
         </p>
       </CardHeader>
       <CardContent>
         {executions.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">No recent executions found</p>
+          <div className={styles.empty}>
+            <p className={styles.emptyText}>No recent executions found</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="stack space-4">
             {executions.map((execution) => (
               <ExecutionRow
                 key={execution.id}

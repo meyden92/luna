@@ -1,4 +1,3 @@
-import { cva, type VariantProps } from 'class-variance-authority';
 import type { Locale } from 'date-fns';
 import {
   addMonths,
@@ -21,11 +20,24 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/libs/utils';
 
+import styles from './calendar-view.module.css';
+
 // ============================================================================
 // Types
 // ============================================================================
 
 export type EventColor = 'default' | 'primary' | 'secondary' | 'destructive' | 'success' | 'warning';
+
+const KNOWN_EVENT_COLORS: EventColor[] = ['default', 'primary', 'secondary', 'destructive', 'success', 'warning'];
+
+function isCustomEventColor(color: string): boolean {
+  return !KNOWN_EVENT_COLORS.includes(color as EventColor);
+}
+
+export type MonthlyCalendarSize = 'default' | 'sm' | 'lg';
+export type MonthlyCalendarVariant = 'default' | 'card' | 'bordered';
+export type MonthlyNavLayout = 'default' | 'spread' | 'centered';
+export type MonthlyEventVariant = 'compact' | 'default' | 'expanded';
 
 export interface CalendarEvent {
   id: string;
@@ -56,125 +68,6 @@ interface WeekData {
   days: Date[];
   placements: EventPlacement[];
 }
-
-// ============================================================================
-// CVA Variants
-// ============================================================================
-
-const monthlyCalendarVariants = cva('w-full', {
-  variants: {
-    size: {
-      default: '[--cell-min-height:6rem] text-sm',
-      sm: '[--cell-min-height:4rem] text-xs',
-      lg: '[--cell-min-height:8rem] text-base',
-    },
-    variant: {
-      default: 'bg-background',
-      card: 'bg-card rounded-2xl ring-1 ring-foreground/10 p-4',
-      bordered: 'border border-border rounded-lg p-2',
-    },
-  },
-  defaultVariants: {
-    size: 'default',
-    variant: 'default',
-  },
-});
-
-const monthlyDayVariants = cva('relative min-h-[--cell-min-height] p-1 transition-colors border-t border-r border-border first:border-l', {
-  variants: {
-    state: {
-      default: 'bg-background hover:bg-muted/50',
-      today: 'bg-primary/5',
-      outsideMonth: 'bg-muted/50 text-muted-foreground/70',
-    },
-    interactive: {
-      true: 'cursor-pointer',
-      false: 'cursor-default',
-    },
-  },
-  defaultVariants: {
-    state: 'default',
-    interactive: true,
-  },
-});
-
-const monthlyDayNumberVariants = cva('inline-flex items-center justify-center rounded-full size-7 text-sm font-medium transition-colors', {
-  variants: {
-    state: {
-      default: '',
-      today: 'bg-primary text-primary-foreground',
-      highlighted: 'ring-2',
-    },
-  },
-  defaultVariants: {
-    state: 'default',
-  },
-});
-
-const monthlyEventBarVariants = cva(
-  'truncate px-1.5 py-0.5 text-xs cursor-pointer transition-opacity hover:opacity-80 h-5 flex items-center mx-px animate-in fade-in-0 slide-in-from-bottom-1 duration-200',
-  {
-    variants: {
-      color: {
-        default: 'bg-primary/20 text-primary',
-        primary: 'bg-primary/20 text-primary',
-        secondary: 'bg-secondary/20 text-secondary-foreground',
-        destructive: 'bg-destructive/20 text-destructive',
-        success: 'bg-green-500/20 text-green-700 dark:text-green-400',
-        warning: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400',
-      },
-      position: {
-        single: 'rounded mx-px',
-        start: 'rounded-l ml-px',
-        middle: '',
-        end: 'rounded-r mr-px',
-      },
-    },
-    defaultVariants: {
-      color: 'default',
-      position: 'single',
-    },
-  },
-);
-
-const monthlyEventVariants = cva('truncate rounded px-1.5 py-0.5 text-xs cursor-pointer transition-opacity hover:opacity-80', {
-  variants: {
-    color: {
-      default: 'bg-primary/20 text-primary',
-      primary: 'bg-primary/20 text-primary',
-      secondary: 'bg-secondary/20 text-secondary-foreground',
-      destructive: 'bg-destructive/20 text-destructive',
-      success: 'bg-green-500/20 text-green-700 dark:text-green-400',
-      warning: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400',
-    },
-    variant: {
-      compact: 'text-[10px] py-0',
-      default: '',
-      expanded: 'p-2 text-sm rounded-lg',
-    },
-  },
-  defaultVariants: {
-    color: 'default',
-    variant: 'default',
-  },
-});
-
-const monthlyOverflowVariants = cva(
-  'w-full text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded px-1.5 py-0.5 transition-colors cursor-pointer text-left animate-in fade-in-0 duration-200',
-);
-
-const monthlyNavVariants = cva('flex items-center gap-2 mb-4', {
-  variants: {
-    layout: {
-      default: '',
-      spread: 'justify-between',
-      centered: 'justify-center gap-4',
-    },
-  },
-  defaultVariants: {
-    layout: 'default',
-  },
-});
 
 // ============================================================================
 // Context
@@ -354,7 +247,7 @@ function getPlacementsPerColumn(placements: EventPlacement[]): number[] {
 // Components
 // ============================================================================
 
-export interface MonthlyCalendarProps extends React.ComponentProps<'div'>, VariantProps<typeof monthlyCalendarVariants> {
+export interface MonthlyCalendarProps extends React.ComponentProps<'div'> {
   currentMonth?: Date;
   defaultMonth?: Date;
   onCurrentMonthChange?: (month: Date) => void;
@@ -365,6 +258,8 @@ export interface MonthlyCalendarProps extends React.ComponentProps<'div'>, Varia
   onEventClick?: (event: CalendarEvent) => void;
   maxEventRows?: number;
   locale?: Locale;
+  size?: MonthlyCalendarSize;
+  variant?: MonthlyCalendarVariant;
   /** Stretch calendar to fill parent container height (default: true) */
   fillHeight?: boolean;
   /** Show days from previous/next months (default: true) */
@@ -386,8 +281,8 @@ function MonthlyCalendar({
   onEventClick,
   maxEventRows = 3,
   locale,
-  size,
-  variant,
+  size = 'default',
+  variant = 'default',
   fillHeight = true,
   showOutsideMonthDays = true,
   dimOutsideMonthDays = true,
@@ -496,7 +391,10 @@ function MonthlyCalendar({
     <MonthlyCalendarContext.Provider value={contextValue}>
       <div
         data-slot="monthly-calendar"
-        className={cn(monthlyCalendarVariants({ size, variant }), fillHeight && 'h-full flex flex-col', className)}
+        data-size={size}
+        data-variant={variant}
+        data-fill-height={fillHeight || undefined}
+        className={cn(styles.root, className)}
         {...props}
       >
         {children}
@@ -506,7 +404,8 @@ function MonthlyCalendar({
 }
 
 // Navigation
-export interface MonthlyNavProps extends React.ComponentProps<'div'>, VariantProps<typeof monthlyNavVariants> {
+export interface MonthlyNavProps extends React.ComponentProps<'div'> {
+  layout?: MonthlyNavLayout;
   showTodayButton?: boolean;
   renderPrevButton?: (props: { onClick: () => void }) => React.ReactNode;
   renderNextButton?: (props: { onClick: () => void }) => React.ReactNode;
@@ -519,7 +418,7 @@ function MonthlyNav({
   renderPrevButton,
   renderNextButton,
   renderTitle,
-  layout,
+  layout = 'default',
   ...props
 }: MonthlyNavProps) {
   const { currentMonth, goToPrevMonth, goToNextMonth, goToToday, locale } = useMonthlyCalendar();
@@ -529,7 +428,8 @@ function MonthlyNav({
   return (
     <div
       data-slot="monthly-nav"
-      className={cn(monthlyNavVariants({ layout }), className)}
+      data-layout={layout}
+      className={cn(styles.nav, className)}
       {...props}
     >
       {renderPrevButton ? (
@@ -541,14 +441,14 @@ function MonthlyNav({
           onClick={goToPrevMonth}
           aria-label="Previous month"
         >
-          <ChevronLeftIcon className="size-4" />
+          <ChevronLeftIcon className={styles.navIcon} />
         </Button>
       )}
 
       {renderTitle ? (
         renderTitle({ month: currentMonth, formatted: formattedMonth })
       ) : (
-        <h2 className="text-lg font-semibold min-w-[160px] text-center">{formattedMonth}</h2>
+        <h2 className={styles.navTitle}>{formattedMonth}</h2>
       )}
 
       {renderNextButton ? (
@@ -560,7 +460,7 @@ function MonthlyNav({
           onClick={goToNextMonth}
           aria-label="Next month"
         >
-          <ChevronRightIcon className="size-4" />
+          <ChevronRightIcon className={styles.navIcon} />
         </Button>
       )}
 
@@ -569,7 +469,7 @@ function MonthlyNav({
           variant="outline"
           size="sm"
           onClick={goToToday}
-          className="ml-2"
+          className={styles.navToday}
         >
           Today
         </Button>
@@ -602,13 +502,13 @@ function MonthlyWeekdays({ className, dayFormat = 'short', ...props }: MonthlyWe
   return (
     <div
       data-slot="monthly-weekdays"
-      className={cn('grid grid-cols-7 text-muted-foreground text-sm font-medium', className)}
+      className={cn(styles.weekdays, className)}
       {...props}
     >
       {weekdays.map((day) => (
         <div
           key={day}
-          className="text-center py-2 border-b border-r border-border first:border-l"
+          className={styles.weekday}
         >
           {day}
         </div>
@@ -722,12 +622,19 @@ function MonthlyContent({ className, ...props }: MonthlyContentProps) {
     <div
       ref={contentRef}
       data-slot="monthly-content"
-      className={cn('flex flex-col', fillHeight && 'flex-1 min-h-0', className)}
+      data-fill-height={fillHeight || undefined}
+      className={cn(styles.content, className)}
       style={{ minHeight }}
       {...props}
     >
-      <div className={cn('flex flex-col w-full', fillHeight && 'flex-1 min-h-0 justify-center')}>
-        <div className={cn('flex flex-col w-full', fillHeight && 'max-h-full aspect-[7/5]')}>
+      <div
+        data-fill-height={fillHeight || undefined}
+        className={styles.contentInner}
+      >
+        <div
+          data-fill-height={fillHeight || undefined}
+          className={styles.contentAspect}
+        >
           <MonthlyWeekdays />
           {weeks.map((week) => (
             <MonthlyWeekRow
@@ -805,11 +712,15 @@ const MonthlyWeekRow = React.memo(function MonthlyWeekRow({
   return (
     <div
       data-slot="monthly-week-row"
-      className={cn('relative', fillHeight && 'flex-1')}
+      data-fill-height={fillHeight || undefined}
+      className={styles.weekRow}
       style={{ minHeight: fillHeight ? minRowHeight : undefined }}
     >
       {/* Day cells grid */}
-      <div className={cn('grid grid-cols-7', fillHeight && 'h-full')}>
+      <div
+        data-fill-height={fillHeight || undefined}
+        className={styles.dayGrid}
+      >
         {week.days.map((day, colIndex) => {
           const dayHighlights = highlightsByDate.get(formatDateKey(day)) ?? [];
           const dayEvents = getEventsForDate(day);
@@ -823,7 +734,8 @@ const MonthlyWeekRow = React.memo(function MonthlyWeekRow({
             return (
               <div
                 key={formatDateKey(day)}
-                className={cn('border-t border-r border-border first:border-l', fillHeight && 'h-full')}
+                data-fill-height={fillHeight || undefined}
+                className={styles.dayEmpty}
               />
             );
           }
@@ -848,15 +760,12 @@ const MonthlyWeekRow = React.memo(function MonthlyWeekRow({
       </div>
 
       {/* Event lanes overlay */}
-      <div
-        className="absolute inset-x-0 pointer-events-none"
-        style={{ top: 'calc(2rem + 2px)' }} // Below day numbers
-      >
+      <div className={styles.eventLanes}>
         {visibleLanes.map((lanePlacements, laneIndex) => (
           <div
             // biome-ignore lint/suspicious/noArrayIndexKey: Lane order is stable (sorted by lane number)
             key={laneIndex}
-            className="grid grid-cols-7 grid-rows-1 h-5 mb-0.5 overflow-hidden"
+            className={styles.lane}
           >
             {lanePlacements.map((placement) => (
               <MonthlyEventBar
@@ -870,7 +779,7 @@ const MonthlyWeekRow = React.memo(function MonthlyWeekRow({
 
         {/* Overflow indicators - show for each column that has overflow */}
         {hasAnyOverflow && (
-          <div className="grid grid-cols-7 h-5">
+          <div className={styles.overflowRow}>
             {week.days.map((day, colIndex) => {
               const dayEvents = getEventsForDate(day);
               const columnPlacementCount = placementsPerColumn[colIndex] ?? 0;
@@ -879,7 +788,7 @@ const MonthlyWeekRow = React.memo(function MonthlyWeekRow({
                 return (
                   <div
                     key={formatDateKey(day)}
-                    className="h-5"
+                    className={styles.overflowCellEmpty}
                   />
                 );
               return (
@@ -938,14 +847,18 @@ const MonthlyDay = React.memo(function MonthlyDay({
   return (
     <div
       data-slot="monthly-day"
-      className={cn(monthlyDayVariants({ state, interactive: !!onClick }), fillHeight && 'h-full', className)}
+      data-state={state}
+      data-interactive={!!onClick}
+      data-fill-height={fillHeight || undefined}
+      className={cn(styles.day, className)}
       style={!fillHeight ? { paddingBottom: `${eventAreaHeight + 4}px` } : undefined}
       onClick={onClick}
       {...props}
     >
       <div
-        className={monthlyDayNumberVariants({ state: dayNumberState })}
-        style={highlights[0]?.color ? ({ '--tw-ring-color': highlights[0].color } as React.CSSProperties) : undefined}
+        data-state={dayNumberState}
+        className={styles.dayNumber}
+        style={highlights[0]?.color ? ({ '--highlight-color': highlights[0].color } as React.CSSProperties) : undefined}
       >
         {date.getDate()}
       </div>
@@ -974,13 +887,15 @@ const MonthlyEventBar = React.memo(function MonthlyEventBar({ placement, onEvent
             : 'single';
 
   const color = (event.color ?? 'default') as EventColor;
-  const isCustomColor = !['default', 'primary', 'secondary', 'destructive', 'success', 'warning'].includes(color);
+  const isCustomColor = isCustomEventColor(color);
 
   return (
     <button
       type="button"
       data-slot="monthly-event-bar"
-      className={cn(monthlyEventBarVariants({ color: isCustomColor ? 'default' : color, position }), 'pointer-events-auto')}
+      data-color={isCustomColor ? 'default' : color}
+      data-position={position}
+      className={styles.eventBar}
       style={{
         // Explicit grid positioning: row 1 prevents CSS Grid from auto-creating rows
         gridRow: 1,
@@ -992,31 +907,35 @@ const MonthlyEventBar = React.memo(function MonthlyEventBar({ placement, onEvent
         onEventClick?.(event);
       }}
     >
-      {continuesFromPrev && <span className="mr-1">&larr;</span>}
-      <span className="truncate flex-1">{event.title}</span>
-      {continuesToNext && <span className="ml-1">&rarr;</span>}
+      {continuesFromPrev && <span className={styles.eventBarArrow}>&larr;</span>}
+      <span className={styles.eventTitle}>{event.title}</span>
+      {continuesToNext && <span className={styles.eventBarArrow}>&rarr;</span>}
     </button>
   );
 });
 
 // Single-day event (for use in overflow dialog)
-export interface MonthlyEventProps extends Omit<React.ComponentProps<'button'>, 'color'>, VariantProps<typeof monthlyEventVariants> {
+export interface MonthlyEventProps extends Omit<React.ComponentProps<'button'>, 'color'> {
   event: CalendarEvent;
+  color?: EventColor | (string & {});
+  variant?: MonthlyEventVariant;
 }
 
-function MonthlyEvent({ className, event, color, variant, ...props }: MonthlyEventProps) {
+function MonthlyEvent({ className, event, color, variant = 'default', ...props }: MonthlyEventProps) {
   const eventColor = (event.color ?? color ?? 'default') as EventColor;
-  const isCustomColor = !['default', 'primary', 'secondary', 'destructive', 'success', 'warning'].includes(eventColor);
+  const isCustomColor = isCustomEventColor(eventColor);
 
   return (
     <button
       type="button"
       data-slot="monthly-event"
-      className={cn(monthlyEventVariants({ color: isCustomColor ? 'default' : eventColor, variant }), className)}
+      data-color={isCustomColor ? 'default' : eventColor}
+      data-variant={variant}
+      className={cn(styles.event, className)}
       style={isCustomColor ? { backgroundColor: `${eventColor}20`, color: eventColor } : undefined}
       {...props}
     >
-      <span className="truncate">{event.title}</span>
+      <span className={styles.eventTitle}>{event.title}</span>
     </button>
   );
 }
@@ -1029,16 +948,7 @@ interface OverflowEventItemProps {
 
 function OverflowEventItem({ event, onEventClick }: OverflowEventItemProps) {
   const eventColor = (event.color ?? 'default') as EventColor;
-  const isCustomColor = !['default', 'primary', 'secondary', 'destructive', 'success', 'warning'].includes(eventColor);
-
-  const colorClasses: Record<EventColor, string> = {
-    default: 'bg-primary',
-    primary: 'bg-primary',
-    secondary: 'bg-secondary',
-    destructive: 'bg-destructive',
-    success: 'bg-green-500',
-    warning: 'bg-yellow-500',
-  };
+  const isCustomColor = isCustomEventColor(eventColor);
 
   const startDate = toDate(event.start);
   const endDate = event.end ? toDate(event.end) : null;
@@ -1048,19 +958,20 @@ function OverflowEventItem({ event, onEventClick }: OverflowEventItemProps) {
     <button
       type="button"
       onClick={() => onEventClick?.(event)}
-      className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors text-left group"
+      className={styles.overflowItem}
     >
       {/* Color indicator */}
       <div
-        className={cn('w-1 self-stretch rounded-full shrink-0', isCustomColor ? '' : colorClasses[eventColor])}
+        data-color={isCustomColor ? 'default' : eventColor}
+        className={styles.overflowItemColor}
         style={isCustomColor ? { backgroundColor: eventColor } : undefined}
       />
 
       {/* Event content */}
-      <div className="flex-1 min-w-0">
-        <div className="font-medium text-sm group-hover:text-primary transition-colors">{event.title}</div>
+      <div className={styles.overflowItemContent}>
+        <div className={styles.overflowItemTitle}>{event.title}</div>
         {isMultiDay && (
-          <div className="text-xs text-muted-foreground mt-0.5">
+          <div className={styles.overflowItemDate}>
             {format(startDate, 'MMM d')} - {format(endDate, 'MMM d')}
           </div>
         )}
@@ -1090,24 +1001,24 @@ function MonthlyOverflow({ date, events, count, onEventClick }: MonthlyOverflowP
           <button
             type="button"
             data-slot="monthly-overflow"
-            className={cn(monthlyOverflowVariants(), 'pointer-events-auto')}
+            className={styles.overflowTrigger}
           />
         }
       >
         +{count} more
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold">{format(date, 'd')}</span>
-            <span className="text-muted-foreground font-normal">{format(date, 'EEEE, MMMM yyyy')}</span>
+          <DialogTitle className={styles.overflowDialogTitle}>
+            <span className={styles.overflowDialogDay}>{format(date, 'd')}</span>
+            <span className={styles.overflowDialogLabel}>{format(date, 'EEEE, MMMM yyyy')}</span>
           </DialogTitle>
           <DialogDescription>
             {events.length} event{events.length !== 1 ? 's' : ''} scheduled
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="max-h-[60vh]">
-          <div className="space-y-1 pr-4">
+        <ScrollArea className={styles.overflowScrollArea}>
+          <div className={styles.overflowList}>
             {sortedEvents.map((event) => (
               <OverflowEventItem
                 key={event.id}
@@ -1126,16 +1037,4 @@ function MonthlyOverflow({ date, events, count, onEventClick }: MonthlyOverflowP
 // Exports
 // ============================================================================
 
-export {
-  MonthlyCalendar,
-  MonthlyContent,
-  MonthlyEvent,
-  MonthlyNav,
-  MonthlyWeekdays,
-  monthlyCalendarVariants,
-  monthlyDayNumberVariants,
-  monthlyDayVariants,
-  monthlyEventBarVariants,
-  monthlyEventVariants,
-  monthlyNavVariants,
-};
+export { MonthlyCalendar, MonthlyContent, MonthlyEvent, MonthlyNav, MonthlyWeekdays };

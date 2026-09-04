@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { queryKeys } from '@/libs/query-keys';
 import { listManagerTasks, operateManagerTask } from '@/server/fns/admin/task-manager';
+import styles from './TaskManager.module.css';
 
 interface TaskInfo {
   name: string;
@@ -93,23 +94,23 @@ export default function TaskManagerList() {
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+    <Card className={styles.card}>
+      <CardHeader className={styles.header}>
         <CardTitle>Tasks</CardTitle>
         {isFetching && !isLoading && (
           <Badge
             variant="outline"
-            className="bg-primary/10"
+            className={styles.updatingBadge}
           >
-            <Loader2 className="mr-2 size-4 animate-spin" />
+            <Loader2 className={styles.updatingSpinner} />
             Updating...
           </Badge>
         )}
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="flex h-64 items-center justify-center">
-            <Loader2 className="size-8 animate-spin text-primary" />
+          <div className={styles.loading}>
+            <Loader2 className={styles.loadingSpinner} />
           </div>
         ) : (
           <Table>
@@ -128,11 +129,12 @@ export default function TaskManagerList() {
                 <TableRow
                   key={task.name}
                   onClick={() => handleRowClick(task)}
-                  className={task.lastExecutionResult && !task.lastExecutionResult.success ? 'cursor-pointer hover:bg-muted/50' : ''}
+                  className={styles.row}
+                  data-failed={!!task.lastExecutionResult && !task.lastExecutionResult.success}
                 >
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{getStatusIcon(task)}</span>
+                  <TableCell className={styles.nameCell}>
+                    <div className={styles.name}>
+                      <span className={styles.statusGlyph}>{getStatusIcon(task)}</span>
                       {task.name}
                     </div>
                   </TableCell>
@@ -151,7 +153,7 @@ export default function TaskManagerList() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <div className="flex space-x-1">
+                    <div className={styles.rowActions}>
                       {/* Start/Stop buttons */}
                       {task.isEnabled && !task.isScheduled && (
                         <Button
@@ -161,7 +163,7 @@ export default function TaskManagerList() {
                           onClick={(e) => handleTaskAction(e, task.name, 'start')}
                           disabled={taskMutation.isPending}
                         >
-                          <Play className="size-4" />
+                          <Play />
                         </Button>
                       )}
 
@@ -173,7 +175,7 @@ export default function TaskManagerList() {
                           onClick={(e) => handleTaskAction(e, task.name, 'stop')}
                           disabled={taskMutation.isPending}
                         >
-                          <Square className="size-4" />
+                          <Square />
                         </Button>
                       )}
 
@@ -184,7 +186,7 @@ export default function TaskManagerList() {
                         onClick={(e) => handleTaskAction(e, task.name, 'execute')}
                         disabled={taskMutation.isPending || task.isRunning}
                       >
-                        <Zap className="size-4" />
+                        <Zap />
                       </Button>
 
                       {task.isEnabled ? (
@@ -195,7 +197,7 @@ export default function TaskManagerList() {
                           onClick={(e) => handleTaskAction(e, task.name, 'disable')}
                           disabled={taskMutation.isPending}
                         >
-                          <PowerOff className="size-4" />
+                          <PowerOff />
                         </Button>
                       ) : (
                         <Button
@@ -205,7 +207,7 @@ export default function TaskManagerList() {
                           onClick={(e) => handleTaskAction(e, task.name, 'enable')}
                           disabled={taskMutation.isPending}
                         >
-                          <Power className="size-4" />
+                          <Power />
                         </Button>
                       )}
                     </div>
@@ -224,7 +226,7 @@ export default function TaskManagerList() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Task Error</DialogTitle>
-            <pre className="mt-2 whitespace-pre-wrap text-sm bg-muted p-3 rounded">{errorMessage}</pre>
+            <pre className={styles.errorText}>{errorMessage}</pre>
           </DialogHeader>
         </DialogContent>
       </Dialog>

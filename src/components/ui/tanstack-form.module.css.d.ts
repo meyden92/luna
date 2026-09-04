@@ -1,0 +1,31 @@
+declare const styles: {
+  readonly "checkboxBody": string;
+  readonly "checkboxItem": string;
+  readonly "clickableLabel": string;
+  readonly "description": string;
+  readonly "errors": string;
+  readonly "errorsBullet": string;
+  readonly "errorsItem": string;
+  readonly "errorsList": string;
+  readonly "errorsTitle": string;
+  readonly "fileInput": string;
+  readonly "form": string;
+  readonly "formMessageIn": string;
+  readonly "hint": string;
+  readonly "hintSmall": string;
+  readonly "item": string;
+  readonly "label": string;
+  readonly "labelDisabled": string;
+  readonly "loading": string;
+  readonly "loadingText": string;
+  readonly "message": string;
+  readonly "radio": string;
+  readonly "radioGroup": string;
+  readonly "radioLabel": string;
+  readonly "radioRow": string;
+  readonly "switchBody": string;
+  readonly "switchItem": string;
+  readonly "switchLabel": string;
+};
+export = styles;
+

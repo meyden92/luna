@@ -2,6 +2,7 @@ import { FormControl, FormDescription, FormField, FormItem, FormLabel } from '@/
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/libs/utils';
 import { PROFILE_DESCRIPTION_MAX_LENGTH } from '@/libs/validation/profile_settings';
+import styles from './field.module.css';
 
 export function ProfileDescriptionInput() {
   return (
@@ -18,9 +19,9 @@ export function ProfileDescriptionInput() {
         const isNearLimit = characterCount > PROFILE_DESCRIPTION_MAX_LENGTH * 0.9;
 
         return (
-          <FormItem className="space-y-2 rounded-lg border p-4">
-            <div className="space-y-0.5">
-              <FormLabel className="text-base">Description</FormLabel>
+          <FormItem className={styles.rowStacked}>
+            <div className={styles.text}>
+              <FormLabel className={styles.label}>Description</FormLabel>
               <FormDescription>A short description about you.</FormDescription>
             </div>
             <FormControl>
@@ -30,11 +31,11 @@ export function ProfileDescriptionInput() {
                 onBlur={onBlur}
                 maxLength={PROFILE_DESCRIPTION_MAX_LENGTH}
                 rows={5}
-                className="min-h-32 resize-y"
+                className={styles.textarea}
                 placeholder="Enter a description"
               />
             </FormControl>
-            <p className={cn('text-right text-xs text-muted-foreground', isNearLimit && 'text-amber-600')}>
+            <p className={cn(styles.counter, isNearLimit && styles.counterNearLimit)}>
               {characterCount}/{PROFILE_DESCRIPTION_MAX_LENGTH}
             </p>
           </FormItem>

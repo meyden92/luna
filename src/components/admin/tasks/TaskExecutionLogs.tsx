@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getAllTaskLogs } from '@/server/fns/admin/tasks';
+import styles from './TaskExecutionLogs.module.css';
 
 type ExecutionLogsResponse = Awaited<ReturnType<typeof getAllTaskLogs>>;
 
@@ -127,18 +128,11 @@ export default function TaskExecutionLogs({ taskId, showTaskColumn = true }: Tas
       timeout: 'destructive',
     };
 
-    const colors: Record<string, string> = {
-      pending: 'text-yellow-600',
-      running: 'text-blue-600',
-      success: 'text-green-600',
-      failed: 'text-red-600',
-      timeout: 'text-orange-600',
-    };
-
     return (
       <Badge
         variant={variants[status] || 'outline'}
-        className={colors[status]}
+        className={styles.statusBadge}
+        data-status={status}
       >
         {status.toUpperCase()}
       </Badge>
@@ -152,8 +146,8 @@ export default function TaskExecutionLogs({ taskId, showTaskColumn = true }: Tas
   if (loading) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center p-8">
-          <RefreshCcwIcon className="h-6 w-6 animate-spin mr-2" />
+        <CardContent className={styles.loading}>
+          <RefreshCcwIcon className={styles.spinner} />
           Loading execution logs...
         </CardContent>
       </Card>
@@ -163,14 +157,14 @@ export default function TaskExecutionLogs({ taskId, showTaskColumn = true }: Tas
   if (error) {
     return (
       <Card>
-        <CardContent className="p-8">
-          <div className="text-center text-red-600">
+        <CardContent className="pad-8">
+          <div className={styles.errorState}>
             <p>Error loading execution logs: {error}</p>
             <Button
               onClick={fetchLogs}
-              className="mt-4"
+              className="margin-top-4"
             >
-              <RefreshCcwIcon className="h-4 w-4 mr-2" />
+              <RefreshCcwIcon />
               Retry
             </Button>
           </div>
@@ -180,36 +174,46 @@ export default function TaskExecutionLogs({ taskId, showTaskColumn = true }: Tas
   }
 
   return (
-    <div className="space-y-6">
+    <div className="stack space-6">
       {/* Statistics */}
       {logs?.stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className={styles.stats}>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">{logs.stats.total}</div>
-              <div className="text-sm text-muted-foreground">Total Executions</div>
-              <div className="text-xs text-muted-foreground">{logs.stats.period}</div>
+            <CardContent className="pad-4">
+              <div className={styles.statValue}>{logs.stats.total}</div>
+              <div className={styles.statLabel}>Total Executions</div>
+              <div className={styles.statHint}>{logs.stats.period}</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-green-600">{logs.stats.successRate}%</div>
-              <div className="text-sm text-muted-foreground">Success Rate</div>
-              <div className="text-xs text-muted-foreground">{logs.stats.byStatus.success || 0} successful</div>
+            <CardContent className="pad-4">
+              <div
+                className={styles.statValue}
+                data-tone="success"
+              >
+                {logs.stats.successRate}%
+              </div>
+              <div className={styles.statLabel}>Success Rate</div>
+              <div className={styles.statHint}>{logs.stats.byStatus.success || 0} successful</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-red-600">{logs.stats.byStatus.failed || 0}</div>
-              <div className="text-sm text-muted-foreground">Failed</div>
-              <div className="text-xs text-muted-foreground">{logs.stats.byStatus.timeout || 0} timeouts</div>
+            <CardContent className="pad-4">
+              <div
+                className={styles.statValue}
+                data-tone="failed"
+              >
+                {logs.stats.byStatus.failed || 0}
+              </div>
+              <div className={styles.statLabel}>Failed</div>
+              <div className={styles.statHint}>{logs.stats.byStatus.timeout || 0} timeouts</div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">{logs.stats.averageDuration}ms</div>
-              <div className="text-sm text-muted-foreground">Avg Duration</div>
-              <div className="text-xs text-muted-foreground">successful tasks</div>
+            <CardContent className="pad-4">
+              <div className={styles.statValue}>{logs.stats.averageDuration}ms</div>
+              <div className={styles.statLabel}>Avg Duration</div>
+              <div className={styles.statHint}>successful tasks</div>
             </CardContent>
           </Card>
         </div>
@@ -221,21 +225,19 @@ export default function TaskExecutionLogs({ taskId, showTaskColumn = true }: Tas
           <CardTitle>Execution Logs</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-4 mb-6">
-            <div className="flex-1 min-w-[200px]">
-              <div className="relative">
-                <SearchIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by task name or error..."
-                  value={searchFilter}
-                  onChange={(e) => {
-                    setSearchFilter(e.target.value);
-                    resetPagination();
-                  }}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  className="pl-10"
-                />
-              </div>
+          <div className={styles.filters}>
+            <div className={styles.searchField}>
+              <SearchIcon className={styles.searchIcon} />
+              <Input
+                placeholder="Search by task name or error..."
+                value={searchFilter}
+                onChange={(e) => {
+                  setSearchFilter(e.target.value);
+                  resetPagination();
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                className={styles.searchInput}
+              />
             </div>
             <Select
               value={statusFilter}
@@ -245,7 +247,7 @@ export default function TaskExecutionLogs({ taskId, showTaskColumn = true }: Tas
                 resetPagination();
               }}
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className={styles.statusSelect}>
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
@@ -265,7 +267,7 @@ export default function TaskExecutionLogs({ taskId, showTaskColumn = true }: Tas
                 resetPagination();
               }}
             >
-              <SelectTrigger className="w-[120px]">
+              <SelectTrigger className={styles.daysSelect}>
                 <SelectValue placeholder="Days" />
               </SelectTrigger>
               <SelectContent>
@@ -280,147 +282,127 @@ export default function TaskExecutionLogs({ taskId, showTaskColumn = true }: Tas
               onClick={handleSearch}
               variant="outline"
             >
-              <SearchIcon className="h-4 w-4 mr-2" />
+              <SearchIcon />
               Search
             </Button>
             <Button
               onClick={fetchLogs}
               variant="outline"
             >
-              <RefreshCcwIcon className="h-4 w-4 mr-2" />
+              <RefreshCcwIcon />
               Refresh
             </Button>
           </div>
 
           {/* Execution logs list */}
-          <ScrollArea className="h-[600px]">
-            <div className="space-y-4">
+          <ScrollArea className={styles.scroll}>
+            <div className="stack space-4">
               {logs?.executions.map((execution) => (
-                <Card
-                  key={execution.id}
-                  className="relative"
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          {showTaskColumn && <div className="font-medium">{execution.task.name}</div>}
-                          {getStatusBadge(execution.status)}
-                          {execution.durationDisplay && <Badge variant="outline">{execution.durationDisplay}</Badge>}
-                          <span className="text-sm text-muted-foreground">{formatDate(execution.startedAt)}</span>
-                        </div>
-
-                        {execution.resultSummary && (
-                          <div className="text-sm mb-2">
-                            <strong>Result:</strong> {execution.resultSummary}
-                          </div>
-                        )}
-
-                        {execution.error && (
-                          <div className="text-sm text-red-600 mb-2">
-                            <strong>Error:</strong> {execution.error}
-                          </div>
-                        )}
-
-                        <div className="text-xs text-muted-foreground">
-                          Triggered by: {execution.triggeredBy}
-                          {execution.executedByUser && <> • Executed by: {execution.executedByUser.name}</>}
-                          {execution.task.taskFunction && <> • Function: {execution.task.taskFunction}</>}
-                        </div>
-
-                        {/* Detailed logs */}
-                        {execution.parsedLogs && execution.parsedLogs.length > 0 && (
-                          <Collapsible
-                            open={expandedLogs.has(execution.id)}
-                            onOpenChange={() => toggleLogExpansion(execution.id)}
-                          >
-                            <CollapsibleTrigger
-                              render={
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="mt-2 p-0 h-auto"
-                                />
-                              }
-                            >
-                              {expandedLogs.has(execution.id) ? (
-                                <ChevronDownIcon className="h-4 w-4 mr-1" />
-                              ) : (
-                                <ChevronRightIcon className="h-4 w-4 mr-1" />
-                              )}
-                              View logs ({execution.parsedLogs.length})
-                            </CollapsibleTrigger>
-                            <CollapsibleContent>
-                              <div className="mt-3 bg-muted/50 rounded-md p-3 max-h-64 overflow-y-auto">
-                                {(execution.parsedLogs as unknown as ParsedLog[]).map((log) => (
-                                  <div
-                                    key={log.timestamp}
-                                    className="text-xs font-mono mb-1"
-                                  >
-                                    <span className="text-muted-foreground">{new Date(log.timestamp).toLocaleTimeString()}</span>
-                                    <span
-                                      className={`ml-2 font-semibold ${
-                                        log.level === 'error'
-                                          ? 'text-red-600'
-                                          : log.level === 'warn'
-                                            ? 'text-yellow-600'
-                                            : 'text-foreground'
-                                      }`}
-                                    >
-                                      [{log.level.toUpperCase()}]
-                                    </span>
-                                    <span className="ml-2">{log.message}</span>
-                                    {log.data != null && (
-                                      <pre className="mt-1 text-xs text-muted-foreground">{JSON.stringify(log.data, null, 2)}</pre>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </CollapsibleContent>
-                          </Collapsible>
-                        )}
-
-                        {/* Result details */}
-                        {execution.resultDetails && (
-                          <Collapsible>
-                            <CollapsibleTrigger
-                              render={
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="mt-2 p-0 h-auto"
-                                />
-                              }
-                            >
-                              <ChevronRightIcon className="h-4 w-4 mr-1" />
-                              View result details
-                            </CollapsibleTrigger>
-                            <CollapsibleContent>
-                              <div className="mt-3 bg-muted/50 rounded-md p-3">
-                                <pre className="text-xs overflow-x-auto">{JSON.stringify(execution.resultDetails, null, 2)}</pre>
-                              </div>
-                            </CollapsibleContent>
-                          </Collapsible>
-                        )}
-                      </div>
+                <Card key={execution.id}>
+                  <CardContent className="pad-4">
+                    <div className={styles.executionHead}>
+                      {showTaskColumn && <div className="weight-medium">{execution.task.name}</div>}
+                      {getStatusBadge(execution.status)}
+                      {execution.durationDisplay && <Badge variant="outline">{execution.durationDisplay}</Badge>}
+                      <span className={styles.timestamp}>{formatDate(execution.startedAt)}</span>
                     </div>
+
+                    {execution.resultSummary && (
+                      <div className={styles.result}>
+                        <strong>Result:</strong> {execution.resultSummary}
+                      </div>
+                    )}
+
+                    {execution.error && (
+                      <div className={styles.error}>
+                        <strong>Error:</strong> {execution.error}
+                      </div>
+                    )}
+
+                    <div className={styles.meta}>
+                      Triggered by: {execution.triggeredBy}
+                      {execution.executedByUser && <> • Executed by: {execution.executedByUser.name}</>}
+                      {execution.task.taskFunction && <> • Function: {execution.task.taskFunction}</>}
+                    </div>
+
+                    {/* Detailed logs */}
+                    {execution.parsedLogs && execution.parsedLogs.length > 0 && (
+                      <Collapsible
+                        open={expandedLogs.has(execution.id)}
+                        onOpenChange={() => toggleLogExpansion(execution.id)}
+                      >
+                        <CollapsibleTrigger
+                          render={
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={styles.disclosure}
+                            />
+                          }
+                        >
+                          {expandedLogs.has(execution.id) ? <ChevronDownIcon /> : <ChevronRightIcon />}
+                          View logs ({execution.parsedLogs.length})
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className={styles.logPanel}>
+                            {(execution.parsedLogs as unknown as ParsedLog[]).map((log) => (
+                              <div
+                                key={log.timestamp}
+                                className={styles.logLine}
+                              >
+                                <span className={styles.logTime}>{new Date(log.timestamp).toLocaleTimeString()}</span>
+                                <span
+                                  className={styles.logLevel}
+                                  data-level={log.level}
+                                >
+                                  [{log.level.toUpperCase()}]
+                                </span>
+                                <span className={styles.logMessage}>{log.message}</span>
+                                {log.data != null && <pre className={styles.logData}>{JSON.stringify(log.data, null, 2)}</pre>}
+                              </div>
+                            ))}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    )}
+
+                    {/* Result details */}
+                    {execution.resultDetails && (
+                      <Collapsible>
+                        <CollapsibleTrigger
+                          render={
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={styles.disclosure}
+                            />
+                          }
+                        >
+                          <ChevronRightIcon />
+                          View result details
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className={styles.detailsPanel}>
+                            <pre className={styles.detailsPre}>{JSON.stringify(execution.resultDetails, null, 2)}</pre>
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    )}
                   </CardContent>
                 </Card>
               ))}
 
-              {logs?.executions.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">No execution logs found for the selected filters.</div>
-              )}
+              {logs?.executions.length === 0 && <div className={styles.empty}>No execution logs found for the selected filters.</div>}
             </div>
           </ScrollArea>
 
           {/* Pagination */}
           {logs && (logs.pagination.hasPrevious || logs.pagination.hasMore) && (
-            <div className="flex items-center justify-between mt-6">
-              <div className="text-sm text-muted-foreground">
+            <div className={styles.pagination}>
+              <div className={styles.paginationCount}>
                 Showing {logs.executions.length} result{logs.executions.length === 1 ? '' : 's'}
               </div>
-              <div className="flex items-center gap-2">
+              <div className={styles.paginationControls}>
                 <Button
                   variant="outline"
                   size="sm"
@@ -429,7 +411,7 @@ export default function TaskExecutionLogs({ taskId, showTaskColumn = true }: Tas
                 >
                   Previous
                 </Button>
-                <span className="text-sm">Page {page}</span>
+                <span className={styles.pageLabel}>Page {page}</span>
                 <Button
                   variant="outline"
                   size="sm"

@@ -1,0 +1,94 @@
+@layer components {
+  /* Title row and search form stack on narrow screens, sit side by side from sm. */
+  .toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .searchForm {
+    display: flex;
+    width: 100%;
+    gap: var(--space-2);
+  }
+
+  @media (width >= 640px) {
+    .toolbar {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .searchForm {
+      width: auto;
+    }
+
+    .searchInput {
+      width: 16rem;
+    }
+  }
+
+  .icon {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  .sortIcon {
+    width: var(--space-3);
+    height: var(--space-3);
+    margin-left: var(--space-1);
+  }
+
+  .muted {
+    color: var(--muted-foreground);
+  }
+
+  /* Column headers are buttons that must sit flush in the header cell. */
+  .sortButton {
+    height: auto;
+    padding: 0;
+    font-weight: var(--weight-medium);
+  }
+
+  .sortButtonEnd {
+    margin-left: auto;
+  }
+
+  .alignEnd {
+    text-align: right;
+  }
+
+  .emptyCell {
+    padding-block: var(--space-8);
+    text-align: center;
+    color: var(--muted-foreground);
+  }
+
+  .userCell {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .quotaCell {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-1);
+  }
+
+  .quotaLink {
+    color: var(--primary);
+  }
+
+  .quotaLink:hover {
+    text-decoration: underline;
+  }
+
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+}

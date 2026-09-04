@@ -1,0 +1,16 @@
+@layer components {
+  .root {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .icon {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  .select {
+    width: 8rem;
+  }
+}

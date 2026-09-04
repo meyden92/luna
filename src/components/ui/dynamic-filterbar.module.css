@@ -1,0 +1,385 @@
+/* Popup motion for the operator/sort popovers follows the tooltip.module.css
+ * reference pattern (ADR 0003). The suggestions dropdown below the input is a
+ * plain conditionally-rendered element (not a Base UI popup), so it gets a
+ * one-shot entrance animation instead of the starting/ending-style dance.
+ */
+@layer components {
+  .root {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .field {
+    position: relative;
+    flex: 1;
+  }
+
+  .inputBox {
+    --min-height: 2.75rem;
+
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: var(--min-height);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid color-mix(in oklch, var(--border) 65%, transparent);
+    border-radius: var(--radius-lg);
+    background-color: var(--background);
+    box-shadow: var(--shadow-sm);
+    cursor: text;
+    transition-property: border-color, box-shadow;
+    transition-duration: 150ms;
+
+    &:focus-within {
+      border-color: color-mix(in oklch, var(--primary) 30%, transparent);
+      box-shadow: 0 0 0 2px var(--ring);
+    }
+  }
+
+  .searchIcon {
+    flex-shrink: 0;
+    width: var(--space-4);
+    height: var(--space-4);
+    color: var(--muted-foreground);
+  }
+
+  /* Search badge and filter badges share this shell. */
+  .badge {
+    --value-max-width: 12rem;
+    --label-tracking: 0.14em;
+
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid color-mix(in oklch, var(--border) 60%, transparent);
+    border-radius: var(--radius-md);
+    background-color: var(--background);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    box-shadow: var(--shadow-sm);
+    animation: badgeIn 150ms ease-out;
+  }
+
+  .badgeLabel {
+    color: color-mix(in oklch, var(--muted-foreground) 80%, transparent);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    font-weight: var(--weight-medium);
+    text-transform: uppercase;
+    letter-spacing: var(--label-tracking);
+  }
+
+  .badgeValue {
+    max-width: var(--value-max-width);
+    overflow: hidden;
+    color: color-mix(in oklch, var(--foreground) 90%, transparent);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .iconButton {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-1);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--accent);
+    }
+
+    & svg {
+      width: var(--space-3);
+      height: var(--space-3);
+    }
+  }
+
+  .operatorTrigger {
+    padding: var(--space-1) var(--space-1) var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--accent);
+    }
+  }
+
+  .operatorPositioner,
+  .sortPositioner {
+    isolation: isolate;
+    z-index: 50;
+  }
+
+  .operatorPopup,
+  .sortPopup {
+    --slide: var(--space-2);
+
+    min-width: var(--space-24);
+    padding: var(--space-1);
+    border-radius: var(--radius-lg);
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+    box-shadow: var(--shadow-lg);
+    transform-origin: var(--transform-origin);
+    transition-property: opacity, transform, scale, overlay, display;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
+    transition-behavior: allow-discrete;
+
+    &[data-starting-style],
+    &[data-ending-style] {
+      opacity: 0;
+      scale: 0.95;
+    }
+
+    @starting-style {
+      opacity: 0;
+      scale: 0.95;
+    }
+
+    &[data-side="top"][data-starting-style],
+    &[data-side="top"][data-ending-style] {
+      transform: translateY(var(--slide));
+    }
+
+    &[data-side="bottom"][data-starting-style],
+    &[data-side="bottom"][data-ending-style] {
+      transform: translateY(calc(-1 * var(--slide)));
+    }
+  }
+
+  .sortPopup {
+    min-width: 9rem;
+  }
+
+  .operatorItem,
+  .sortItem {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--accent);
+    }
+
+    &[data-selected] {
+      background-color: var(--accent);
+    }
+
+    & svg {
+      width: var(--space-4);
+      height: var(--space-4);
+      color: var(--muted-foreground);
+    }
+  }
+
+  .operatorSymbol {
+    width: var(--space-6);
+    font-family: var(--font-mono);
+  }
+
+  .inputPrefix {
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+    white-space: nowrap;
+  }
+
+  .loader {
+    flex-shrink: 0;
+    width: var(--space-4);
+    height: var(--space-4);
+    color: var(--muted-foreground);
+    animation: spin 1s linear infinite;
+  }
+
+  .input {
+    flex: 1;
+    min-width: var(--space-24);
+    height: var(--space-6);
+    background-color: transparent;
+    font-size: var(--text-sm);
+    outline: none;
+
+    &::placeholder {
+      color: var(--muted-foreground);
+    }
+  }
+
+  .dropdown {
+    position: absolute;
+    inset-inline: 0;
+    top: 100%;
+    z-index: 50;
+    margin-top: var(--space-2);
+    max-height: 18rem;
+    overflow-y: auto;
+    padding: var(--space-2);
+    border: 1px solid color-mix(in oklch, var(--border) 60%, transparent);
+    border-radius: var(--radius-lg);
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+    box-shadow: var(--shadow-lg);
+    animation: dropdownIn 150ms ease-out;
+  }
+
+  .emptyState {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+
+    & svg {
+      width: var(--space-4);
+      height: var(--space-4);
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  .option {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-xl);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    cursor: pointer;
+
+    &:hover {
+      background-color: color-mix(in oklch, var(--accent) 50%, transparent);
+    }
+
+    &[data-highlighted] {
+      background-color: var(--accent);
+    }
+
+    & svg {
+      width: var(--space-4);
+      height: var(--space-4);
+      color: var(--muted-foreground);
+    }
+  }
+
+  .applySeparator {
+    margin: var(--space-1) 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .applyButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-xl);
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    cursor: pointer;
+
+    &:hover {
+      background-color: color-mix(in oklch, var(--primary) 90%, transparent);
+    }
+  }
+
+  .sortWrap {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .sortTrigger {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid color-mix(in oklch, var(--border) 65%, transparent);
+    border-radius: var(--radius-lg);
+    background-color: var(--background);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--accent);
+    }
+
+    & svg {
+      width: var(--space-4);
+      height: var(--space-4);
+      color: var(--muted-foreground);
+    }
+  }
+
+  .sortLabel {
+    color: var(--muted-foreground);
+  }
+
+  /* Merged with the ported Button's own classes via cn(); adds the bordered chip look. */
+  .directionButton {
+    width: var(--space-8);
+    height: var(--space-8);
+    border: 1px solid color-mix(in oklch, var(--border) 65%, transparent);
+    border-radius: var(--radius-lg);
+    background-color: var(--background);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Entrance animations only; the spinner stays, it communicates progress. */
+  @media (prefers-reduced-motion: reduce) {
+    .badge,
+    .dropdown {
+      animation: none;
+    }
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes badgeIn {
+    from {
+      opacity: 0;
+      scale: 0.95;
+    }
+  }
+
+  @keyframes dropdownIn {
+    from {
+      opacity: 0;
+      transform: translateY(calc(-1 * var(--space-2)));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .operatorPopup,
+    .sortPopup {
+      transition-duration: 0.01ms;
+    }
+  }
+}

@@ -1,0 +1,18 @@
+@layer components {
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+  }
+
+  /* The public snippet page leans on the accent for its heading in dark mode. */
+  .title {
+    text-align: center;
+    font-size: var(--text-3xl);
+    line-height: var(--leading-3xl);
+    font-weight: var(--weight-bold);
+    color: light-dark(var(--foreground), var(--primary));
+  }
+}

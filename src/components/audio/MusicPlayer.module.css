@@ -1,0 +1,114 @@
+@layer components {
+  /* Shown instead of the whole player when the library is empty. */
+  .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    gap: var(--space-5);
+    padding-inline: var(--space-6);
+    text-align: center;
+  }
+
+  .emptyIcon {
+    padding: var(--space-5);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    background: color-mix(in oklab, var(--muted) 30%, transparent);
+    color: var(--muted-foreground);
+  }
+
+  .emptyIcon svg {
+    width: var(--space-10);
+    height: var(--space-10);
+  }
+
+  .emptyText {
+    max-width: 24rem;
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  /* ---- Player shell ----------------------------------------------------- */
+  .root {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+  }
+
+  .body {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+  }
+
+  .playlist {
+    width: 16.666%;
+    height: 100%;
+    padding: var(--space-4);
+  }
+
+  .trackButton {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    border-radius: var(--radius-md);
+    text-align: left;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    transition:
+      background-color 150ms ease,
+      color 150ms ease;
+  }
+
+  .trackButton:hover {
+    background: var(--accent);
+  }
+
+  .trackButton[data-active="true"] {
+    background: color-mix(in oklab, var(--primary) 50%, transparent);
+  }
+
+  .trackTitle {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .nowPlayingIcon {
+    flex-shrink: 0;
+    width: var(--space-4);
+    height: var(--space-4);
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse {
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nowPlayingIcon {
+      animation: none;
+    }
+  }
+
+  /* Visualiser stage: the canvas inside is absolutely positioned. */
+  .stage {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    overflow: hidden;
+  }
+}

@@ -1,4 +1,5 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import styles from './period-selector.module.css';
 
 interface PeriodSelectorProps {
   value: string;
@@ -7,13 +8,13 @@ interface PeriodSelectorProps {
 
 export default function PeriodSelector({ value, onChange }: PeriodSelectorProps) {
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-sm text-muted-foreground">Period:</span>
+    <div className={styles.root}>
+      <span className={styles.label}>Period:</span>
       <Select
         value={value}
         onValueChange={(v) => v && onChange(v)}
       >
-        <SelectTrigger className="w-32">
+        <SelectTrigger className={styles.select}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

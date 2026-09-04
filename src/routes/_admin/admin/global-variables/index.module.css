@@ -1,0 +1,49 @@
+@layer components {
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .subtitle {
+    color: var(--muted-foreground);
+  }
+
+  .icon {
+    width: var(--space-4);
+    height: var(--space-4);
+    margin-right: var(--space-2);
+  }
+
+  .iconOnly {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  .empty {
+    padding-block: var(--space-12);
+    text-align: center;
+  }
+
+  .emptyIcon {
+    width: var(--space-12);
+    height: var(--space-12);
+    margin-inline: auto;
+    color: var(--muted-foreground);
+    margin-bottom: var(--space-4);
+  }
+
+  .actionsCell {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+  }
+
+  .alignEnd {
+    text-align: right;
+  }
+
+  .typeBadge {
+    text-transform: uppercase;
+  }
+}

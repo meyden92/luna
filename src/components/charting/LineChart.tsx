@@ -1,6 +1,7 @@
 import { ResponsiveLine } from '@nivo/line';
 import { useCallback, useMemo, useState } from 'react';
 import { type AnyDatum, type BaseChartProps, createLegendConfig, createNivoLineMarkers, useBaseChart } from './BaseChart';
+import styles from './LineChart.module.css';
 import type { ChartMarker } from './types';
 
 type NivoSerie = { id: string | number; data: Array<{ x: any; y: number | null }> };
@@ -324,7 +325,7 @@ export default function LineChart<T extends AnyDatum = AnyDatum>({
 
   return (
     <div
-      className="relative"
+      className={styles.root}
       style={{ height, width }}
     >
       <ResponsiveLineAny

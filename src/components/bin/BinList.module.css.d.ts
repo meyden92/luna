@@ -1,0 +1,34 @@
+declare const styles: {
+  readonly "actions": string;
+  readonly "alignRight": string;
+  readonly "card": string;
+  readonly "cardBody": string;
+  readonly "cardHead": string;
+  readonly "cardList": string;
+  readonly "cardTitle": string;
+  readonly "copiedIcon": string;
+  readonly "empty": string;
+  readonly "emptyIcon": string;
+  readonly "emptyText": string;
+  readonly "emptyTitle": string;
+  readonly "filter": string;
+  readonly "iconButton": string;
+  readonly "identity": string;
+  readonly "identityText": string;
+  readonly "languageIcon": string;
+  readonly "meta": string;
+  readonly "metaDate": string;
+  readonly "placeholder": string;
+  readonly "preview": string;
+  readonly "row": string;
+  readonly "rowActions": string;
+  readonly "search": string;
+  readonly "searchIcon": string;
+  readonly "searchInput": string;
+  readonly "titleCell": string;
+  readonly "toolbar": string;
+  readonly "viewButton": string;
+  readonly "viewToggle": string;
+};
+export = styles;
+

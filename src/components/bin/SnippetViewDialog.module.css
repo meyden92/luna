@@ -1,0 +1,38 @@
+@layer components {
+  .titleRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .dateRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .dateRow svg {
+    width: var(--space-3);
+    height: var(--space-3);
+  }
+
+  .body {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+  }
+
+  .buttonIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+    margin-right: var(--space-2);
+  }
+
+  /* A private snippet cannot be shared, so the share action reads as inactive. */
+  .dimmed {
+    opacity: 0.6;
+  }
+}

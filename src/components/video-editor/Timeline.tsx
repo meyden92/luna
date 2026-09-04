@@ -1,8 +1,8 @@
 import { XIcon } from 'lucide-react';
 import { useCallback, useRef } from 'react';
 import { useVideoEditorStore } from '@/hooks/stores/video-editor-store';
-import { cn } from '@/libs/utils';
 import { formatTime } from '@/libs/video-editor/ffmpeg-video';
+import styles from './Timeline.module.css';
 import { seekTo } from './video-ref';
 
 type Drag = 'start' | 'end' | 'playhead';
@@ -65,22 +65,22 @@ export function Timeline() {
   );
 
   return (
-    <div className="px-6 pt-3 pb-2">
+    <div className={styles.root}>
       <div
         ref={containerRef}
-        className="relative h-16 bg-muted/40 rounded-sm overflow-hidden select-none"
+        className={styles.track}
         onPointerDown={onTrackClick}
       >
         {/* Thumbnails */}
-        <div className="absolute inset-0 flex">
+        <div className={styles.thumbnails}>
           {thumbnails.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center text-[11px] text-muted-foreground/70">Generating thumbnails…</div>
+            <div className={styles.thumbnailsPending}>Generating thumbnails…</div>
           ) : (
             thumbnails.map((url, i) => (
               <div
                 // biome-ignore lint/suspicious/noArrayIndexKey: thumbnail strip is static per video
                 key={i}
-                className="flex-1 h-full bg-cover bg-center"
+                className={styles.thumbnail}
                 style={{ backgroundImage: `url(${url})` }}
               />
             ))
@@ -89,31 +89,31 @@ export function Timeline() {
 
         {/* Dim outside trim range */}
         <div
-          className="absolute top-0 bottom-0 bg-black/60 pointer-events-none"
+          className={styles.dim}
           style={{ left: 0, width: `${pctOf(trimStart)}%` }}
         />
         <div
-          className="absolute top-0 bottom-0 bg-black/60 pointer-events-none"
+          className={styles.dim}
           style={{ right: 0, width: `${100 - pctOf(trimEnd)}%` }}
         />
 
-        {/* Cut segments (red) */}
+        {/* Cut segments */}
         {cuts.map((c) => {
           const left = pctOf(c.start);
           const width = pctOf(c.end) - left;
           return (
             <div
               key={c.id}
-              className="absolute top-0 bottom-0 bg-destructive/40 border-x-2 border-destructive/80 pointer-events-auto group"
+              className={styles.cut}
               style={{ left: `${left}%`, width: `${width}%` }}
             >
               <button
                 type="button"
                 onClick={() => removeCut(c.id)}
-                className="absolute top-1 right-1 p-0.5 rounded-sm bg-background/80 text-destructive opacity-0 group-hover:opacity-100 hover:bg-background"
+                className={styles.cutRemove}
                 aria-label="Remove cut"
               >
-                <XIcon className="size-3" />
+                <XIcon />
               </button>
             </div>
           );
@@ -139,22 +139,24 @@ export function Timeline() {
         />
       </div>
 
-      <div className="relative mt-1 h-4 text-[11px] text-muted-foreground font-mono">
+      <div className={styles.ruler}>
         <span
-          className="absolute text-cyan-400"
-          style={{ left: `${pctOf(trimStart)}%`, transform: 'translateX(-50%)' }}
+          className={styles.rulerMark}
+          data-edge="true"
+          style={{ left: `${pctOf(trimStart)}%` }}
         >
           {formatTime(trimStart)}
         </span>
         <span
-          className="absolute"
-          style={{ left: `${pctOf(duration / 2)}%`, transform: 'translateX(-50%)' }}
+          className={styles.rulerMark}
+          style={{ left: `${pctOf(duration / 2)}%` }}
         >
           {formatTime(duration / 2)}
         </span>
         <span
-          className="absolute text-cyan-400"
-          style={{ left: `${pctOf(trimEnd)}%`, transform: 'translateX(-50%)' }}
+          className={styles.rulerMark}
+          data-edge="true"
+          style={{ left: `${pctOf(trimEnd)}%` }}
         >
           {formatTime(trimEnd)}
         </span>
@@ -175,12 +177,13 @@ function TrimHandle({
   return (
     <div
       onPointerDown={onPointerDown}
-      className={cn('absolute top-0 bottom-0 w-2 bg-cyan-400 cursor-ew-resize z-20', side === 'left' ? 'rounded-l-sm' : 'rounded-r-sm')}
+      className={styles.handle}
+      data-side={side}
       style={{ left: `calc(${leftPct}% - 4px)` }}
     >
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col gap-0.5">
-        <span className="block w-px h-2 bg-cyan-900/70" />
-        <span className="block w-px h-2 bg-cyan-900/70" />
+      <div className={styles.grip}>
+        <span />
+        <span />
       </div>
     </div>
   );
@@ -189,17 +192,15 @@ function TrimHandle({
 function Playhead({ leftPct, time, onPointerDown }: { leftPct: number; time: number; onPointerDown: (e: React.PointerEvent) => void }) {
   return (
     <div
-      className="absolute top-0 bottom-0 z-30 pointer-events-none"
+      className={styles.playhead}
       style={{ left: `${leftPct}%` }}
     >
       <div
         onPointerDown={onPointerDown}
-        className="absolute top-0 bottom-0 -translate-x-1/2 w-3 pointer-events-auto cursor-ew-resize flex flex-col items-center"
+        className={styles.playheadGrab}
       >
-        <div className="px-1.5 py-0.5 rounded bg-background/90 border border-border text-[10px] font-mono text-foreground -translate-y-5 whitespace-nowrap">
-          {formatTime(time)}
-        </div>
-        <div className="absolute top-0 bottom-0 w-px bg-cyan-400" />
+        <div className={styles.playheadLabel}>{formatTime(time)}</div>
+        <div className={styles.playheadLine} />
       </div>
     </div>
   );

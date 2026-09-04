@@ -2,6 +2,7 @@ import type { BarDatum, BarSvgProps } from '@nivo/bar';
 import { ResponsiveBar } from '@nivo/bar';
 import { useCallback, useMemo } from 'react';
 import { type AnyDatum, type BaseChartProps, createNivoBarMarkers, useBaseChart } from './BaseChart';
+import styles from './StackedBarChart.module.css';
 import type { ChartMarker } from './types';
 
 type NivoOverrides = Omit<
@@ -200,7 +201,7 @@ export default function StackedBarChart<T extends AnyDatum = AnyDatum>({
 
   return (
     <div
-      className="relative"
+      className={styles.root}
       style={{ height, width }}
     >
       <ResponsiveBar

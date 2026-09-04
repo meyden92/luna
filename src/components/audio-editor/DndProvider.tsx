@@ -12,6 +12,7 @@ import {
 import { type ReactNode, useCallback, useState } from 'react';
 import { type AudioClip, type MediaFile, useAudioEditorStore } from '@/hooks/stores/audio-editor-store';
 import { pixelsToSeconds } from '@/libs/audio-editor/audio-utils';
+import styles from './DndProvider.module.css';
 
 const SNAP_THRESHOLD_PX = 10; // Pixels within which to snap
 
@@ -166,13 +167,7 @@ export function AudioEditorDndProvider({ children }: AudioEditorDndProviderProps
       {children}
 
       {/* Drag overlay for media pool items only */}
-      <DragOverlay>
-        {activeMedia && (
-          <div className="opacity-90 p-2 rounded-md border border-primary bg-primary/20 text-sm font-medium shadow-lg">
-            {activeMedia.name}
-          </div>
-        )}
-      </DragOverlay>
+      <DragOverlay>{activeMedia && <div className={styles.dragPreview}>{activeMedia.name}</div>}</DragOverlay>
     </DndContext>
   );
 }

@@ -1,0 +1,63 @@
+@layer components {
+  .root {
+    position: relative;
+    display: flex;
+    width: var(--space-4);
+    height: var(--space-4);
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--input);
+    border-radius: var(--radius-sm);
+    background-color: transparent;
+    color: var(--foreground);
+    outline: none;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease,
+      box-shadow 150ms ease;
+
+    /* The box is small, so an invisible pad enlarges the pointer target. */
+    &::after {
+      content: "";
+      position: absolute;
+      inset-inline: calc(var(--space-3) * -1);
+      inset-block: calc(var(--space-2) * -1);
+    }
+
+    &[data-checked] {
+      border-color: var(--primary);
+      background-color: var(--primary);
+      color: var(--primary-foreground);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ring);
+      outline-offset: 2px;
+    }
+
+    &[aria-invalid="true"] {
+      border-color: var(--destructive);
+    }
+
+    &:disabled,
+    &[data-disabled] {
+      pointer-events: none;
+      opacity: 0.5;
+    }
+  }
+
+  .indicator {
+    --check-size: 0.875rem;
+
+    display: grid;
+    place-content: center;
+    color: currentcolor;
+
+    & svg {
+      width: var(--check-size);
+      height: var(--check-size);
+    }
+  }
+}

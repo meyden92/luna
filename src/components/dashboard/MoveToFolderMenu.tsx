@@ -4,6 +4,7 @@ import { ContextMenuItem, ContextMenuSub, ContextMenuSubContent, ContextMenuSubT
 import { DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from '@/components/ui/dropdown-menu';
 import { useFolders } from '@/contexts/FoldersContext';
 import { useMoveFiles } from '@/hooks/use-move-files';
+import styles from './MoveToFolderMenu.module.css';
 
 interface MoveToFolderMenuProps {
   fileIds: string[];
@@ -29,34 +30,34 @@ function MoveToFolderMenu({ fileIds, onClose, asDropdown = false }: MoveToFolder
   return (
     <Sub>
       <SubTrigger disabled={isPending || isLoading}>
-        <Folder className="mr-2 h-4 w-4" />
+        <Folder className={styles.icon} />
         Move to folder
       </SubTrigger>
-      <SubContent className="w-48">
+      <SubContent className={styles.content}>
         {isLoading ? (
           <Item disabled>Loading...</Item>
         ) : (
           <>
             {/* Root folder option */}
             <Item onClick={() => handleMoveToFolder(null)}>
-              <FolderOpen className="mr-2 h-4 w-4" />
+              <FolderOpen className={styles.icon} />
               Root (All Files)
             </Item>
 
             {folders.length > 0 && (
               <>
-                <div className="h-px bg-border my-1" />
+                <div className={styles.separator} />
                 {folders.map((folder) => (
                   <Item
                     key={folder.id}
                     onClick={() => handleMoveToFolder(folder.id)}
                   >
                     <div
-                      className="w-4 h-4 rounded mr-2 flex-shrink-0"
+                      className={styles.swatch}
                       style={{ backgroundColor: folder.color || '#6b7280' }}
                     />
-                    <span className="truncate flex-1">{folder.name}</span>
-                    <span className="text-xs text-muted-foreground ml-2">{folder._count.files}</span>
+                    <span className={styles.name}>{folder.name}</span>
+                    <span className={styles.count}>{folder._count.files}</span>
                   </Item>
                 ))}
               </>

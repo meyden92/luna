@@ -1,4 +1,5 @@
 import { ImageIcon, Link2, MegaphoneOff, Share2, Sparkles, Star } from 'lucide-react';
+import styles from './Features.module.css';
 
 const FEATURES = [
   {
@@ -31,27 +32,25 @@ const FEATURES = [
 
 export default function Features() {
   return (
-    <section className="relative mx-auto max-w-[1280px] px-9 py-[54px_30px]">
-      <div className="flex items-baseline justify-between border-t border-luna-line pt-[22px]">
-        <span className="font-mono text-[11px] tracking-[0.12em] text-luna-ink-3">01 — Why Choose LunaShare?</span>
-        <span className="font-serif text-[28px] tracking-[-0.01em] text-luna-ink">Features That Actually Matter</span>
+    <section className={styles.root}>
+      <div className={styles.header}>
+        <span className={styles.eyebrow}>01 — Why Choose LunaShare?</span>
+        <span className={styles.headline}>Features That Actually Matter</span>
       </div>
-      <div className="mt-7 grid grid-cols-1 border-t border-luna-line sm:grid-cols-2 lg:grid-cols-4">
-        {FEATURES.map((feature, index) => {
+      <div className={styles.grid}>
+        {FEATURES.map((feature) => {
           const Ic = feature.icon;
           return (
             <div
               key={feature.tag}
-              className={`group relative py-[22px] pr-[22px] ${index > 0 ? 'pl-[22px] border-l border-luna-line' : ''}`}
+              className={styles.cell}
             >
-              <div className="mb-4 inline-flex h-9 w-9 items-center justify-center rounded-[10px] bg-luna-accent-soft text-luna-accent-2 transition-transform duration-[250ms] group-hover:-rotate-6 group-hover:scale-105">
+              <div className={styles.icon}>
                 <Ic size={18} />
               </div>
-              <h4 className="mb-1.5 text-[14.5px] font-semibold tracking-[-0.01em] text-luna-ink">{feature.title}</h4>
-              <p className="text-[13px] leading-[1.5] text-luna-ink-3">{feature.description}</p>
-              <span className="absolute right-0 top-[22px] font-mono text-[10px] tracking-[0.1em] text-luna-ink-4 lg:right-[22px] group-last:lg:right-0">
-                {feature.tag}
-              </span>
+              <h4 className={styles.title}>{feature.title}</h4>
+              <p className={styles.description}>{feature.description}</p>
+              <span className={styles.tag}>{feature.tag}</span>
             </div>
           );
         })}

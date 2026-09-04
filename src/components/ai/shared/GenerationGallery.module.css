@@ -1,0 +1,56 @@
+@layer components {
+  .empty {
+    padding: var(--space-12);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-lg);
+    text-align: center;
+    color: var(--muted-foreground);
+  }
+
+  .emptyHint {
+    margin-top: var(--space-1);
+    color: color-mix(in oklab, var(--muted-foreground) 70%, transparent);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+
+  .title {
+    margin: 0;
+    font-size: var(--text-section-title);
+    line-height: var(--leading-section-title);
+    font-weight: var(--weight-semibold);
+  }
+
+  .count {
+    margin: 0;
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .header .clearButton {
+    gap: var(--space-2);
+  }
+
+  .clearIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  /* Cards keep a comfortable minimum width and reflow on their own; this
+     replaces the old fixed 1/2/3/4-column breakpoint ladder. */
+  .grid {
+    --card-min: 15rem;
+
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(var(--card-min), 100%), 1fr));
+    gap: var(--space-4);
+  }
+}

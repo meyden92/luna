@@ -1,4 +1,5 @@
 import { FileItem } from './FileItem';
+import styles from './FilesList.module.css';
 import type { FileStatus } from './useFileUpload';
 
 interface FilesListProps {
@@ -9,11 +10,11 @@ interface FilesListProps {
 
 export const FilesList = ({ files, onRemoveAction, onRetryAction }: FilesListProps) => {
   if (files.length === 0) {
-    return <div className="py-8 text-center text-muted-foreground">No files selected</div>;
+    return <div className={styles.empty}>No files selected</div>;
   }
 
   return (
-    <div className="mt-4 max-h-[calc(100vh-200px)] space-y-4 overflow-y-auto">
+    <div className={styles.list}>
       {files.map((fileStatus) => (
         <FileItem
           key={fileStatus.id}

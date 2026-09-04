@@ -1,5 +1,6 @@
 import { Filter } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import styles from './task-filters.module.css';
 
 type StatusFilter = 'all' | 'running' | 'scheduled' | 'stopped' | 'disabled';
 
@@ -10,13 +11,13 @@ interface TaskFiltersProps {
 
 export default function TaskFilters({ statusFilter, onStatusFilterChange }: TaskFiltersProps) {
   return (
-    <div className="flex items-center gap-2">
-      <Filter className="h-4 w-4" />
+    <div className={styles.root}>
+      <Filter className={styles.icon} />
       <Select
         value={statusFilter}
         onValueChange={(v) => v && onStatusFilterChange(v as StatusFilter)}
       >
-        <SelectTrigger className="w-32">
+        <SelectTrigger className={styles.select}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

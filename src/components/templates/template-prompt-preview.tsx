@@ -8,7 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/libs/utils';
 import type { TemplateVariable, TemplateVariableOption } from '@/types/template';
+import styles from './template-prompt-preview.module.css';
 
 interface TemplatePromptPreviewProps {
   prompt: string;
@@ -96,31 +98,31 @@ export function TemplatePromptPreview({ prompt, variables }: TemplatePromptPrevi
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
+        <div className={styles.headerRow}>
+          <div className={styles.headerMain}>
+            <div className={styles.titleRow}>
               <CardTitle>Prompt Preview</CardTitle>
               <Button
                 onClick={() => setIsExpanded(!isExpanded)}
                 variant="ghost"
                 size="sm"
                 type="button"
-                className="h-7"
+                className={styles.toggleButton}
               >
-                {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                {isExpanded ? <ChevronUp className={styles.icon} /> : <ChevronDown className={styles.icon} />}
               </Button>
             </div>
             {isExpanded && <CardDescription>Test your template with different values to see the final prompt</CardDescription>}
           </div>
           {isExpanded && (
-            <div className="flex gap-2">
+            <div className={styles.actions}>
               <Button
                 onClick={handleReset}
                 variant="outline"
                 size="sm"
                 type="button"
               >
-                <RotateCcw className="w-4 h-4 mr-2" />
+                <RotateCcw className={styles.buttonIcon} />
                 Reset
               </Button>
               <Button
@@ -129,7 +131,7 @@ export function TemplatePromptPreview({ prompt, variables }: TemplatePromptPrevi
                 size="sm"
                 type="button"
               >
-                <Copy className="w-4 h-4 mr-2" />
+                <Copy className={styles.buttonIcon} />
                 Copy
               </Button>
             </div>
@@ -137,16 +139,16 @@ export function TemplatePromptPreview({ prompt, variables }: TemplatePromptPrevi
         </div>
       </CardHeader>
       {isExpanded && (
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="stack space-6">
+          <div className={styles.variableGrid}>
             {enabledVariables.map((variable) => (
               <div
                 key={variable.id || variable.name}
-                className="space-y-2"
+                className="stack space-2"
               >
                 <Label htmlFor={`preview-${variable.name}`}>
                   {variable.label}
-                  {variable.required && <span className="text-destructive ml-1">*</span>}
+                  {variable.required && <span className={styles.required}>*</span>}
                 </Label>
 
                 {variable.type === 'text' ? (
@@ -188,7 +190,7 @@ export function TemplatePromptPreview({ prompt, variables }: TemplatePromptPrevi
                     </SelectContent>
                   </Select>
                 ) : variable.type === 'boolean' ? (
-                  <div className="flex items-center space-x-2 h-10">
+                  <div className={styles.switchRow}>
                     <Switch
                       id={`preview-${variable.name}`}
                       checked={testValues[variable.name] === 'true'}
@@ -196,7 +198,7 @@ export function TemplatePromptPreview({ prompt, variables }: TemplatePromptPrevi
                     />
                     <Label
                       htmlFor={`preview-${variable.name}`}
-                      className="text-sm text-muted-foreground cursor-pointer"
+                      className={cn('type-sm', styles.switchLabel)}
                     >
                       {testValues[variable.name] === 'true' ? 'Enabled' : 'Disabled'}
                     </Label>
@@ -206,12 +208,12 @@ export function TemplatePromptPreview({ prompt, variables }: TemplatePromptPrevi
             ))}
           </div>
 
-          <div className="border-t pt-6 space-y-2">
+          <div className={cn('stack space-2', styles.finalSection)}>
             <Label>Final Prompt</Label>
             <Textarea
               value={previewPrompt}
               readOnly
-              className="min-h-[120px] font-mono text-sm bg-muted/50 resize-none"
+              className={styles.preview}
             />
           </div>
         </CardContent>

@@ -1,0 +1,200 @@
+@layer components {
+  /* The timeline is a container so the track can shrink on narrow editors. */
+  .root {
+    container-type: inline-size;
+    padding-inline: var(--space-6);
+    padding-top: var(--space-3);
+    padding-bottom: var(--space-2);
+  }
+
+  .track {
+    position: relative;
+    height: var(--space-16);
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background: color-mix(in oklab, var(--muted) 40%, transparent);
+    user-select: none;
+  }
+
+  /* A narrow editor gets a shorter strip so the controls stay in reach. */
+  @container (width < 32rem) {
+    .track {
+      height: var(--space-10);
+    }
+  }
+
+  .thumbnails {
+    position: absolute;
+    inset: 0;
+    display: flex;
+  }
+
+  .thumbnailsPending {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    color: color-mix(in oklab, var(--muted-foreground) 70%, transparent);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .thumbnail {
+    flex: 1;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+  }
+
+  /* Darkens the frames outside the trim range. */
+  .dim {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: var(--scrim);
+    pointer-events: none;
+  }
+
+  .cut {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: color-mix(in oklab, var(--destructive) 40%, transparent);
+    border-inline: 2px solid color-mix(in oklab, var(--destructive) 80%, transparent);
+    pointer-events: auto;
+  }
+
+  /* The remove button stays hidden until its cut is hovered or takes focus. */
+  .cutRemove {
+    position: absolute;
+    top: var(--space-1);
+    right: var(--space-1);
+    padding: 0.125rem;
+    border-radius: var(--radius-sm);
+    background: color-mix(in oklab, var(--background) 80%, transparent);
+    color: var(--destructive);
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+
+  .cut:hover .cutRemove,
+  .cutRemove:focus-visible {
+    opacity: 1;
+  }
+
+  .cutRemove:hover {
+    background: var(--background);
+  }
+
+  .cutRemove svg {
+    width: var(--space-3);
+    height: var(--space-3);
+  }
+
+  .handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 20;
+    width: var(--space-2);
+    background: var(--primary);
+    cursor: ew-resize;
+  }
+
+  .handle[data-side="left"] {
+    border-start-start-radius: var(--radius-sm);
+    border-end-start-radius: var(--radius-sm);
+  }
+
+  .handle[data-side="right"] {
+    border-start-end-radius: var(--radius-sm);
+    border-end-end-radius: var(--radius-sm);
+  }
+
+  .grip {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .grip span {
+    display: block;
+    width: 1px;
+    height: var(--space-2);
+    background: color-mix(in oklab, var(--primary-foreground) 70%, transparent);
+  }
+
+  .playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 30;
+    pointer-events: none;
+  }
+
+  .playheadGrab {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    translate: -50% 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: var(--space-3);
+    cursor: ew-resize;
+    pointer-events: auto;
+  }
+
+  .playheadLabel {
+    translate: 0 -1.25rem;
+    padding: 0.125rem var(--space-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: color-mix(in oklab, var(--background) 90%, transparent);
+    color: var(--foreground);
+    font-family: var(--font-mono);
+    font-feature-settings: "ss01", "zero";
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    white-space: nowrap;
+  }
+
+  /* The label floats above the track; on a short track it would clip the frame. */
+  @container (width < 32rem) {
+    .playheadLabel {
+      display: none;
+    }
+  }
+
+  .playheadLine {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--primary);
+  }
+
+  .ruler {
+    position: relative;
+    height: var(--space-4);
+    margin-top: var(--space-1);
+    color: var(--muted-foreground);
+    font-family: var(--font-mono);
+    font-feature-settings: "ss01", "zero";
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .rulerMark {
+    position: absolute;
+    translate: -50% 0;
+  }
+
+  .rulerMark[data-edge="true"] {
+    color: var(--primary);
+  }
+}

@@ -1,0 +1,6 @@
+@layer components {
+  /* The landing page fills at least the viewport so the footer never floats mid-screen. */
+  .root {
+    min-height: 100vh;
+  }
+}

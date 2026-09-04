@@ -1,0 +1,11 @@
+@layer components {
+  /* Narrow reading width for a single form, centred on wide admin screens. */
+  .root {
+    max-width: 56rem;
+    margin-inline: auto;
+  }
+
+  .subtitle {
+    color: var(--muted-foreground);
+  }
+}

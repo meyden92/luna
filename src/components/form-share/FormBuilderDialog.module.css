@@ -1,0 +1,76 @@
+@layer components {
+  /* The form scrolls inside the dialog rather than growing it past the viewport. */
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-right: var(--space-1);
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .optional {
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .entry {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  /* Label + type, then expiry + max views: one column until there is room for two. */
+  .pair {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+
+  .pairWide {
+    gap: var(--space-3);
+  }
+
+  @media (width >= 640px) {
+    .pair {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .entryFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .toggleLabel {
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .addButton {
+    width: 100%;
+  }
+}

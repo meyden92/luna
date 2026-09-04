@@ -1,0 +1,51 @@
+@layer components {
+  .root {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--background);
+    /* Ruler, playhead and clips size themselves against this surface. */
+    container-type: inline-size;
+    container-name: timeline;
+  }
+
+  .scroll {
+    flex: 1;
+    overflow: auto;
+  }
+
+  .surface {
+    position: relative;
+    min-width: 100%;
+  }
+
+  .tracks {
+    position: relative;
+  }
+
+  .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    height: var(--space-20);
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    text-align: center;
+  }
+
+  .emptyHint {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  /* On a narrow timeline the second line only repeats the first. */
+  @container timeline (width < 450px) {
+    .emptyHint {
+      display: none;
+    }
+  }
+}

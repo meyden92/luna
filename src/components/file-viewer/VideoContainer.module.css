@@ -1,0 +1,80 @@
+@layer components {
+  .root {
+    display: flex;
+    width: 100%;
+    max-inline-size: 56rem;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-inline: auto;
+  }
+
+  .title {
+    overflow: hidden;
+    font-size: var(--text-2xl);
+    line-height: var(--leading-2xl);
+    font-weight: var(--weight-semibold);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .source {
+    overflow: hidden;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--muted-foreground);
+  }
+
+  .frame {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    border-radius: var(--radius-lg);
+    background: var(--muted);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--muted-strong);
+  }
+
+  .spinner {
+    width: var(--space-8);
+    height: var(--space-8);
+    color: var(--primary);
+    animation: video-container-spin 1s linear infinite;
+  }
+
+  @keyframes video-container-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* The frame fades in once the first frame has decoded. */
+  .video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 300ms ease;
+  }
+
+  .video[data-ready] {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spinner {
+      animation-duration: 0.01ms;
+      animation-iteration-count: 1;
+    }
+  }
+}

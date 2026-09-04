@@ -1,0 +1,108 @@
+@layer components {
+  .root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .previewWrap {
+    position: relative;
+    display: inline-block;
+  }
+
+  .previewImage {
+    /* No token matches this thumbnail size; named to make the one-off explicit. */
+    --preview-size: 8rem;
+
+    width: var(--preview-size);
+    height: var(--preview-size);
+    object-fit: cover;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    transition: opacity 200ms;
+  }
+
+  .removeButton {
+    position: absolute;
+    top: calc(-1 * var(--space-2));
+    right: calc(-1 * var(--space-2));
+    height: var(--space-6);
+    width: var(--space-6);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-md);
+    opacity: 0;
+    transition: opacity 200ms;
+  }
+
+  /* Hovering the thumbnail dims it and reveals the remove button. */
+  .previewWrap:hover .previewImage {
+    opacity: 0.9;
+  }
+
+  .previewWrap:hover .removeButton {
+    opacity: 1;
+  }
+
+  .dropzone {
+    position: relative;
+    border: 2px dashed var(--foreground-subtle);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    transition:
+      background-color 200ms,
+      border-color 200ms;
+    text-align: center;
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--muted);
+    }
+
+    &[data-dragging="true"] {
+      border-color: var(--primary);
+      background-color: var(--primary-tint);
+    }
+
+    &[data-disabled="true"] {
+      opacity: 0.5;
+      cursor: not-allowed;
+
+      &:hover {
+        background-color: transparent;
+      }
+    }
+  }
+
+  .dropzoneContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--muted-foreground);
+  }
+
+  .iconWrap {
+    padding: var(--space-2);
+    background-color: var(--background);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+  }
+
+  .maxSize {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.7;
+  }
+
+  .removeIcon {
+    width: var(--space-3);
+    height: var(--space-3);
+  }
+
+  .uploadIcon {
+    width: var(--space-5);
+    height: var(--space-5);
+  }
+}

@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import { queryKeys } from '@/libs/query-keys';
 import { createFormShare } from '@/server/fns/form-shares';
+import styles from './FormBuilderDialog.module.css';
 
 type FieldType = 'text' | 'password' | 'email' | 'url' | 'number' | 'textarea' | 'hidden';
 
@@ -137,7 +138,7 @@ export function FormBuilderDialog({ open, onOpenChange }: { open: boolean; onOpe
         </DialogHeader>
 
         <form
-          className="flex flex-col gap-4 overflow-y-auto max-h-[60vh] pr-1"
+          className={styles.form}
           onSubmit={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -147,9 +148,9 @@ export function FormBuilderDialog({ open, onOpenChange }: { open: boolean; onOpe
           {/* Title */}
           <form.Field name="title">
             {(field: any) => (
-              <div className="space-y-1.5">
+              <div className={styles.field}>
                 <Label>
-                  Title <span className="text-muted-foreground text-xs">(Optional)</span>
+                  Title <span className={styles.optional}>(Optional)</span>
                 </Label>
                 <Input
                   placeholder="e.g., Server Credentials, API Keys..."
@@ -165,14 +166,14 @@ export function FormBuilderDialog({ open, onOpenChange }: { open: boolean; onOpe
             {(fieldArray: any) => {
               const entries = fieldArray.state.value as FieldEntry[];
               return (
-                <div className="space-y-3">
+                <div className={styles.fields}>
                   <Label>Fields</Label>
                   {entries.map((entry, index) => (
                     <div
                       key={entry.id}
-                      className="grid gap-2 rounded-lg border p-3"
+                      className={styles.entry}
                     >
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className={styles.pair}>
                         <Input
                           placeholder="Label"
                           value={entry.label}
@@ -214,14 +215,14 @@ export function FormBuilderDialog({ open, onOpenChange }: { open: boolean; onOpe
                         />
                       )}
 
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                      <div className={styles.entryFooter}>
+                        <div className={styles.toggle}>
                           <Switch
                             checked={entry.isSensitive}
                             onCheckedChange={(checked) => updateField(index, 'isSensitive', checked)}
                             disabled={entry.type === 'password' || entry.type === 'hidden'}
                           />
-                          <span className="text-sm text-muted-foreground">Sensitive</span>
+                          <span className={styles.toggleLabel}>Sensitive</span>
                         </div>
 
                         <Button
@@ -231,7 +232,7 @@ export function FormBuilderDialog({ open, onOpenChange }: { open: boolean; onOpe
                           onClick={() => removeField(index)}
                           disabled={entries.length <= 1}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 />
                         </Button>
                       </div>
                     </div>
@@ -242,9 +243,9 @@ export function FormBuilderDialog({ open, onOpenChange }: { open: boolean; onOpe
                     variant="outline"
                     size="sm"
                     onClick={addField}
-                    className="w-full"
+                    className={styles.addButton}
                   >
-                    <Plus className="h-4 w-4 mr-1" />
+                    <Plus />
                     Add Field
                   </Button>
                 </div>
@@ -253,10 +254,10 @@ export function FormBuilderDialog({ open, onOpenChange }: { open: boolean; onOpe
           </form.Field>
 
           {/* Expiry settings */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className={`${styles.pair} ${styles.pairWide}`}>
             <form.Field name="expiryDuration">
               {(field: any) => (
-                <div className="space-y-1.5">
+                <div className={styles.field}>
                   <Label>Expires after</Label>
                   <Select
                     value={field.state.value}
@@ -282,9 +283,9 @@ export function FormBuilderDialog({ open, onOpenChange }: { open: boolean; onOpe
 
             <form.Field name="maxViews">
               {(field: any) => (
-                <div className="space-y-1.5">
+                <div className={styles.field}>
                   <Label>
-                    Max views <span className="text-muted-foreground text-xs">(Optional)</span>
+                    Max views <span className={styles.optional}>(Optional)</span>
                   </Label>
                   <Input
                     type="number"

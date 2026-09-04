@@ -1,0 +1,208 @@
+/* Form primitives and field wrappers for the TanStack Form bindings. */
+@layer components {
+  /* ---- Shell ------------------------------------------------------------ */
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .loading {
+    display: grid;
+    place-items: center;
+    padding: var(--space-4);
+  }
+
+  .loadingText {
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  /* ---- Item / label / helper text --------------------------------------- */
+  .item {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .label {
+    &[data-error="true"] {
+      color: var(--destructive);
+    }
+
+    /* Dimmed while an async validator is in flight. */
+    &[data-validating="true"] {
+      opacity: 0.75;
+    }
+  }
+
+  .clickableLabel {
+    cursor: pointer;
+  }
+
+  .labelDisabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .description {
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .message {
+    color: var(--destructive);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    font-weight: var(--weight-medium);
+    animation: formMessageIn 200ms ease;
+  }
+
+  @keyframes formMessageIn {
+    from {
+      opacity: 0;
+      transform: translateY(-0.25rem);
+    }
+  }
+
+  /* Inline "(optional)" / "(validating...)" suffixes after a label. */
+  .hint {
+    margin-left: var(--space-1);
+    color: var(--muted-foreground);
+  }
+
+  .hintSmall {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  /* ---- Control states ---------------------------------------------------- */
+  /* File input's own button, styled as a compact primary chip. */
+  .fileInput {
+    &::file-selector-button {
+      margin-right: var(--space-4);
+      padding: var(--space-2) var(--space-4);
+      border: 0;
+      border-radius: var(--radius-full);
+      background-color: var(--primary);
+      color: var(--primary-foreground);
+      font-size: var(--text-xs);
+      line-height: var(--leading-xs);
+      font-weight: var(--weight-semibold);
+      transition: background-color 150ms ease;
+    }
+
+    &:hover::file-selector-button {
+      background-color: var(--primary-strong);
+    }
+  }
+
+  /* ---- Form-level error summary ------------------------------------------ */
+  .errors {
+    padding: var(--space-4);
+    border: 1px solid color-mix(in oklch, var(--destructive) 50%, transparent);
+    border-radius: var(--radius-lg);
+    background-color: color-mix(in oklch, var(--destructive) 10%, transparent);
+  }
+
+  .errorsTitle {
+    margin-bottom: var(--space-2);
+    color: var(--destructive);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+  }
+
+  .errorsList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    color: var(--destructive);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .errorsItem {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .errorsBullet {
+    /* Nudge the bullet onto the first line's optical centre. */
+    --bullet-nudge: 0.125rem;
+
+    margin-top: var(--bullet-nudge);
+  }
+
+  /* ---- Boxed fields (checkbox / switch) ---------------------------------- */
+  .checkboxItem {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+
+  .checkboxBody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    line-height: 1;
+  }
+
+  .switchItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  .switchBody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .switchLabel {
+    font-size: var(--text-base);
+    line-height: var(--leading-base);
+  }
+
+  /* ---- Radio group -------------------------------------------------------- */
+  .radioGroup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .radioRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .radio {
+    inline-size: 1rem;
+    block-size: 1rem;
+    accent-color: var(--primary);
+    border-color: var(--input);
+
+    &:focus-visible {
+      outline: 2px solid var(--ring);
+      outline-offset: 2px;
+    }
+  }
+
+  .radioLabel {
+    font-size: var(--text-sm);
+    line-height: 1;
+    font-weight: var(--weight-medium);
+    cursor: pointer;
+  }
+}

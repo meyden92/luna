@@ -1,6 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/libs/utils';
+import styles from './squi.module.css';
 
 export const Route = createFileRoute('/_dashboard/preview/squi')({
   head: () => ({ meta: [{ title: 'Squi | LunaShare' }] }),
@@ -10,22 +12,22 @@ export const Route = createFileRoute('/_dashboard/preview/squi')({
 function SquiPage() {
   return (
     <main>
-      <div className="ml-2">
-        <h1 className="text-3xl font-bold">Website Title</h1>
-        <p className="text-sm font-bold text-neutral-900">Placeholder text</p>
+      <div className={styles.header}>
+        <h1 className="type-3xl weight-bold">Website Title</h1>
+        <p className={cn('type-sm weight-bold', styles.subtitle)}>Placeholder text</p>
       </div>
-      <Separator className="my-2" />
+      <Separator className="margin-top-2 margin-bottom-2" />
 
-      <div className="flex justify-between items-start ml-2">
+      <div className={styles.nav}>
         <ul>
           <li>Home</li>
           <li>Favoriten</li>
           <li>Rezepte</li>
         </ul>
-        <div className="flex items-center gap-2">
+        <div className={styles.search}>
           <Input
             placeholder="Rezepte suchen"
-            className="flex-1"
+            className={styles.searchInput}
           />
           <div>Irgendetwas anderes</div>
         </div>

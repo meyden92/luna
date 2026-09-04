@@ -4,8 +4,8 @@ import { useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { type MediaFile, useAudioEditorStore } from '@/hooks/stores/audio-editor-store';
 import { formatTimeShort } from '@/libs/audio-editor/audio-utils';
-import { cn } from '@/libs/utils';
 import { useAudioEditor } from '../AudioEditorProvider';
+import styles from './MediaPool.module.css';
 
 const ACCEPTED_AUDIO_TYPES = [
   'audio/mpeg',
@@ -37,29 +37,27 @@ function MediaPoolItem({ media }: { media: MediaFile }) {
   return (
     <div
       ref={setNodeRef}
-      className={cn(
-        'group flex items-center gap-2 p-2 rounded-md border border-border bg-card hover:bg-accent/50 transition-colors cursor-grab active:cursor-grabbing',
-        isDragging && 'opacity-50',
-      )}
+      className={styles.item}
+      data-dragging={isDragging}
       style={style}
       {...attributes}
       {...listeners}
     >
-      <MusicIcon className="size-4 text-muted-foreground shrink-0" />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{media.name}</p>
-        <p className="text-xs text-muted-foreground">{formatTimeShort(media.duration)}</p>
+      <MusicIcon className={styles.itemIcon} />
+      <div className={styles.itemBody}>
+        <p className={styles.itemName}>{media.name}</p>
+        <p className={styles.itemDuration}>{formatTimeShort(media.duration)}</p>
       </div>
       <Button
         variant="ghost"
         size="icon-sm"
-        className="opacity-0 group-hover:opacity-100 transition-opacity"
+        className={styles.remove}
         onClick={(e) => {
           e.stopPropagation();
           removeFromMediaPool(media.id);
         }}
       >
-        <Trash2Icon className="size-3" />
+        <Trash2Icon className={styles.removeIcon} />
       </Button>
     </div>
   );
@@ -158,29 +156,33 @@ export function MediaPool() {
 
   return (
     <div
-      className={cn('flex flex-col h-full border-r border-border bg-muted/30 transition-colors', isDragOver && 'bg-primary/10')}
+      className={styles.root}
+      data-drag-over={isDragOver}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div className="p-2 border-b border-border flex items-center justify-between">
-        <h3 className="text-sm font-medium">Media Pool</h3>
+      <div className={styles.header}>
+        <h3 className={styles.title}>Media Pool</h3>
         <Button
           variant="ghost"
           size="icon-sm"
           onClick={handleAddClick}
           disabled={isLoading}
         >
-          <UploadIcon className="size-4" />
+          <UploadIcon className={styles.uploadIcon} />
         </Button>
       </div>
 
-      <div className="flex-1 overflow-auto p-2 space-y-1">
+      <div className={styles.list}>
         {mediaFiles.length === 0 ? (
-          <label className="flex flex-col items-center justify-center h-full text-center cursor-pointer">
-            <UploadIcon className={cn('size-8 mb-2', isDragOver ? 'text-primary' : 'text-muted-foreground')} />
-            <p className="text-xs text-muted-foreground">{isLoading ? 'Loading...' : 'Drop audio files here'}</p>
-            <p className="text-xs text-muted-foreground mt-1">or click to browse</p>
+          <label
+            className={styles.empty}
+            data-drag-over={isDragOver}
+          >
+            <UploadIcon className={styles.emptyIcon} />
+            <p className={styles.emptyText}>{isLoading ? 'Loading...' : 'Drop audio files here'}</p>
+            <p className={styles.emptyHint}>or click to browse</p>
             <input
               type="file"
               accept="audio/*"
@@ -198,7 +200,7 @@ export function MediaPool() {
                 media={media}
               />
             ))}
-            {isLoading && <p className="text-xs text-muted-foreground text-center py-2">Loading...</p>}
+            {isLoading && <p className={styles.loading}>Loading...</p>}
           </>
         )}
       </div>

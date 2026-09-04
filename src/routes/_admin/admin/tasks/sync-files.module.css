@@ -1,0 +1,207 @@
+@layer components {
+  .icon {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  .iconLg {
+    width: var(--space-5);
+    height: var(--space-5);
+  }
+
+  .danger {
+    color: var(--destructive);
+  }
+
+  .muted {
+    color: var(--muted-foreground);
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+
+  .spinning {
+    animation: spin 1s linear infinite;
+  }
+
+  /* The analysis toolbar stacks on narrow screens and becomes a row from sm up. */
+  .toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  @media (width >= 640px) {
+    .toolbar {
+      flex-direction: row;
+    }
+  }
+
+  /* ---- Statistics tiles -------------------------------------------------- */
+  .statGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  @media (width >= 768px) {
+    .statGrid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  /* One tile rule; `data-tone` picks the role its wash and number read from.
+     The S3-count tile was purple, a hue with no role in the scale — it now
+     reads as the accent, `--primary`. */
+  .statTile {
+    --tone: var(--primary);
+    padding: var(--space-3);
+    text-align: center;
+    border-radius: var(--radius-lg);
+    background: color-mix(in oklab, var(--tone) 10%, transparent);
+  }
+
+  .statTile[data-tone="success"] {
+    --tone: var(--success);
+  }
+
+  .statTile[data-tone="info"] {
+    --tone: var(--info);
+  }
+
+  .statTile[data-tone="warning"] {
+    --tone: var(--warning);
+  }
+
+  .statValue {
+    color: var(--tone);
+  }
+
+  .statLabel {
+    color: var(--muted-foreground);
+  }
+
+  .rateRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .progress {
+    height: var(--space-2);
+  }
+
+  /* ---- Section headings -------------------------------------------------- */
+  .warningIcon {
+    width: var(--space-5);
+    height: var(--space-5);
+    color: var(--warning);
+  }
+
+  .dangerIcon {
+    width: var(--space-5);
+    height: var(--space-5);
+    color: var(--destructive);
+  }
+
+  /* ---- File lists -------------------------------------------------------- */
+  .fileList {
+    --file-list-max-height: 24rem;
+    max-height: var(--file-list-max-height);
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  .fileRow {
+    padding: var(--space-3);
+    transition: background-color 150ms ease;
+  }
+
+  .fileRow:hover {
+    background: color-mix(in oklab, var(--muted) 50%, transparent);
+  }
+
+  .fileRow + .fileRow {
+    border-top: 1px solid var(--border);
+  }
+
+  .fileLabel {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    cursor: pointer;
+  }
+
+  .fileMain {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .fileIconInfo,
+  .fileIconDanger {
+    flex-shrink: 0;
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  .fileIconInfo {
+    color: var(--info);
+  }
+
+  .fileIconDanger {
+    color: var(--destructive);
+  }
+
+  .fileMeta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    color: var(--muted-foreground);
+  }
+
+  .s3Key {
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--muted);
+  }
+
+  /* ---- Empty and idle states --------------------------------------------- */
+  .emptyState {
+    padding-block: var(--space-8);
+    text-align: center;
+  }
+
+  .successIcon {
+    width: var(--space-12);
+    height: var(--space-12);
+    margin-inline: auto;
+    margin-bottom: var(--space-4);
+    color: var(--success);
+  }
+
+  .successTitle {
+    color: var(--success);
+  }
+
+  .idleIcon {
+    width: var(--space-12);
+    height: var(--space-12);
+    margin-inline: auto;
+    margin-bottom: var(--space-4);
+    color: var(--muted-foreground);
+  }
+
+  /* The confirm dialog's primary action turns destructive for deletes. */
+  .destructiveAction {
+    background: var(--destructive);
+    color: var(--destructive-foreground);
+  }
+
+  .destructiveAction:hover {
+    background: color-mix(in oklab, var(--destructive) 85%, black);
+  }
+}

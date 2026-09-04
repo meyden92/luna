@@ -1,0 +1,98 @@
+@layer components {
+  .muted {
+    color: var(--muted-foreground);
+  }
+
+  .statGrid {
+    display: grid;
+    gap: var(--space-4);
+
+    @media (width >= 768px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .thirdsGrid {
+    display: grid;
+    gap: var(--space-4);
+
+    @media (width >= 1024px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .statHeader {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: var(--space-2);
+  }
+
+  /* Label/value pair; the tone marks a success or failure count. */
+  .between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .between[data-tone="success"] {
+    color: var(--success);
+  }
+
+  .between[data-tone="danger"] {
+    color: var(--destructive);
+  }
+
+  .chartContent {
+    padding-left: var(--space-2);
+  }
+
+  /* The bar chart is drawn at a fixed 300px height by StackedBarChart. */
+  .chartFrame {
+    --chart-height: 18.75rem;
+
+    width: 100%;
+    height: var(--chart-height);
+  }
+
+  .chartEmpty {
+    --chart-empty-height: 12.5rem;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--chart-empty-height);
+    color: var(--muted-foreground);
+  }
+
+  /* One line of a breakdown list. */
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .rowKey {
+    min-width: 0;
+  }
+
+  .rowValue {
+    flex-shrink: 0;
+    color: var(--muted-foreground);
+  }
+
+  .empty {
+    padding-block: var(--space-8);
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    text-align: center;
+  }
+}

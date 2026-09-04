@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import type { GenerationStatus } from '@/hooks/stores/image-editor-queue-store';
 import { cn } from '@/libs/utils';
+import styles from './GenerationStatusBadge.module.css';
 
 interface GenerationStatusBadgeProps {
   status: GenerationStatus;
@@ -13,35 +14,36 @@ const statusConfig: Record<
     label: string;
     variant: 'default' | 'secondary' | 'destructive' | 'outline';
     pulse?: boolean;
-    dotColor: string;
+    /** Semantic colour role for the leading dot. */
+    tone: 'warning' | 'info' | 'success' | 'destructive';
   }
 > = {
   queued: {
     label: 'In Queue',
     variant: 'outline',
-    dotColor: 'bg-yellow-500',
+    tone: 'warning',
   },
   uploading: {
     label: 'Uploading',
     variant: 'secondary',
     pulse: true,
-    dotColor: 'bg-blue-500',
+    tone: 'info',
   },
   processing: {
     label: 'Processing',
     variant: 'secondary',
     pulse: true,
-    dotColor: 'bg-blue-500',
+    tone: 'info',
   },
   succeeded: {
     label: 'Complete',
     variant: 'default',
-    dotColor: 'bg-green-500',
+    tone: 'success',
   },
   failed: {
     label: 'Failed',
     variant: 'destructive',
-    dotColor: 'bg-red-500',
+    tone: 'destructive',
   },
 };
 
@@ -51,9 +53,13 @@ export function GenerationStatusBadge({ status, className }: GenerationStatusBad
   return (
     <Badge
       variant={config.variant}
-      className={cn('gap-1.5', className)}
+      className={cn(styles.badge, className)}
     >
-      <span className={cn('w-2 h-2 rounded-full', config.dotColor, config.pulse && 'animate-pulse')} />
+      <span
+        className={styles.dot}
+        data-tone={config.tone}
+        data-pulse={config.pulse ? '' : undefined}
+      />
       {config.label}
     </Badge>
   );

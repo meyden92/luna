@@ -1,0 +1,254 @@
+@layer components {
+  .root {
+    /* Canvas layout one-offs with no step on the scale: the flow-list and
+       inspector column widths and the canvas card/frame heights. */
+    --flow-list-width: 17.5rem;
+    --inspector-width: 22.5rem;
+    --canvas-card-height: 41.25rem;
+    --canvas-frame-height: 32.5rem;
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    padding: var(--space-4);
+    padding-bottom: var(--space-10);
+
+    @media (width >= 640px) {
+      padding: var(--space-6);
+    }
+
+    @media (width >= 768px) {
+      padding: var(--space-10);
+    }
+  }
+
+  .header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+
+    @media (width >= 640px) {
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+  }
+
+  .title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .titleIcon {
+    width: var(--space-6);
+    height: var(--space-6);
+  }
+
+  .subtitle {
+    color: var(--muted-foreground);
+  }
+
+  .headerActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .icon {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  /* Flow list / canvas / inspector / runs table on a 3-column canvas layout from xl. */
+  .layout {
+    display: grid;
+    gap: var(--space-4);
+
+    @media (width >= 1280px) {
+      grid-template-columns: var(--flow-list-width) minmax(0, 1fr) var(--inspector-width);
+    }
+  }
+
+  .rowSpan2 {
+    @media (width >= 1280px) {
+      grid-row: span 2;
+    }
+  }
+
+  .flowList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .flowItem {
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+    border-radius: var(--radius-lg);
+    background: var(--background);
+    text-align: left;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background: color-mix(in oklab, var(--muted) 50%, transparent);
+    }
+  }
+
+  .flowItem[data-active="true"] {
+    border-color: var(--primary);
+    background: var(--primary-tint);
+  }
+
+  .flowItemHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .flowItemName {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: var(--weight-medium);
+  }
+
+  .flowItemMeta {
+    display: block;
+    margin-top: var(--space-1);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--muted-foreground);
+  }
+
+  .flowStateIcon {
+    color: var(--primary);
+  }
+
+  .flowStateIcon[data-tone="muted"] {
+    color: var(--muted-foreground);
+  }
+
+  .empty {
+    padding-block: var(--space-8);
+    text-align: center;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .canvasCard {
+    min-height: var(--canvas-card-height);
+
+    @media (width >= 1280px) {
+      grid-column: span 1;
+    }
+  }
+
+  .canvasHeader {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+
+    @media (width >= 1024px) {
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+  }
+
+  .canvasActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .canvasFrame {
+    height: var(--canvas-frame-height);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: color-mix(in oklab, var(--muted) 20%, transparent);
+  }
+
+  .inspectorBody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .selectFull {
+    width: 100%;
+  }
+
+  .toggleRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .inspectorEmpty {
+    padding: var(--space-4);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .inspectorNote {
+    padding: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: color-mix(in oklab, var(--muted) 20%, transparent);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .fieldStack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .runsErrorCell {
+    padding-block: var(--space-8);
+    text-align: center;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .runError {
+    margin-top: var(--space-2);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--destructive);
+  }
+
+  /* Applied to ReactFlow's generated node elements via the library's className prop. */
+  .flowNodeTrigger {
+    border-color: var(--primary);
+    background: var(--primary-tint);
+  }
+
+  .flowNodeDefault {
+    background: var(--background);
+  }
+}

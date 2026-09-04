@@ -1,0 +1,23 @@
+@layer components {
+  .subtitle {
+    color: var(--muted-foreground);
+  }
+
+  /* Destructive-action callout: a tinted well in the destructive role. */
+  .warning {
+    background: color-mix(in oklch, var(--destructive) 10%, transparent);
+    border: 1px solid color-mix(in oklch, var(--destructive) 20%, transparent);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    color: var(--destructive);
+  }
+
+  .warningList {
+    list-style: disc;
+    padding-inline-start: var(--space-6);
+  }
+
+  .warningList li + li {
+    margin-top: var(--space-1);
+  }
+}

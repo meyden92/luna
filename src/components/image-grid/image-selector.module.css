@@ -1,0 +1,175 @@
+@layer components {
+  .spread {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sectionLabel {
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: var(--space-2);
+    max-height: 20rem;
+    overflow-y: auto;
+  }
+
+  /* Reorder tile. `data-dragging` is the tile being carried, `data-dragover`
+     the drop target under it. */
+  .tile {
+    position: relative;
+    cursor: move;
+    border-radius: var(--radius-lg);
+    transition:
+      opacity 200ms ease,
+      transform 200ms ease,
+      box-shadow 200ms ease,
+      background-color 200ms ease;
+  }
+
+  .tile:hover {
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 30%, transparent);
+  }
+
+  .tile[data-dragging] {
+    z-index: 10;
+    opacity: 0.5;
+    transform: scale(0.95) rotate(3deg);
+  }
+
+  .tile[data-dragover] {
+    background: color-mix(in oklab, var(--primary) 10%, transparent);
+    box-shadow:
+      0 0 0 2px var(--background),
+      0 0 0 4px var(--primary);
+  }
+
+  .thumbFrame {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--muted);
+  }
+
+  .thumb {
+    width: 100%;
+    height: var(--space-16);
+    object-fit: cover;
+    pointer-events: none;
+  }
+
+  /* Position of the image in the generated grid. */
+  .order {
+    position: absolute;
+    top: var(--space-1);
+    left: var(--space-1);
+    display: grid;
+    place-items: center;
+    width: var(--space-5);
+    height: var(--space-5);
+    border-radius: var(--radius-full);
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    font-weight: var(--weight-medium);
+  }
+
+  .handle {
+    position: absolute;
+    right: var(--space-1);
+    bottom: var(--space-1);
+    padding: var(--space-1);
+    border-radius: var(--radius-sm);
+    background: var(--scrim-strong);
+    color: var(--on-scrim);
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+
+  .handleIcon {
+    display: block;
+    width: var(--space-3);
+    height: var(--space-3);
+  }
+
+  .remove {
+    position: absolute;
+    top: calc(var(--space-1) * -1);
+    right: calc(var(--space-1) * -1);
+    z-index: 20;
+    width: var(--space-5);
+    height: var(--space-5);
+    padding: 0;
+    border-radius: var(--radius-full);
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+
+  .removeIcon {
+    width: var(--space-3);
+    height: var(--space-3);
+  }
+
+  .tile:hover .handle,
+  .tile:hover .remove,
+  .tile:focus-within .handle,
+  .tile:focus-within .remove {
+    opacity: 1;
+  }
+
+  .hints {
+    text-align: center;
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .hintFaint {
+    opacity: 0.75;
+  }
+
+  .dropzone {
+    padding: var(--space-8);
+    text-align: center;
+    border: 2px dashed var(--input);
+    border-radius: var(--radius-lg);
+    color: var(--muted-foreground);
+    cursor: pointer;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease;
+  }
+
+  .dropzone:hover {
+    background: color-mix(in oklab, var(--muted) 50%, transparent);
+    border-color: var(--primary);
+  }
+
+  .dropzoneIcon {
+    width: var(--space-12);
+    height: var(--space-12);
+    margin-inline: auto;
+    margin-bottom: var(--space-4);
+  }
+
+  .dropzoneTitle {
+    margin-bottom: var(--space-2);
+    color: var(--foreground);
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+    font-weight: var(--weight-medium);
+  }
+
+  .dropzoneHint {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+}

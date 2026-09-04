@@ -1,0 +1,57 @@
+@layer components {
+  .dropzone {
+    position: relative;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-lg);
+    transition:
+      border-color 200ms ease,
+      background-color 200ms ease;
+  }
+
+  .dropzone:hover {
+    border-color: color-mix(in oklab, var(--primary) 50%, transparent);
+  }
+
+  /* `data-active` is set while a file is dragged over the zone. */
+  .dropzone[data-active] {
+    border-color: var(--primary);
+    background: color-mix(in oklab, var(--primary) 10%, transparent);
+  }
+
+  .dropzone[data-loading] {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    padding: var(--space-12);
+    cursor: pointer;
+  }
+
+  .icon {
+    width: var(--space-12);
+    height: var(--space-12);
+    color: var(--muted-foreground);
+    transition: color 200ms ease;
+  }
+
+  .dropzone[data-active] .icon {
+    color: var(--primary);
+  }
+
+  .text {
+    text-align: center;
+  }
+
+  .hint {
+    margin-top: var(--space-2);
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+}

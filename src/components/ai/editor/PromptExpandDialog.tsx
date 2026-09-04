@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import styles from './PromptExpandDialog.module.css';
 
 interface PromptExpandDialogProps {
   open: boolean;
@@ -73,16 +74,16 @@ export function PromptExpandDialog({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col flex-1 min-h-0 gap-2">
+        <div className={styles.body}>
           <Textarea
             value={localValue}
             onChange={(e) => setLocalValue(e.target.value)}
             maxLength={maxLength}
-            className="flex-1 min-h-0 resize-none font-mono"
+            className={styles.textarea}
             autoFocus
           />
           {showCharCount && (
-            <p className="text-xs text-muted-foreground text-right shrink-0">
+            <p className={styles.charCount}>
               {localValue.length}
               {maxLength ? ` / ${maxLength}` : ''} characters
             </p>
@@ -93,7 +94,7 @@ export function PromptExpandDialog({
           <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
           <Button onClick={handleSave}>
             Save
-            <span className="ml-2 text-xs opacity-70">Ctrl+S</span>
+            <span className={styles.shortcut}>Ctrl+S</span>
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,0 +1,223 @@
+@layer components {
+  /*
+   * Every variant and size rule is reachable two ways: `data-variant`/`data-size`
+   * on a real <Button>, and the bare class, which is what `buttonVariants()`
+   * returns so a link or a dialog trigger can be styled as a button.
+   *
+   * Geometry is carried by custom properties rather than repeated padding
+   * declarations, so the icon-hug rules below stay independent of the size rules.
+   */
+  .root {
+    --button-height: 2.25rem;
+    --button-icon-size: 1rem;
+    --button-pad: var(--space-4);
+    --button-pad-hug: var(--space-3);
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    gap: var(--space-2);
+    height: var(--button-height);
+    padding-inline: var(--button-pad);
+    border: 1px solid transparent;
+    border-radius: var(--radius-lg);
+    background-clip: padding-box;
+    font-family: inherit;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+    white-space: nowrap;
+    user-select: none;
+    outline: none;
+    transition:
+      background-color 150ms ease-out,
+      border-color 150ms ease-out,
+      color 150ms ease-out,
+      box-shadow 150ms ease-out,
+      transform 150ms ease-out;
+
+    & svg {
+      flex-shrink: 0;
+      pointer-events: none;
+      /* Left alone when the caller sized the icon itself. */
+      &:not([width]):not([height]) {
+        width: var(--button-icon-size);
+        height: var(--button-icon-size);
+      }
+    }
+
+    /* An icon hugging an edge needs less room on that side than a word does. */
+    &:has([data-icon="inline-start"]) {
+      padding-inline-start: var(--button-pad-hug);
+    }
+
+    &:has([data-icon="inline-end"]) {
+      padding-inline-end: var(--button-pad-hug);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ring);
+      outline-offset: 2px;
+    }
+
+    &[aria-invalid="true"] {
+      border-color: var(--destructive);
+      outline-color: var(--destructive);
+    }
+
+    &:disabled,
+    &[data-disabled] {
+      pointer-events: none;
+      opacity: 0.5;
+    }
+  }
+
+  /* ---- Variants --------------------------------------------------------- */
+  .root:is([data-variant="default"], .default) {
+    border-color: color-mix(in oklch, var(--primary-strong) 45%, transparent);
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    box-shadow: var(--shadow-sm);
+
+    &:hover {
+      background-color: var(--primary-strong);
+      box-shadow: var(--shadow-md);
+    }
+  }
+
+  .root:is([data-variant="outline"], .outline) {
+    border-color: var(--border);
+    background-color: var(--card);
+    color: var(--foreground);
+    box-shadow: var(--shadow-sm);
+
+    &:hover {
+      border-color: color-mix(in oklch, var(--primary) 40%, transparent);
+      background-color: var(--accent);
+      box-shadow: var(--shadow-md);
+    }
+
+    &[aria-expanded="true"] {
+      background-color: var(--muted);
+    }
+  }
+
+  .root:is([data-variant="secondary"], .secondary) {
+    border-color: var(--border);
+    background-color: var(--secondary);
+    color: var(--secondary-foreground);
+    box-shadow: var(--shadow-sm);
+
+    &:hover {
+      background-color: var(--muted-strong);
+      box-shadow: var(--shadow-md);
+    }
+
+    &[aria-expanded="true"] {
+      background-color: var(--muted-strong);
+    }
+  }
+
+  .root:is([data-variant="ghost"], .ghost) {
+    border-color: transparent;
+    color: var(--foreground);
+
+    &:hover {
+      border-color: var(--border);
+      background-color: var(--accent);
+    }
+
+    &[aria-expanded="true"] {
+      background-color: var(--muted);
+    }
+  }
+
+  .root:is([data-variant="destructive"], .destructive) {
+    border-color: color-mix(in oklch, var(--destructive) 40%, transparent);
+    background-color: color-mix(in oklch, var(--destructive) 15%, transparent);
+    color: var(--destructive);
+    box-shadow: var(--shadow-sm);
+
+    &:hover {
+      background-color: color-mix(in oklch, var(--destructive) 25%, transparent);
+      box-shadow: var(--shadow-md);
+    }
+
+    &:focus-visible {
+      outline-color: var(--destructive);
+    }
+  }
+
+  .root:is([data-variant="link"], .link) {
+    height: auto;
+    padding: 0;
+    border-color: transparent;
+    background-color: transparent;
+    color: var(--primary);
+    box-shadow: none;
+    text-underline-offset: 4px;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  /* ---- Sizes ------------------------------------------------------------ */
+  .root:is([data-size="xs"], .xs) {
+    --button-height: 1.5rem;
+    --button-icon-size: 0.75rem;
+    --button-pad: var(--space-2);
+    --button-pad-hug: var(--space-2);
+
+    gap: var(--space-1);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .root:is([data-size="sm"], .sm) {
+    --button-height: 2rem;
+    --button-pad: var(--space-3);
+    --button-pad-hug: var(--space-2);
+
+    gap: var(--space-1);
+  }
+
+  .root:is([data-size="lg"], .lg) {
+    --button-height: 2.5rem;
+    --button-pad: var(--space-5);
+  }
+
+  /* Icon-only sizes are square: no inline padding, and none to give back. */
+  .root:is([data-size="icon"], .icon, [data-size="icon-xs"], .iconXs, [data-size="icon-sm"], .iconSm, [data-size="icon-lg"], .iconLg) {
+    --button-pad: 0;
+    --button-pad-hug: 0;
+
+    width: var(--button-height);
+  }
+
+  .root:is([data-size="icon-xs"], .iconXs) {
+    --button-height: 1.5rem;
+    --button-icon-size: 0.75rem;
+  }
+
+  .root:is([data-size="icon-sm"], .iconSm) {
+    --button-height: 2rem;
+  }
+
+  .root:is([data-size="icon-lg"], .iconLg) {
+    --button-height: 2.5rem;
+  }
+
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .root:is([data-variant="default"], .default):is([data-size="lg"], .lg):hover:not(:active) {
+      transform: translateY(-1px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .root {
+      transition: none;
+    }
+  }
+}

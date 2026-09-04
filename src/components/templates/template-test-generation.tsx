@@ -12,7 +12,9 @@ import { useFormWatch } from '@/components/ui/tanstack-form';
 import { UPLOAD_CONFIG } from '@/config/upload-config';
 import type { editingModelField } from '@/db/schema/ai';
 import { streamSSE } from '@/libs/sse';
+import { cn } from '@/libs/utils';
 import type { TemplateVariable, TemplateVariableOption } from '@/types/template';
+import styles from './template-test-generation.module.css';
 
 type EditingModelField = typeof editingModelField.$inferSelect;
 interface TemplateTestGenerationProps {
@@ -178,8 +180,8 @@ export function TemplateTestGeneration({ models }: TemplateTestGenerationProps) 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Play className="w-5 h-5 text-primary" />
+        <CardTitle className={styles.title}>
+          <Play className={styles.titleIcon} />
           Test Generation
         </CardTitle>
         <CardDescription>
@@ -187,33 +189,33 @@ export function TemplateTestGeneration({ models }: TemplateTestGenerationProps) 
           not stored.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {!selectedModel && <p className="text-sm text-muted-foreground">Select a base model above to enable testing.</p>}
+      <CardContent className="stack space-6">
+        {!selectedModel && <p className={cn('type-sm', styles.muted)}>Select a base model above to enable testing.</p>}
 
-        <div className="space-y-2">
+        <div className="stack space-2">
           <Label>Sample Image</Label>
           <input
             ref={fileInputRef}
             type="file"
             accept={UPLOAD_CONFIG.ALLOWED_IMAGE_TYPES.join(',')}
-            className="hidden"
+            className="hide"
             onChange={(e) => handleFile(e.target.files?.[0])}
           />
           {samplePreview ? (
-            <div className="relative inline-block">
+            <div className={styles.previewWrap}>
               <img
                 src={samplePreview}
                 alt="Sample"
-                className="w-32 h-32 object-cover rounded-lg border shadow-sm"
+                className={styles.samplePreview}
               />
               <Button
                 type="button"
                 variant="destructive"
                 size="icon"
-                className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                className={styles.removeSample}
                 onClick={() => setSampleImage(null)}
               >
-                <X className="h-3 w-3" />
+                <X className={styles.removeIcon} />
               </Button>
             </div>
           ) : (
@@ -221,29 +223,29 @@ export function TemplateTestGeneration({ models }: TemplateTestGenerationProps) 
               type="button"
               variant="outline"
               onClick={() => fileInputRef.current?.click()}
-              className="gap-2"
+              className={styles.actionButton}
             >
-              <Upload className="w-4 h-4" />
+              <Upload className={styles.buttonIcon} />
               Upload sample image
             </Button>
           )}
         </div>
 
         {enabledVariables.length > 0 && (
-          <div className="space-y-3">
+          <div className="stack space-3">
             <Label>Variable Values</Label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className={styles.variableGrid}>
               {enabledVariables.map((variable) => (
                 <div
                   key={variable.id || variable.name}
-                  className="space-y-2"
+                  className="stack space-2"
                 >
                   <Label
                     htmlFor={`test-${variable.name}`}
-                    className="text-sm font-normal"
+                    className="type-sm weight-normal"
                   >
                     {variable.label}
-                    {variable.required && <span className="text-destructive ml-1">*</span>}
+                    {variable.required && <span className={styles.required}>*</span>}
                   </Label>
                   {variable.type === 'dropdown' && variable.options ? (
                     <Select
@@ -269,7 +271,7 @@ export function TemplateTestGeneration({ models }: TemplateTestGenerationProps) 
                       </SelectContent>
                     </Select>
                   ) : variable.type === 'boolean' ? (
-                    <div className="flex items-center gap-2 h-10">
+                    <div className={styles.switchRow}>
                       <Switch
                         id={`test-${variable.name}`}
                         checked={testValues[variable.name] === 'true'}
@@ -295,43 +297,43 @@ export function TemplateTestGeneration({ models }: TemplateTestGenerationProps) 
           type="button"
           onClick={handleRun}
           disabled={isRunning || !selectedModel || !sampleImage}
-          className="gap-2"
+          className={styles.actionButton}
         >
-          {isRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+          {isRunning ? <Loader2 className={styles.spinner} /> : <Play className={styles.buttonIcon} />}
           {isRunning ? 'Generating…' : 'Run Test Generation'}
         </Button>
 
         {isRunning && (
-          <div className="space-y-2">
+          <div className="stack space-2">
             <Progress value={progress} />
-            <p className="text-sm text-muted-foreground">{message}</p>
+            <p className={cn('type-sm', styles.muted)}>{message}</p>
           </div>
         )}
 
         {status === 'failed' && error && (
-          <div className="flex items-start gap-3 rounded-md border border-destructive bg-destructive/5 p-3">
-            <AlertCircle className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
-            <p className="text-sm text-destructive">{error}</p>
+          <div className={styles.errorBox}>
+            <AlertCircle className={styles.errorIcon} />
+            <p className={cn('type-sm', styles.danger)}>{error}</p>
           </div>
         )}
 
         {status === 'succeeded' && resultUrl && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
+          <div className="stack space-3">
+            <div className={styles.resultHeader}>
               <Label>Result</Label>
               <a
                 href={resultUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                className={cn('type-sm', styles.resultLink)}
               >
-                Open full size <ExternalLink className="w-3.5 h-3.5" />
+                Open full size <ExternalLink className={styles.linkIcon} />
               </a>
             </div>
             <img
               src={resultUrl}
               alt="Generated result"
-              className="max-h-[480px] w-auto rounded-lg border shadow-sm"
+              className={styles.resultImage}
             />
           </div>
         )}

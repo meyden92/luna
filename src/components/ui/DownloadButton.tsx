@@ -5,6 +5,7 @@ import { downloadImage } from '@/libs/download';
 import { cn } from '@/libs/utils';
 
 import { Button } from './button';
+import styles from './DownloadButton.module.css';
 
 interface DownloadButtonProps extends React.HTMLAttributes<HTMLDivElement> {
   url: string;
@@ -18,7 +19,7 @@ function DownloadButton({ url, filename, small = false, className }: DownloadBut
       {small ? (
         <HardDriveDownload
           onClick={() => downloadImage(url, filename)}
-          className={cn('cursor-pointer bg-muted p-1 transition hover:bg-muted/80', className)}
+          className={cn(styles.icon, className)}
         />
       ) : (
         <Button onClick={() => downloadImage(url, filename)}>Download</Button>

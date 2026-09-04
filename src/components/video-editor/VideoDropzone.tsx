@@ -1,7 +1,7 @@
 import { FilmIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
-import { cn } from '@/libs/utils';
+import styles from './VideoDropzone.module.css';
 
 interface VideoDropzoneProps {
   onFileSelect: (file: File) => void;
@@ -57,22 +57,20 @@ export function VideoDropzone({ onFileSelect, disabled = false }: VideoDropzoneP
   );
 
   return (
-    <div className="h-full w-full flex items-center justify-center p-6">
+    <div className={styles.root}>
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={cn(
-          'w-full max-w-2xl border-2 border-dashed rounded-lg transition-colors',
-          isDragOver ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50',
-          disabled && 'opacity-50 pointer-events-none',
-        )}
+        className={styles.zone}
+        data-drag-over={isDragOver}
+        data-disabled={disabled}
       >
-        <label className="flex flex-col items-center justify-center gap-3 p-12 cursor-pointer">
-          <FilmIcon className={cn('size-12', isDragOver ? 'text-primary' : 'text-muted-foreground')} />
-          <div className="text-center">
-            <p className="text-sm font-medium">Drop a video here or click to browse</p>
-            <p className="text-xs text-muted-foreground mt-2">MP4, WebM, MOV, MKV — edits run entirely in your browser</p>
+        <label className={styles.label}>
+          <FilmIcon className={styles.icon} />
+          <div className={styles.text}>
+            <p className={styles.title}>Drop a video here or click to browse</p>
+            <p className={styles.hint}>MP4, WebM, MOV, MKV — edits run entirely in your browser</p>
           </div>
           <input
             type="file"

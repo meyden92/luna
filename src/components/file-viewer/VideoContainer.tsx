@@ -1,6 +1,6 @@
 import { Loader2 } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { cn } from '@/libs/utils';
+import styles from './VideoContainer.module.css';
 
 interface VideoContainerProps {
   src: string;
@@ -17,14 +17,14 @@ function VideoContainer({ src, title, onError }: VideoContainerProps) {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-3">
-      <h1 className="text-2xl font-semibold truncate antialiased">{title}</h1>
-      <p className="text-sm text-muted-foreground truncate">{src}</p>
+    <div className={styles.root}>
+      <h1 className={styles.title}>{title}</h1>
+      <p className={styles.source}>{src}</p>
 
-      <div className="relative aspect-video bg-black/5 rounded-lg overflow-hidden shadow-sm">
+      <div className={styles.frame}>
         {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/10">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className={styles.loading}>
+            <Loader2 className={styles.spinner} />
           </div>
         )}
 
@@ -35,7 +35,8 @@ function VideoContainer({ src, title, onError }: VideoContainerProps) {
           controlsList="nodownload"
           onLoadedData={handleLoadedData}
           onError={onError}
-          className={cn('w-full h-full object-contain', isLoading ? 'opacity-0' : 'opacity-100 transition-opacity duration-300')}
+          className={styles.video}
+          data-ready={isLoading ? undefined : ''}
         >
           <track
             kind="captions"

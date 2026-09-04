@@ -1,0 +1,20 @@
+@layer components {
+  .root {
+    width: var(--space-4);
+    height: var(--space-4);
+    animation: spin 1s linear infinite;
+  }
+
+  /* Keep the affordance turning, but slowly, when motion is reduced. */
+  @media (prefers-reduced-motion: reduce) {
+    .root {
+      animation-duration: 3s;
+    }
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+}

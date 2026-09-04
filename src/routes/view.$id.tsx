@@ -13,6 +13,7 @@ import { buildOEmbedDiscoveryUrl, buildPublicFileMeta } from '@/libs/oembed';
 import { queryKeys } from '@/libs/query-keys';
 import { formatSize } from '@/libs/utils';
 import { getViewableFile, type ViewableFile } from '@/server/fns/platform';
+import styles from './view.module.css';
 
 const PRIVATE_SIGNED_URL_TTL_MS = 900_000;
 const PRIVATE_SIGNED_URL_REFRESH_MARGIN_MS = 120_000;
@@ -127,21 +128,17 @@ function ViewFilePage({ info, refetchFile }: { info: ViewableFile; refetchFile: 
   }, [info.private, refreshPrivateUrl]);
 
   return (
-    <div className="relative flex min-h-screen flex-col">
+    <div className={styles.page}>
       <div
         aria-hidden="true"
-        className="pointer-events-none fixed inset-0"
-        style={{
-          backgroundImage:
-            'radial-gradient(ellipse 700px 440px at 85% 10%, color-mix(in oklab, var(--luna-accent) 9%, transparent), transparent 65%), radial-gradient(ellipse 500px 340px at 0% 90%, color-mix(in oklab, var(--luna-accent) 6%, transparent), transparent 65%)',
-        }}
+        className={styles.glow}
       />
 
-      <header className="relative z-10 flex flex-wrap items-center justify-between gap-5 border-b border-luna-line bg-[color-mix(in_oklab,var(--luna-bg)_70%,transparent)] px-9 py-4 backdrop-blur-md">
-        <div className="flex items-center gap-3 rounded-full border border-luna-line bg-luna-bg px-3 py-1.5 font-mono text-[11.5px] text-luna-ink-3">
-          <span className="luna-pulse-dot h-1.5 w-1.5 rounded-full" />
+      <header className={styles.header}>
+        <div className={styles.badge}>
+          <span className={styles.pulseDot} />
           <span>{info.private ? 'PRIVATE LINK' : 'PUBLIC LINK'}</span>
-          <span className="h-3.5 w-px bg-luna-line" />
+          <span className={styles.headerDivider} />
           <span>
             {shareUrlDisplay}/view/{info.id.slice(0, 8)}
           </span>
@@ -153,10 +150,10 @@ function ViewFilePage({ info, refetchFile }: { info: ViewableFile; refetchFile: 
         />
       </header>
 
-      <div className="relative z-10 flex-1 px-9 py-8 pb-15">
-        <section className="mb-7 w-full">
+      <div className={styles.main}>
+        <section className={styles.previewSection}>
           {isImage ? (
-            <div className="relative flex w-full items-center justify-center">
+            <div className={styles.previewImageWrap}>
               <FilePreview
                 info={info}
                 cdnUrl={cdnUrl}
@@ -164,14 +161,14 @@ function ViewFilePage({ info, refetchFile }: { info: ViewableFile; refetchFile: 
               />
             </div>
           ) : (
-            <div className="relative w-full min-h-[340px] overflow-hidden rounded-[18px] border border-luna-line bg-luna-bg-3 shadow-[0_30px_60px_-30px_rgba(15,21,17,0.22),0_10px_20px_-10px_rgba(15,21,17,0.1)]">
+            <div className={styles.previewFrame}>
               <FilePreview
                 info={info}
                 cdnUrl={cdnUrl}
                 onPrivateUrlExpired={recoverPrivatePreview}
               />
               <div
-                className="luna-pic-corners pointer-events-none absolute inset-0"
+                className={styles.picCorners}
                 aria-hidden="true"
               >
                 <span />
@@ -196,20 +193,20 @@ function ViewFilePage({ info, refetchFile }: { info: ViewableFile; refetchFile: 
         />
       </div>
 
-      <footer className="relative z-10 flex flex-wrap items-center justify-between gap-2.5 border-t border-luna-line bg-luna-bg-2 px-9 py-4 text-xs text-luna-ink-3">
-        <div className="flex items-center gap-2.5">
+      <footer className={styles.footer}>
+        <div className={styles.footerLeft}>
           <Brandmark size={18} />
           <span>
             Shared on LunaShare ·{' '}
             <Link
               to="/"
-              className="text-luna-accent-2"
+              className={styles.footerLink}
             >
               Get your own
             </Link>
           </span>
         </div>
-        <div className="font-mono text-[10.5px] tracking-[0.12em] text-luna-ink-4">© 2026 · PRIVACY · TERMS · REPORT</div>
+        <div className={styles.footerMeta}>© 2026 · PRIVACY · TERMS · REPORT</div>
       </footer>
     </div>
   );
@@ -230,7 +227,7 @@ function PrivateFileGate({ authenticated }: { authenticated: boolean }) {
       {authenticated ? (
         <Link
           to="/dashboard"
-          className={btnAccentSmall}
+          className={styles.btnAccentSmall}
         >
           Go to dashboard
         </Link>
@@ -238,14 +235,14 @@ function PrivateFileGate({ authenticated }: { authenticated: boolean }) {
         <Link
           to="/login"
           search={{ redirect: `/view/${id}` }}
-          className={btnAccentSmall}
+          className={styles.btnAccentSmall}
         >
           Sign in to view
         </Link>
       )}
       <Link
         to="/"
-        className={btnGhostSmall}
+        className={styles.btnGhostSmall}
       >
         Go home
       </Link>
@@ -255,40 +252,32 @@ function PrivateFileGate({ authenticated }: { authenticated: boolean }) {
 
 function ViewStatePage({ title, description, children }: { title: string; description: string; children?: React.ReactNode }) {
   return (
-    <div className="relative flex min-h-screen flex-col">
+    <div className={styles.page}>
       <div
         aria-hidden="true"
-        className="pointer-events-none fixed inset-0"
-        style={{
-          backgroundImage:
-            'radial-gradient(ellipse 700px 440px at 85% 10%, color-mix(in oklab, var(--luna-accent) 9%, transparent), transparent 65%), radial-gradient(ellipse 500px 340px at 0% 90%, color-mix(in oklab, var(--luna-accent) 6%, transparent), transparent 65%)',
-        }}
+        className={styles.glow}
       />
-      <header className="relative z-10 flex items-center justify-between border-b border-luna-line bg-[color-mix(in_oklab,var(--luna-bg)_70%,transparent)] px-9 py-4 backdrop-blur-md">
+      <header className={styles.header}>
         <Link
           to="/"
-          className="flex items-center gap-2.5 text-sm font-medium text-luna-ink"
+          className={styles.stateHeaderLink}
         >
           <Brandmark size={22} />
           LunaShare
         </Link>
-        <span className="rounded-full border border-luna-line bg-luna-bg px-3 py-1.5 font-mono text-[11px] text-luna-ink-3">
-          SECURE SHARE
-        </span>
+        <span className={styles.badge}>SECURE SHARE</span>
       </header>
-      <main className="relative z-10 flex flex-1 items-center justify-center px-6 py-16">
-        <section className="w-full max-w-[520px] text-center">
-          <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full border border-luna-line bg-luna-bg-2 text-luna-accent-2">
+      <main className={styles.stateMain}>
+        <section className={styles.stateSection}>
+          <div className={styles.stateIcon}>
             <Shield size={24} />
           </div>
-          <h1 className="font-serif text-[42px] font-normal leading-[1.05] text-luna-ink">{title}</h1>
-          <p className="mx-auto mt-4 max-w-[440px] text-sm leading-6 text-luna-ink-3">{description}</p>
-          {children ? <div className="mt-7 flex flex-wrap items-center justify-center gap-2.5">{children}</div> : null}
+          <h1 className={styles.stateTitle}>{title}</h1>
+          <p className={styles.stateDescription}>{description}</p>
+          {children ? <div className={styles.stateActions}>{children}</div> : null}
         </section>
       </main>
-      <footer className="relative z-10 border-t border-luna-line bg-luna-bg-2 px-9 py-4 text-center text-xs text-luna-ink-3">
-        Private file metadata is only shown after access is verified.
-      </footer>
+      <footer className={styles.stateFooter}>Private file metadata is only shown after access is verified.</footer>
     </div>
   );
 }
@@ -320,11 +309,7 @@ function FilePreview({ info, cdnUrl, onPrivateUrlExpired }: { info: ViewableFile
         onError={onPrivateUrlExpired}
       />
     );
-  return (
-    <div className="flex h-full min-h-[240px] items-center justify-center text-center text-sm text-luna-ink-3">
-      This file has no in-browser preview. Use the download button to open it.
-    </div>
-  );
+  return <div className={styles.noPreview}>This file has no in-browser preview. Use the download button to open it.</div>;
 }
 
 function buildKind(contentType: string): string {
@@ -374,21 +359,17 @@ function FileMetaSection({
   }, [shareTitle, shareUrl]);
 
   return (
-    <section className="mx-auto max-w-[1180px] px-1 pt-2">
-      <div className="mb-3.5 flex items-center justify-between">
-        <span className="rounded-full border border-luna-line bg-luna-bg px-2.5 py-0.5 font-mono text-[10.5px] tracking-[0.12em] text-luna-ink-3">
-          {kindLabel}
-        </span>
-        <span className="font-mono text-[11px] tracking-[0.08em] text-luna-ink-4">
+    <section className={styles.metaSection}>
+      <div className={styles.metaTopRow}>
+        <span className={styles.kindBadge}>{kindLabel}</span>
+        <span className={styles.sizeMeta}>
           {info.size && info.size > 0 ? formatSize(info.size) : '—'} · {fileExt}
         </span>
       </div>
 
-      <div className="mb-7 flex flex-wrap items-end justify-between gap-5">
-        <h1 className="min-w-0 flex-1 break-words font-serif text-[44px] font-normal leading-[1.04] tracking-[-0.02em] text-luna-ink">
-          {info.title || 'Untitled'}
-        </h1>
-        <div className="flex shrink-0 items-center gap-2">
+      <div className={styles.titleRow}>
+        <h1 className={styles.title}>{info.title || 'Untitled'}</h1>
+        <div className={styles.titleActions}>
           <CopyLinkButton shareUrl={shareUrl} />
           <DownloadButton
             downloadUrl={downloadUrl}
@@ -398,40 +379,35 @@ function FileMetaSection({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 border-y border-luna-line sm:grid-cols-2 lg:grid-cols-4">
+      <div className={styles.metaGrid}>
         <MetaCell label="Uploaded">
-          <span className="font-mono">{uploadedLabel}</span>
+          <span className="type-mono">{uploadedLabel}</span>
         </MetaCell>
         <MetaCell label="Owner">
-          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-luna-accent-soft font-mono text-[10px] font-bold text-luna-accent-2">
-            {ownerInitial}
-          </span>
+          <span className={styles.ownerAvatar}>{ownerInitial}</span>
           {info.owner.name}
         </MetaCell>
         <MetaCell label="Type">
-          <span className="font-mono">{mimeType}</span>
+          <span className="type-mono">{mimeType}</span>
         </MetaCell>
         <MetaCell
           label="Visibility"
           last
         >
-          <span className="font-mono">{info.private ? 'private' : 'public'}</span>
+          <span className="type-mono">{info.private ? 'private' : 'public'}</span>
         </MetaCell>
       </div>
 
       {tags.length > 0 && (
         <>
           <SepHeading>Tags</SepHeading>
-          <div className="flex flex-wrap gap-1.5">
+          <div className={styles.tagsRow}>
             {tags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center gap-1.5 rounded-full border border-luna-line bg-luna-bg px-2.5 py-1 text-xs text-luna-ink-2 transition-colors hover:border-luna-line-2"
+                className={styles.tag}
               >
-                <span
-                  className="h-2 w-2 rounded-sm"
-                  style={{ background: 'var(--luna-accent)' }}
-                />
+                <span className={styles.tagDot} />
                 {tag}
               </span>
             ))}
@@ -440,16 +416,16 @@ function FileMetaSection({
       )}
 
       <SepHeading>Share</SepHeading>
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex min-w-[280px] flex-1 items-center gap-2.5 rounded-[10px] border border-luna-line bg-luna-bg-2 py-2 pl-3.5 pr-2.5">
+      <div className={styles.shareRow}>
+        <div className={styles.shareUrlBox}>
           <LinkIcon size={14} />
-          <span className="flex-1 truncate font-mono text-xs text-luna-ink-2">{shareUrl}</span>
+          <span className={styles.shareUrlText}>{shareUrl}</span>
           <CopyLinkButton
             shareUrl={shareUrl}
             compact
           />
         </div>
-        <div className="flex gap-1.5">
+        <div className={styles.shareButtons}>
           <IconBtn
             title="Share"
             ariaLabel="Share"
@@ -485,7 +461,7 @@ function FileMetaSection({
         embedCode={embedCode}
       />
 
-      <div className="mt-6.5 flex items-center gap-1.5 text-[11px] text-luna-ink-4">
+      <div className={styles.trustRow}>
         <Shield size={12} />
         <span>Scanned · Safe · Served with end-to-end TLS</span>
       </div>
@@ -496,11 +472,6 @@ function FileMetaSection({
 function escapeHtmlAttribute(value: string) {
   return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
-
-const btnGhostSmall =
-  'inline-flex items-center gap-2 rounded-[10px] border border-luna-line bg-luna-bg px-3 py-1.5 text-xs font-medium text-luna-ink transition-all hover:bg-luna-bg-2';
-const btnAccentSmall =
-  'inline-flex items-center gap-2 rounded-[10px] bg-luna-accent px-3 py-1.5 text-xs font-medium text-[oklch(0.15_0.03_162)] transition-all hover:-translate-y-px hover:shadow-[0_10px_24px_-10px_color-mix(in_oklab,var(--luna-accent)_55%,transparent)]';
 
 function useCopy(text: string, errorMessage = 'Could not copy link') {
   const [copied, setCopied] = useState(false);
@@ -522,7 +493,7 @@ function CopyLinkButton({ shareUrl, compact }: { shareUrl: string; compact?: boo
     return (
       <button
         type="button"
-        className={btnGhostSmall}
+        className={styles.btnGhostSmall}
         onClick={onCopy}
         aria-label={copied ? 'Copied' : 'Copy link'}
       >
@@ -533,7 +504,7 @@ function CopyLinkButton({ shareUrl, compact }: { shareUrl: string; compact?: boo
   return (
     <button
       type="button"
-      className={btnGhostSmall}
+      className={styles.btnGhostSmall}
       onClick={onCopy}
     >
       {copied ? <Check size={13} /> : <Copy size={13} />}
@@ -545,7 +516,7 @@ function CopyLinkButton({ shareUrl, compact }: { shareUrl: string; compact?: boo
 function DownloadButton({ downloadUrl, filename, label = 'Download' }: { downloadUrl: string; filename: string; label?: string }) {
   return (
     <a
-      className={btnAccentSmall}
+      className={styles.btnAccentSmall}
       href={downloadUrl}
       download={filename}
       rel="noopener"
@@ -557,7 +528,7 @@ function DownloadButton({ downloadUrl, filename, label = 'Download' }: { downloa
 
 function HeaderActions({ downloadUrl, filename, shareUrl }: { downloadUrl: string; filename: string; shareUrl: string }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className={styles.headerActions}>
       <CopyLinkButton shareUrl={shareUrl} />
       <DownloadButton
         downloadUrl={downloadUrl}
@@ -609,22 +580,22 @@ function QrCodeDialog({ open, onOpenChange, shareUrl }: { open: boolean; onOpenC
           <DialogTitle>QR code</DialogTitle>
           <DialogDescription>Scan this code to open the shared file.</DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col items-center gap-4">
-          <div className="flex h-64 w-64 items-center justify-center rounded-[14px] border border-luna-line bg-white p-3">
+        <div className={styles.qrDialogBody}>
+          <div className={styles.qrBox}>
             {qrDataUrl ? (
               <img
                 src={qrDataUrl}
                 alt="QR code for shared file"
-                className="h-full w-full"
+                className={styles.qrImage}
               />
             ) : hasError ? (
-              <p className="px-4 text-center text-sm text-luna-ink-3">Could not generate a QR code.</p>
+              <p className={styles.qrErrorText}>Could not generate a QR code.</p>
             ) : (
-              <p className="text-sm text-luna-ink-3">Generating...</p>
+              <p className={styles.qrLoadingText}>Generating...</p>
             )}
           </div>
-          <div className="flex w-full items-center gap-2 rounded-[10px] border border-luna-line bg-luna-bg-2 py-2 pl-3.5 pr-2.5">
-            <span className="flex-1 truncate font-mono text-xs text-luna-ink-2">{shareUrl}</span>
+          <div className={styles.shareUrlBox}>
+            <span className={styles.shareUrlText}>{shareUrl}</span>
             <CopyLinkButton
               shareUrl={shareUrl}
               compact
@@ -649,13 +620,13 @@ function EmbedDialog({ open, onOpenChange, embedCode }: { open: boolean; onOpenC
           <DialogTitle>Embed</DialogTitle>
           <DialogDescription>Copy this iframe into a page that should display the shared file.</DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
-          <pre className="max-h-44 overflow-auto rounded-[12px] border border-luna-line bg-luna-bg-2 p-3 font-mono text-xs leading-5 text-luna-ink-2">
+        <div className={styles.embedBody}>
+          <pre className={styles.embedPre}>
             <code>{embedCode}</code>
           </pre>
           <button
             type="button"
-            className={btnGhostSmall}
+            className={styles.btnGhostSmall}
             onClick={onCopy}
           >
             {copied ? <Check size={13} /> : <Copy size={13} />}
@@ -669,17 +640,20 @@ function EmbedDialog({ open, onOpenChange, embedCode }: { open: boolean; onOpenC
 
 function MetaCell({ label, children, last }: { label: string; children: React.ReactNode; last?: boolean }) {
   return (
-    <div className={`flex flex-col gap-1.5 py-3.5 pr-5 ${last ? '' : 'border-r border-dashed border-luna-line'}`}>
-      <span className="text-[10.5px] font-medium uppercase tracking-[0.1em] text-luna-ink-3">{label}</span>
-      <span className="inline-flex items-center gap-2 text-[13px] text-luna-ink">{children}</span>
+    <div
+      className={styles.metaCell}
+      data-position={last ? 'last' : undefined}
+    >
+      <span className={styles.metaLabel}>{label}</span>
+      <span className={styles.metaValue}>{children}</span>
     </div>
   );
 }
 
 function SepHeading({ children }: { children: React.ReactNode }) {
   return (
-    <div className="luna-sep-rule relative my-6.5 mb-3">
-      <span className="relative bg-luna-bg pr-3 text-[10.5px] font-medium uppercase tracking-[0.14em] text-luna-ink-4">{children}</span>
+    <div className={styles.sepHeading}>
+      <span className={styles.sepHeadingLabel}>{children}</span>
     </div>
   );
 }
@@ -698,7 +672,7 @@ function IconBtn({
   return (
     <button
       type="button"
-      className="inline-flex h-[38px] w-[38px] items-center justify-center rounded-[10px] border border-luna-line bg-luna-bg text-luna-ink transition-all hover:-translate-y-px hover:bg-luna-bg-2 hover:shadow-[0_1px_0_rgba(15,21,17,0.04),0_1px_2px_rgba(15,21,17,0.04)]"
+      className={styles.iconBtn}
       title={title}
       aria-label={ariaLabel}
       onClick={onClick}

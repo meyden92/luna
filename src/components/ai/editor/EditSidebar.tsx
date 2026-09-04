@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { EditGenerateParams } from '@/hooks/use-edit-image-generation';
 import { useModelFieldDefaults } from '@/hooks/use-model-field-defaults';
+import styles from './EditSidebar.module.css';
 import { type EditingModelField, ModelFieldsForm } from './ModelFieldsForm';
 import { ReferenceImageSection } from './ReferenceImageSection';
 import type { ImageItem } from './SortableImageCard';
@@ -68,13 +69,13 @@ export function EditSidebar({ editingModels, onGenerate, referenceImageUrl, onRe
           <Button
             onClick={handleGenerate}
             disabled={isGenerateDisabled}
-            className="w-full"
+            className={styles.generateButton}
             size="lg"
           >
             Generate
           </Button>
           {isGenerateDisabled && (
-            <p className="text-xs text-muted-foreground text-center mt-2">
+            <p className={styles.generateHint}>
               {images.length === 0 ? 'Upload at least one reference image' : 'Select a model to continue'}
             </p>
           )}
@@ -91,8 +92,8 @@ export function EditSidebar({ editingModels, onGenerate, referenceImageUrl, onRe
       />
 
       {/* Model Selection */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">Editing Model</Label>
+      <div className="stack space-2">
+        <Label className={styles.sectionLabel}>Editing Model</Label>
         <Select
           value={selectedModelId}
           onValueChange={handleModelChange}
@@ -106,9 +107,9 @@ export function EditSidebar({ editingModels, onGenerate, referenceImageUrl, onRe
                 key={model.id}
                 value={model.id}
               >
-                <div className="flex flex-col items-start">
-                  <span className="font-medium">{model.label}</span>
-                  {model.description && <span className="text-xs text-muted-foreground">{model.description}</span>}
+                <div className={styles.modelOption}>
+                  <span className={styles.modelLabel}>{model.label}</span>
+                  {model.description && <span className={styles.modelDescription}>{model.description}</span>}
                 </div>
               </SelectItem>
             ))}
@@ -127,8 +128,8 @@ export function EditSidebar({ editingModels, onGenerate, referenceImageUrl, onRe
 
       {/* Dynamic Model Fields */}
       {selectedModel && selectedModel.fields.length > 0 && (
-        <div className="space-y-3">
-          <Label className="text-sm font-medium">Model Parameters</Label>
+        <div className="stack space-3">
+          <Label className={styles.sectionLabel}>Model Parameters</Label>
           <ModelFieldsForm
             fields={selectedModel.fields}
             values={fieldValues}

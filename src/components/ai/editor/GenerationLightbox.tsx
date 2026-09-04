@@ -8,6 +8,7 @@ import { Dialog, DialogOverlay, DialogPortal } from '@/components/ui/dialog';
 import { Comparison, ComparisonHandle, ComparisonItem } from '@/components/ui/image-compare';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { GenerationItem } from '@/hooks/stores/image-editor-queue-store';
+import styles from './GenerationLightbox.module.css';
 
 interface GenerationLightboxProps {
   generation: GenerationItem | null;
@@ -67,29 +68,29 @@ export function GenerationLightbox({ generation, open, onOpenChange }: Generatio
     >
       <DialogPortal>
         <DialogOverlay />
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8">
+        <div className={styles.layer}>
           {/* Close button */}
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-4 right-4 z-50 bg-background/80 backdrop-blur-sm"
+            className={styles.closeButton}
             onClick={() => onOpenChange(false)}
           >
-            <X className="h-5 w-5" />
+            <X className={styles.closeIcon} />
           </Button>
 
           {/* Main content */}
-          <div className="flex flex-col w-full max-w-6xl max-h-[90vh] bg-background rounded-lg overflow-hidden shadow-2xl">
+          <div className={styles.panel}>
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b">
-              <div className="flex items-center gap-4">
-                <h2 className="text-lg font-semibold">{generation.modelLabel}</h2>
+            <div className={styles.header}>
+              <div className={styles.headerMeta}>
+                <h2 className={styles.title}>{generation.modelLabel}</h2>
                 {successfulResults.length > 1 && (
                   <Select
                     value={selectedOutputIndex.toString()}
                     onValueChange={(value) => setSelectedOutput({ generationId, index: Number(value) })}
                   >
-                    <SelectTrigger className="w-[150px]">
+                    <SelectTrigger className={styles.outputSelect}>
                       <SelectValue placeholder="Generated output" />
                     </SelectTrigger>
                     <SelectContent>
@@ -109,7 +110,7 @@ export function GenerationLightbox({ generation, open, onOpenChange }: Generatio
                     value={selectedReferenceIndex.toString()}
                     onValueChange={(value) => setSelectedReference({ generationId, index: Number(value) })}
                   >
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className={styles.referenceSelect}>
                       <SelectValue placeholder="Reference image" />
                     </SelectTrigger>
                     <SelectContent>
@@ -125,14 +126,14 @@ export function GenerationLightbox({ generation, open, onOpenChange }: Generatio
                   </Select>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className={styles.headerActions}>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleSendToEdit}
-                  className="gap-1.5"
+                  className={styles.editButton}
                 >
-                  <ImagePlus className="h-3.5 w-3.5" />
+                  <ImagePlus className={styles.icon} />
                   Edit
                 </Button>
                 <DownloadButton
@@ -143,13 +144,13 @@ export function GenerationLightbox({ generation, open, onOpenChange }: Generatio
             </div>
 
             {/* Comparison area */}
-            <div className="flex-1 min-h-0 p-4">
-              <Comparison className="w-full h-full rounded-lg aspect-video">
+            <div className={styles.comparisonArea}>
+              <Comparison className={styles.comparison}>
                 <ComparisonItem position="left">
                   <img
                     src={resultImageUrl}
                     alt="Generated result"
-                    className="absolute inset-0 h-full w-full object-contain"
+                    className={styles.comparisonImage}
                     sizes="(max-width: 1200px) 100vw, 1200px"
                   />
                 </ComparisonItem>
@@ -158,7 +159,7 @@ export function GenerationLightbox({ generation, open, onOpenChange }: Generatio
                     <img
                       src={currentReferenceImage}
                       alt="Reference image"
-                      className="absolute inset-0 h-full w-full object-contain"
+                      className={styles.comparisonImage}
                       sizes="(max-width: 1200px) 100vw, 1200px"
                     />
                   )}
@@ -168,12 +169,12 @@ export function GenerationLightbox({ generation, open, onOpenChange }: Generatio
             </div>
 
             {/* Footer with labels */}
-            <div className="flex items-center justify-between p-4 border-t text-sm text-muted-foreground">
+            <div className={styles.footer}>
               <span>Generated Result{successfulResults.length > 1 ? ` ${selectedOutputIndex + 1}/${successfulResults.length}` : ''}</span>
-              <span className="flex items-center gap-1">
-                <ChevronDown className="h-4 w-4 rotate-90" />
+              <span className={styles.hint}>
+                <ChevronDown className={styles.hintIconStart} />
                 Drag to compare
-                <ChevronDown className="h-4 w-4 -rotate-90" />
+                <ChevronDown className={styles.hintIconEnd} />
               </span>
               <span>Reference {selectedReferenceIndex + 1}</span>
             </div>

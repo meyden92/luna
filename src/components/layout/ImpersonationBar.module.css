@@ -1,0 +1,42 @@
+@layer components {
+  /* Fixed warning strip pinned above every route while an admin is impersonating. */
+  .root {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 50;
+    height: var(--space-12);
+    padding-block: var(--space-2);
+    padding-inline: var(--space-4);
+    background: var(--destructive);
+    color: var(--destructive-foreground);
+  }
+
+  .inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    /* Matches the widest content column the app ever shows. */
+    max-inline-size: 80rem;
+    margin-inline: auto;
+  }
+
+  /* The button sits on the destructive fill, so it borrows that pairing. */
+  .stop {
+    color: var(--destructive-foreground);
+    cursor: pointer;
+
+    &:hover {
+      background: color-mix(in oklab, black 12%, var(--destructive));
+      color: var(--destructive-foreground);
+    }
+  }
+
+  .icon {
+    width: var(--space-4);
+    height: var(--space-4);
+    margin-right: var(--space-1);
+  }
+}

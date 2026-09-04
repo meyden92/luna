@@ -1,0 +1,129 @@
+@layer components {
+  .row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  .rowMain {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .titleRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: var(--weight-medium);
+  }
+
+  /* Status wash; the tone comes from data-status on the badge itself. */
+  .status {
+    padding: 0.125rem var(--space-2);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    background: color-mix(in oklab, var(--muted-foreground) 10%, transparent);
+    color: var(--muted-foreground);
+  }
+
+  .status[data-status="expired"] {
+    background: color-mix(in oklab, var(--destructive) 10%, transparent);
+    color: var(--destructive);
+  }
+
+  .status[data-status="pending"] {
+    background: color-mix(in oklab, var(--warning) 10%, transparent);
+    color: var(--warning);
+  }
+
+  .status[data-status="active"] {
+    background: color-mix(in oklab, var(--success) 10%, transparent);
+    color: var(--success);
+  }
+
+  .rowMeta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-1);
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .metaItem {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .metaItem svg {
+    width: var(--space-3);
+    height: var(--space-3);
+  }
+
+  .rowActions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex-shrink: 0;
+  }
+
+  .copiedIcon {
+    color: var(--success);
+  }
+
+  /* The list scrolls inside the dialog rather than growing it past the viewport. */
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-right: var(--space-1);
+  }
+
+  .loading {
+    display: flex;
+    justify-content: center;
+    padding-block: var(--space-8);
+  }
+
+  .emptyText {
+    padding-block: var(--space-8);
+    text-align: center;
+    color: var(--muted-foreground);
+  }
+
+  .spinner {
+    animation: sharesSpinnerSpin 1s linear infinite;
+  }
+
+  .listSpinner {
+    width: var(--space-6);
+    height: var(--space-6);
+    color: var(--muted-foreground);
+  }
+
+  @keyframes sharesSpinnerSpin {
+    to {
+      rotate: 360deg;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spinner {
+      animation-duration: 2s;
+    }
+  }
+}

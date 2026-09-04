@@ -3,7 +3,9 @@ import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { SettingsSidebar } from '@/components/settings/settings-sidebar';
 import { Separator } from '@/components/ui/separator';
 import { queryKeys } from '@/libs/query-keys';
+import { cn } from '@/libs/utils';
 import { getSettingsOverview } from '@/server/fns/dashboard/settings-overview';
+import styles from './_settings.module.css';
 
 export const settingsOverviewQuery = queryOptions({
   queryKey: queryKeys.dashboard.settingsOverview,
@@ -17,17 +19,17 @@ export const Route = createFileRoute('/_dashboard/_settings')({
 
 function SettingsLayout() {
   return (
-    <div className="space-y-6 p-4 pb-10 sm:p-6 md:p-10 md:pb-16">
-      <div className="space-y-0.5">
-        <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
-        <p className="text-muted-foreground">Manage your account settings and set e-mail preferences.</p>
+    <div className={cn('stack space-6', styles.root)}>
+      <div className="stack space-1">
+        <h2 className={styles.title}>Settings</h2>
+        <p className={styles.subtitle}>Manage your account settings and set e-mail preferences.</p>
       </div>
-      <Separator className="my-6" />
-      <div className="flex flex-col space-y-8 lg:flex-row lg:space-x-12 lg:space-y-0">
-        <aside className="-mx-1 overflow-x-auto pb-1 lg:mx-0 lg:w-1/5 lg:overflow-visible">
+      <Separator />
+      <div className={styles.panels}>
+        <aside className={styles.nav}>
           <SettingsSidebar />
         </aside>
-        <div className="min-w-0 flex-1">
+        <div className={styles.pane}>
           <Outlet />
         </div>
       </div>

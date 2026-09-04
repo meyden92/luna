@@ -2,6 +2,7 @@ import { Slider as SliderPrimitive } from '@base-ui/react/slider';
 import * as React from 'react';
 
 import { cn } from '@/libs/utils';
+import styles from './slider.module.css';
 
 type SliderProps = SliderPrimitive.Root.Props & {
   thumbAriaLabel?: string;
@@ -16,7 +17,7 @@ function Slider({ className, defaultValue, value, min = 0, max = 100, thumbAriaL
 
   return (
     <SliderPrimitive.Root
-      className="data-horizontal:w-full data-vertical:h-full"
+      className={styles.root}
       data-slot="slider"
       defaultValue={defaultValue}
       value={value}
@@ -25,19 +26,14 @@ function Slider({ className, defaultValue, value, min = 0, max = 100, thumbAriaL
       thumbAlignment="edge"
       {...props}
     >
-      <SliderPrimitive.Control
-        className={cn(
-          'data-vertical:min-h-40 relative flex w-full touch-none items-center py-1 select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:w-auto data-vertical:flex-col',
-          className,
-        )}
-      >
+      <SliderPrimitive.Control className={cn(styles.control, className)}>
         <SliderPrimitive.Track
           data-slot="slider-track"
-          className="relative h-2.5 w-full bg-border/85 dark:bg-base-700 border-border dark:border-base-600 rounded-lg border overflow-hidden shadow-inner select-none data-vertical:h-full data-vertical:w-2.5"
+          className={styles.track}
         >
           <SliderPrimitive.Indicator
             data-slot="slider-range"
-            className="h-full bg-gradient-to-r from-primary-800 via-primary-600 to-primary-400 shadow-sm select-none data-vertical:h-auto data-vertical:w-full"
+            className={styles.indicator}
           />
         </SliderPrimitive.Track>
         {Array.from({ length: _values.length }, (_, index) => (
@@ -48,7 +44,7 @@ function Slider({ className, defaultValue, value, min = 0, max = 100, thumbAriaL
             index={index}
             getAriaLabel={thumbAriaLabel ? () => thumbAriaLabel : undefined}
             getAriaValueText={getThumbAriaValueText ? (_formattedValue, value) => getThumbAriaValueText(value) : undefined}
-            className="border-primary-300 dark:border-primary-500 ring-primary/20 size-5 rounded-full border-2 bg-background shadow-md transition-[box-shadow,transform,border-color] duration-200 hover:scale-110 hover:shadow-lg focus-visible:scale-110 focus-visible:ring-4 focus-visible:ring-ring/45 focus-visible:outline-hidden block shrink-0 select-none disabled:pointer-events-none disabled:opacity-50"
+            className={styles.thumb}
           />
         ))}
       </SliderPrimitive.Control>

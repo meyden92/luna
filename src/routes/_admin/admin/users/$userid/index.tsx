@@ -9,7 +9,9 @@ import UserStorageInfo from '@/components/admin/user/user-storage-info';
 import { buttonVariants } from '@/components/ui/button';
 import { queryKeys } from '@/libs/query-keys';
 import { storageQuotaMiBToBytes } from '@/libs/storage-quota';
+import { cn } from '@/libs/utils';
 import { getAdminUserDetail } from '@/server/fns/admin/users';
+import styles from './index.module.css';
 
 const userDetailQueryOptions = (userid: string) =>
   queryOptions({
@@ -39,17 +41,17 @@ function UserDetailPage() {
     quotaBytes > 0 ? Math.round((Math.min(totalSize, quotaBytes) / quotaBytes) * 100 * 100) / 100 : totalSize > 0 ? 100 : 0;
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="space-y-3">
+    <div className="container pad-y-8">
+      <div className="stack space-3">
         <UserHeader user={user} />
 
-        <div className="flex gap-2">
+        <div className={styles.actionsRow}>
           <Link
             to="/admin/users/$userid/files"
             params={{ userid: user.id }}
             className={buttonVariants({ variant: 'secondary' })}
           >
-            <Files className="h-4 w-4 mr-2" />
+            <Files className={styles.icon} />
             View Files ({user.fileCount})
           </Link>
 
@@ -59,12 +61,12 @@ function UserDetailPage() {
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          <div className="lg:col-span-2 space-y-3">
+        <div className={styles.layout}>
+          <div className={cn(styles.details, 'stack space-3')}>
             <UserAccountDetails user={user} />
           </div>
 
-          <div className="space-y-3">
+          <div className="stack space-3">
             <UserStorageInfo
               userId={user.id}
               totalSize={totalSize}

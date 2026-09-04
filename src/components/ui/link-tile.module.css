@@ -1,0 +1,41 @@
+@layer components {
+  .link {
+    display: block;
+    text-decoration: none;
+    border-radius: var(--radius-xl);
+
+    &:focus-visible {
+      outline: 2px solid var(--ring);
+      outline-offset: 2px;
+    }
+
+    /* Descendant selectors so these win over the card primitive's own module. */
+    .card {
+      height: 100%;
+      background: var(--accent);
+      color: var(--accent-foreground);
+      transition:
+        background-color 150ms ease,
+        border-color 150ms ease,
+        color 150ms ease,
+        box-shadow 150ms ease;
+    }
+
+    &:hover .card {
+      background: color-mix(in oklch, var(--primary) 40%, var(--accent));
+      border-color: var(--primary);
+    }
+
+    .title {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .icon {
+      width: var(--space-4);
+      height: var(--space-4);
+      flex-shrink: 0;
+    }
+  }
+}

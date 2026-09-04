@@ -1,0 +1,26 @@
+@layer components {
+  /* Outline badge tinted by change type; the Badge primitive supplies layout. */
+  .root {
+    border-color: color-mix(in oklab, var(--tone) 20%, transparent);
+    background-color: color-mix(in oklab, var(--tone) 10%, transparent);
+    color: var(--tone);
+  }
+
+  .root[data-type="added"] {
+    --tone: var(--success);
+  }
+
+  .root[data-type="modified"] {
+    --tone: var(--warning);
+  }
+
+  .root[data-type="removed"] {
+    --tone: var(--destructive);
+  }
+
+  .icon {
+    width: var(--space-3);
+    height: var(--space-3);
+    margin-right: var(--space-1);
+  }
+}

@@ -1,0 +1,58 @@
+@layer components {
+  .idCell {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--muted-foreground);
+  }
+
+  .recordCell {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .summaryCell {
+    max-width: 20rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  .actionsCell {
+    text-align: right;
+  }
+
+  /* Pill tinted by the kind of write the row records. */
+  .actionPill {
+    --tone: var(--muted-foreground);
+    padding-inline: var(--space-2);
+    padding-block: var(--space-1);
+    border-radius: var(--radius-full);
+    background-color: color-mix(in oklab, var(--tone) 15%, transparent);
+    color: var(--tone);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .actionPill[data-action="create"] {
+    --tone: var(--success);
+  }
+
+  .actionPill[data-action="update"] {
+    --tone: var(--info);
+  }
+
+  .actionPill[data-action="delete"] {
+    --tone: var(--destructive);
+  }
+
+  .emptyCell {
+    height: var(--space-24);
+    text-align: center;
+    color: var(--muted-foreground);
+  }
+}

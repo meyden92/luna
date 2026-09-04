@@ -1,0 +1,35 @@
+@layer components {
+  .root {
+    position: relative;
+  }
+
+  .copyButton {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+  }
+
+  /* prism-react-renderer supplies the palette through an inline style; only the
+     box around it belongs here. */
+  .pre {
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    overflow: auto;
+  }
+
+  .line {
+    display: table-row;
+  }
+
+  .lineNumber {
+    display: table-cell;
+    padding-right: var(--space-4);
+    text-align: right;
+    user-select: none;
+    opacity: 0.5;
+  }
+
+  .lineContent {
+    display: table-cell;
+  }
+}

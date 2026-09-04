@@ -1,0 +1,91 @@
+/* Popup motion follows the tooltip.module.css reference pattern (ADR 0003). */
+@layer components {
+  .positioner {
+    isolation: isolate;
+    z-index: 50;
+  }
+
+  .popup {
+    /* Distance the popup travels on entry, along the axis it opens from. */
+    --slide: var(--space-2);
+    --width: 18rem;
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    width: var(--width);
+    padding: var(--space-4);
+    border: 1px solid color-mix(in oklch, var(--border) 70%, transparent);
+    border-radius: var(--radius-xl);
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    box-shadow: var(--shadow-lg);
+    transform-origin: var(--transform-origin);
+    outline: none;
+    transition-property: opacity, transform, scale, overlay, display;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
+    transition-behavior: allow-discrete;
+
+    &[data-starting-style],
+    &[data-ending-style] {
+      opacity: 0;
+      scale: 0.95;
+    }
+
+    @starting-style {
+      opacity: 0;
+      scale: 0.95;
+    }
+
+    /* Slide in from the trigger: the popup starts pushed toward its own side. */
+    &[data-side="top"][data-starting-style],
+    &[data-side="top"][data-ending-style] {
+      transform: translateY(var(--slide));
+    }
+
+    &[data-side="bottom"][data-starting-style],
+    &[data-side="bottom"][data-ending-style] {
+      transform: translateY(calc(-1 * var(--slide)));
+    }
+
+    &[data-side="left"][data-starting-style],
+    &[data-side="left"][data-ending-style] {
+      transform: translateX(var(--slide));
+    }
+
+    &[data-side="right"][data-starting-style],
+    &[data-side="right"][data-ending-style] {
+      transform: translateX(calc(-1 * var(--slide)));
+    }
+  }
+
+  .header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .title {
+    --tracking-tight: -0.025em;
+
+    font-size: var(--text-base);
+    line-height: var(--leading-base);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-tight);
+  }
+
+  .description {
+    color: var(--muted-foreground);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .popup {
+      transition-duration: 0.01ms;
+    }
+  }
+}

@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import type { CronConfig, ScheduleType } from '@/libs/cron-utils';
 import { generateCronExpression, getCronDescription, parseCronExpression } from '@/libs/cron-utils';
 import { previewCronSchedule } from '@/server/fns/admin/tasks';
+import styles from './cron-builder.module.css';
 
 interface CronBuilderProps {
   value: string;
@@ -159,14 +160,14 @@ export default function CronBuilder({ value, onChange, className }: CronBuilderP
   return (
     <TooltipProvider>
       <div className={className}>
-        <div className="space-y-4">
+        <div className="stack space-4">
           {/* Header with toggle */}
-          <div className="flex items-center justify-between">
-            <Label className="text-base font-medium">Schedule</Label>
-            <div className="flex items-center gap-2">
+          <div className={styles.header}>
+            <Label className={styles.heading}>Schedule</Label>
+            <div className={styles.switchRow}>
               <Label
                 htmlFor="visual-builder"
-                className="text-sm"
+                className={styles.switchLabel}
               >
                 Visual Builder
               </Label>
@@ -180,10 +181,10 @@ export default function CronBuilder({ value, onChange, className }: CronBuilderP
 
           {useVisualBuilder ? (
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">Visual Schedule Builder</CardTitle>
+              <CardHeader className={styles.cardHeader}>
+                <CardTitle className={styles.cardTitle}>Visual Schedule Builder</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="stack space-4">
                 {/* Schedule Type */}
                 <div>
                   <Label htmlFor="schedule-type">Schedule Type</Label>
@@ -207,7 +208,7 @@ export default function CronBuilder({ value, onChange, className }: CronBuilderP
 
                 {/* Dynamic inputs based on schedule type */}
                 {config.type === 'every' && (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className={styles.pair}>
                     <div>
                       <Label>Interval</Label>
                       <Input
@@ -246,7 +247,7 @@ export default function CronBuilder({ value, onChange, className }: CronBuilderP
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="max-h-60">
+                      <SelectContent className={styles.longList}>
                         {Array.from({ length: 60 }, (_, i) => (
                           <SelectItem
                             key={i.toString()}
@@ -261,7 +262,7 @@ export default function CronBuilder({ value, onChange, className }: CronBuilderP
                 )}
 
                 {(config.type === 'daily' || config.type === 'weekly' || config.type === 'monthly') && (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className={styles.pair}>
                     <div>
                       <Label>Hour</Label>
                       <Select
@@ -271,7 +272,7 @@ export default function CronBuilder({ value, onChange, className }: CronBuilderP
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="max-h-60">
+                        <SelectContent className={styles.longList}>
                           {Array.from({ length: 24 }, (_, i) => (
                             <SelectItem
                               key={i.toString()}
@@ -292,7 +293,7 @@ export default function CronBuilder({ value, onChange, className }: CronBuilderP
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="max-h-60">
+                        <SelectContent className={styles.longList}>
                           {Array.from({ length: 60 }, (_, i) => (
                             <SelectItem
                               key={i.toString()}
@@ -340,7 +341,7 @@ export default function CronBuilder({ value, onChange, className }: CronBuilderP
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="max-h-60">
+                      <SelectContent className={styles.longList}>
                         {Array.from({ length: 31 }, (_, i) => (
                           <SelectItem
                             key={(i + 1).toString()}
@@ -361,9 +362,9 @@ export default function CronBuilder({ value, onChange, className }: CronBuilderP
                       value={customExpression}
                       onChange={(e) => handleCustomExpressionChange(e.target.value)}
                       placeholder="0 0 * * *"
-                      className={!validation.isValid ? 'border-destructive' : ''}
+                      className={validation.isValid ? undefined : styles.invalidInput}
                     />
-                    {!validation.isValid && <p className="text-sm text-destructive mt-1">{validation.error}</p>}
+                    {!validation.isValid && <p className={styles.validationError}>{validation.error}</p>}
                   </div>
                 )}
               </CardContent>
@@ -375,31 +376,31 @@ export default function CronBuilder({ value, onChange, className }: CronBuilderP
                 value={customExpression}
                 onChange={(e) => handleCustomExpressionChange(e.target.value)}
                 placeholder="0 0 * * * (daily at midnight)"
-                className={!validation.isValid ? 'border-destructive' : ''}
+                className={validation.isValid ? undefined : styles.invalidInput}
               />
-              {!validation.isValid && <p className="text-sm text-destructive mt-1">{validation.error}</p>}
-              <p className="text-sm text-muted-foreground mt-1">Standard cron syntax: minute hour dayOfMonth month dayOfWeek</p>
+              {!validation.isValid && <p className={styles.validationError}>{validation.error}</p>}
+              <p className={styles.syntaxHint}>Standard cron syntax: minute hour dayOfMonth month dayOfWeek</p>
             </div>
           )}
 
           {/* Preview */}
-          <div className="space-y-3">
+          <div className="stack space-3">
             <Separator />
 
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Schedule Preview</span>
+            <div className={styles.previewHead}>
+              <Clock className={styles.previewIcon} />
+              <span className={styles.previewTitle}>Schedule Preview</span>
               <Tooltip>
                 <TooltipTrigger
                   render={
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-auto p-0"
+                      className={styles.infoTrigger}
                     />
                   }
                 >
-                  <Info className="h-3 w-3" />
+                  <Info />
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Shows when this task will run next</p>
@@ -407,21 +408,21 @@ export default function CronBuilder({ value, onChange, className }: CronBuilderP
               </Tooltip>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
+            <div className="stack space-2">
+              <div className={styles.expressionRow}>
                 <Badge variant="secondary">{getCronDescription(useVisualBuilder ? config : { type: 'custom', customExpression })}</Badge>
-                <code className="text-xs bg-muted px-2 py-1 rounded">{currentExpression}</code>
+                <code className={styles.expression}>{currentExpression}</code>
               </div>
 
               {validation.isValid && nextExecutions.length > 0 && (
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">Next 5 executions:</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 text-xs">
+                  <p className={styles.executionsLabel}>Next 5 executions:</p>
+                  <div className={styles.executions}>
                     {nextExecutions.map((date) => (
                       <Badge
                         key={date.getTime().toString()}
                         variant="outline"
-                        className="justify-start font-mono"
+                        className={styles.executionBadge}
                       >
                         {formatExecutionDate(date, preview.timeZone)}
                       </Badge>

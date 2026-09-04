@@ -1,5 +1,6 @@
 import { Link, useLocation } from '@tanstack/react-router';
 import type { FileRouteTypes } from '@/routeTree.gen';
+import styles from './admin-breadcrumbs-wrapper.module.css';
 
 type AdminRouteTo = Extract<FileRouteTypes['to'], '/admin' | `/admin/${string}`>;
 type Breadcrumb = {
@@ -78,20 +79,20 @@ export default function AdminBreadcrumbsWrapper() {
   }
 
   return (
-    <nav className="bg-accent ring-1 ring-accent/20 p-4 rounded mb-6">
-      <ol className="list-reset flex text-sm">
+    <nav className={styles.nav}>
+      <ol className={styles.trail}>
         {breadcrumbs.map((breadcrumb, index) => (
           <li
             key={breadcrumb.path}
-            className="flex items-center"
+            className={styles.crumb}
           >
-            {index > 0 && <span className="mx-2">/</span>}
+            {index > 0 && <span className={styles.separator}>/</span>}
             {breadcrumb.isLast || !breadcrumb.to ? (
-              <span className="text-muted-foreground">{breadcrumb.name}</span>
+              <span className={styles.current}>{breadcrumb.name}</span>
             ) : (
               <Link
                 to={breadcrumb.to}
-                className="text-blue-600 hover:underline"
+                className={styles.link}
               >
                 {breadcrumb.name}
               </Link>

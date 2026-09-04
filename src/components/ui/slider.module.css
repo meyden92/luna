@@ -1,0 +1,98 @@
+@layer components {
+  .root {
+    &[data-orientation="horizontal"] {
+      width: 100%;
+    }
+
+    &[data-orientation="vertical"] {
+      height: 100%;
+    }
+  }
+
+  /* Track geometry lives here and inherits down to the track element. */
+  .control {
+    --track-thickness: 0.625rem;
+    --track-length-vertical: 10rem;
+
+    position: relative;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    padding-block: var(--space-1);
+    touch-action: none;
+    user-select: none;
+
+    &[data-orientation="vertical"] {
+      flex-direction: column;
+      width: auto;
+      height: 100%;
+      min-height: var(--track-length-vertical);
+    }
+
+    &[data-disabled] {
+      opacity: 0.5;
+    }
+  }
+
+  .track {
+    position: relative;
+    width: 100%;
+    height: var(--track-thickness);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background-color: var(--muted-strong);
+    box-shadow: inset 0 1px 2px var(--shadow-color-1);
+    user-select: none;
+
+    &[data-orientation="vertical"] {
+      width: var(--track-thickness);
+      height: 100%;
+    }
+  }
+
+  .indicator {
+    height: 100%;
+    background-image: linear-gradient(to right, var(--primary-strong), var(--primary));
+    user-select: none;
+
+    &[data-orientation="vertical"] {
+      width: 100%;
+      height: auto;
+      background-image: linear-gradient(to top, var(--primary-strong), var(--primary));
+    }
+  }
+
+  .thumb {
+    display: block;
+    width: var(--space-5);
+    height: var(--space-5);
+    flex-shrink: 0;
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-full);
+    background-color: var(--background);
+    box-shadow: var(--shadow-md);
+    user-select: none;
+    transition:
+      transform 150ms ease,
+      box-shadow 150ms ease,
+      border-color 150ms ease;
+
+    &:hover {
+      transform: scale(1.1);
+      box-shadow: var(--shadow-lg);
+    }
+
+    &:focus-visible {
+      transform: scale(1.1);
+      outline: 2px solid var(--ring);
+      outline-offset: 2px;
+    }
+
+    &:disabled,
+    &[data-disabled] {
+      pointer-events: none;
+      opacity: 0.5;
+    }
+  }
+}

@@ -1,0 +1,135 @@
+@layer components {
+  .root {
+    display: flex;
+    gap: var(--space-2);
+
+    &[data-orientation="horizontal"] {
+      flex-direction: column;
+    }
+  }
+
+  .list {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-1);
+    border-radius: var(--radius-3xl);
+    color: var(--muted-foreground);
+
+    &[data-variant="default"] {
+      background-color: var(--muted);
+    }
+
+    &[data-variant="line"] {
+      gap: var(--space-1);
+      background-color: transparent;
+    }
+  }
+
+  .root[data-orientation="horizontal"] .list {
+    height: var(--space-10);
+  }
+
+  .root[data-orientation="vertical"] .list {
+    height: fit-content;
+    flex-direction: column;
+    border-radius: var(--radius-2xl);
+  }
+
+  .trigger {
+    position: relative;
+    display: inline-flex;
+    height: 100%;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    white-space: nowrap;
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid transparent;
+    border-radius: var(--radius-xl);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+    color: var(--muted-foreground);
+    transition:
+      color 150ms ease,
+      background-color 150ms ease,
+      border-color 150ms ease;
+
+    &:hover {
+      color: var(--foreground);
+    }
+
+    &[data-active] {
+      color: var(--foreground);
+    }
+
+    &:focus-visible {
+      border-color: var(--ring);
+      outline: 1px solid var(--ring);
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent);
+    }
+
+    &:disabled {
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    & svg {
+      pointer-events: none;
+      flex-shrink: 0;
+      width: var(--space-4);
+      height: var(--space-4);
+    }
+  }
+
+  .root[data-orientation="vertical"] .trigger {
+    width: 100%;
+    justify-content: flex-start;
+    padding: var(--space-2) var(--space-3);
+  }
+
+  /* Pill treatment: the selected tab lifts onto the page surface. */
+  .list[data-variant="default"] .trigger[data-active] {
+    border-color: light-dark(transparent, var(--input));
+    background-color: light-dark(var(--background), color-mix(in oklab, var(--input) 30%, transparent));
+  }
+
+  /* Underline treatment: no fill, a rule on the edge the list runs along. */
+  .list[data-variant="line"] .trigger {
+    background-color: transparent;
+
+    &::after {
+      content: "";
+      position: absolute;
+      background-color: var(--foreground);
+      opacity: 0;
+      transition: opacity 150ms ease;
+    }
+
+    &[data-active]::after {
+      opacity: 1;
+    }
+  }
+
+  .root[data-orientation="horizontal"] .list[data-variant="line"] .trigger::after {
+    inset-inline: 0;
+    bottom: calc(-1 * var(--space-1));
+    height: 2px;
+  }
+
+  .root[data-orientation="vertical"] .list[data-variant="line"] .trigger::after {
+    inset-block: 0;
+    right: calc(-1 * var(--space-1));
+    width: 2px;
+  }
+
+  .panel {
+    flex: 1;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    outline: none;
+  }
+}

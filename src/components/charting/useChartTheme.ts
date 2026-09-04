@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'react';
+import { resolveCssColor } from '@/libs/css-color';
 
 export type ChartTheme = {
   text: string;
@@ -24,11 +25,7 @@ export type ChartTheme = {
 };
 
 export function useChartTheme(): ChartTheme {
-  const readVar = useCallback((name: string, fallback: string) => {
-    if (typeof window === 'undefined') return fallback;
-    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-    return v || fallback;
-  }, []);
+  const readVar = useCallback((name: string, fallback: string) => resolveCssColor(name, fallback), []);
 
   const withAlpha = useCallback((color: string, alpha: number) => {
     const a = Math.max(0, Math.min(1, alpha));

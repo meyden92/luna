@@ -6,11 +6,11 @@ import { Button } from '@/components/ui/button';
 import { useGalleryStore } from '@/hooks/stores/gallery-store';
 import { useBulkSelection } from '@/hooks/stores/use-bulk-selection';
 import { densityMetrics, useGalleryView } from '@/hooks/stores/use-gallery-view';
-import { cn } from '@/libs/utils';
 import type { GalleryFile } from '@/types/project';
 import { DayCheckbox } from './day-checkbox';
 import GalleryEntry from './GalleryEntry';
 import { GallerySkeleton } from './GallerySkeleton';
+import styles from './VirtualizedGallery.module.css';
 
 interface VirtualizedGalleryProps {
   files: GalleryFile[];
@@ -171,17 +171,18 @@ const MonthSection = memo(function MonthSection({
   };
 
   return (
-    <section className={cn(!isFirst && 'mt-[30px]')}>
+    <section
+      className={styles.section}
+      data-first={isFirst || undefined}
+    >
       <header
-        className="flex items-baseline gap-3.5"
+        className={styles.header}
         style={{ height: GROUP_HEADER_HEIGHT - 16, marginBottom: 16 }}
       >
-        <span className="font-mono text-xs tracking-[0.1em] text-luna-accent-2 dark:text-luna-accent">
-          {String(index + 1).padStart(2, '0')}
-        </span>
-        <h2 className="m-0 whitespace-nowrap font-serif text-[31px] font-normal leading-9 text-luna-ink">{group.label}</h2>
-        <span className="whitespace-nowrap font-mono text-[11.5px] tracking-[0.04em] text-luna-ink-4">{group.meta}</span>
-        <span className="h-px flex-1 self-center bg-luna-line" />
+        <span className={styles.index}>{String(index + 1).padStart(2, '0')}</span>
+        <h2 className={styles.title}>{group.label}</h2>
+        <span className={styles.meta}>{group.meta}</span>
+        <span className={styles.rule} />
         <DayCheckbox
           date={group.dateKey}
           fileIds={group.fileIds}
@@ -190,14 +191,14 @@ const MonthSection = memo(function MonthSection({
 
       {layout.rows ? (
         <div
-          className="flex flex-col"
+          className={styles.rows}
           style={{ gap }}
         >
           {layout.rows.map((row, rowIndex) => (
             <div
               // biome-ignore lint/suspicious/noArrayIndexKey: rows are positional slices of a stable file list
               key={rowIndex}
-              className="flex"
+              className={styles.row}
               style={{ height: row.height, gap }}
             >
               {row.items.map(({ file, width }) => (
@@ -214,7 +215,7 @@ const MonthSection = memo(function MonthSection({
         </div>
       ) : (
         <div
-          className="grid"
+          className={styles.grid}
           style={{ gap, gridTemplateColumns: `repeat(${layout.columns}, minmax(0, 1fr))` }}
         >
           {group.files.map((file) => (
@@ -235,9 +236,9 @@ function TimelineRail({ groups, activeIndex, onJump }: { groups: VirtualGroup[];
   return (
     <nav
       aria-label="Timeline"
-      className="fixed right-3.5 top-1/2 z-40 hidden -translate-y-1/2 flex-col items-end gap-[22px] xl:flex"
+      className={styles.rail}
     >
-      <span className="absolute -bottom-3.5 -top-3.5 right-[21px] w-px bg-luna-line-2" />
+      <span className={styles.railLine} />
       {groups.map((group, index) => {
         const isActive = index === activeIndex;
         return (
@@ -247,18 +248,16 @@ function TimelineRail({ groups, activeIndex, onJump }: { groups: VirtualGroup[];
             onClick={() => onJump(index)}
             aria-label={`Jump to ${group.label}`}
             aria-current={isActive ? 'true' : undefined}
-            className="group/stop relative flex flex-row-reverse items-center gap-[9px] py-0.5"
+            className={styles.stop}
           >
             <span
-              className={cn('h-[1.5px] w-3.5 bg-luna-line-2 transition-all duration-150', isActive && 'h-[2.5px] w-[22px] bg-luna-accent')}
+              className={styles.tick}
+              data-active={isActive || undefined}
             />
             <span
               aria-hidden
-              className={cn(
-                'font-mono text-[10px] uppercase tracking-[0.12em] text-luna-ink-4 transition-colors duration-150 group-hover/stop:text-luna-ink-2',
-                isActive &&
-                  'text-luna-accent-2 group-hover/stop:text-luna-accent-2 dark:text-luna-accent dark:group-hover/stop:text-luna-accent',
-              )}
+              className={styles.stopLabel}
+              data-active={isActive || undefined}
             >
               {group.railLabel}
             </span>
@@ -271,10 +270,10 @@ function TimelineRail({ groups, activeIndex, onJump }: { groups: VirtualGroup[];
 
 function EmptyState({ scopeLabel }: { scopeLabel: string }) {
   return (
-    <div className="mt-10 flex flex-col items-center gap-1.5 rounded-[18px] border-[1.5px] border-dashed border-luna-line-2 px-10 py-[90px] text-center">
-      <span className="relative mb-2.5 block h-10 w-10 overflow-hidden rounded-full bg-luna-accent-tint after:absolute after:-right-[7px] after:-top-[7px] after:h-8 after:w-8 after:rounded-full after:bg-luna-bg after:content-['']" />
-      <p className="m-0 font-serif text-[22px] text-luna-ink">Nothing in “{scopeLabel}” yet</p>
-      <p className="m-0 text-[13px] text-luna-ink-4">Adjust your filters, or upload something new.</p>
+    <div className={styles.empty}>
+      <span className={styles.emptyGlyph} />
+      <p className={styles.emptyTitle}>Nothing in “{scopeLabel}” yet</p>
+      <p className={styles.emptyHint}>Adjust your filters, or upload something new.</p>
     </div>
   );
 }
@@ -523,15 +522,15 @@ export default function VirtualizedGallery({
   // Error state (failed query with no loaded files)
   if (isError && files.length === 0) {
     return (
-      <div className="flex items-center justify-center px-4 py-20">
-        <div className="rounded-[18px] border-[1.5px] border-dashed border-destructive/40 px-8 py-10 text-center">
-          <p className="font-serif text-[22px] text-luna-ink">Couldn't load your files</p>
-          <p className="mt-2 text-[13px] text-luna-ink-4">Something went wrong while loading the gallery. Please try again.</p>
+      <div className={styles.errorWrap}>
+        <div className={styles.errorCard}>
+          <p className={styles.emptyTitle}>Couldn't load your files</p>
+          <p className={`${styles.emptyHint} margin-top-2`}>Something went wrong while loading the gallery. Please try again.</p>
           {onRetry && (
             <Button
               variant="outline"
               size="sm"
-              className="mt-4 rounded-lg"
+              className={styles.retry}
               onClick={onRetry}
             >
               Try again
@@ -550,13 +549,13 @@ export default function VirtualizedGallery({
   return (
     <>
       {virtualGroups.length > 1 && (
-        <div className="mb-3 flex justify-end xl:hidden">
-          <label className="flex items-center gap-2 text-[12px] font-medium text-luna-ink-3">
+        <div className={styles.jumpBar}>
+          <label className={styles.jumpLabel}>
             Jump to
             <select
               value={activeGroupIndex}
               onChange={(event) => jumpToGroup(Number(event.target.value))}
-              className="h-8 rounded-lg border border-luna-line bg-luna-bg px-2 text-[12px] text-luna-ink shadow-sm outline-none focus:border-luna-accent focus:ring-2 focus:ring-luna-accent/20"
+              className={styles.jumpSelect}
               aria-label="Jump to timeline group"
             >
               {virtualGroups.map((group, index) => (
@@ -574,7 +573,7 @@ export default function VirtualizedGallery({
 
       <div ref={listRef}>
         <div
-          className="relative w-full"
+          className={styles.viewport}
           style={{ height: virtualizer.getTotalSize() }}
         >
           {containerWidth > 0 &&
@@ -586,7 +585,7 @@ export default function VirtualizedGallery({
               return (
                 <div
                   key={group.key}
-                  className="absolute left-0 w-full"
+                  className={styles.groupPosition}
                   style={{ top: virtualRow.start - scrollMargin }}
                 >
                   <MonthSection
@@ -612,7 +611,7 @@ export default function VirtualizedGallery({
       <div
         ref={loadMoreSentinelRef}
         aria-hidden="true"
-        className="h-px"
+        className={styles.sentinel}
       />
 
       {virtualGroups.length > 1 && (
@@ -624,8 +623,8 @@ export default function VirtualizedGallery({
       )}
 
       {isFetchingNextPage && (
-        <div className="flex justify-center py-4">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <div className={styles.spinnerWrap}>
+          <div className={styles.spinner} />
         </div>
       )}
     </>

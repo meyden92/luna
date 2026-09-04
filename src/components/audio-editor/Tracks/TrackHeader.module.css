@@ -1,0 +1,81 @@
+@layer components {
+  /* Height matches .track in TimelineTrack.module.css so headers stay aligned
+     with their lane. */
+  .root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    height: var(--space-20);
+    padding: var(--space-2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .root[data-muted="true"] {
+    opacity: 0.5;
+  }
+
+  /* A soloed track elsewhere pushes this one further back than a plain mute. */
+  .root[data-dimmed="true"] {
+    opacity: 0.4;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  /* Borderless until hovered or focused, so a row of names reads as text. */
+  .nameInput {
+    flex: 1;
+    height: var(--space-5);
+    padding-inline: var(--space-2);
+    background: transparent;
+    border-color: transparent;
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .nameInput:hover,
+  .nameInput:focus {
+    border-color: var(--border);
+  }
+
+  .icon {
+    width: var(--space-3);
+    height: var(--space-3);
+  }
+
+  .volumeIcon {
+    width: var(--space-3);
+    height: var(--space-3);
+    flex-shrink: 0;
+    color: var(--muted-foreground);
+  }
+
+  .toggleLetter {
+    font-size: var(--text-xs);
+    line-height: 1;
+    font-weight: var(--weight-bold);
+  }
+
+  .volumeSlider {
+    flex: 1;
+    min-width: var(--space-16);
+  }
+
+  .volumeValue {
+    width: var(--space-8);
+    text-align: right;
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    font-variant-numeric: tabular-nums;
+  }
+}

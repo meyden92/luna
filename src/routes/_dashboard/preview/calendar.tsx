@@ -8,7 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { queryKeys } from '@/libs/query-keys';
+import { cn } from '@/libs/utils';
 import { getMockCalendar } from '@/server/fns/system';
+import styles from './calendar.module.css';
 
 interface CalendarApiResponse {
   year: number;
@@ -21,6 +23,8 @@ interface CalendarApiResponse {
 async function fetchCalendarEvents(year: number, month: number): Promise<CalendarApiResponse> {
   return getMockCalendar({ data: { year, month } }) as Promise<CalendarApiResponse>;
 }
+
+const EVENT_COLORS = ['primary', 'secondary', 'success', 'warning', 'destructive'] as const;
 
 export const Route = createFileRoute('/_dashboard/preview/calendar')({
   head: () => ({ meta: [{ title: 'Calendar | LunaShare' }] }),
@@ -49,24 +53,24 @@ function CalendarPreviewPage() {
   };
 
   return (
-    <section className="container mx-auto py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Calendar Preview</h1>
-        <p className="text-muted-foreground mt-1">Testing the MonthlyCalendar component with mock data from API</p>
+    <section className="container pad-y-8">
+      <div className={styles.header}>
+        <h1 className="type-2xl weight-bold">Calendar Preview</h1>
+        <p className={styles.subtitle}>Testing the MonthlyCalendar component with mock data from API</p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+      <div className={styles.layout}>
         <Card
-          className="flex flex-col"
+          className={styles.calendarCard}
           style={containerStyle}
         >
-          <CardHeader className="pb-2 shrink-0">
-            <div className="flex items-center justify-between">
+          <CardHeader className={styles.calendarCardHeader}>
+            <div className={styles.calendarCardHeaderRow}>
               <div>
                 <CardTitle>Events Calendar</CardTitle>
                 <CardDescription>
                   {error ? (
-                    <span className="text-destructive">Error loading events</span>
+                    <span className={styles.errorText}>Error loading events</span>
                   ) : data ? (
                     <>
                       {data.events.length} events loaded in {data.delay}ms
@@ -77,14 +81,14 @@ function CalendarPreviewPage() {
                 </CardDescription>
               </div>
               {isFetching && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                <div className={styles.fetching}>
+                  <div className={styles.fetchingDot} />
                   {isLoading ? 'Loading...' : 'Updating...'}
                 </div>
               )}
             </div>
           </CardHeader>
-          <CardContent className="flex-1 min-h-0">
+          <CardContent className={styles.calendarCardContent}>
             <MonthlyCalendar
               currentMonth={currentMonth}
               onCurrentMonthChange={(d) => setCurrentMonth(startOfMonth(d))}
@@ -106,17 +110,17 @@ function CalendarPreviewPage() {
           </CardContent>
         </Card>
 
-        <div className="space-y-4">
+        <div className={styles.rail}>
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Container Size</CardTitle>
+              <CardTitle className="type-base">Container Size</CardTitle>
               <CardDescription>Test different container dimensions</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
+            <CardContent className="stack space-4">
+              <div className="stack space-2">
                 <Label
                   htmlFor="containerHeight"
-                  className="text-sm"
+                  className={styles.fieldLabel}
                 >
                   Height (px)
                 </Label>
@@ -130,10 +134,10 @@ function CalendarPreviewPage() {
                   max={2000}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="stack space-2">
                 <Label
                   htmlFor="containerWidth"
-                  className="text-sm"
+                  className={styles.fieldLabel}
                 >
                   Width (px)
                 </Label>
@@ -147,7 +151,7 @@ function CalendarPreviewPage() {
                   max={2000}
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="type-xs">
                 Current: {containerHeight || 'auto'}px × {containerWidth || 'auto'}px
               </p>
             </CardContent>
@@ -155,13 +159,13 @@ function CalendarPreviewPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Layout Options</CardTitle>
+              <CardTitle className="type-base">Layout Options</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
+            <CardContent className="stack space-4">
+              <div className={styles.rowBetween}>
                 <Label
                   htmlFor="dimOutsideMonthDays"
-                  className="text-sm"
+                  className={styles.fieldLabel}
                 >
                   Dim outside month days
                 </Label>
@@ -171,10 +175,10 @@ function CalendarPreviewPage() {
                   onCheckedChange={setDimOutsideMonthDays}
                 />
               </div>
-              <div className="flex items-center justify-between">
+              <div className={styles.rowBetween}>
                 <Label
                   htmlFor="showOutsideMonthDays"
-                  className="text-sm"
+                  className={styles.fieldLabel}
                 >
                   Show outside month days
                 </Label>
@@ -189,36 +193,36 @@ function CalendarPreviewPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">API Info</CardTitle>
+              <CardTitle className="type-base">API Info</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div>
-                <span className="text-muted-foreground">Endpoint:</span>
-                <code className="ml-2 text-xs bg-muted px-1.5 py-0.5 rounded">/api/mock-calendar</code>
+            <CardContent className="stack space-3 type-sm">
+              <div className={styles.infoRow}>
+                <span>Endpoint:</span>
+                <code className={styles.code}>/api/mock-calendar</code>
               </div>
-              <div>
-                <span className="text-muted-foreground">Year:</span>
-                <span className="ml-2 font-medium">{year}</span>
+              <div className={styles.infoRow}>
+                <span>Year:</span>
+                <span className={styles.infoValue}>{year}</span>
               </div>
-              <div>
-                <span className="text-muted-foreground">Month:</span>
-                <span className="ml-2 font-medium">
+              <div className={styles.infoRow}>
+                <span>Month:</span>
+                <span className={styles.infoValue}>
                   {month} ({format(currentMonth, 'MMMM')})
                 </span>
               </div>
               {data && (
                 <>
-                  <div>
-                    <span className="text-muted-foreground">Events:</span>
-                    <span className="ml-2 font-medium">{data.events.length}</span>
+                  <div className={styles.infoRow}>
+                    <span>Events:</span>
+                    <span className={styles.infoValue}>{data.events.length}</span>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Simulated delay:</span>
-                    <span className="ml-2 font-medium">{data.delay}ms</span>
+                  <div className={styles.infoRow}>
+                    <span>Simulated delay:</span>
+                    <span className={styles.infoValue}>{data.delay}ms</span>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Generated:</span>
-                    <span className="ml-2 font-medium text-xs">{format(new Date(data.generatedAt), 'HH:mm:ss')}</span>
+                  <div className={styles.infoRow}>
+                    <span>Generated:</span>
+                    <span className={cn(styles.infoValue, 'type-xs')}>{format(new Date(data.generatedAt), 'HH:mm:ss')}</span>
                   </div>
                 </>
               )}
@@ -227,11 +231,11 @@ function CalendarPreviewPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Features Demo</CardTitle>
+              <CardTitle className="type-base">Features Demo</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 text-sm text-muted-foreground">
+            <CardContent className="stack space-2 type-sm">
               <p>This calendar demonstrates:</p>
-              <ul className="list-disc list-inside space-y-1">
+              <ul className={cn('stack space-1', styles.featureList)}>
                 <li>TanStack Query data fetching</li>
                 <li>Multi-day event spanning</li>
                 <li>Event lane collision avoidance</li>
@@ -244,29 +248,20 @@ function CalendarPreviewPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Event Colors</CardTitle>
+              <CardTitle className="type-base">Event Colors</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                {(['primary', 'secondary', 'success', 'warning', 'destructive'] as const).map((color) => (
+              <div className="stack space-2">
+                {EVENT_COLORS.map((color) => (
                   <div
                     key={color}
-                    className="flex items-center gap-2"
+                    className="cluster space-2"
                   >
                     <div
-                      className={`h-4 w-4 rounded ${
-                        color === 'primary'
-                          ? 'bg-primary/20'
-                          : color === 'secondary'
-                            ? 'bg-secondary/20'
-                            : color === 'success'
-                              ? 'bg-green-500/20'
-                              : color === 'warning'
-                                ? 'bg-yellow-500/20'
-                                : 'bg-destructive/20'
-                      }`}
+                      className={styles.swatch}
+                      style={{ '--swatch-color': `var(--${color})` } as React.CSSProperties}
                     />
-                    <span className="text-sm capitalize">{color}</span>
+                    <span className={cn('type-sm', styles.capitalize)}>{color}</span>
                   </div>
                 ))}
               </div>

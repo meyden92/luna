@@ -1,0 +1,204 @@
+/* Popup motion follows the tooltip.module.css reference pattern (ADR 0003). */
+@layer components {
+  .trigger {
+    user-select: none;
+  }
+
+  .positioner {
+    isolation: isolate;
+    z-index: 50;
+    outline: none;
+  }
+
+  .popup {
+    /* Distance the popup travels on entry, along the axis it opens from. */
+    --slide: var(--space-2);
+
+    display: block;
+    box-sizing: border-box;
+    min-width: 12rem;
+    max-height: var(--available-height);
+    padding: var(--space-1);
+    overflow-x: hidden;
+    overflow-y: auto;
+    border: 1px solid color-mix(in oklch, var(--foreground) 5%, transparent);
+    border-radius: var(--radius-2xl);
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+    box-shadow: var(--shadow-lg);
+    transform-origin: var(--transform-origin);
+    outline: none;
+    transition-property: opacity, transform, scale, overlay, display;
+    transition-duration: 100ms;
+    transition-timing-function: ease-out;
+    transition-behavior: allow-discrete;
+
+    &[data-starting-style],
+    &[data-ending-style] {
+      opacity: 0;
+      scale: 0.95;
+    }
+
+    @starting-style {
+      opacity: 0;
+      scale: 0.95;
+    }
+
+    &[data-side="top"][data-starting-style],
+    &[data-side="top"][data-ending-style] {
+      transform: translateY(var(--slide));
+    }
+
+    &[data-side="bottom"][data-starting-style],
+    &[data-side="bottom"][data-ending-style] {
+      transform: translateY(calc(-1 * var(--slide)));
+    }
+
+    &[data-side="left"][data-starting-style],
+    &[data-side="left"][data-ending-style] {
+      transform: translateX(var(--slide));
+    }
+
+    &[data-side="right"][data-starting-style],
+    &[data-side="right"][data-ending-style] {
+      transform: translateX(calc(-1 * var(--slide)));
+    }
+  }
+
+  .label {
+    padding: var(--space-3) var(--space-3);
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+
+    &[data-inset] {
+      padding-left: var(--space-8);
+    }
+  }
+
+  .item,
+  .subTrigger,
+  .checkboxItem,
+  .radioItem {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-xl);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    cursor: default;
+    outline: none;
+    user-select: none;
+
+    & svg {
+      flex-shrink: 0;
+      width: var(--space-4);
+      height: var(--space-4);
+      pointer-events: none;
+    }
+
+    &[data-highlighted] {
+      background-color: var(--accent);
+      color: var(--accent-foreground);
+    }
+  }
+
+  .item,
+  .subTrigger {
+    &[data-inset] {
+      padding-left: var(--space-8);
+    }
+  }
+
+  .item {
+    &[data-disabled] {
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    &[data-variant="destructive"] {
+      color: var(--destructive);
+
+      & svg {
+        color: var(--destructive);
+      }
+
+      &[data-highlighted] {
+        background-color: light-dark(
+          color-mix(in oklch, var(--destructive) 10%, transparent),
+          color-mix(in oklch, var(--destructive) 20%, transparent)
+        );
+        color: var(--destructive);
+      }
+    }
+  }
+
+  .subTrigger {
+    &[data-open] {
+      background-color: var(--accent);
+      color: var(--accent-foreground);
+    }
+  }
+
+  .subPopup {
+    box-shadow: var(--shadow-lg);
+  }
+
+  .chevron {
+    margin-left: auto;
+  }
+
+  .checkboxItem,
+  .radioItem {
+    padding-right: var(--space-8);
+    padding-left: var(--space-3);
+
+    &[data-disabled] {
+      pointer-events: none;
+      opacity: 0.5;
+    }
+  }
+
+  .indicator {
+    position: absolute;
+    right: var(--space-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .separator {
+    height: 1px;
+    margin: var(--space-1) calc(-1 * var(--space-1));
+    background-color: color-mix(in oklch, var(--border) 50%, transparent);
+  }
+
+  .shortcut {
+    --tracking-widest: 0.1em;
+
+    margin-left: auto;
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-widest);
+  }
+
+  .item[data-highlighted] .shortcut,
+  .subTrigger[data-highlighted] .shortcut,
+  .checkboxItem[data-highlighted] .shortcut,
+  .radioItem[data-highlighted] .shortcut {
+    color: var(--accent-foreground);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .popup,
+    .item,
+    .subTrigger,
+    .checkboxItem,
+    .radioItem {
+      transition-duration: 0.01ms;
+    }
+  }
+}

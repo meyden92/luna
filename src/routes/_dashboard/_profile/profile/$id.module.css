@@ -1,0 +1,78 @@
+@layer components {
+  .card {
+    overflow: hidden;
+  }
+
+  .cover {
+    height: 8rem;
+    background: linear-gradient(to right, var(--success), var(--foreground));
+
+    @media (width >= 640px) {
+      height: 12rem;
+    }
+  }
+
+  /* Avatar/name row overlaps the cover banner, centered on mobile and left-aligned from sm. */
+  .headRow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: calc(var(--space-16) * -1);
+    margin-bottom: var(--space-4);
+
+    @media (width >= 640px) {
+      flex-direction: row;
+      align-items: flex-end;
+      margin-top: calc(var(--space-24) * -1);
+      margin-bottom: var(--space-6);
+    }
+  }
+
+  .avatar {
+    width: var(--space-24);
+    height: var(--space-24);
+    border: 4px solid var(--background);
+
+    @media (width >= 640px) {
+      width: 8rem;
+      height: 8rem;
+    }
+  }
+
+  .identity {
+    margin-top: var(--space-4);
+    text-align: center;
+
+    @media (width >= 640px) {
+      margin-top: 0;
+      margin-left: var(--space-6);
+      text-align: left;
+    }
+  }
+
+  .name {
+    letter-spacing: -0.025em;
+  }
+
+  .muted {
+    color: var(--muted-foreground);
+  }
+
+  .badges {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+
+    @media (width >= 640px) {
+      justify-content: flex-start;
+    }
+  }
+
+  .badgeIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+    margin-right: var(--space-1);
+  }
+}

@@ -1,0 +1,21 @@
+@layer components {
+  .playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 30;
+    width: 1px;
+    background: var(--destructive);
+    pointer-events: none;
+  }
+
+  .grip {
+    position: absolute;
+    top: calc(var(--space-1) * -1);
+    left: -0.375rem;
+    width: var(--space-3);
+    height: var(--space-3);
+    border-radius: var(--radius-sm);
+    background: var(--destructive);
+  }
+}

@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Copy, Download, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Copy, Download, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -11,14 +11,17 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
+import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import { useConfirmation } from '@/hooks/use-confirmation';
 import { queryKeys } from '@/libs/query-keys';
 import { DEFAULT_SHAREX_JPEG_QUALITY, MAX_SHAREX_JPEG_QUALITY, MIN_SHAREX_JPEG_QUALITY } from '@/libs/sharex-constants';
+import { cn } from '@/libs/utils';
 import { settingsOverviewQuery } from '@/routes/_dashboard/_settings';
 import { listFolders } from '@/server/fns/folders';
 import { createUserToken, deleteUserToken, getShareXConfig, updateTokenSettings } from '@/server/fns/user';
+import styles from './api.module.css';
 
 interface SharexSettings {
   compressImage: boolean;
@@ -188,29 +191,29 @@ function SettingsApiPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="stack space-6">
+      <div className={styles.header}>
         <div>
-          <h3 className="text-lg font-medium">Tokens</h3>
-          <p className="text-sm text-muted-foreground">Manage your upload tokens for ShareX and API access.</p>
+          <h3 className="type-lg weight-medium">Tokens</h3>
+          <p className={cn('type-sm', styles.muted)}>Manage your upload tokens for ShareX and API access.</p>
         </div>
         <Dialog
           open={isCreateOpen}
           onOpenChange={setIsCreateOpen}
         >
           <DialogTrigger render={<Button />}>
-            <Plus className="mr-2 h-4 w-4" /> Create Token
+            <Plus /> Create Token
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New Token</DialogTitle>
               <DialogDescription>Enter a name for your new token.</DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
+            <div className="pad-y-4">
+              <div className={styles.nameGrid}>
                 <Label
                   htmlFor="name"
-                  className="text-right"
+                  className={styles.labelRight}
                 >
                   Name
                 </Label>
@@ -218,7 +221,7 @@ function SettingsApiPage() {
                   id="name"
                   value={newKeyName}
                   onChange={(e) => setNewKeyName(e.target.value)}
-                  className="col-span-3"
+                  className={styles.nameInput}
                   placeholder="e.g. Development Token"
                 />
               </div>
@@ -247,11 +250,11 @@ function SettingsApiPage() {
                 {createdToken?.copied ? 'The key has been copied to your clipboard.' : 'Copy the key now to use it in ShareX.'}
               </DialogDescription>
             </DialogHeader>
-            <div className="flex gap-2 py-2">
+            <div className="cluster space-2 pad-y-2">
               <Input
                 value={createdToken?.key ?? ''}
                 readOnly
-                className="min-w-0 font-mono text-sm"
+                className={styles.keyInput}
               />
               <Button
                 type="button"
@@ -262,7 +265,7 @@ function SettingsApiPage() {
                 }}
                 aria-label="Copy token"
               >
-                <Copy className="h-4 w-4" />
+                <Copy />
               </Button>
             </div>
             <DialogFooter>
@@ -278,7 +281,7 @@ function SettingsApiPage() {
         <ConfirmationDialog />
       </div>
       <Separator />
-      <div className="space-y-4">
+      <div className="stack space-4">
         {settings.tokens.length === 0 ? (
           <Card>
             <CardHeader>
@@ -296,15 +299,15 @@ function SettingsApiPage() {
 
             return (
               <Card key={token.id}>
-                <CardHeader className="flex flex-col gap-3 pb-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="space-y-1">
+                <CardHeader className={styles.cardHeader}>
+                  <div className="stack space-1">
                     <CardTitle>{tokenName}</CardTitle>
                     <CardDescription>Created on {new Date(token.createdAt).toLocaleDateString()}</CardDescription>
                   </div>
                   <Button
                     variant="destructive"
                     size="icon"
-                    className="self-start sm:self-auto"
+                    className={styles.deleteAction}
                     onClick={() =>
                       confirm({
                         title: `Delete "${tokenName}"?`,
@@ -317,33 +320,33 @@ function SettingsApiPage() {
                     disabled={isDeleting}
                     aria-label={`Delete ${tokenName}`}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 />
                   </Button>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex gap-2 pt-4">
+                  <div className={cn('cluster space-2', styles.keyRow)}>
                     <Input
                       value={token.key}
                       readOnly
-                      className="min-w-0 font-mono text-sm"
+                      className={styles.keyInput}
                     />
                     <Button
                       variant="outline"
                       size="icon"
                       onClick={() => void copyToClipboard(token.key)}
                     >
-                      <Copy className="h-4 w-4" />
+                      <Copy />
                     </Button>
                   </div>
 
-                  <div className="mt-3 flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0 space-y-0.5">
-                      <p className="text-sm font-medium">ShareX config</p>
-                      <p className="text-xs text-muted-foreground">
+                  <div className={cn('margin-top-3', styles.configRow)}>
+                    <div className={cn('stack space-1', styles.configText)}>
+                      <p className="type-sm weight-medium">ShareX config</p>
+                      <p className={cn('type-xs', styles.muted)}>
                         {token.enabled ? 'Copy or download the .sxcu file for this token.' : 'Enable this token before creating a config.'}
                       </p>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="cluster space-2">
                       <Button
                         type="button"
                         variant="outline"
@@ -351,7 +354,7 @@ function SettingsApiPage() {
                         onClick={() => createSharexConfig({ keyId: token.id, tokenName, action: 'copy' })}
                         disabled={sharexConfigDisabled}
                       >
-                        {pendingSharexAction === 'copy' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
+                        {pendingSharexAction === 'copy' ? <Spinner /> : <Copy />}
                         Copy .sxcu
                       </Button>
                       <Button
@@ -361,26 +364,22 @@ function SettingsApiPage() {
                         onClick={() => createSharexConfig({ keyId: token.id, tokenName, action: 'download' })}
                         disabled={sharexConfigDisabled}
                       >
-                        {pendingSharexAction === 'download' ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Download className="h-4 w-4" />
-                        )}
+                        {pendingSharexAction === 'download' ? <Spinner /> : <Download />}
                         Download .sxcu
                       </Button>
                     </div>
                   </div>
 
-                  <div className="mt-4 space-y-4 border rounded-lg p-4">
+                  <div className={cn('stack space-4 margin-top-4', styles.panel)}>
                     <div>
-                      <p className="text-sm font-medium">ShareX Upload Settings</p>
-                      <p className="text-xs text-muted-foreground">Configure compression and default folder behavior for this token.</p>
+                      <p className="type-sm weight-medium">ShareX Upload Settings</p>
+                      <p className={cn('type-xs', styles.muted)}>Configure compression and default folder behavior for this token.</p>
                     </div>
 
-                    <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm">Compress images before upload</Label>
-                        <p className="text-xs text-muted-foreground">Only affects image uploads sent through this key.</p>
+                    <div className={styles.toggleRow}>
+                      <div className="stack space-1">
+                        <Label className="type-sm">Compress images before upload</Label>
+                        <p className={cn('type-xs', styles.muted)}>Only affects image uploads sent through this key.</p>
                       </div>
                       <Switch
                         checked={sharexSettings.compressImage}
@@ -388,12 +387,10 @@ function SettingsApiPage() {
                       />
                     </div>
 
-                    <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm">Convert images to JPEG</Label>
-                        <p className="text-xs text-muted-foreground">
-                          Transparent areas are flattened to white when conversion is enabled.
-                        </p>
+                    <div className={styles.toggleRow}>
+                      <div className="stack space-1">
+                        <Label className="type-sm">Convert images to JPEG</Label>
+                        <p className={cn('type-xs', styles.muted)}>Transparent areas are flattened to white when conversion is enabled.</p>
                       </div>
                       <Switch
                         checked={sharexSettings.convertToJpeg}
@@ -402,10 +399,10 @@ function SettingsApiPage() {
                       />
                     </div>
 
-                    <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm">Strip upload metadata</Label>
-                        <p className="text-xs text-muted-foreground">
+                    <div className={styles.toggleRow}>
+                      <div className="stack space-1">
+                        <Label className="type-sm">Strip upload metadata</Label>
+                        <p className={cn('type-xs', styles.muted)}>
                           Remove common image metadata automatically and store a privacy report with each upload.
                         </p>
                       </div>
@@ -415,10 +412,10 @@ function SettingsApiPage() {
                       />
                     </div>
 
-                    <div className="space-y-2 rounded-lg border p-3">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-sm">JPEG quality</Label>
-                        <span className="text-xs text-muted-foreground">{sharexSettings.jpegQuality}</span>
+                    <div className={cn('stack space-2', styles.well)}>
+                      <div className={styles.between}>
+                        <Label className="type-sm">JPEG quality</Label>
+                        <span className={cn('type-xs', styles.muted)}>{sharexSettings.jpegQuality}</span>
                       </div>
                       <Slider
                         value={[sharexSettings.jpegQuality]}
@@ -433,13 +430,13 @@ function SettingsApiPage() {
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-sm">Default folder</Label>
+                    <div className="stack space-2">
+                      <Label className="type-sm">Default folder</Label>
                       <Select
                         value={sharexSettings.folderId ?? '__root__'}
                         onValueChange={(value) => handleSharexSettingChange(token.id, { folderId: value === '__root__' ? null : value })}
                       >
-                        <SelectTrigger className="w-full justify-between">
+                        <SelectTrigger className={styles.folderSelect}>
                           <SelectValue placeholder="Select folder" />
                         </SelectTrigger>
                         <SelectContent>

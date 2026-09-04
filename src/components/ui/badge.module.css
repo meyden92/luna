@@ -1,0 +1,120 @@
+@layer components {
+  .root {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: fit-content;
+    height: var(--space-6);
+    gap: var(--space-1);
+    padding-inline: var(--space-2);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    font-weight: var(--weight-medium);
+    white-space: nowrap;
+    box-shadow: var(--shadow-sm);
+    transition:
+      background-color 200ms ease,
+      border-color 200ms ease,
+      color 200ms ease,
+      box-shadow 200ms ease;
+
+    & > svg {
+      flex-shrink: 0;
+      pointer-events: none;
+      width: var(--space-3);
+      height: var(--space-3);
+    }
+
+    /* An icon at an edge sits closer to it than a word does. */
+    &:has([data-icon="inline-start"]) {
+      padding-inline-start: var(--space-1);
+    }
+
+    &:has([data-icon="inline-end"]) {
+      padding-inline-end: var(--space-1);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ring);
+      outline-offset: 2px;
+    }
+
+    &[aria-invalid="true"] {
+      border-color: var(--destructive);
+      outline-color: var(--destructive);
+    }
+  }
+
+  /* Hover only applies where the badge is itself a link. */
+  .root[data-variant="default"] {
+    border-color: color-mix(in oklch, var(--primary) 35%, transparent);
+    background-color: var(--primary-tint);
+    color: var(--primary-strong);
+
+    &:is(a):hover {
+      background-color: color-mix(in oklch, var(--primary) 25%, var(--primary-tint));
+    }
+  }
+
+  .root[data-variant="secondary"] {
+    border-color: var(--border);
+    background-color: var(--secondary);
+    color: var(--secondary-foreground);
+
+    &:is(a):hover {
+      background-color: var(--muted-strong);
+    }
+  }
+
+  .root[data-variant="destructive"] {
+    border-color: color-mix(in oklch, var(--destructive) 35%, transparent);
+    background-color: color-mix(in oklch, var(--destructive) 12%, transparent);
+    color: var(--destructive);
+
+    &:is(a):hover {
+      background-color: color-mix(in oklch, var(--destructive) 22%, transparent);
+    }
+
+    &:focus-visible {
+      outline-color: var(--destructive);
+    }
+  }
+
+  .root[data-variant="outline"] {
+    border-color: var(--border);
+    background-color: var(--card);
+    color: var(--foreground);
+
+    &:is(a):hover {
+      background-color: var(--muted);
+      color: var(--muted-foreground);
+    }
+  }
+
+  .root[data-variant="ghost"] {
+    border-color: transparent;
+    background-color: transparent;
+    box-shadow: none;
+
+    &:hover {
+      border-color: var(--border);
+      background-color: var(--muted);
+      color: var(--muted-foreground);
+    }
+  }
+
+  .root[data-variant="link"] {
+    border-color: transparent;
+    background-color: transparent;
+    color: var(--primary);
+    box-shadow: none;
+    text-underline-offset: 4px;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

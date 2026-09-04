@@ -2,6 +2,7 @@ import { useBlocker } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ShortcutPanel } from '@/components/video-editor/ShortcutPanel';
 import { hasPendingAudioEdits, useAudioEditorStore } from '@/hooks/stores/audio-editor-store';
+import styles from './AudioEditorPage.module.css';
 import { AudioEditorProvider, useAudioEditor } from './AudioEditorProvider';
 import { AudioEditorDndProvider } from './DndProvider';
 import { MediaPool } from './MediaPool/MediaPool';
@@ -97,7 +98,7 @@ function AudioEditorContent() {
   }, [playTimeline, stopPlayback]);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className={styles.page}>
       {/* Main toolbar */}
       <EditorToolbar />
 
@@ -106,9 +107,9 @@ function AudioEditorContent() {
 
       {/* Main content area */}
       <AudioEditorDndProvider>
-        <div className="relative flex-1 flex overflow-hidden">
+        <div className={styles.workspace}>
           {/* Media pool (left sidebar) */}
-          <div className="w-48 shrink-0">
+          <div className={styles.mediaPool}>
             <MediaPool />
           </div>
 

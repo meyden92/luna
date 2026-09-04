@@ -13,6 +13,7 @@ import { useConfirmation } from '@/hooks/use-confirmation';
 import { formatSize } from '@/libs/utils';
 import { deleteAdminUserFile } from '@/server/fns/admin/users';
 import FilePreview from './file-preview';
+import styles from './user-files-table.module.css';
 
 type File = typeof file.$inferSelect;
 const routeApi = getRouteApi('/_admin/admin/users/$userid/files');
@@ -33,27 +34,15 @@ interface UserFilesTableProps {
 
 const ADMIN_FILE_SIZE_OPTIONS = { byteUnit: 'Bytes', trim: true } as const;
 
-function getTypeColor(contentType: string): string {
-  if (contentType.startsWith('image/')) {
-    return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400';
-  }
-  if (contentType.startsWith('video/')) {
-    return 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400';
-  }
-  if (contentType.startsWith('audio/')) {
-    return 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400';
-  }
-  if (contentType.includes('pdf')) {
-    return 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400';
-  }
-  if (contentType.includes('text') || contentType.includes('json') || contentType.includes('xml')) {
-    return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400';
-  }
-  if (contentType.includes('zip') || contentType.includes('archive') || contentType.includes('tar')) {
-    return 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400';
-  }
-  // Default for other types
-  return 'bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400';
+// Broad family of a content type; the module tints the chip from it.
+function getTypeKind(contentType: string): string {
+  if (contentType.startsWith('image/')) return 'image';
+  if (contentType.startsWith('video/')) return 'video';
+  if (contentType.startsWith('audio/')) return 'audio';
+  if (contentType.includes('pdf')) return 'pdf';
+  if (contentType.includes('text') || contentType.includes('json') || contentType.includes('xml')) return 'text';
+  if (contentType.includes('zip') || contentType.includes('archive') || contentType.includes('tar')) return 'archive';
+  return 'other';
 }
 
 export default function UserFilesTable({
@@ -109,8 +98,8 @@ export default function UserFilesTable({
 
   if (files.length === 0) {
     return (
-      <div className="flex items-center justify-center p-8 border rounded-lg">
-        <p className="text-muted-foreground">No files found for this user.</p>
+      <div className={styles.empty}>
+        <p className={styles.emptyText}>No files found for this user.</p>
       </div>
     );
   }
@@ -120,12 +109,12 @@ export default function UserFilesTable({
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="stack space-4">
         {/* Filters and Sorting Controls */}
-        <div className="flex flex-wrap gap-4 p-4 bg-muted/20 rounded-lg">
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            <span className="text-sm font-medium">Filters:</span>
+        <div className={styles.filters}>
+          <div className={styles.filterGroup}>
+            <Filter className={styles.filterIcon} />
+            <span className={styles.filterLabel}>Filters:</span>
           </div>
 
           {/* Type Filter */}
@@ -133,7 +122,7 @@ export default function UserFilesTable({
             value={currentType || 'all'}
             onValueChange={(value) => value && updateSearchParams({ type: value === 'all' ? undefined : value })}
           >
-            <SelectTrigger className="w-40">
+            <SelectTrigger className={styles.filterControl}>
               <SelectValue placeholder="File Type" />
             </SelectTrigger>
             <SelectContent>
@@ -148,22 +137,22 @@ export default function UserFilesTable({
           </Select>
 
           {/* Date Range Filters */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm">From:</span>
+          <div className={styles.filterGroup}>
+            <span className={styles.filterHint}>From:</span>
             <Input
               type="date"
               value={currentDateFrom || ''}
               onChange={(e) => updateSearchParams({ dateFrom: e.target.value || undefined })}
-              className="w-40"
+              className={styles.filterControl}
             />
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm">To:</span>
+          <div className={styles.filterGroup}>
+            <span className={styles.filterHint}>To:</span>
             <Input
               type="date"
               value={currentDateTo || ''}
               onChange={(e) => updateSearchParams({ dateTo: e.target.value || undefined })}
-              className="w-40"
+              className={styles.filterControl}
             />
           </div>
 
@@ -181,7 +170,7 @@ export default function UserFilesTable({
           )}
         </div>
 
-        <div className="border rounded-lg">
+        <div className={styles.tableWrap}>
           <Table>
             <TableHeader>
               <TableRow>
@@ -191,43 +180,46 @@ export default function UserFilesTable({
                 <TableHead>
                   <Button
                     variant="ghost"
-                    className="h-auto p-0 font-medium"
+                    className={styles.sortButton}
                     onClick={() => handleSort('size')}
                   >
                     Size
-                    <ArrowUpDown className="ml-1 h-3 w-3" />
+                    <ArrowUpDown />
                   </Button>
                 </TableHead>
                 <TableHead>
                   <Button
                     variant="ghost"
-                    className="h-auto p-0 font-medium"
+                    className={styles.sortButton}
                     onClick={() => handleSort('date')}
                   >
                     Upload Date
-                    <ArrowUpDown className="ml-1 h-3 w-3" />
+                    <ArrowUpDown />
                   </Button>
                 </TableHead>
                 <TableHead>
                   <Button
                     variant="ghost"
-                    className="h-auto p-0 font-medium"
+                    className={styles.sortButton}
                     onClick={() => handleSort('private')}
                   >
                     Private
-                    <ArrowUpDown className="ml-1 h-3 w-3" />
+                    <ArrowUpDown />
                   </Button>
                 </TableHead>
-                <TableHead className="w-24">Actions</TableHead>
+                <TableHead className={styles.actionsColumn}>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {files.map((file) => (
                 <TableRow key={file.id}>
-                  <TableCell className="font-mono text-xs">{file.id.slice(0, 8)}...</TableCell>
-                  <TableCell className="max-w-xs truncate">{file.title}</TableCell>
+                  <TableCell className={styles.idCell}>{file.id.slice(0, 8)}...</TableCell>
+                  <TableCell className={styles.titleCell}>{file.title}</TableCell>
                   <TableCell>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs ${getTypeColor(file.contentType)}`}>
+                    <span
+                      className={styles.chip}
+                      data-kind={getTypeKind(file.contentType)}
+                    >
                       {file.contentType}
                     </span>
                   </TableCell>
@@ -235,24 +227,21 @@ export default function UserFilesTable({
                   <TableCell>{format(new Date(file.createdAt), 'MMM dd, yyyy')}</TableCell>
                   <TableCell>
                     <span
-                      className={`inline-flex items-center px-2 py-1 rounded-md text-xs ${
-                        file.private
-                          ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
-                          : 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
-                      }`}
+                      className={styles.chip}
+                      data-kind={file.private ? 'private' : 'public'}
                     >
                       {file.private ? 'Private' : 'Public'}
                     </span>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-1">
+                    <div className={styles.rowActions}>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => handlePreview(file)}
                         title="Preview file"
                       >
-                        <Eye className="h-4 w-4" />
+                        <Eye />
                       </Button>
                       <Button
                         variant="ghost"
@@ -260,9 +249,9 @@ export default function UserFilesTable({
                         onClick={() => handleDelete(file.id, file.title)}
                         disabled={isDeletingFile}
                         title="Delete file"
-                        className="text-destructive hover:text-destructive"
+                        className={styles.deleteButton}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 />
                       </Button>
                     </div>
                   </TableCell>
@@ -274,22 +263,22 @@ export default function UserFilesTable({
 
         {/* Pagination Controls */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
+          <div className={styles.pagination}>
+            <div className={styles.paginationCount}>
               Showing {startIndex}-{endIndex} of {totalFiles} files
             </div>
-            <div className="flex items-center gap-2">
+            <div className={styles.paginationControls}>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => goToPage(currentPage - 1)}
                 disabled={currentPage <= 1}
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft />
                 Previous
               </Button>
 
-              <div className="flex items-center gap-1">
+              <div className={styles.pageButtons}>
                 {/* Show first page */}
                 {currentPage > 3 && (
                   <>
@@ -300,7 +289,7 @@ export default function UserFilesTable({
                     >
                       1
                     </Button>
-                    {currentPage > 4 && <span className="text-muted-foreground">...</span>}
+                    {currentPage > 4 && <span className={styles.ellipsis}>...</span>}
                   </>
                 )}
 
@@ -327,7 +316,7 @@ export default function UserFilesTable({
                 {/* Show last page */}
                 {currentPage < totalPages - 2 && (
                   <>
-                    {currentPage < totalPages - 3 && <span className="text-muted-foreground">...</span>}
+                    {currentPage < totalPages - 3 && <span className={styles.ellipsis}>...</span>}
                     <Button
                       variant="outline"
                       size="sm"
@@ -346,7 +335,7 @@ export default function UserFilesTable({
                 disabled={currentPage >= totalPages}
               >
                 Next
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight />
               </Button>
             </div>
           </div>
@@ -357,11 +346,11 @@ export default function UserFilesTable({
         open={previewDialogOpen}
         onOpenChange={setPreviewDialogOpen}
       >
-        <DialogContent className="max-w-[90vw] max-h-[90vh] w-[70vw] h-[70vh] p-0 flex flex-col overflow-hidden">
-          <DialogHeader className="p-6 pb-4 flex-shrink-0">
-            <DialogTitle className="truncate">{selectedFile?.title}</DialogTitle>
+        <DialogContent className={styles.previewDialog}>
+          <DialogHeader className={styles.previewHeader}>
+            <DialogTitle className="type-truncate">{selectedFile?.title}</DialogTitle>
           </DialogHeader>
-          <div className="flex-1 overflow-auto p-6 pt-0">{selectedFile && <FilePreview file={selectedFile} />}</div>
+          <div className={styles.previewBody}>{selectedFile && <FilePreview file={selectedFile} />}</div>
         </DialogContent>
       </Dialog>
 

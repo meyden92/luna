@@ -13,10 +13,11 @@ import {
 import { useFolders } from '@/contexts/FoldersContext';
 import { useGalleryStore } from '@/hooks/stores/gallery-store';
 import { useMoveFiles } from '@/hooks/use-move-files';
-import { formatSize, getCDNImage } from '@/libs/utils';
+import { cn, formatSize, getCDNImage } from '@/libs/utils';
 import type { GalleryFile } from '@/types/project';
 import { ImagePreloader } from './ImagePreloader';
 import ImagePreviewSidebar from './ImagePreviewSidebar';
+import styles from './LightBox.module.css';
 import MainContent from './LightBoxMainContent';
 import { LightboxPortal } from './LightboxPortal';
 
@@ -237,8 +238,8 @@ export default function LightBox({ close, cachedData, userId, onLoadMore, isLoad
   if (!currentFile) {
     if (cachedData.length === 0) {
       return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 text-white">
-          <p className="text-lg">No files available</p>
+        <div className={styles.empty}>
+          <p>No files available</p>
         </div>
       );
     }
@@ -260,12 +261,6 @@ export default function LightBox({ close, cachedData, userId, onLoadMore, isLoad
     toast('Share link copied', { duration: 2000 });
   };
 
-  const lightboxButtonClass =
-    'flex h-11 items-center gap-1.5 rounded-[9px] border border-[#F1F3EF]/22 px-3 text-[12.5px] font-medium text-[#F1F3EF] transition-all hover:border-[#F1F3EF]/40 hover:bg-[#F1F3EF]/10 sm:h-8 sm:px-[13px]';
-
-  const arrowClass =
-    'absolute top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[#F1F3EF]/16 bg-[#F1F3EF]/8 text-[#F1F3EF] transition-all hover:bg-[#F1F3EF]/16 disabled:opacity-30';
-
   return (
     <LightboxPortal isOpen={!!currentFile}>
       {/* Image preloader for adjacent images */}
@@ -276,40 +271,37 @@ export default function LightBox({ close, cachedData, userId, onLoadMore, isLoad
         preloadCount={PRELOAD_COUNT}
       />
 
-      <div className="fixed inset-0 grid h-[100dvh] grid-cols-1 grid-rows-[auto_1fr] bg-[rgba(8,12,10,0.93)] text-[#F1F3EF] backdrop-blur-[10px] md:grid-cols-[1fr_160px]">
+      <div className={styles.root}>
         {/* Top bar: filename, meta, actions */}
-        <header
-          className="flex items-center justify-between gap-4 px-[22px] py-4"
-          style={{ gridColumn: '1', gridRow: '1' }}
-        >
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="truncate font-mono text-[12.5px]">{currentFile.title || 'Untitled'}</span>
-            <span className="font-mono text-[10.5px] text-[#F1F3EF]/55">{metaLine}</span>
+        <header className={styles.header}>
+          <div className={styles.meta}>
+            <span className={styles.title}>{currentFile.title || 'Untitled'}</span>
+            <span className={styles.subtitle}>{metaLine}</span>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className={styles.actions}>
             <button
               type="button"
-              className={`${lightboxButtonClass} hover:border-[#FF9C92]/45 hover:bg-[#FF9C92]/10 hover:text-[#FFBBB4]`}
+              className={cn(styles.button, styles.buttonDanger)}
               aria-label="Delete file"
               onClick={deleteCurrentFile}
             >
-              <Trash2 className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Delete</span>
+              <Trash2 className={styles.buttonIcon} /> <span className="hide-below-sm">Delete</span>
             </button>
             <DropdownMenu>
               <DropdownMenuTrigger
-                className={lightboxButtonClass}
+                className={styles.button}
                 aria-label="Move file"
               >
-                <Folder className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Move</span>
+                <Folder className={styles.buttonIcon} /> <span className="hide-below-sm">Move</span>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 data-lightbox-menu
                 side="bottom"
                 align="end"
-                className="w-48"
+                className={styles.menuContent}
               >
                 <DropdownMenuItem onClick={() => moveCurrentFileTo(null)}>
-                  <FolderOpen className="mr-2 h-4 w-4" />
+                  <FolderOpen className={styles.menuIcon} />
                   Root (All Files)
                 </DropdownMenuItem>
                 {folders.length > 0 && <DropdownMenuSeparator />}
@@ -319,45 +311,44 @@ export default function LightBox({ close, cachedData, userId, onLoadMore, isLoad
                     onClick={() => moveCurrentFileTo(folder.id)}
                   >
                     <span
-                      className="mr-2 h-2 w-2 shrink-0 rounded-full"
+                      className={styles.folderDot}
                       style={{ backgroundColor: folder.color || '#6b7280' }}
                     />
-                    <span className="truncate">{folder.name}</span>
+                    <span className={styles.folderName}>{folder.name}</span>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
             <button
               type="button"
-              className={lightboxButtonClass}
+              className={styles.button}
               aria-label="Copy share link"
               onClick={copyShareLink}
             >
-              <Link2 className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Copy link</span>
+              <Link2 className={styles.buttonIcon} /> <span className="hide-below-sm">Copy link</span>
             </button>
             <a
-              className={lightboxButtonClass}
+              className={styles.button}
               href={`/api/download?url=${encodeURIComponent(getCDNImage(`/${userId}/${currentFile.url}`))}`}
               download={currentFile.title}
               aria-label="Download file"
             >
-              <Download className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Download</span>
+              <Download className={styles.buttonIcon} /> <span className="hide-below-sm">Download</span>
             </a>
             <button
               type="button"
               onClick={close}
               aria-label="Close"
-              className="flex h-11 w-11 items-center justify-center rounded-[9px] text-[#F1F3EF]/80 transition-all hover:bg-[#F1F3EF]/12 hover:text-white sm:h-8 sm:w-8"
+              className={styles.close}
             >
-              <X className="h-4 w-4" />
+              <X className={styles.closeIcon} />
             </button>
           </div>
         </header>
 
         {/* Main content area */}
         <div
-          className="relative flex items-center justify-center overflow-hidden"
-          style={{ gridColumn: '1', gridRow: '2' }}
+          className={styles.stage}
           onTouchStartCapture={handleTouchStart}
           onTouchEndCapture={handleTouchEnd}
         >
@@ -367,9 +358,9 @@ export default function LightBox({ close, cachedData, userId, onLoadMore, isLoad
             onClick={goPrev}
             disabled={currentIndex === 0}
             aria-label="Previous file"
-            className={`${arrowClass} left-5`}
+            className={cn(styles.arrow, styles.arrowPrev)}
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className={styles.arrowIcon} />
           </button>
 
           <button
@@ -377,9 +368,9 @@ export default function LightBox({ close, cachedData, userId, onLoadMore, isLoad
             onClick={goNext}
             disabled={currentIndex === cachedData.length - 1}
             aria-label="Next file"
-            className={`${arrowClass} right-5`}
+            className={cn(styles.arrow, styles.arrowNext)}
           >
-            <ChevronRight className="h-5 w-5" />
+            <ChevronRight className={styles.arrowIcon} />
           </button>
 
           {/* Media content */}
@@ -393,8 +384,7 @@ export default function LightBox({ close, cachedData, userId, onLoadMore, isLoad
         {/* Sidebar */}
         <div
           data-lightbox-sidebar
-          className="hidden border-l border-white/10 bg-black/40 md:block"
-          style={{ gridColumn: '2', gridRow: '1 / 3' }}
+          className={styles.sidebar}
         >
           <ImagePreviewSidebar
             images={cachedData}

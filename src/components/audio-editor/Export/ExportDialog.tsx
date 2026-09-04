@@ -9,6 +9,7 @@ import { getTotalAudioDuration, useAudioEditorStore } from '@/hooks/stores/audio
 import { downloadBlob, encodeMP3, encodeWAV } from '@/libs/audio-editor/audio-encoder';
 import { formatTimeShort } from '@/libs/audio-editor/audio-utils';
 import { useAudioEditor } from '../AudioEditorProvider';
+import styles from './ExportDialog.module.css';
 
 interface ExportDialogProps {
   open: boolean;
@@ -86,16 +87,16 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           <DialogDescription>Export your project as an audio file. Duration: {formatTimeShort(duration)}</DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
+        <div className={styles.fields}>
           {/* Format selection */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-right">Format</Label>
+          <div className={styles.field}>
+            <Label className={styles.fieldLabel}>Format</Label>
             <Select
               value={format}
               onValueChange={(value) => setFormat(value as ExportFormat)}
               disabled={isExporting}
             >
-              <SelectTrigger className="col-span-3">
+              <SelectTrigger className={styles.fieldControl}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -107,14 +108,14 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
           {/* Bitrate (MP3 only) */}
           {format === 'mp3' && (
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">Quality</Label>
+            <div className={styles.field}>
+              <Label className={styles.fieldLabel}>Quality</Label>
               <Select
                 value={bitrate.toString()}
                 onValueChange={(value) => setBitrate(Number(value) as MP3Bitrate)}
                 disabled={isExporting}
               >
-                <SelectTrigger className="col-span-3">
+                <SelectTrigger className={styles.fieldControl}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -129,9 +130,9 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
           {/* Progress */}
           {isExporting && (
-            <div className="grid gap-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Exporting...</span>
+            <div className={styles.progress}>
+              <div className={styles.progressRow}>
+                <span className={styles.progressLabel}>Exporting...</span>
                 <span>{Math.round(exportProgress)}%</span>
               </div>
               <Progress value={exportProgress} />
@@ -139,7 +140,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           )}
 
           {/* Error */}
-          {error && <div className="text-sm text-destructive bg-destructive/10 p-2 rounded">{error}</div>}
+          {error && <div className={styles.error}>{error}</div>}
         </div>
 
         <DialogFooter>
@@ -156,12 +157,12 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
           >
             {isExporting ? (
               <>
-                <Loader2Icon className="size-4 mr-1 animate-spin" />
+                <Loader2Icon className={styles.spinner} />
                 Exporting...
               </>
             ) : (
               <>
-                <DownloadIcon className="size-4 mr-1" />
+                <DownloadIcon className={styles.icon} />
                 Export
               </>
             )}

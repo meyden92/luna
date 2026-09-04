@@ -1,0 +1,101 @@
+@layer components {
+  /* The rail flows with the results until the AI layout has room for two columns. */
+  .rail {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid var(--border);
+    background: var(--background);
+  }
+
+  /* Faint vertical ruling, previously a global side-rail class in base.css. */
+  .rail::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: repeating-linear-gradient(90deg, transparent 0 28px, color-mix(in oklab, var(--border) 30%, transparent) 28px 29px);
+    opacity: 0.4;
+  }
+
+  @container ai-layout (width >= 52rem) {
+    .rail {
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+      border-bottom: 0;
+      border-right: 1px solid var(--border);
+    }
+  }
+
+  .header {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: var(--space-2);
+    border-bottom: 1px solid var(--border);
+    background: var(--background);
+    padding: var(--space-4) var(--space-5) var(--space-3);
+  }
+
+  /* Live-status dot, previously a global pulse-dot class in base.css. */
+  .dot {
+    width: var(--space-2);
+    height: var(--space-2);
+    border-radius: var(--radius-full);
+    background: var(--primary);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 18%, transparent);
+    animation: railPulse 2.4s ease-in-out infinite;
+  }
+
+  @keyframes railPulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 18%, transparent);
+    }
+    50% {
+      box-shadow: 0 0 0 6px color-mix(in oklab, var(--primary) 0%, transparent);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dot {
+      animation-duration: 0.01ms;
+      animation-iteration-count: 1;
+    }
+  }
+
+  .title {
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-semibold);
+    letter-spacing: -0.01em;
+    color: var(--foreground);
+  }
+
+  .body {
+    position: relative;
+    z-index: 1;
+    padding: var(--space-4) var(--space-5) var(--space-5);
+  }
+
+  @container ai-layout (width >= 52rem) {
+    .body {
+      min-height: 0;
+      flex: 1;
+      overflow-y: auto;
+    }
+  }
+
+  .footer {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    border-top: 1px solid var(--border);
+    background: var(--background);
+    padding: var(--space-4) var(--space-5);
+  }
+}

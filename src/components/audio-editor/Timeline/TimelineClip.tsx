@@ -3,8 +3,8 @@ import { GripVerticalIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { type AudioClip, useAudioEditorStore } from '@/hooks/stores/audio-editor-store';
 import { formatTimeShort, pixelsToSeconds, secondsToPixels } from '@/libs/audio-editor/audio-utils';
-import { cn } from '@/libs/utils';
 import { WaveformDisplay } from '../Waveform/WaveformDisplay';
+import styles from './TimelineClip.module.css';
 
 interface TimelineClipProps {
   clip: AudioClip;
@@ -133,12 +133,9 @@ export function TimelineClip({ clip, isOverlay = false }: TimelineClipProps) {
     <div
       ref={setNodeRef}
       data-clip
-      className={cn(
-        'absolute top-1 bottom-1 rounded-md overflow-hidden cursor-pointer group',
-        'bg-primary/20 border border-primary/50',
-        isSelected && 'ring-2 ring-primary shadow-lg',
-        isDragging && 'cursor-grabbing',
-      )}
+      className={styles.clip}
+      data-selected={isSelected}
+      data-dragging={isDragging}
       style={style}
       onClick={handleClick}
     >
@@ -146,15 +143,15 @@ export function TimelineClip({ clip, isOverlay = false }: TimelineClipProps) {
       <div
         {...attributes}
         {...listeners}
-        className="absolute top-0 left-0 right-0 h-5 flex items-center gap-1 px-1 bg-primary/30 cursor-grab active:cursor-grabbing"
+        className={styles.handle}
       >
-        <GripVerticalIcon className="size-3 text-primary-foreground/70" />
-        <span className="text-[10px] text-primary-foreground/90 truncate font-medium">{clip.name}</span>
-        <span className="text-[10px] text-primary-foreground/60 ml-auto">{formatTimeShort(clipDuration)}</span>
+        <GripVerticalIcon className={styles.handleIcon} />
+        <span className={styles.handleName}>{clip.name}</span>
+        <span className={styles.handleDuration}>{formatTimeShort(clipDuration)}</span>
       </div>
 
       {/* Waveform */}
-      <div className="absolute top-5 left-0 right-0 bottom-0 px-0.5">
+      <div className={styles.waveform}>
         {clip.fileUrl && width > 0 && (
           <WaveformDisplay
             fileUrl={clip.fileUrl}
@@ -166,34 +163,32 @@ export function TimelineClip({ clip, isOverlay = false }: TimelineClipProps) {
 
       {/* Trim handle - start */}
       <div
-        className={cn(
-          'absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize',
-          'hover:bg-primary/40 transition-colors',
-          isTrimming === 'start' && 'bg-primary/50',
-        )}
+        className={styles.trimHandle}
+        data-side="start"
+        data-active={isTrimming === 'start'}
         onPointerDown={handleTrimStart}
       />
 
       {/* Trim handle - end */}
       <div
-        className={cn(
-          'absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize',
-          'hover:bg-primary/40 transition-colors',
-          isTrimming === 'end' && 'bg-primary/50',
-        )}
+        className={styles.trimHandle}
+        data-side="end"
+        data-active={isTrimming === 'end'}
         onPointerDown={handleTrimEnd}
       />
 
       {/* Fade indicators */}
       {clip.fadeIn > 0 && (
         <div
-          className="absolute top-5 left-0 bottom-0 bg-gradient-to-r from-black/50 to-transparent pointer-events-none"
+          className={styles.fade}
+          data-side="in"
           style={{ width: secondsToPixels(clip.fadeIn, pixelsPerSecond) }}
         />
       )}
       {clip.fadeOut > 0 && (
         <div
-          className="absolute top-5 right-0 bottom-0 bg-gradient-to-l from-black/50 to-transparent pointer-events-none"
+          className={styles.fade}
+          data-side="out"
           style={{ width: secondsToPixels(clip.fadeOut, pixelsPerSecond) }}
         />
       )}
@@ -202,17 +197,15 @@ export function TimelineClip({ clip, isOverlay = false }: TimelineClipProps) {
       {(isSelected || isTrimming) && (
         <>
           {/* Left bracket [ */}
-          <div className="absolute left-0 top-0 bottom-0 w-1.5 pointer-events-none">
-            <div className="absolute left-0 top-0 w-1.5 h-2.5 border-l-2 border-t-2 border-primary" />
-            <div className="absolute left-0 top-2.5 bottom-2.5 border-l-2 border-primary" />
-            <div className="absolute left-0 bottom-0 w-1.5 h-2.5 border-l-2 border-b-2 border-primary" />
-          </div>
+          <div
+            className={styles.bracket}
+            data-side="start"
+          />
           {/* Right bracket ] */}
-          <div className="absolute right-0 top-0 bottom-0 w-1.5 pointer-events-none">
-            <div className="absolute right-0 top-0 w-1.5 h-2.5 border-r-2 border-t-2 border-primary" />
-            <div className="absolute right-0 top-2.5 bottom-2.5 border-r-2 border-primary" />
-            <div className="absolute right-0 bottom-0 w-1.5 h-2.5 border-r-2 border-b-2 border-primary" />
-          </div>
+          <div
+            className={styles.bracket}
+            data-side="end"
+          />
         </>
       )}
     </div>

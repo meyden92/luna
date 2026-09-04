@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import styles from './image-mask-generator.module.css';
 
 type DrawingMode = 'brush' | 'rectangle' | 'circle' | 'eraser';
 
@@ -352,44 +353,41 @@ const ImageMaskCreator = React.forwardRef<ImageMaskCreatorRef, ImageMaskCreatorP
   }));
 
   return (
-    <div className="flex flex-col items-center space-y-4 p-4">
+    <div className={styles.root}>
       <input
         type="file"
         accept="image/*"
         onChange={handleImageUpload}
-        className="mb-4"
+        className={styles.fileInput}
       />
       {image && (
         <>
-          <div className="flex gap-4">
+          <div className={styles.canvases}>
             {/* Original image and drawing canvas */}
-            <div className="relative inline-block">
+            <div className={styles.stage}>
               {isOverCanvas && (
                 <>
                   {(drawingMode === 'brush' || drawingMode === 'eraser') && (
                     <div
-                      className="pointer-events-none absolute border-2 border-white rounded-full -translate-x-1/2 -translate-y-1/2"
+                      className={styles.brushCursor}
                       style={{
                         width: `${brushSize}px`,
                         height: `${brushSize}px`,
                         left: cursorPosition.x,
                         top: cursorPosition.y,
-                        boxShadow: '0 0 0 1px black',
                       }}
                     />
                   )}
                   {(drawingMode === 'rectangle' || drawingMode === 'circle') && (
                     <div
-                      className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
+                      className={styles.crosshair}
                       style={{
                         left: cursorPosition.x,
                         top: cursorPosition.y,
-                        width: '20px',
-                        height: '20px',
                       }}
                     >
-                      <div className="absolute left-1/2 top-0 w-px h-full bg-white shadow-[0_0_0_1px_rgba(0,0,0,1)]" />
-                      <div className="absolute top-1/2 left-0 h-px w-full bg-white shadow-[0_0_0_1px_rgba(0,0,0,1)]" />
+                      <div className={styles.crosshairVertical} />
+                      <div className={styles.crosshairHorizontal} />
                     </div>
                   )}
                 </>
@@ -398,7 +396,7 @@ const ImageMaskCreator = React.forwardRef<ImageMaskCreatorRef, ImageMaskCreatorP
                 ref={imageRef}
                 src={image}
                 alt="Selected"
-                className="max-w-full h-auto"
+                className={styles.sourceImage}
               />
               <canvas
                 ref={canvasRef}
@@ -408,38 +406,38 @@ const ImageMaskCreator = React.forwardRef<ImageMaskCreatorRef, ImageMaskCreatorP
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
                 onBlur={stopDrawing}
-                className="absolute top-0 left-0 w-full h-full cursor-none"
+                className={styles.drawSurface}
               />
               <canvas
                 ref={maskCanvasRef}
-                className="hidden"
+                className={styles.offscreen}
               />
             </div>
 
             {/* Mask preview */}
-            <div className="relative inline-block bg-muted">
+            <div className={styles.maskPreview}>
               <canvas
                 ref={maskCanvasRef}
                 width={imageDimensions?.width}
                 height={imageDimensions?.height}
-                className="max-w-full h-auto"
+                className={styles.maskCanvas}
               />
             </div>
           </div>
 
-          <div className="space-x-2">
+          <div className={styles.actions}>
             <Button
               onClick={undo}
               disabled={undoStack.length <= 1}
             >
-              <Undo2 className="w-4 h-4 mr-2" />
+              <Undo2 className={styles.actionIcon} />
               Undo
             </Button>
             <Button
               onClick={redo}
               disabled={redoStack.length === 0}
             >
-              <Redo2 className="w-4 h-4 mr-2" />
+              <Redo2 className={styles.actionIcon} />
               Redo
             </Button>
             <Button onClick={downloadMask}>Download Mask</Button>
@@ -450,7 +448,7 @@ const ImageMaskCreator = React.forwardRef<ImageMaskCreatorRef, ImageMaskCreatorP
               Clear Mask
             </Button>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className={styles.brushRow}>
             <span>Brush Size:</span>
             <Slider
               value={[brushSize]}
@@ -461,7 +459,7 @@ const ImageMaskCreator = React.forwardRef<ImageMaskCreatorRef, ImageMaskCreatorP
               min={1}
               max={50}
               step={1}
-              className="w-[200px]"
+              className={styles.brushSlider}
             />
             <span>{brushSize}px</span>
           </div>
@@ -476,25 +474,25 @@ const ImageMaskCreator = React.forwardRef<ImageMaskCreatorRef, ImageMaskCreatorP
               value="brush"
               aria-label="Brush tool"
             >
-              <Pencil className="h-4 w-4" />
+              <Pencil />
             </ToggleGroupItem>
             <ToggleGroupItem
               value="eraser"
               aria-label="Eraser tool"
             >
-              <Eraser className="h-4 w-4" />
+              <Eraser />
             </ToggleGroupItem>
             <ToggleGroupItem
               value="rectangle"
               aria-label="Rectangle tool"
             >
-              <Square className="h-4 w-4" />
+              <Square />
             </ToggleGroupItem>
             <ToggleGroupItem
               value="circle"
               aria-label="Circle tool"
             >
-              <Circle className="h-4 w-4" />
+              <Circle />
             </ToggleGroupItem>
           </ToggleGroup>
         </>

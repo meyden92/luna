@@ -1,0 +1,7 @@
+@layer components {
+  /* Positioning context for the chart's absolutely placed tooltip and legend
+     layers; the box itself is sized inline from the `height`/`width` props. */
+  .root {
+    position: relative;
+  }
+}

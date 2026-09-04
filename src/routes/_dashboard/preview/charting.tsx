@@ -121,9 +121,9 @@ export const Route = createFileRoute('/_dashboard/preview/charting')({
 
 function ChartingPage() {
   return (
-    <section className="container mx-auto py-8">
-      <h1 className="text-2xl font-bold">Charting Page</h1>
-      <div className="mt-6">
+    <section className="container pad-y-8">
+      <h1 className="type-2xl weight-bold">Charting Page</h1>
+      <div className="margin-top-6">
         <StackedBarChart
           data={demoData.map((d) => ({ category: d.day, apples: d.apples, bananas: d.bananas, cherries: d.cherries, test: d.test }))}
           stacked={false}
@@ -148,7 +148,7 @@ function ChartingPage() {
           ]}
         />
 
-        <div className="mt-10" />
+        <div className="margin-top-10" />
 
         <LineChart
           data={revenueData.map((r) => ({ category: r.date, billable: r.billable, relevant: r.relevant, not_billable: r.not_billable }))}
@@ -170,9 +170,9 @@ function ChartingPage() {
           seriesColors={{ not_billable: '#6b7280', relevant: '#f97316', billable: '#22c55e' }}
         />
 
-        <div className="mt-10" />
+        <div className="margin-top-10" />
 
-        <h2 className="text-xl font-semibold mb-4">Employee Utilization (Auslastung) per Month</h2>
+        <h2 className="type-xl weight-semibold margin-bottom-4">Employee Utilization (Auslastung) per Month</h2>
         <StackedBarChart
           data={utilizationChartData}
           stacked={false}
@@ -233,11 +233,11 @@ function ChartingPage() {
           ]}
         />
 
-        <div className="mt-10" />
+        <div className="margin-top-10" />
 
-        <h2 className="text-xl font-semibold mb-4">Pie Charts</h2>
+        <h2 className="type-xl weight-semibold margin-bottom-4">Pie Charts</h2>
 
-        <h3 className="text-lg font-medium mb-2">Basic Pie Chart - Browser Market Share</h3>
+        <h3 className="type-lg weight-medium margin-bottom-2">Basic Pie Chart - Browser Market Share</h3>
         <PieChart
           data={marketShareData}
           showLegend
@@ -246,9 +246,9 @@ function ChartingPage() {
           height={400}
         />
 
-        <div className="mt-10" />
+        <div className="margin-top-10" />
 
-        <h3 className="text-lg font-medium mb-2">Donut Chart with Center Label - Department Headcount</h3>
+        <h3 className="type-lg weight-medium margin-bottom-2">Donut Chart with Center Label - Department Headcount</h3>
         <PieChart
           data={departmentData}
           innerRadius={0.5}
@@ -270,9 +270,9 @@ function ChartingPage() {
           height={400}
         />
 
-        <div className="mt-10" />
+        <div className="margin-top-10" />
 
-        <h3 className="text-lg font-medium mb-2">Multi-Series Pie - Budget Allocation</h3>
+        <h3 className="type-lg weight-medium margin-bottom-2">Multi-Series Pie - Budget Allocation</h3>
         <PieChart
           data={[budgetAllocation]}
           formatValue={(n) => n.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
@@ -295,9 +295,9 @@ function ChartingPage() {
           height={450}
         />
 
-        <div className="mt-10" />
+        <div className="margin-top-10" />
 
-        <h3 className="text-lg font-medium mb-2">Revenue Distribution (Day 1)</h3>
+        <h3 className="type-lg weight-medium margin-bottom-2">Revenue Distribution (Day 1)</h3>
         <PieChart
           data={[revenueData[0]!]}
           formatValue={(n) => n.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
@@ -331,9 +331,9 @@ function ChartingPage() {
           height={400}
         />
 
-        <div className="mt-10" />
+        <div className="margin-top-10" />
 
-        <h3 className="text-lg font-medium mb-2">Interactive Pie with Hover Effects</h3>
+        <h3 className="type-lg weight-medium margin-bottom-2">Interactive Pie with Hover Effects</h3>
         <PieChart
           data={marketShareData}
           showLegend

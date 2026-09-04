@@ -8,6 +8,7 @@ import { Dialog, DialogOverlay, DialogPortal } from '@/components/ui/dialog';
 import { Comparison, ComparisonHandle, ComparisonItem } from '@/components/ui/image-compare';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { TemplateGenerationItem } from '@/hooks/stores/template-generation-queue-store';
+import styles from './TemplateGenerationLightbox.module.css';
 
 interface TemplateGenerationLightboxProps {
   generation: TemplateGenerationItem | null;
@@ -60,17 +61,17 @@ export function TemplateGenerationLightbox({ generation, open, onOpenChange }: T
     >
       <DialogPortal>
         <DialogOverlay />
-        <div className="fixed inset-0 z-50 flex flex-col">
+        <div className={styles.root}>
           {/* Header bar */}
-          <div className="shrink-0 flex items-center justify-between px-4 py-3 bg-background/95 backdrop-blur-sm border-b">
-            <div className="flex items-center gap-4">
-              <h2 className="text-lg font-semibold">{generation.templateName}</h2>
+          <div className={`${styles.bar} ${styles.barTop}`}>
+            <div className={styles.barGroup}>
+              <h2 className={styles.templateName}>{generation.templateName}</h2>
               {referenceImages.length > 1 && (
                 <Select
                   value={selectedReferenceIndex.toString()}
                   onValueChange={(value) => setSelectedReferenceIndex(Number(value))}
                 >
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className={styles.referenceSelect}>
                     <SelectValue placeholder="Reference image" />
                   </SelectTrigger>
                   <SelectContent>
@@ -86,14 +87,14 @@ export function TemplateGenerationLightbox({ generation, open, onOpenChange }: T
                 </Select>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className={styles.barActions}>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleSendToEdit}
-                className="gap-1.5"
+                className="space-2"
               >
-                <ImagePlus className="h-3.5 w-3.5" />
+                <ImagePlus />
                 Edit
               </Button>
               <DownloadButton
@@ -105,19 +106,19 @@ export function TemplateGenerationLightbox({ generation, open, onOpenChange }: T
                 size="icon"
                 onClick={() => onOpenChange(false)}
               >
-                <X className="h-5 w-5" />
+                <X />
               </Button>
             </div>
           </div>
 
           {/* Comparison area - fills remaining space */}
-          <div className="flex-1 min-h-0 flex items-center justify-center p-4 bg-black/50">
-            <Comparison className="w-full h-full max-w-[95vw] max-h-[calc(100vh-8rem)]">
+          <div className={styles.stage}>
+            <Comparison className={styles.comparison}>
               <ComparisonItem position="left">
                 <img
                   src={resultImageUrl}
                   alt="Generated result"
-                  className="absolute inset-0 h-full w-full object-contain"
+                  className={styles.comparisonImage}
                   sizes="95vw"
                 />
               </ComparisonItem>
@@ -126,7 +127,7 @@ export function TemplateGenerationLightbox({ generation, open, onOpenChange }: T
                   <img
                     src={currentReferenceImage}
                     alt="Reference image"
-                    className="absolute inset-0 h-full w-full object-contain"
+                    className={styles.comparisonImage}
                     sizes="95vw"
                   />
                 )}
@@ -136,12 +137,12 @@ export function TemplateGenerationLightbox({ generation, open, onOpenChange }: T
           </div>
 
           {/* Footer with labels */}
-          <div className="shrink-0 flex items-center justify-between px-4 py-2 bg-background/95 backdrop-blur-sm border-t text-sm text-muted-foreground">
+          <div className={`${styles.bar} ${styles.barBottom}`}>
             <span>Generated Result</span>
-            <span className="flex items-center gap-1">
-              <ChevronDown className="h-4 w-4 rotate-90" />
+            <span className={styles.hint}>
+              <ChevronDown className={styles.hintIconStart} />
               Drag to compare
-              <ChevronDown className="h-4 w-4 -rotate-90" />
+              <ChevronDown className={styles.hintIconEnd} />
             </span>
             <span>Reference {selectedReferenceIndex + 1}</span>
           </div>

@@ -2,6 +2,7 @@ import { Input } from '@/components/ui/input';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/tanstack-form';
 import { cn } from '@/libs/utils';
 import { PROFILE_BIO_MAX_LENGTH } from '@/libs/validation/profile_settings';
+import styles from './field.module.css';
 
 export function ProfileBioInput() {
   return (
@@ -16,9 +17,9 @@ export function ProfileBioInput() {
         const isNearLimit = characterCount > PROFILE_BIO_MAX_LENGTH * 0.9;
 
         return (
-          <FormItem className="space-y-2 rounded-lg border p-4">
-            <div className="space-y-0.5">
-              <FormLabel className="text-base">Bio</FormLabel>
+          <FormItem className={styles.rowStacked}>
+            <div className={styles.text}>
+              <FormLabel className={styles.label}>Bio</FormLabel>
               <FormDescription>A short bio about you.</FormDescription>
             </div>
             <FormControl>
@@ -30,7 +31,7 @@ export function ProfileBioInput() {
                 placeholder="Enter a short bio"
               />
             </FormControl>
-            <p className={cn('text-right text-xs text-muted-foreground', isNearLimit && 'text-amber-600')}>
+            <p className={cn(styles.counter, isNearLimit && styles.counterNearLimit)}>
               {characterCount}/{PROFILE_BIO_MAX_LENGTH}
             </p>
           </FormItem>

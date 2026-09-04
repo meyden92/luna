@@ -1,0 +1,58 @@
+@layer components {
+  .root {
+    display: flex;
+    flex-direction: column;
+    width: 13rem;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    background: color-mix(in oklab, var(--muted) 30%, transparent);
+  }
+
+  /* Height matches the timeline ruler so the two columns line up. */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--space-6);
+    padding-inline: var(--space-2);
+    border-bottom: 1px solid var(--border);
+    background: color-mix(in oklab, var(--muted) 50%, transparent);
+  }
+
+  .headerLabel {
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    font-weight: var(--weight-medium);
+  }
+
+  .scroll {
+    flex: 1;
+  }
+
+  .icon {
+    width: var(--space-3);
+    height: var(--space-3);
+  }
+
+  .iconLead {
+    width: var(--space-3);
+    height: var(--space-3);
+    margin-right: var(--space-1);
+  }
+
+  .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    height: var(--space-20);
+    color: var(--muted-foreground);
+  }
+
+  .emptyText {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+}

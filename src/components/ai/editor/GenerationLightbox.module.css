@@ -1,0 +1,146 @@
+@layer components {
+  .layer {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+  }
+
+  @media (width >= 768px) {
+    .layer {
+      padding: var(--space-8);
+    }
+  }
+
+  /* Scoped through .layer so it wins over the Button primitive's ghost rules. */
+  .layer .closeButton {
+    position: absolute;
+    top: var(--space-4);
+    right: var(--space-4);
+    z-index: 1;
+    background: color-mix(in oklab, var(--background) 80%, transparent);
+    backdrop-filter: blur(4px);
+  }
+
+  .closeIcon {
+    width: var(--space-5);
+    height: var(--space-5);
+  }
+
+  .panel {
+    --panel-max-width: 72rem;
+
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: var(--panel-max-width);
+    max-height: 90vh;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    background: var(--background);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .headerMeta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .title {
+    margin: 0;
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+    font-weight: var(--weight-semibold);
+  }
+
+  .outputSelect {
+    --select-width: 9.5rem;
+
+    width: var(--select-width);
+  }
+
+  .referenceSelect {
+    --select-width: 11.5rem;
+
+    width: var(--select-width);
+  }
+
+  .headerActions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .headerActions .editButton {
+    gap: var(--space-2);
+  }
+
+  .icon {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  .comparisonArea {
+    flex: 1;
+    min-height: 0;
+    padding: var(--space-4);
+  }
+
+  .comparison {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: var(--radius-lg);
+  }
+
+  .comparisonImage {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border-top: 1px solid var(--border);
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .hint {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .hintIconStart {
+    width: var(--space-4);
+    height: var(--space-4);
+    rotate: 90deg;
+  }
+
+  .hintIconEnd {
+    width: var(--space-4);
+    height: var(--space-4);
+    rotate: -90deg;
+  }
+}

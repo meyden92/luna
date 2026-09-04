@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { queryKeys } from '@/libs/query-keys';
 import { createImagePreset, deleteImagePreset, listImagePresets } from '@/server/fns/ai-presets';
+import styles from './PresetManager.module.css';
 
 interface PresetManagerProps {
   modelId: string;
@@ -72,34 +73,34 @@ export function PresetManager({ modelId, currentFieldValues, onLoadPreset }: Pre
   const selectedPreset = presets.find((p) => p.id === selectedPresetId);
 
   return (
-    <div className="space-y-2">
+    <div className="stack space-2">
       <Label>Saved Presets</Label>
-      <div className="flex gap-2">
+      <div className={styles.row}>
         <Select
           value={selectedPresetId}
           onValueChange={handlePresetSelect}
         >
-          <SelectTrigger className="flex-1">
+          <SelectTrigger className={styles.select}>
             <SelectValue placeholder="Select a preset...">{selectedPreset?.name || 'Select a preset...'}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             {presets.length === 0 ? (
-              <div className="py-4 text-center text-sm text-muted-foreground">No presets saved for this model</div>
+              <div className={styles.emptyState}>No presets saved for this model</div>
             ) : (
               presets.map((preset) => (
                 <SelectItem
                   key={preset.id}
                   value={preset.id}
                 >
-                  <div className="flex items-center justify-between w-full gap-2">
+                  <div className={styles.option}>
                     <span>{preset.name}</span>
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      className="h-5 w-5 opacity-60 hover:opacity-100"
+                      className={styles.delete}
                       onClick={(e) => handleDeletePreset(preset.id, e)}
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 className={styles.deleteIcon} />
                     </Button>
                   </div>
                 </SelectItem>
@@ -121,15 +122,15 @@ export function PresetManager({ modelId, currentFieldValues, onLoadPreset }: Pre
               />
             }
           >
-            <Star className="h-4 w-4" />
+            <Star />
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Save Preset</DialogTitle>
               <DialogDescription>Save the current field configuration as a reusable preset.</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
+            <div className={styles.dialogBody}>
+              <div className="stack space-2">
                 <Label htmlFor="preset-name">Preset Name</Label>
                 <Input
                   id="preset-name"

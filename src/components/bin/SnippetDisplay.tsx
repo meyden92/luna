@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import CodeBlock from './CustomHighlighter';
+import styles from './SnippetDisplay.module.css';
 
 export interface SnippetDisplayData {
   title: string;
@@ -18,8 +19,8 @@ export function SnippetDisplay({ snippet }: { snippet: SnippetDisplayData | null
 
   return (
     <div>
-      <div className="flex items-center justify-center gap-3 mb-6">
-        <h1 className="text-center text-3xl font-bold dark:text-primary">{snippet.title}</h1>
+      <div className={styles.header}>
+        <h1 className={styles.title}>{snippet.title}</h1>
         {snippet.language && <Badge variant="secondary">{snippet.language}</Badge>}
       </div>
       <CodeBlock

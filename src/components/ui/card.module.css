@@ -1,0 +1,104 @@
+@layer components {
+  .root {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    padding-block: var(--space-5);
+    overflow: hidden;
+    background: var(--card);
+    color: var(--card-foreground);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+
+    /* Accent hairline along the top edge, fading out before the corners. */
+    &::before {
+      content: "";
+      position: absolute;
+      inset-inline: var(--space-6);
+      top: 0;
+      height: 1px;
+      pointer-events: none;
+      background: linear-gradient(to right, transparent, color-mix(in oklch, var(--primary) 55%, transparent), transparent);
+    }
+
+    /* A leading image is meant to bleed into the top edge. */
+    &:has(> img:first-child) {
+      padding-top: 0;
+    }
+
+    & > img:first-child {
+      border-start-start-radius: var(--radius-lg);
+      border-start-end-radius: var(--radius-lg);
+    }
+
+    & > img:last-child {
+      border-end-start-radius: var(--radius-lg);
+      border-end-end-radius: var(--radius-lg);
+    }
+
+    &[data-size="sm"] {
+      gap: var(--space-4);
+      padding-block: var(--space-4);
+    }
+  }
+
+  .header {
+    display: grid;
+    grid-auto-rows: min-content;
+    align-items: start;
+    gap: var(--space-2);
+    padding-inline: var(--space-6);
+
+    /* An action sits in a second column; a description gets its own row. */
+    &:has([data-slot="card-action"]) {
+      grid-template-columns: 1fr auto;
+    }
+
+    &:has([data-slot="card-description"]) {
+      grid-template-rows: auto auto;
+    }
+  }
+
+  .title {
+    font-size: var(--text-base);
+    line-height: var(--leading-base);
+    font-weight: var(--weight-semibold);
+    letter-spacing: -0.01em;
+  }
+
+  .description {
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-base);
+  }
+
+  .action {
+    grid-column-start: 2;
+    grid-row: 1 / span 2;
+    align-self: start;
+    justify-self: end;
+  }
+
+  .content {
+    padding-inline: var(--space-6);
+  }
+
+  .footer {
+    display: flex;
+    align-items: center;
+    padding-inline: var(--space-6);
+  }
+
+  /* The compact card tightens the gutter on every section. */
+  .root[data-size="sm"] {
+    & .header,
+    & .content,
+    & .footer {
+      padding-inline: var(--space-4);
+    }
+  }
+}

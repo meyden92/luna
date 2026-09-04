@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { cn } from '@/libs/utils';
+import styles from './LightboxPortal.module.css';
 
 interface LightboxPortalProps {
   children: ReactNode;
@@ -71,7 +71,8 @@ export function LightboxPortal({ children, isOpen }: LightboxPortalProps) {
       ref={containerRef}
       tabIndex={-1}
       aria-label="Image viewer"
-      className={cn('fixed inset-0 z-50 transition-opacity duration-150', isOpen ? 'animate-in fade-in-0' : 'animate-out fade-out-0')}
+      className={styles.root}
+      data-closing={isOpen ? undefined : ''}
       aria-modal="true"
       role="dialog"
     >

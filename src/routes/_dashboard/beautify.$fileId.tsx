@@ -2,7 +2,9 @@ import { createFileRoute, Link, notFound } from '@tanstack/react-router';
 import { ImageOff } from 'lucide-react';
 import { BeautifierEditor } from '@/components/beautifier/beautifier-editor';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/libs/utils';
 import { getBeautifierSourceFile } from '@/server/fns/beautifier';
+import styles from './beautify.$fileId.module.css';
 
 export const Route = createFileRoute('/_dashboard/beautify/$fileId')({
   loader: async ({ params }) => {
@@ -37,15 +39,15 @@ function BeautifyFilePage() {
 
 function BeautifierState({ title, description }: { title: string; description: string }) {
   return (
-    <section className="flex min-h-[calc(100dvh-9rem)] items-center justify-center px-4 py-12">
-      <div className="max-w-md text-center">
-        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-[12px] border border-luna-line bg-luna-bg-2 text-luna-ink-3">
-          <ImageOff className="h-6 w-6" />
+    <section className={styles.state}>
+      <div className={styles.stateInner}>
+        <div className={styles.icon}>
+          <ImageOff className={styles.iconSvg} />
         </div>
-        <h1 className="font-serif text-[38px] font-normal leading-none text-luna-ink">{title}</h1>
-        <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-luna-ink-3">{description}</p>
+        <h1 className={cn('type-display', styles.title)}>{title}</h1>
+        <p className={cn('type-sm', styles.description)}>{description}</p>
         <Button
-          className="mt-6"
+          className="margin-top-6"
           render={<Link to="/dashboard" />}
         >
           Back to gallery

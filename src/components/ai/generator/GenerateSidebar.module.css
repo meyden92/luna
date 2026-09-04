@@ -1,0 +1,35 @@
+@layer components {
+  .generateButton {
+    width: 100%;
+  }
+
+  .generateHint {
+    margin: var(--space-2) 0 0;
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    text-align: center;
+  }
+
+  .sectionLabel {
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-medium);
+  }
+
+  .modelOption {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .modelLabel {
+    font-weight: var(--weight-medium);
+  }
+
+  .modelDescription {
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+}

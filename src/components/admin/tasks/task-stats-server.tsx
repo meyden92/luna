@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import StatCard from '@/components/ui/stat-card';
 import type { getTaskStats } from '@/server/fns/admin/tasks';
+import styles from './task-stats-server.module.css';
 
 // getTaskStats returns a union: per-task stats (when called with taskId) or the
 // global dashboard shape — this component renders the global variant.
@@ -15,8 +16,8 @@ const getStatusBadge = (status: string) => {
     case 'success':
       return (
         <Badge
-          variant="secondary"
-          className="text-green-700 bg-green-100"
+          variant="outline"
+          className={styles.successBadge}
         >
           Success
         </Badge>
@@ -44,7 +45,7 @@ export default function TaskStatsServer({ stats }: TaskStatsServerProps) {
   return (
     <>
       {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className={styles.overview}>
         <StatCard
           title="Total Tasks"
           value={stats.overview.totalTasks}
@@ -57,8 +58,8 @@ export default function TaskStatsServer({ stats }: TaskStatsServerProps) {
           value={stats.overview.runningTasks}
           description="Currently executing"
           icon={Loader2}
-          iconClassName="h-4 w-4 text-blue-500"
-          valueClassName="text-2xl font-bold text-blue-600"
+          iconClassName={styles.runningIcon}
+          valueClassName={styles.runningValue}
         />
 
         <StatCard
@@ -66,8 +67,8 @@ export default function TaskStatsServer({ stats }: TaskStatsServerProps) {
           value={stats.overview.scheduledTasks}
           description="Waiting for next run"
           icon={Clock}
-          iconClassName="h-4 w-4 text-green-500"
-          valueClassName="text-2xl font-bold text-green-600"
+          iconClassName={styles.scheduledIcon}
+          valueClassName={styles.scheduledValue}
         />
 
         <StatCard
@@ -85,24 +86,24 @@ export default function TaskStatsServer({ stats }: TaskStatsServerProps) {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className={styles.panels}>
         {/* Execution Status Breakdown */}
         <Card>
           <CardHeader>
             <CardTitle>Execution Status Breakdown</CardTitle>
-            <p className="text-sm text-muted-foreground">Last {stats.period}</p>
+            <p className={styles.period}>Last {stats.period}</p>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="stack space-4">
               {Object.entries(stats.statusBreakdown).map(([status, count]) => (
                 <div
                   key={status}
-                  className="flex items-center justify-between"
+                  className={styles.row}
                 >
-                  <div className="flex items-center gap-2">{getStatusBadge(status)}</div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{count}</span>
-                    <span className="text-sm text-muted-foreground">({Math.round((count / stats.executions.total) * 100)}%)</span>
+                  <div className={styles.rowSide}>{getStatusBadge(status)}</div>
+                  <div className={styles.rowSide}>
+                    <span className={styles.count}>{count}</span>
+                    <span className={styles.share}>({Math.round((count / stats.executions.total) * 100)}%)</span>
                   </div>
                 </div>
               ))}
@@ -115,25 +116,25 @@ export default function TaskStatsServer({ stats }: TaskStatsServerProps) {
           <Card>
             <CardHeader>
               <CardTitle>Most Active Tasks</CardTitle>
-              <p className="text-sm text-muted-foreground">Last {stats.period}</p>
+              <p className={styles.period}>Last {stats.period}</p>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="stack space-4">
                 {stats.mostActiveTasks.map((task, index) => (
                   <div
                     key={task.taskId}
-                    className="flex items-center justify-between"
+                    className={styles.row}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className={styles.rowSide}>
                       <Badge
                         variant="outline"
-                        className="w-6 h-6 flex items-center justify-center text-xs p-0"
+                        className={styles.rank}
                       >
                         {index + 1}
                       </Badge>
                       <div>
-                        <div className="font-medium text-sm">{task.taskName}</div>
-                        <div className="text-xs text-muted-foreground">{task.taskId}</div>
+                        <div className={styles.taskName}>{task.taskName}</div>
+                        <div className={styles.taskId}>{task.taskId}</div>
                       </div>
                     </div>
                     <Badge variant="secondary">{task.executionCount} runs</Badge>

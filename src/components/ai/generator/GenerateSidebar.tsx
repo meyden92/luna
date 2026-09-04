@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { GenerateParams } from '@/hooks/use-image-generation';
 import { useModelFieldDefaults } from '@/hooks/use-model-field-defaults';
+import styles from './GenerateSidebar.module.css';
 
 interface GenerationModel {
   id: string;
@@ -78,22 +79,20 @@ export function GenerateSidebar({ generationModels, onGenerate }: GenerateSideba
           <Button
             onClick={() => handleGenerate()}
             disabled={isGenerateDisabled}
-            className="w-full"
+            className={styles.generateButton}
             size="lg"
           >
             Generate
           </Button>
           {isGenerateDisabled && (
-            <p className="text-xs text-muted-foreground text-center mt-2">
-              {!promptValue.trim() ? 'Enter a prompt to generate' : 'Select a model to continue'}
-            </p>
+            <p className={styles.generateHint}>{!promptValue.trim() ? 'Enter a prompt to generate' : 'Select a model to continue'}</p>
           )}
         </>
       }
     >
       {/* Model Selection */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">Generation Model</Label>
+      <div className="stack space-2">
+        <Label className={styles.sectionLabel}>Generation Model</Label>
         <Select
           value={selectedModelId}
           onValueChange={handleModelChange}
@@ -107,9 +106,9 @@ export function GenerateSidebar({ generationModels, onGenerate }: GenerateSideba
                 key={model.id}
                 value={model.id}
               >
-                <div className="flex flex-col items-start">
-                  <span className="font-medium">{model.label}</span>
-                  {model.description && <span className="text-xs text-muted-foreground">{model.description}</span>}
+                <div className={styles.modelOption}>
+                  <span className={styles.modelLabel}>{model.label}</span>
+                  {model.description && <span className={styles.modelDescription}>{model.description}</span>}
                 </div>
               </SelectItem>
             ))}
@@ -128,8 +127,8 @@ export function GenerateSidebar({ generationModels, onGenerate }: GenerateSideba
 
       {/* Dynamic Model Fields */}
       {selectedModel && selectedModel.fields.length > 0 && (
-        <div className="space-y-3">
-          <Label className="text-sm font-medium">Model Parameters</Label>
+        <div className="stack space-3">
+          <Label className={styles.sectionLabel}>Model Parameters</Label>
           <ModelFieldsForm
             fields={selectedModel.fields}
             values={fieldValues}

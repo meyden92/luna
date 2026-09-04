@@ -1,0 +1,49 @@
+@layer components {
+  .header {
+    text-align: center;
+    margin-bottom: var(--space-8);
+  }
+
+  .title {
+    background: linear-gradient(to right, var(--primary), color-mix(in oklab, var(--primary) 60%, transparent));
+    background-clip: text;
+    color: transparent;
+  }
+
+  .subtitle {
+    max-width: 42rem;
+    margin-inline: auto;
+    color: var(--muted-foreground);
+  }
+
+  .card {
+    border-color: color-mix(in oklab, var(--border) 50%, transparent);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .cardTitle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .iconWell {
+    padding: var(--space-2);
+    border-radius: var(--radius-lg);
+    background: color-mix(in oklab, var(--primary) 10%, transparent);
+  }
+
+  .iconWell[data-tone="info"] {
+    background: color-mix(in oklab, var(--info) 10%, transparent);
+  }
+
+  .icon {
+    width: var(--space-5);
+    height: var(--space-5);
+    color: var(--primary);
+  }
+
+  .icon[data-tone="info"] {
+    color: var(--info);
+  }
+}

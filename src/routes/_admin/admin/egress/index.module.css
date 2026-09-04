@@ -1,0 +1,20 @@
+@layer components {
+  .icon {
+    width: var(--space-6);
+    height: var(--space-6);
+  }
+
+  .subtitle {
+    color: var(--muted-foreground);
+  }
+
+  .alignEnd {
+    text-align: right;
+  }
+
+  .emptyCell {
+    padding-block: var(--space-10);
+    text-align: center;
+    color: var(--muted-foreground);
+  }
+}

@@ -1,0 +1,25 @@
+@layer components {
+  .titleIcon {
+    width: var(--space-6);
+    height: var(--space-6);
+  }
+
+  .title {
+    font-size: var(--text-2xl);
+    line-height: var(--leading-2xl);
+    font-weight: var(--weight-bold);
+  }
+
+  /* Configuration beside preview once there is room for two full columns. */
+  .columns {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (width >= 1024px) {
+    .columns {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+}

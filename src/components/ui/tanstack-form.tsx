@@ -11,6 +11,8 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/libs/utils';
 
+import styles from './tanstack-form.module.css';
+
 // Core types for TanStack Form integration
 export type FormValues = Record<string, any>;
 
@@ -105,8 +107,8 @@ export function Form<TFormData = FormValues>({
 
   if (isLoadingInitial) {
     return (
-      <div className="flex items-center justify-center p-4">
-        <div className="text-sm text-muted-foreground">Loading form...</div>
+      <div className={styles.loading}>
+        <div className={styles.loadingText}>Loading form...</div>
       </div>
     );
   }
@@ -114,7 +116,7 @@ export function Form<TFormData = FormValues>({
   return (
     <FormContext.Provider value={{ form }}>
       <form
-        className={cn('space-y-6', className)}
+        className={cn(styles.form, className)}
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -175,8 +177,8 @@ export function FormWithSchema<TSchema extends z.ZodType>({
 
   if (isLoadingInitial) {
     return (
-      <div className="flex items-center justify-center p-4">
-        <div className="text-sm text-muted-foreground">Loading form...</div>
+      <div className={styles.loading}>
+        <div className={styles.loadingText}>Loading form...</div>
       </div>
     );
   }
@@ -184,7 +186,7 @@ export function FormWithSchema<TSchema extends z.ZodType>({
   return (
     <FormContext.Provider value={{ form }}>
       <form
-        className={cn('space-y-6', className)}
+        className={cn(styles.form, className)}
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -331,7 +333,7 @@ export function FormItem({ className, ...props }: React.ComponentProps<'div'>) {
     <FormItemContext.Provider value={{ id }}>
       <div
         data-slot="form-item"
-        className={cn('grid gap-2', className)}
+        className={cn(styles.item, className)}
         {...props}
       />
     </FormItemContext.Provider>
@@ -347,7 +349,7 @@ export function FormLabel({ className, ...props }: React.ComponentProps<'label'>
       data-slot="form-label"
       data-error={!!error}
       data-validating={isValidating}
-      className={cn('data-[error=true]:text-destructive', 'data-[validating=true]:opacity-75', className)}
+      className={cn(styles.label, className)}
       htmlFor={formItemId}
       {...props}
     />
@@ -378,7 +380,7 @@ export function FormDescription({ className, ...props }: React.ComponentProps<'p
     <p
       data-slot="form-description"
       id={formDescriptionId}
-      className={cn('text-muted-foreground text-sm', className)}
+      className={cn(styles.description, className)}
       {...props}
     />
   );
@@ -399,7 +401,7 @@ export function FormMessage({ className, ...props }: React.ComponentProps<'p'>) 
       id={formMessageId}
       role="alert"
       aria-live="polite"
-      className={cn('text-destructive text-sm font-medium', 'animate-in slide-in-from-top-1 duration-200', className)}
+      className={cn(styles.message, className)}
       {...props}
     >
       {body}
@@ -564,15 +566,15 @@ export function FormErrors({
   }
 
   return (
-    <div className={cn('rounded-lg border border-destructive/50 p-4 bg-destructive/10', className)}>
-      <div className="text-destructive text-sm font-medium mb-2">Please fix the following errors:</div>
-      <ul className="text-destructive text-sm space-y-1">
+    <div className={cn(styles.errors, className)}>
+      <div className={styles.errorsTitle}>Please fix the following errors:</div>
+      <ul className={styles.errorsList}>
         {errorMessages.map((error: string) => (
           <li
             key={error}
-            className="flex items-start gap-2"
+            className={styles.errorsItem}
           >
-            <span className="text-destructive mt-0.5">•</span>
+            <span className={styles.errorsBullet}>•</span>
             <span>{error}</span>
           </li>
         ))}
@@ -660,12 +662,12 @@ export function InputField({
       name={name}
       validators={validators}
       asyncDebounceMs={asyncDebounceMs}
-      renderFieldAction={({ value, error, onChange, onBlur, isValidating }) => (
+      renderFieldAction={({ value, onChange, onBlur, isValidating }) => (
         <FormItem className={className}>
           <FormLabel>
             {label}
-            {optional && <span className="text-muted-foreground ml-1">(optional)</span>}
-            {isValidating && <span className="text-muted-foreground ml-1 text-xs">(validating...)</span>}
+            {optional && <span className={styles.hint}>(optional)</span>}
+            {isValidating && <span className={cn(styles.hint, styles.hintSmall)}>(validating...)</span>}
           </FormLabel>
           <FormControl>
             <Input
@@ -675,7 +677,6 @@ export function InputField({
               onChange={(e) => onChange(e.target.value)}
               onBlur={onBlur}
               disabled={disabled}
-              className={cn(error && 'border-destructive')}
               {...props}
             />
           </FormControl>
@@ -716,12 +717,12 @@ export function NumberField({
       name={name}
       validators={validators}
       asyncDebounceMs={asyncDebounceMs}
-      renderFieldAction={({ value, error, onChange, onBlur, isValidating }) => (
+      renderFieldAction={({ value, onChange, onBlur, isValidating }) => (
         <FormItem className={className}>
           <FormLabel>
             {label}
-            {optional && <span className="text-muted-foreground ml-1">(optional)</span>}
-            {isValidating && <span className="text-muted-foreground ml-1 text-xs">(validating...)</span>}
+            {optional && <span className={styles.hint}>(optional)</span>}
+            {isValidating && <span className={cn(styles.hint, styles.hintSmall)}>(validating...)</span>}
           </FormLabel>
           <FormControl>
             <Input
@@ -737,7 +738,6 @@ export function NumberField({
               min={min}
               max={max}
               step={step}
-              className={cn(error && 'border-destructive')}
               {...props}
             />
           </FormControl>
@@ -774,12 +774,12 @@ export function TextareaField({
       name={name}
       validators={validators}
       asyncDebounceMs={asyncDebounceMs}
-      renderFieldAction={({ value, error, onChange, onBlur, isValidating }) => (
+      renderFieldAction={({ value, onChange, onBlur, isValidating }) => (
         <FormItem className={className}>
           <FormLabel>
             {label}
-            {optional && <span className="text-muted-foreground ml-1">(optional)</span>}
-            {isValidating && <span className="text-muted-foreground ml-1 text-xs">(validating...)</span>}
+            {optional && <span className={styles.hint}>(optional)</span>}
+            {isValidating && <span className={cn(styles.hint, styles.hintSmall)}>(validating...)</span>}
           </FormLabel>
           <FormControl>
             <Textarea
@@ -789,7 +789,6 @@ export function TextareaField({
               onBlur={onBlur}
               disabled={disabled}
               rows={rows}
-              className={cn(error && 'border-destructive')}
               {...props}
             />
           </FormControl>
@@ -825,12 +824,12 @@ export function SelectField({
       name={name}
       validators={validators}
       asyncDebounceMs={asyncDebounceMs}
-      renderFieldAction={({ value, error, onChange, isValidating }) => (
+      renderFieldAction={({ value, onChange, isValidating }) => (
         <FormItem className={className}>
           <FormLabel>
             {label}
-            {optional && <span className="text-muted-foreground ml-1">(optional)</span>}
-            {isValidating && <span className="text-muted-foreground ml-1 text-xs">(validating...)</span>}
+            {optional && <span className={styles.hint}>(optional)</span>}
+            {isValidating && <span className={cn(styles.hint, styles.hintSmall)}>(validating...)</span>}
           </FormLabel>
           <Select
             value={value ?? ''}
@@ -838,7 +837,7 @@ export function SelectField({
             disabled={disabled}
           >
             <FormControl>
-              <SelectTrigger className={cn(error && 'border-destructive')}>
+              <SelectTrigger>
                 <SelectValue placeholder={placeholder} />
               </SelectTrigger>
             </FormControl>
@@ -881,7 +880,7 @@ export function CheckboxField({
       validators={validators}
       asyncDebounceMs={asyncDebounceMs}
       renderFieldAction={({ value, onChange, isValidating }) => (
-        <FormItem className={cn('flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4', className)}>
+        <FormItem className={cn(styles.checkboxItem, className)}>
           <FormControl>
             <Checkbox
               checked={Boolean(value)}
@@ -889,10 +888,10 @@ export function CheckboxField({
               disabled={disabled}
             />
           </FormControl>
-          <div className="space-y-1 leading-none">
-            <FormLabel className={cn('cursor-pointer', disabled && 'cursor-not-allowed opacity-50')}>
+          <div className={styles.checkboxBody}>
+            <FormLabel className={cn(styles.clickableLabel, disabled && styles.labelDisabled)}>
               {label}
-              {isValidating && <span className="text-muted-foreground ml-1 text-xs">(validating...)</span>}
+              {isValidating && <span className={cn(styles.hint, styles.hintSmall)}>(validating...)</span>}
             </FormLabel>
             {description && <FormDescription>{description}</FormDescription>}
             <FormMessage />
@@ -922,11 +921,11 @@ export function SwitchField({
       validators={validators}
       asyncDebounceMs={asyncDebounceMs}
       renderFieldAction={({ value, onChange, isValidating }) => (
-        <FormItem className={cn('flex flex-row items-center justify-between rounded-lg border p-4', className)}>
-          <div className="space-y-0.5">
-            <FormLabel className={cn('text-base', disabled && 'opacity-50')}>
+        <FormItem className={cn(styles.switchItem, className)}>
+          <div className={styles.switchBody}>
+            <FormLabel className={cn(styles.switchLabel, disabled && styles.labelDisabled)}>
               {label}
-              {isValidating && <span className="text-muted-foreground ml-1 text-xs">(validating...)</span>}
+              {isValidating && <span className={cn(styles.hint, styles.hintSmall)}>(validating...)</span>}
             </FormLabel>
             {description && <FormDescription>{description}</FormDescription>}
           </div>
@@ -968,12 +967,12 @@ export function DateField({
       name={name}
       validators={validators}
       asyncDebounceMs={asyncDebounceMs}
-      renderFieldAction={({ value, error, onChange, onBlur, isValidating }) => (
+      renderFieldAction={({ value, onChange, onBlur, isValidating }) => (
         <FormItem className={className}>
           <FormLabel>
             {label}
-            {optional && <span className="text-muted-foreground ml-1">(optional)</span>}
-            {isValidating && <span className="text-muted-foreground ml-1 text-xs">(validating...)</span>}
+            {optional && <span className={styles.hint}>(optional)</span>}
+            {isValidating && <span className={cn(styles.hint, styles.hintSmall)}>(validating...)</span>}
           </FormLabel>
           <FormControl>
             <Input
@@ -984,7 +983,6 @@ export function DateField({
               disabled={disabled}
               min={min}
               max={max}
-              className={cn(error && 'border-destructive')}
             />
           </FormControl>
           {description && <FormDescription>{description}</FormDescription>}
@@ -1019,12 +1017,12 @@ export function DateTimeField({
       name={name}
       validators={validators}
       asyncDebounceMs={asyncDebounceMs}
-      renderFieldAction={({ value, error, onChange, onBlur, isValidating }) => (
+      renderFieldAction={({ value, onChange, onBlur, isValidating }) => (
         <FormItem className={className}>
           <FormLabel>
             {label}
-            {optional && <span className="text-muted-foreground ml-1">(optional)</span>}
-            {isValidating && <span className="text-muted-foreground ml-1 text-xs">(validating...)</span>}
+            {optional && <span className={styles.hint}>(optional)</span>}
+            {isValidating && <span className={cn(styles.hint, styles.hintSmall)}>(validating...)</span>}
           </FormLabel>
           <FormControl>
             <Input
@@ -1035,7 +1033,6 @@ export function DateTimeField({
               disabled={disabled}
               min={min}
               max={max}
-              className={cn(error && 'border-destructive')}
             />
           </FormControl>
           {description && <FormDescription>{description}</FormDescription>}
@@ -1070,12 +1067,12 @@ export function FileField({
       name={name}
       validators={validators}
       asyncDebounceMs={asyncDebounceMs}
-      renderFieldAction={({ error, onChange, onBlur, isValidating }) => (
+      renderFieldAction={({ onChange, onBlur, isValidating }) => (
         <FormItem className={className}>
           <FormLabel>
             {label}
-            {optional && <span className="text-muted-foreground ml-1">(optional)</span>}
-            {isValidating && <span className="text-muted-foreground ml-1 text-xs">(validating...)</span>}
+            {optional && <span className={styles.hint}>(optional)</span>}
+            {isValidating && <span className={cn(styles.hint, styles.hintSmall)}>(validating...)</span>}
           </FormLabel>
           <FormControl>
             <Input
@@ -1085,10 +1082,7 @@ export function FileField({
               disabled={disabled}
               accept={accept}
               multiple={multiple}
-              className={cn(
-                error && 'border-destructive',
-                'file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/80',
-              )}
+              className={styles.fileInput}
             />
           </FormControl>
           {description && <FormDescription>{description}</FormDescription>}
@@ -1125,15 +1119,15 @@ export function RadioField({
         <FormItem className={className}>
           <FormLabel>
             {label}
-            {optional && <span className="text-muted-foreground ml-1">(optional)</span>}
-            {isValidating && <span className="text-muted-foreground ml-1 text-xs">(validating...)</span>}
+            {optional && <span className={styles.hint}>(optional)</span>}
+            {isValidating && <span className={cn(styles.hint, styles.hintSmall)}>(validating...)</span>}
           </FormLabel>
           <FormControl>
-            <div className="space-y-2">
+            <div className={styles.radioGroup}>
               {options.map((option) => (
                 <div
                   key={option.value}
-                  className="flex items-center space-x-2"
+                  className={styles.radioRow}
                 >
                   <input
                     type="radio"
@@ -1143,14 +1137,11 @@ export function RadioField({
                     checked={value === option.value}
                     onChange={(e) => onChange(e.target.value)}
                     disabled={disabled || option.disabled}
-                    className="h-4 w-4 border-border text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className={styles.radio}
                   />
                   <label
                     htmlFor={`${name}-${option.value}`}
-                    className={cn(
-                      'text-sm font-medium leading-none cursor-pointer',
-                      (disabled || option.disabled) && 'opacity-50 cursor-not-allowed',
-                    )}
+                    className={cn(styles.radioLabel, (disabled || option.disabled) && styles.labelDisabled)}
                   >
                     {option.label}
                   </label>

@@ -10,6 +10,7 @@ import { useAppMutation } from '@/hooks/use-app-mutation';
 import { queryKeys } from '@/libs/query-keys';
 import { deleteAdminTask, listAdminTasks } from '@/server/fns/admin/tasks';
 import type { TaskWithStatus } from '@/types/tasks';
+import styles from './EnhancedTaskList.module.css';
 import SimpleTaskForm from './SimpleTaskForm';
 import TaskFilters from './task-filters';
 import TaskTableServer from './task-table-server';
@@ -60,8 +61,8 @@ export default function EnhancedTaskList() {
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
+        <CardContent className={styles.state}>
+          <Loader2 className={styles.spinner} />
         </CardContent>
       </Card>
     );
@@ -70,10 +71,10 @@ export default function EnhancedTaskList() {
   if (error) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center py-8">
-          <div className="text-center">
-            <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">Failed to load tasks</p>
+        <CardContent className={styles.state}>
+          <div>
+            <AlertCircle className={styles.errorIcon} />
+            <p className={styles.errorText}>Failed to load tasks</p>
           </div>
         </CardContent>
       </Card>
@@ -103,8 +104,8 @@ export default function EnhancedTaskList() {
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
+          <div className={styles.header}>
+            <CardTitle className={styles.title}>
               Task Management
               {tasks && (
                 <Badge variant="outline">
@@ -112,7 +113,7 @@ export default function EnhancedTaskList() {
                 </Badge>
               )}
             </CardTitle>
-            <div className="flex items-center gap-2">
+            <div className={styles.toolbar}>
               <TaskFilters
                 statusFilter={statusFilter}
                 onStatusFilterChange={setStatusFilter}
@@ -121,7 +122,7 @@ export default function EnhancedTaskList() {
                 variant="outline"
                 render={<Link to="/admin/tasks/logs" />}
               >
-                <FileText className="h-4 w-4 mr-2" />
+                <FileText />
                 View All Logs
               </Button>
               <Button onClick={() => setShowCreateForm(true)}>Create Task</Button>
@@ -130,12 +131,12 @@ export default function EnhancedTaskList() {
         </CardHeader>
         <CardContent>
           {filteredTasks.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">{statusFilter === 'all' ? 'No tasks found' : `No ${statusFilter} tasks found`}</p>
+            <div className={styles.empty}>
+              <p className={styles.emptyText}>{statusFilter === 'all' ? 'No tasks found' : `No ${statusFilter} tasks found`}</p>
               {statusFilter === 'all' && (
                 <Button
                   onClick={() => setShowCreateForm(true)}
-                  className="mt-4"
+                  className="margin-top-4"
                 >
                   Create Your First Task
                 </Button>
@@ -173,7 +174,7 @@ export default function EnhancedTaskList() {
               onClick={handleDelete}
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {deleteMutation.isPending && <Loader2 className={styles.buttonSpinner} />}
               Delete
             </Button>
           </DialogFooter>

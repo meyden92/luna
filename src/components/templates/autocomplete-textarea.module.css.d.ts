@@ -1,0 +1,32 @@
+declare const styles: {
+  readonly "backdrop": string;
+  readonly "chip": string;
+  readonly "chipBody": string;
+  readonly "chipLabel": string;
+  readonly "chipName": string;
+  readonly "editor": string;
+  readonly "expand": string;
+  readonly "field": string;
+  readonly "filterHint": string;
+  readonly "helper": string;
+  readonly "helperLine": string;
+  readonly "helperText": string;
+  readonly "input": string;
+  readonly "kbd": string;
+  readonly "option": string;
+  readonly "optionLabel": string;
+  readonly "panel": string;
+  readonly "panelGrid": string;
+  readonly "panelTitle": string;
+  readonly "plain": string;
+  readonly "popup": string;
+  readonly "popupAnchor": string;
+  readonly "popupEmpty": string;
+  readonly "popupHeader": string;
+  readonly "popupList": string;
+  readonly "toggle": string;
+  readonly "tokenInvalid": string;
+  readonly "tokenValid": string;
+};
+export = styles;
+

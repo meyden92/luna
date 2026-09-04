@@ -10,6 +10,7 @@ import { useAppMutation } from '@/hooks/use-app-mutation';
 import { queryKeys } from '@/libs/query-keys';
 import type { listGenerationModels } from '@/server/fns/admin/models';
 import { deleteGenerationModel, setGenerationModelActive } from '@/server/fns/admin/models';
+import styles from './ModelManager.module.css';
 
 type GenerationModel = Awaited<ReturnType<typeof listGenerationModels>>[number];
 
@@ -62,8 +63,8 @@ export default function ModelManager({ models }: ModelManagerProps) {
   if (models.length === 0) {
     return (
       <Card>
-        <CardContent className="p-6">
-          <p className="text-center text-muted-foreground">No models configured yet. Add your first model to get started.</p>
+        <CardContent className="pad-6">
+          <p className={styles.emptyText}>No models configured yet. Add your first model to get started.</p>
         </CardContent>
       </Card>
     );
@@ -71,16 +72,16 @@ export default function ModelManager({ models }: ModelManagerProps) {
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className={styles.grid}>
         {models.map((model) => (
           <Card key={model.id}>
             <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="min-w-0 flex-1">
-                  <CardTitle className="text-lg">{model.label}</CardTitle>
+              <div className={styles.cardHead}>
+                <div className={styles.titleWrap}>
+                  <CardTitle className={styles.title}>{model.label}</CardTitle>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className="text-xs text-muted-foreground">{model.isActive ? 'Active' : 'Inactive'}</span>
+                <div className={styles.activeToggle}>
+                  <span className={styles.activeLabel}>{model.isActive ? 'Active' : 'Inactive'}</span>
                   <Switch
                     checked={model.isActive}
                     disabled={isTogglingActive && activeToggleVariables?.id === model.id}
@@ -91,21 +92,24 @@ export default function ModelManager({ models }: ModelManagerProps) {
               </div>
             </CardHeader>
             <CardContent>
-              {model.description && <p className="text-sm text-muted-foreground mb-3">{model.description}</p>}
-              <p className="text-xs text-muted-foreground mb-3">
+              {model.description && <p className={styles.description}>{model.description}</p>}
+              <p className={styles.meta}>
                 <strong>API Model:</strong> {model.apiModelName}
               </p>
-              <p className="text-xs text-muted-foreground mb-4">
+              <p
+                className={styles.meta}
+                data-last="true"
+              >
                 <strong>Fields:</strong> {model.fields?.length || 0}
               </p>
-              <div className="flex gap-2">
+              <div className={styles.actions}>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1"
+                  className={styles.editButton}
                   onClick={() => navigate({ to: '/admin/models/generation/$id', params: { id: String(model.id) } })}
                 >
-                  <Pencil className="mr-2 h-4 w-4" />
+                  <Pencil />
                   Edit
                 </Button>
                 <Button
@@ -113,7 +117,7 @@ export default function ModelManager({ models }: ModelManagerProps) {
                   size="sm"
                   onClick={() => handleDelete(model)}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 />
                 </Button>
               </div>
             </CardContent>

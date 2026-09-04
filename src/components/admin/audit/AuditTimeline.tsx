@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/libs/utils';
 import type { AuditLog } from '@/types/audit';
+import styles from './AuditTimeline.module.css';
 
 interface AuditTimelineProps {
   auditLogs: AuditLog[];
@@ -13,46 +13,12 @@ interface AuditTimelineProps {
   onAuditSelect: (auditLog: AuditLog) => void;
 }
 
-type ActionType = 'create' | 'update' | 'delete';
+const TONED_ACTIONS = ['create', 'update', 'delete'];
 
-interface ActionColors {
-  bg: string;
-  border: string;
-  text: string;
-  lightBg: string;
-}
-
-const ACTION_COLORS: Record<ActionType, ActionColors> = {
-  create: {
-    bg: 'bg-emerald-500',
-    border: 'border-emerald-200 dark:border-emerald-800',
-    text: 'text-emerald-700 dark:text-emerald-300',
-    lightBg: 'bg-emerald-50 dark:bg-emerald-950/50',
-  },
-  update: {
-    bg: 'bg-blue-500',
-    border: 'border-blue-200 dark:border-blue-800',
-    text: 'text-blue-700 dark:text-blue-300',
-    lightBg: 'bg-blue-50 dark:bg-blue-950/50',
-  },
-  delete: {
-    bg: 'bg-red-500',
-    border: 'border-red-200 dark:border-red-800',
-    text: 'text-red-700 dark:text-red-300',
-    lightBg: 'bg-red-50 dark:bg-red-950/50',
-  },
-};
-
-const DEFAULT_COLORS: ActionColors = {
-  bg: 'bg-muted-foreground',
-  border: 'border-border',
-  text: 'text-muted-foreground',
-  lightBg: 'bg-muted/50',
-};
-
-const getActionColor = (action: string): ActionColors => {
-  const normalizedAction = action.toLowerCase() as ActionType;
-  return ACTION_COLORS[normalizedAction] || DEFAULT_COLORS;
+/** The action names the module tints; anything else falls back to the neutral tone. */
+const getActionTone = (action: string): string | undefined => {
+  const normalized = action.toLowerCase();
+  return TONED_ACTIONS.includes(normalized) ? normalized : undefined;
 };
 
 // Timeline constants
@@ -128,43 +94,41 @@ export function AuditTimeline({ auditLogs, selectedAuditId, onAuditSelect }: Aud
   }, []);
 
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-6 overflow-hidden">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold">Change History</h3>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">{auditLogs.length} changes</span>
-            <div className="flex gap-1">
+    <Card className={styles.root}>
+      <CardContent className={styles.body}>
+        <div className={styles.head}>
+          <h3 className={styles.heading}>Change History</h3>
+          <div className="cluster space-2">
+            <span className={styles.count}>{auditLogs.length} changes</span>
+            <div className="cluster space-1">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => scrollTimeline('left')}
                 disabled={!canScrollLeft}
-                className="h-8 w-8 p-0"
+                className={styles.scrollButton}
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className={styles.scrollIcon} />
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => scrollTimeline('right')}
                 disabled={!canScrollRight}
-                className="h-8 w-8 p-0"
+                className={styles.scrollButton}
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className={styles.scrollIcon} />
               </Button>
             </div>
           </div>
         </div>
 
-        <div className="relative w-full overflow-hidden">
+        <div className={styles.viewport}>
           {/* Scrollable timeline container */}
           <div
             ref={scrollContainerRef}
-            className={cn(
-              'overflow-x-auto overflow-y-hidden scrollbar-hide relative w-full',
-              isDragging ? 'cursor-grabbing' : 'cursor-grab',
-            )}
+            className={styles.track}
+            data-dragging={isDragging}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -176,7 +140,7 @@ export function AuditTimeline({ auditLogs, selectedAuditId, onAuditSelect }: Aud
           >
             {/* Timeline line */}
             <div
-              className="absolute top-6 h-0.5 bg-border"
+              className={styles.rail}
               style={{
                 left: `${TIMELINE_LINE_OFFSET}px`,
                 width: `${Math.max(sortedAuditLogs.length * TIMELINE_ITEM_WIDTH - TIMELINE_LINE_OFFSET * 2, 0)}px`,
@@ -185,53 +149,43 @@ export function AuditTimeline({ auditLogs, selectedAuditId, onAuditSelect }: Aud
 
             {/* Timeline items */}
             <div
-              className="flex items-start gap-0"
+              className={styles.items}
               style={{
                 width: `${sortedAuditLogs.length * TIMELINE_ITEM_WIDTH}px`,
               }}
             >
-              {sortedAuditLogs.map((log, _index) => {
-                const colors = getActionColor(log.action);
+              {sortedAuditLogs.map((log) => {
                 const isSelected = selectedAuditId === log.id;
 
                 return (
                   <div
                     key={log.id}
-                    className="flex flex-col items-center relative cursor-pointer group flex-shrink-0"
+                    className={styles.item}
+                    data-action={getActionTone(log.action)}
+                    data-selected={isSelected}
                     onClick={() => onAuditSelect(log)}
                     style={{ width: `${TIMELINE_ITEM_WIDTH}px` }}
                     onMouseDown={(e) => e.stopPropagation()} // Prevent drag when clicking timeline items
                   >
                     {/* Circle indicator */}
-                    <div
-                      className={cn(
-                        'relative z-10 w-12 h-12 rounded-full border-4 flex items-center justify-center transition-all duration-200',
-                        isSelected
-                          ? `${colors.bg} border-background shadow-lg scale-110`
-                          : `bg-background ${colors.border} group-hover:${colors.lightBg} group-hover:scale-105`,
-                      )}
-                    >
-                      <Check className={cn('h-5 w-5 transition-colors', isSelected ? 'text-white' : colors.text)} />
+                    <div className={styles.node}>
+                      <Check className={styles.nodeIcon} />
                     </div>
 
                     {/* Action label */}
-                    <div className="mt-3 text-center">
+                    <div className={styles.label}>
                       <Badge
                         variant={isSelected ? 'default' : 'outline'}
-                        className={cn('text-xs font-medium mb-1', isSelected && `${colors.bg} text-white border-transparent`)}
+                        className={styles.badge}
                       >
                         {log.action}
                       </Badge>
-                      <p className="text-xs text-muted-foreground">{log.user?.name ?? 'System'}</p>
-                      <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}</p>
+                      <p className={styles.meta}>{log.user?.name ?? 'System'}</p>
+                      <p className={styles.meta}>{formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}</p>
                     </div>
 
                     {/* Summary tooltip on hover */}
-                    {log.summary && (
-                      <div className="absolute top-16 left-1/2 transform -translate-x-1/2 bg-popover text-popover-foreground text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20 whitespace-nowrap max-w-48 truncate border border-border shadow-md">
-                        {log.summary}
-                      </div>
-                    )}
+                    {log.summary && <div className={styles.tooltip}>{log.summary}</div>}
                   </div>
                 );
               })}
@@ -240,10 +194,16 @@ export function AuditTimeline({ auditLogs, selectedAuditId, onAuditSelect }: Aud
 
           {/* Fade indicators for scrollable content */}
           {canScrollLeft && (
-            <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent pointer-events-none z-10" />
+            <div
+              className={styles.fade}
+              data-edge="left"
+            />
           )}
           {canScrollRight && (
-            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none z-10" />
+            <div
+              className={styles.fade}
+              data-edge="right"
+            />
           )}
         </div>
       </CardContent>

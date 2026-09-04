@@ -1,5 +1,7 @@
 import { Upload } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { cn } from '@/libs/utils';
+import styles from './Story.module.css';
 
 const sampleFiles = ['sunset-walk.jpg', 'status-report.pdf', 'recording-003.mov', 'notes.md'];
 
@@ -32,52 +34,41 @@ export default function Story() {
   return (
     <section
       id="showcase"
-      className="relative mx-auto max-w-[1280px] px-9 py-[40px_60px]"
+      className={styles.root}
     >
-      <div className="relative overflow-hidden rounded-[20px] border border-luna-line bg-luna-bg">
-        <div className="flex items-center justify-between border-b border-luna-line bg-luna-bg-2 px-[18px] py-3.5">
-          <div className="flex gap-1.5">
-            <i className="h-2.5 w-2.5 rounded-full bg-[#F87171]" />
-            <i className="h-2.5 w-2.5 rounded-full bg-[#FBBF24]" />
-            <i className="h-2.5 w-2.5 rounded-full bg-[#34D399]" />
+      <div className={styles.window}>
+        <div className={styles.titleBar}>
+          <div className={styles.lights}>
+            <i className={cn(styles.light, styles.lightClose)} />
+            <i className={cn(styles.light, styles.lightMinimise)} />
+            <i className={cn(styles.light, styles.lightZoom)} />
           </div>
-          <div className="rounded-lg border border-luna-line bg-luna-bg px-2.5 py-1 font-mono text-[11px] text-luna-ink-3">
-            lunashare.app / upload
-          </div>
-          <div className="font-mono text-[10px] text-luna-ink-4">LIVE · 23ms</div>
+          <div className={styles.address}>lunashare.app / upload</div>
+          <div className={styles.latency}>LIVE · 23ms</div>
         </div>
-        <div className="relative grid items-center gap-8 p-[32px_24px] md:p-[44px_40px] lg:grid-cols-[1.1fr_0.9fr]">
+        <div className={styles.body}>
           <div>
-            <h2 className="mb-3.5 font-serif text-[48px] font-normal leading-[1.02] tracking-[-0.02em] text-luna-ink">Why I Built This</h2>
-            <p className="max-w-[48ch] text-[14.5px] leading-[1.6] text-luna-ink-3">
-              Every great project starts with a problem that needs solving. Here's mine.
-            </p>
-            <div className="mt-5.5 flex flex-col gap-3.5">
+            <h2 className={styles.headline}>Why I Built This</h2>
+            <p className={styles.lede}>Every great project starts with a problem that needs solving. Here's mine.</p>
+            <div className={styles.steps}>
               {STEPS.map((step, i) => (
                 <div
                   key={step.t}
-                  className="flex items-start gap-3.5 rounded-xl border border-luna-line bg-luna-bg p-3.5 transition-all hover:translate-x-[3px] hover:border-luna-line-2"
+                  className={styles.step}
                 >
-                  <span
-                    className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg font-mono text-xs ${
-                      i === 0 ? 'bg-luna-accent text-[oklch(0.15_0.03_162)]' : 'bg-luna-ink text-luna-bg'
-                    }`}
-                  >
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
+                  <span className={cn(styles.stepBadge, i === 0 && styles.stepBadgeFirst)}>{String(i + 1).padStart(2, '0')}</span>
                   <div>
-                    <h5 className="mb-1 text-[13.5px] font-semibold text-luna-ink">{step.t}</h5>
-                    <p className="text-[12.5px] leading-[1.45] text-luna-ink-3">{step.d}</p>
+                    <h5 className={styles.stepTitle}>{step.t}</h5>
+                    <p className={styles.stepBody}>{step.d}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-          <div className="luna-panel-corners relative flex aspect-[4/3.2] items-center justify-center rounded-[14px] border border-luna-line bg-gradient-to-tl from-luna-bg to-luna-bg-2 p-5">
+          <div className={styles.panel}>
             <div
-              className={`relative flex aspect-[1.4] w-[82%] cursor-pointer flex-col items-center justify-center gap-2.5 rounded-[14px] border-[1.5px] border-dashed border-luna-line-2 bg-[color-mix(in_oklab,var(--luna-bg)_70%,transparent)] transition-all duration-300 ${
-                hot ? 'luna-drop-hot' : ''
-              }`}
+              className={styles.dropzone}
+              data-hot={hot || undefined}
               onDragOver={(e) => {
                 e.preventDefault();
                 setHot(true);
@@ -88,20 +79,20 @@ export default function Story() {
                 setHot(false);
               }}
             >
-              <div className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-luna-bg text-luna-accent-2 shadow-[0_1px_0_rgba(15,21,17,0.04),0_1px_2px_rgba(15,21,17,0.04)]">
+              <div className={styles.dropIcon}>
                 <Upload size={22} />
               </div>
-              <h6 className="mt-1.5 text-sm font-semibold text-luna-ink">Drop files here</h6>
-              <small className="text-xs text-luna-ink-3">or paste from clipboard — ⌘V</small>
-              <div className="absolute inset-x-3 bottom-3 flex flex-col gap-1.5">
+              <h6 className={styles.dropTitle}>Drop files here</h6>
+              <small className={styles.dropHint}>or paste from clipboard — ⌘V</small>
+              <div className={styles.queue}>
                 {queue.map((q) => (
                   <div
                     key={q.id}
-                    className="luna-slide-in flex items-center gap-2 rounded-lg border border-luna-line bg-luna-bg px-2 py-1.5 font-mono text-[11px] text-luna-ink-3"
+                    className={styles.queueItem}
                   >
-                    <span className="max-w-[55%] basis-auto truncate">{q.n}</span>
-                    <div className="relative h-[3px] flex-1 overflow-hidden rounded-full bg-luna-bg-3">
-                      <i className="luna-fill-x absolute inset-0 rounded-full bg-luna-accent" />
+                    <span className={styles.queueName}>{q.n}</span>
+                    <div className={styles.queueTrack}>
+                      <i className={styles.queueFill} />
                     </div>
                   </div>
                 ))}

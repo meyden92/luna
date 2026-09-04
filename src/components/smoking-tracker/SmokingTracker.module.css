@@ -1,0 +1,84 @@
+@layer components {
+  .root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    max-width: 80rem;
+    margin-inline: auto;
+    padding-bottom: var(--space-10);
+  }
+
+  /* Capture panel next to the four headline metrics. */
+  .captureRow {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .metricPair {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .metricQuad {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .insightList {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .periodButtons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .charts {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  .chartPanel {
+    min-height: 22rem;
+    padding: var(--space-3);
+    border: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
+    border-radius: var(--radius-xl);
+    background: color-mix(in oklab, var(--background) 55%, transparent);
+  }
+
+  /* Day rhythm beside the generated insights. */
+  .splitRow {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  @media (width >= 640px) {
+    .metricPair {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (width >= 768px) {
+    .metricQuad {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  @media (width >= 1024px) {
+    .captureRow {
+      grid-template-columns: 0.9fr 1.1fr;
+    }
+  }
+
+  @media (width >= 1280px) {
+    .charts {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .splitRow {
+      grid-template-columns: 1fr 0.9fr;
+    }
+  }
+}

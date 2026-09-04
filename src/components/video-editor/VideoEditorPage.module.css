@@ -1,0 +1,31 @@
+@layer components {
+  .root {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* The editor shell keeps its own deep-blue backdrop in both Appearances:
+     grading video against a surface that changes lightness is misleading. */
+  .editor {
+    --editor-top: oklch(0.256 0.064 255.5);
+    --editor-bottom: oklch(0.22 0.047 254.8);
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: linear-gradient(to bottom, var(--editor-top), var(--editor-bottom));
+    color: var(--foreground);
+  }
+
+  .stage {
+    position: relative;
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+}

@@ -1,8 +1,8 @@
 import { UploadIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
-import { cn } from '@/libs/utils';
 import { SUPPORTED_VIDEO_FORMATS } from '@/types/converter';
+import styles from './FileUploadZone.module.css';
 
 interface FileUploadZoneProps {
   onFileSelect: (file: File, format: string) => void;
@@ -85,20 +85,18 @@ export function FileUploadZone({ onFileSelect, isLoading = false }: FileUploadZo
 
   return (
     <div
-      className={cn(
-        'relative border-2 border-dashed rounded-lg transition-colors',
-        isDragOver ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50',
-        isLoading && 'opacity-50 pointer-events-none',
-      )}
+      className={styles.dropzone}
+      data-active={isDragOver || undefined}
+      data-loading={isLoading || undefined}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <label className="flex flex-col items-center justify-center gap-3 p-12 cursor-pointer">
-        <UploadIcon className={cn('size-12', isDragOver ? 'text-primary' : 'text-muted-foreground')} />
-        <div className="text-center">
-          <p className="text-sm font-medium">Drop video files here or click to browse</p>
-          <p className="text-xs text-muted-foreground mt-2">MP4, WebM, MKV, AVI, MOV and more</p>
+      <label className={styles.label}>
+        <UploadIcon className={styles.icon} />
+        <div className={styles.text}>
+          <p className="type-sm weight-medium">Drop video files here or click to browse</p>
+          <p className={styles.hint}>MP4, WebM, MKV, AVI, MOV and more</p>
         </div>
         <input
           type="file"

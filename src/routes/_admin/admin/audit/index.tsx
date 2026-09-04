@@ -4,6 +4,7 @@ import { z } from 'zod';
 import AuditTable from '@/components/admin/audit/AuditTable';
 import { queryKeys } from '@/libs/query-keys';
 import { listAuditLogs, listAuditModels } from '@/server/fns/admin/audit';
+import styles from './index.module.css';
 
 const PAGE_SIZE = 20;
 
@@ -59,12 +60,10 @@ function AdminAuditPage() {
   const { data: auditData } = useSuspenseQuery(auditLogsQueryOptions(search));
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Audit Logs</h1>
-      </div>
+    <div className="stack space-6 pad-6">
+      <h1 className="type-3xl weight-bold">Audit Logs</h1>
 
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
+      <div className={styles.panel}>
         <AuditTable
           searchParams={{
             model: search.model,

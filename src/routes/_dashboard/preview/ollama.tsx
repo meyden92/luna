@@ -13,8 +13,9 @@ import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useOllama } from '@/hooks/use-ollama';
-import { formatSize } from '@/libs/utils';
+import { cn, formatSize } from '@/libs/utils';
 import type { ChatStreamChunk, GenerateStreamChunk, Message, ModelInfo, OllamaStream } from '@/types/ollama';
+import styles from './ollama.module.css';
 
 interface ChatMessage extends Message {
   id: string;
@@ -211,8 +212,8 @@ function OllamaTestPage() {
   };
 
   return (
-    <section className="container mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-6">Ollama Bridge Test Page</h1>
+    <section className="container pad-y-8">
+      <h1 className="type-2xl weight-bold margin-bottom-6">Ollama Bridge Test Page</h1>
 
       <Tabs defaultValue="connection">
         <TabsList>
@@ -225,35 +226,29 @@ function OllamaTestPage() {
 
         <TabsContent
           value="connection"
-          className="mt-4"
+          className="margin-top-4"
         >
           <Card>
             <CardHeader>
               <CardTitle>Connection Status</CardTitle>
               <CardDescription>Check if the Ollama Bridge extension and server are available</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-medium">Extension:</span>
+            <CardContent className="stack space-4">
+              <div className="cluster space-4">
+                <span className="type-sm weight-medium">Extension:</span>
                 {isLoading ? (
-                  <Badge
-                    variant="outline"
-                    className="gap-1"
-                  >
-                    <Spinner className="size-3" />
+                  <Badge variant="outline">
+                    <Spinner />
                     Checking...
                   </Badge>
                 ) : isAvailable ? (
-                  <Badge className="gap-1 bg-green-500/10 text-green-600 border-green-500/20">
-                    <CheckCircleIcon className="size-3" />
+                  <Badge className={styles.ok}>
+                    <CheckCircleIcon />
                     Available
                   </Badge>
                 ) : (
-                  <Badge
-                    variant="destructive"
-                    className="gap-1"
-                  >
-                    <AlertCircleIcon className="size-3" />
+                  <Badge variant="destructive">
+                    <AlertCircleIcon />
                     Not Available
                   </Badge>
                 )}
@@ -261,23 +256,23 @@ function OllamaTestPage() {
 
               {error && (
                 <Alert variant="destructive">
-                  <AlertCircleIcon className="size-4" />
+                  <AlertCircleIcon />
                   <AlertTitle>Error</AlertTitle>
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
 
-              <div className="flex items-center gap-4">
+              <div className="cluster space-4">
                 <Button
                   onClick={handlePing}
                   disabled={!isAvailable || pingLoading}
                 >
-                  {pingLoading && <Spinner className="mr-2" />}
+                  {pingLoading && <Spinner />}
                   Ping Server
                 </Button>
                 {pingResult !== null && (
                   <Badge
-                    className={pingResult ? 'bg-green-500/10 text-green-600 border-green-500/20' : ''}
+                    className={pingResult ? styles.ok : undefined}
                     variant={pingResult ? 'outline' : 'destructive'}
                   >
                     {pingResult ? 'Connected' : 'Disconnected'}
@@ -290,41 +285,42 @@ function OllamaTestPage() {
 
         <TabsContent
           value="models"
-          className="mt-4"
+          className="margin-top-4"
         >
           <Card>
             <CardHeader>
               <CardTitle>Available Models</CardTitle>
               <CardDescription>List and inspect models installed on your Ollama server</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="stack space-4">
               <Button
                 onClick={handleLoadModels}
                 disabled={!isAvailable || modelsLoading}
               >
-                {modelsLoading && <Spinner className="mr-2" />}
+                {modelsLoading && <Spinner />}
                 Load Models
               </Button>
 
               {modelsError && (
                 <Alert variant="destructive">
-                  <AlertCircleIcon className="size-4" />
+                  <AlertCircleIcon />
                   <AlertTitle>Error</AlertTitle>
                   <AlertDescription>{modelsError}</AlertDescription>
                 </Alert>
               )}
 
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className={styles.modelGrid}>
                 {models.map((model) => (
                   <Card
                     key={model.name}
-                    className={`cursor-pointer transition-colors hover:bg-muted/50 ${selectedModelDetails?.name === model.name ? 'ring-2 ring-primary' : ''}`}
+                    className={styles.modelCard}
+                    data-selected={selectedModelDetails?.name === model.name}
                     onClick={() => setSelectedModelDetails(model)}
                   >
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base">{model.name}</CardTitle>
+                    <CardHeader className="pad-y-2">
+                      <CardTitle className="type-base">{model.name}</CardTitle>
                     </CardHeader>
-                    <CardContent className="text-sm text-muted-foreground space-y-1">
+                    <CardContent className={cn('stack space-1', styles.modelMeta)}>
                       <p>Size: {formatSize(model.size, MODEL_SIZE_OPTIONS)}</p>
                       <p>Parameters: {model.details.parameter_size}</p>
                       <p>Family: {model.details.family}</p>
@@ -335,12 +331,12 @@ function OllamaTestPage() {
               </div>
 
               {selectedModelDetails && (
-                <Card className="mt-4">
+                <Card className="margin-top-4">
                   <CardHeader>
-                    <CardTitle className="text-lg">Model Details: {selectedModelDetails.name}</CardTitle>
+                    <CardTitle className="type-lg">Model Details: {selectedModelDetails.name}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <pre className="text-xs bg-muted p-4 rounded-lg overflow-auto">{JSON.stringify(selectedModelDetails, null, 2)}</pre>
+                    <pre className={styles.code}>{JSON.stringify(selectedModelDetails, null, 2)}</pre>
                   </CardContent>
                 </Card>
               )}
@@ -350,21 +346,21 @@ function OllamaTestPage() {
 
         <TabsContent
           value="chat"
-          className="mt-4"
+          className="margin-top-4"
         >
           <Card>
             <CardHeader>
               <CardTitle>Chat</CardTitle>
               <CardDescription>Have a conversation with a model</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-medium">Model:</span>
+            <CardContent className="stack space-4">
+              <div className="cluster space-4">
+                <span className="type-sm weight-medium">Model:</span>
                 <Select
                   value={chatModel}
                   onValueChange={(v) => v && setChatModel(v)}
                 >
-                  <SelectTrigger className="w-64">
+                  <SelectTrigger className={styles.modelSelect}>
                     <SelectValue placeholder="Select a model" />
                   </SelectTrigger>
                   <SelectContent>
@@ -378,36 +374,36 @@ function OllamaTestPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                {models.length === 0 && <span className="text-sm text-muted-foreground">Load models first</span>}
+                {models.length === 0 && <span className={styles.hint}>Load models first</span>}
               </div>
 
-              <ScrollArea className="h-64 rounded-lg border p-4">
-                <div className="space-y-4">
+              <ScrollArea className={styles.chatLog}>
+                <div className="stack space-4">
                   {chatMessages.map((msg) => (
                     <div
                       key={msg.id}
-                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      className={styles.messageRow}
+                      data-role={msg.role}
                     >
                       <div
-                        className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                          msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                        }`}
+                        className={styles.bubble}
+                        data-role={msg.role}
                       >
-                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                        <p className={styles.messageText}>{msg.content}</p>
                       </div>
                     </div>
                   ))}
                   {chatLoading && chatResponse && (
-                    <div className="flex justify-start">
-                      <div className="max-w-[80%] rounded-lg px-4 py-2 bg-muted">
-                        <p className="text-sm whitespace-pre-wrap">{chatResponse}</p>
+                    <div className={styles.messageRow}>
+                      <div className={styles.bubble}>
+                        <p className={styles.messageText}>{chatResponse}</p>
                       </div>
                     </div>
                   )}
                 </div>
               </ScrollArea>
 
-              <div className="flex gap-2">
+              <div className="cluster space-2">
                 <Input
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
@@ -424,16 +420,16 @@ function OllamaTestPage() {
                   onClick={() => handleSendChat(false)}
                   disabled={!chatModel || !chatInput.trim() || chatLoading}
                 >
-                  {chatLoading && !chatStreaming && <Spinner className="mr-2" />}
-                  <SendIcon className="size-4" />
+                  {chatLoading && !chatStreaming && <Spinner />}
+                  <SendIcon />
                 </Button>
                 <Button
                   onClick={() => handleSendChat(true)}
                   disabled={!chatModel || !chatInput.trim() || chatLoading}
                   variant="secondary"
                 >
-                  {chatStreaming && <Spinner className="mr-2" />}
-                  <ZapIcon className="size-4" />
+                  {chatStreaming && <Spinner />}
+                  <ZapIcon />
                   Stream
                 </Button>
                 {chatStreaming && (
@@ -441,7 +437,7 @@ function OllamaTestPage() {
                     onClick={handleAbortChat}
                     variant="destructive"
                   >
-                    <SquareIcon className="size-4" />
+                    <SquareIcon />
                     Abort
                   </Button>
                 )}
@@ -462,21 +458,21 @@ function OllamaTestPage() {
 
         <TabsContent
           value="generate"
-          className="mt-4"
+          className="margin-top-4"
         >
           <Card>
             <CardHeader>
               <CardTitle>Generate</CardTitle>
               <CardDescription>Generate text from a prompt</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-medium">Model:</span>
+            <CardContent className="stack space-4">
+              <div className="cluster space-4">
+                <span className="type-sm weight-medium">Model:</span>
                 <Select
                   value={generateModel}
                   onValueChange={(v) => v && setGenerateModel(v)}
                 >
-                  <SelectTrigger className="w-64">
+                  <SelectTrigger className={styles.modelSelect}>
                     <SelectValue placeholder="Select a model" />
                   </SelectTrigger>
                   <SelectContent>
@@ -492,10 +488,8 @@ function OllamaTestPage() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Temperature: {generateTemperature.toFixed(2)}</span>
-                </div>
+              <div className="stack space-2">
+                <span className="type-sm weight-medium">Temperature: {generateTemperature.toFixed(2)}</span>
                 <Slider
                   value={[generateTemperature]}
                   onValueChange={(v) => setGenerateTemperature(Array.isArray(v) ? (v[0] ?? 0.7) : v)}
@@ -512,12 +506,12 @@ function OllamaTestPage() {
                 rows={4}
               />
 
-              <div className="flex gap-2">
+              <div className="cluster space-2">
                 <Button
                   onClick={() => handleGenerate(false)}
                   disabled={!generateModel || !generatePrompt.trim() || generateLoading}
                 >
-                  {generateLoading && !generateStreaming && <Spinner className="mr-2" />}
+                  {generateLoading && !generateStreaming && <Spinner />}
                   Generate
                 </Button>
                 <Button
@@ -525,8 +519,8 @@ function OllamaTestPage() {
                   disabled={!generateModel || !generatePrompt.trim() || generateLoading}
                   variant="secondary"
                 >
-                  {generateStreaming && <Spinner className="mr-2" />}
-                  <ZapIcon className="size-4" />
+                  {generateStreaming && <Spinner />}
+                  <ZapIcon />
                   Stream
                 </Button>
                 {generateStreaming && (
@@ -534,7 +528,7 @@ function OllamaTestPage() {
                     onClick={handleAbortGenerate}
                     variant="destructive"
                   >
-                    <SquareIcon className="size-4" />
+                    <SquareIcon />
                     Abort
                   </Button>
                 )}
@@ -543,11 +537,11 @@ function OllamaTestPage() {
               {generateResponse && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Response</CardTitle>
+                    <CardTitle className="type-base">Response</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ScrollArea className="h-64">
-                      <p className="text-sm whitespace-pre-wrap">{generateResponse}</p>
+                    <ScrollArea className={styles.responseScroll}>
+                      <p className={styles.messageText}>{generateResponse}</p>
                     </ScrollArea>
                   </CardContent>
                 </Card>
@@ -558,21 +552,21 @@ function OllamaTestPage() {
 
         <TabsContent
           value="embeddings"
-          className="mt-4"
+          className="margin-top-4"
         >
           <Card>
             <CardHeader>
               <CardTitle>Embeddings</CardTitle>
               <CardDescription>Generate vector embeddings for text</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-medium">Model:</span>
+            <CardContent className="stack space-4">
+              <div className="cluster space-4">
+                <span className="type-sm weight-medium">Model:</span>
                 <Select
                   value={embedModel}
                   onValueChange={(v) => v && setEmbedModel(v)}
                 >
-                  <SelectTrigger className="w-64">
+                  <SelectTrigger className={styles.modelSelect}>
                     <SelectValue placeholder="Select a model" />
                   </SelectTrigger>
                   <SelectContent>
@@ -599,13 +593,13 @@ function OllamaTestPage() {
                 onClick={handleEmbed}
                 disabled={!embedModel || !embedInput.trim() || embedLoading}
               >
-                {embedLoading && <Spinner className="mr-2" />}
+                {embedLoading && <Spinner />}
                 Generate Embeddings
               </Button>
 
               {embedError && (
                 <Alert variant="destructive">
-                  <AlertCircleIcon className="size-4" />
+                  <AlertCircleIcon />
                   <AlertTitle>Error</AlertTitle>
                   <AlertDescription>{embedError}</AlertDescription>
                 </Alert>
@@ -614,15 +608,18 @@ function OllamaTestPage() {
               {embedResult && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Embedding Result</CardTitle>
+                    <CardTitle className="type-base">Embedding Result</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2">
-                    <p className="text-sm">
-                      <span className="font-medium">Vector length:</span> {embedResult.length} dimensions
+                  <CardContent className="stack space-2">
+                    <p className="type-sm">
+                      <span className="weight-medium">Vector length:</span> {embedResult.length} dimensions
                     </p>
                     <div>
-                      <span className="text-sm font-medium">Preview (first 10 values):</span>
-                      <pre className="text-xs bg-muted p-2 rounded mt-1 overflow-auto">
+                      <span className="type-sm weight-medium">Preview (first 10 values):</span>
+                      <pre
+                        className={cn('margin-top-1', styles.code)}
+                        data-density="compact"
+                      >
                         [{embedResult.preview.map((v) => v.toFixed(6)).join(', ')}...]
                       </pre>
                     </div>

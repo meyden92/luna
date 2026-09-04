@@ -1,0 +1,22 @@
+@layer components {
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .labelIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  .value {
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .fullWidth {
+    width: 100%;
+  }
+}

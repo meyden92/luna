@@ -1,5 +1,48 @@
 import type React from 'react';
 import { memo, useCallback, useEffect, useRef } from 'react';
+import { resolveCssColor } from '@/libs/css-color';
+import styles from './MusicVisualizer.module.css';
+
+/* Hue used when the theme's --primary cannot be resolved, and the colour behind it. */
+const DEFAULT_PRIMARY_HUE = 162;
+const DEFAULT_PRIMARY_COLOR = 'oklch(0.695 0.17 162)';
+
+/**
+ * Turns any CSS colour string the browser hands back - `rgb()`, `oklch()` or
+ * `color()`, depending on engine and token syntax - into an HSL hue in degrees.
+ * Parsing is delegated to a 1x1 canvas, which normalises every colour syntax to
+ * sRGB bytes; achromatic and unparseable colours fall back to `fallbackHue`.
+ */
+function cssColorToHue(color: string, fallbackHue: number): number {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return fallbackHue;
+
+  // A syntax the engine cannot parse leaves fillStyle untouched, so a sentinel
+  // surviving the assignment means the colour was rejected.
+  ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+  ctx.fillStyle = color;
+  if (ctx.fillStyle === 'rgba(0, 0, 0, 0)') return fallbackHue;
+
+  ctx.fillRect(0, 0, 1, 1);
+  const [red = 0, green = 0, blue = 0] = ctx.getImageData(0, 0, 1, 1).data;
+  const r = red / 255;
+  const g = green / 255;
+  const b = blue / 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  if (max === min) return fallbackHue;
+
+  const d = max - min;
+  let h: number;
+  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+  else if (max === g) h = ((b - r) / d + 2) / 6;
+  else h = ((r - g) / d + 4) / 6;
+  return h * 360;
+}
 
 interface AudioData {
   bassLevel: number;
@@ -192,39 +235,15 @@ const MusicVisualizer: React.FC<MusicVisualizerProps> = memo(
       afterglow: 0,
     });
     const themeColorsRef = useRef<{ primary: number; chartColors: number[] }>({
-      primary: 220,
-      chartColors: [220, 280, 160, 30, 340],
+      primary: DEFAULT_PRIMARY_HUE,
+      chartColors: [DEFAULT_PRIMARY_HUE, 222, 282, 342, 42],
     });
     const lastBassPeakRef = useRef<number>(0);
 
-    // Extract theme colors from CSS variables
+    // Derive the palette from the theme's --primary. The token is a light-dark()
+    // expression, so it has to be resolved to a painted colour before parsing.
     const updateThemeColors = useCallback(() => {
-      const root = document.documentElement;
-      const computedStyle = getComputedStyle(root);
-
-      // Try to get primary color and convert to hue
-      const primaryRaw = computedStyle.getPropertyValue('--color-primary').trim();
-
-      // Parse RGB or use default
-      let primaryHue = 220;
-      if (primaryRaw) {
-        const rgbMatch = primaryRaw.match(/(\d+)\s+(\d+)\s+(\d+)/);
-        if (rgbMatch?.[1] && rgbMatch[2] && rgbMatch[3]) {
-          const r = Number.parseInt(rgbMatch[1], 10) / 255;
-          const g = Number.parseInt(rgbMatch[2], 10) / 255;
-          const b = Number.parseInt(rgbMatch[3], 10) / 255;
-          const max = Math.max(r, g, b);
-          const min = Math.min(r, g, b);
-          if (max !== min) {
-            const d = max - min;
-            let h = 0;
-            if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-            else if (max === g) h = ((b - r) / d + 2) / 6;
-            else h = ((r - g) / d + 4) / 6;
-            primaryHue = h * 360;
-          }
-        }
-      }
+      const primaryHue = cssColorToHue(resolveCssColor('--primary', DEFAULT_PRIMARY_COLOR), DEFAULT_PRIMARY_HUE);
 
       themeColorsRef.current = {
         primary: primaryHue,
@@ -550,8 +569,7 @@ const MusicVisualizer: React.FC<MusicVisualizerProps> = memo(
     return (
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 w-full h-full"
-        style={{ width: '100%', height: '100%' }}
+        className={styles.canvas}
       />
     );
   },

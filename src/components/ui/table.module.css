@@ -1,0 +1,79 @@
+@layer components {
+  .container {
+    position: relative;
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .table {
+    width: 100%;
+    caption-side: bottom;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  .header tr {
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* The last body row sits flush against the footer or the container edge. */
+  .body tr:last-child {
+    border-bottom: 0;
+  }
+
+  .footer {
+    background: color-mix(in oklch, var(--muted) 50%, transparent);
+    border-top: 1px solid var(--border);
+    font-weight: var(--weight-medium);
+
+    & > tr:last-child {
+      border-bottom: 0;
+    }
+  }
+
+  .row {
+    border-bottom: 1px solid var(--border);
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease,
+      box-shadow 150ms ease;
+
+    &:hover {
+      background: color-mix(in oklch, var(--muted) 50%, transparent);
+    }
+
+    &[data-state="selected"] {
+      background: var(--muted);
+    }
+  }
+
+  .head {
+    height: var(--space-12);
+    padding-inline: var(--space-3);
+    color: var(--foreground);
+    text-align: left;
+    vertical-align: middle;
+    font-weight: var(--weight-medium);
+    white-space: nowrap;
+  }
+
+  .cell {
+    padding: var(--space-3);
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  /* A checkbox column carries its own hit area, so drop the trailing gutter. */
+  .head:has([role="checkbox"]),
+  .cell:has([role="checkbox"]) {
+    padding-right: 0;
+  }
+
+  .caption {
+    margin-top: var(--space-4);
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+}

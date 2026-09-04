@@ -1,0 +1,228 @@
+@layer components {
+  .group {
+    padding: var(--space-1);
+    scroll-margin-block: var(--space-1);
+  }
+
+  /* The trigger's label area: shrinks and truncates before the chevron does. */
+  .value {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+    overflow: hidden;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .trigger {
+    display: flex;
+    width: fit-content;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--input);
+    border-radius: var(--radius-lg);
+    background-color: var(--muted);
+    color: var(--foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    white-space: nowrap;
+    box-shadow: var(--shadow-sm);
+    outline: none;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease,
+      box-shadow 150ms ease;
+
+    &[data-size="default"] {
+      height: 2.25rem;
+    }
+
+    &[data-size="sm"] {
+      height: 2rem;
+    }
+
+    &:hover {
+      background-color: var(--muted-strong);
+    }
+
+    &:focus-visible {
+      background-color: var(--background);
+      outline: 2px solid var(--ring);
+      outline-offset: 2px;
+    }
+
+    /* Base UI marks the trigger while it shows the placeholder rather than a value. */
+    &[data-placeholder] {
+      color: var(--foreground-subtle);
+    }
+
+    &[aria-invalid="true"] {
+      border-color: var(--destructive);
+    }
+
+    &:disabled,
+    &[data-disabled] {
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    & svg {
+      flex-shrink: 0;
+      pointer-events: none;
+    }
+  }
+
+  .icon {
+    width: 1rem;
+    height: 1rem;
+    color: var(--muted-foreground);
+    pointer-events: none;
+  }
+
+  .positioner {
+    isolation: isolate;
+    z-index: 50;
+  }
+
+  .popup {
+    --popup-min-width: 9rem;
+    /* Direction the popup drifts in from; set per side below. */
+    --enter-x: 0;
+    --enter-y: 0;
+
+    position: relative;
+    isolation: isolate;
+    z-index: 50;
+    min-width: var(--popup-min-width);
+    width: var(--anchor-width);
+    max-height: var(--available-height);
+    overflow-x: hidden;
+    overflow-y: auto;
+    transform-origin: var(--transform-origin);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+    box-shadow: var(--shadow-lg);
+    transition:
+      opacity 150ms ease,
+      transform 150ms ease;
+
+    &[data-side="bottom"] {
+      --enter-y: -0.5rem;
+    }
+
+    &[data-side="top"] {
+      --enter-y: 0.5rem;
+    }
+
+    &[data-side="left"] {
+      --enter-x: 0.5rem;
+    }
+
+    &[data-side="right"] {
+      --enter-x: -0.5rem;
+    }
+
+    &[data-starting-style],
+    &[data-ending-style] {
+      opacity: 0;
+      transform: translate(var(--enter-x), var(--enter-y)) scale(0.95);
+    }
+  }
+
+  .label {
+    padding: var(--space-2) var(--space-3);
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+  }
+
+  .item {
+    position: relative;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-8) var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    cursor: default;
+    user-select: none;
+    outline: none;
+    transition:
+      background-color 150ms ease,
+      color 150ms ease;
+
+    /* Keyboard and pointer highlight both arrive as data-highlighted from Base UI. */
+    &[data-highlighted] {
+      background-color: var(--accent);
+      color: var(--accent-foreground);
+    }
+
+    &[data-disabled] {
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    & svg {
+      flex-shrink: 0;
+      pointer-events: none;
+    }
+  }
+
+  .itemText {
+    display: flex;
+    flex: 1;
+    flex-shrink: 0;
+    gap: var(--space-2);
+    white-space: nowrap;
+  }
+
+  .itemIndicator {
+    position: absolute;
+    right: var(--space-2);
+    display: flex;
+    width: 1rem;
+    height: 1rem;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+
+    & svg {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+
+  .separator {
+    height: 1px;
+    margin: var(--space-1) calc(var(--space-1) * -1);
+    background-color: var(--border);
+    pointer-events: none;
+  }
+
+  /* Sticky arrows shown when the list overflows; they sit on the popup surface. */
+  .scrollButton {
+    z-index: 10;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    padding-block: var(--space-1);
+    background-color: var(--popover);
+    cursor: default;
+
+    & svg {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+}

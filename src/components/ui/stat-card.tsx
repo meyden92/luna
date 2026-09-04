@@ -1,32 +1,30 @@
 import type { LucideIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/libs/utils';
+
+import styles from './stat-card.module.css';
 
 interface StatCardProps {
   title: string;
   value: string | number;
   description?: string;
   icon?: LucideIcon;
+  /** Merged onto the icon; use it to recolour a stat that needs to stand out. */
   iconClassName?: string;
+  /** Merged onto the value; use it to recolour a stat that needs to stand out. */
   valueClassName?: string;
 }
 
-export default function StatCard({
-  title,
-  value,
-  description,
-  icon: Icon,
-  iconClassName = 'h-4 w-4 text-muted-foreground',
-  valueClassName = 'text-2xl font-bold',
-}: StatCardProps) {
+export default function StatCard({ title, value, description, icon: Icon, iconClassName, valueClassName }: StatCardProps) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {Icon && <Icon className={iconClassName} />}
+    <Card className={styles.root}>
+      <CardHeader className={styles.header}>
+        <CardTitle className={styles.title}>{title}</CardTitle>
+        {Icon && <Icon className={cn(styles.icon, iconClassName)} />}
       </CardHeader>
       <CardContent>
-        <div className={valueClassName}>{value}</div>
-        {description && <p className="text-xs text-muted-foreground">{description}</p>}
+        <div className={cn(styles.value, valueClassName)}>{value}</div>
+        {description && <p className={styles.description}>{description}</p>}
       </CardContent>
     </Card>
   );

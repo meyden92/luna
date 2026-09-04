@@ -1,10 +1,11 @@
 import { cn } from '@/libs/utils';
+import styles from './skeleton.module.css';
 
 function Skeleton({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="skeleton"
-      className={cn('bg-muted rounded-xl animate-pulse motion-reduce:animate-none', className)}
+      className={cn(styles.root, className)}
       {...props}
     />
   );

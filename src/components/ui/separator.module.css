@@ -1,0 +1,16 @@
+@layer components {
+  .root {
+    flex-shrink: 0;
+    background: var(--border);
+
+    &[data-orientation="horizontal"] {
+      width: 100%;
+      height: 1px;
+    }
+
+    &[data-orientation="vertical"] {
+      align-self: stretch;
+      width: 1px;
+    }
+  }
+}

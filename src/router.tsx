@@ -3,6 +3,7 @@ import { createRouter as createTanStackRouter } from '@tanstack/react-router';
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/libs/utils';
+import { canViewTransition } from '@/libs/view-transition';
 import type { RootRouteContext } from './route-context';
 import styles from './router.module.css';
 import { routeTree } from './routeTree.gen';
@@ -67,6 +68,11 @@ export function getRouter() {
       session: null,
       initialTheme: 'default',
     } satisfies RootRouteContext,
+    // Every navigation animates: the old page fades and the new one rises, per
+    // the scopes in src/styles/motion.css. The router calls
+    // startViewTransition itself; `data-vt` below is what lets the CSS tell a
+    // route change apart from a gallery or preview one.
+    defaultViewTransition: true,
     defaultPreload: 'intent',
     defaultPreloadStaleTime: 30_000,
     defaultStaleTime: 0,
@@ -81,6 +87,21 @@ export function getRouter() {
   });
 
   setupRouterSsrQueryIntegration({ router, queryClient });
+
+  /*
+   * Mark the document for the length of a route change so `html[data-vt="page"]`
+   * in motion.css applies. The router owns the transition itself; this only
+   * scopes it, and it is skipped under reduced motion so a navigation that is
+   * not animating cannot leave the attribute behind.
+   */
+  if (typeof document !== 'undefined') {
+    router.subscribe('onBeforeNavigate', () => {
+      if (canViewTransition()) document.documentElement.dataset.vt = 'page';
+    });
+    router.subscribe('onResolved', () => {
+      if (document.documentElement.dataset.vt === 'page') delete document.documentElement.dataset.vt;
+    });
+  }
 
   return router;
 }

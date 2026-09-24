@@ -1,12 +1,16 @@
 @layer components {
-  /* Nav is fixed and 74px tall. The impersonation bar is in flow above
-     MainContent, so it does not add to the offset. The padding matches the nav
-     height so sticky content docks pixel-perfect under it. */
   .root {
-    --nav-height: 4.625rem;
-
     flex: 1;
     min-height: 0;
-    padding-top: var(--nav-height);
+  }
+
+  /*
+   * The marketing nav is `position: fixed`, so the page under it needs its
+   * height back as padding. The app nav is sticky and stays in flow, so it
+   * needs none — and must not be padded for, or every page starts one nav
+   * height down the screen.
+   */
+  .root[data-fixed-nav] {
+    padding-top: 4.625rem;
   }
 }

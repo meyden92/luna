@@ -271,7 +271,6 @@ function FilesPage() {
             renderCard={(file) => (
               <FileCard
                 file={file}
-                ownerId={ownerId}
                 selected={selectedFiles.has(file.id)}
                 selecting={selecting}
                 iconOnlyActions={false}

@@ -1,6 +1,13 @@
 @layer components {
+  /*
+   * The gallery sizes the wrapper — a row item by its aspect, a grid cell by its
+   * ratio — and the card fills it. Absolute rather than `height: 100%`, so it
+   * works the same whether the wrapper's height came from a pixel value or from
+   * an aspect-ratio.
+   */
   .root {
-    position: relative;
+    position: absolute;
+    inset: 0;
     border-radius: var(--radius-lg);
     cursor: pointer;
     outline: none;

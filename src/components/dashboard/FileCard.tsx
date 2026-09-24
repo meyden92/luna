@@ -20,7 +20,6 @@ function extensionOf(file: GalleryFile): string {
 
 export type FileCardProps = {
   file: GalleryFile;
-  ownerId: string;
   selected: boolean;
   /** True while any file is selected, which is when every card shows its check. */
   selecting: boolean;
@@ -53,7 +52,6 @@ export type FileCardProps = {
  */
 const FileCard = React.memo(function FileCard({
   file,
-  ownerId,
   selected,
   selecting,
   iconOnlyActions,
@@ -64,7 +62,7 @@ const FileCard = React.memo(function FileCard({
   dragIds,
   menuItems,
 }: FileCardProps) {
-  const directUrl = getCDNImage(`/${ownerId}/${file.url}`);
+  const directUrl = getCDNImage(`/${file.ownerId}/${file.url}`);
   const isImage = file.contentType.startsWith('image/');
   const isVideo = file.contentType.startsWith('video/');
   const duration = file.metadata?.duration ?? null;
@@ -136,7 +134,7 @@ const FileCard = React.memo(function FileCard({
         className={styles.media}
         {...{ [PREVIEW_MEDIA_ATTR]: file.id }}
       >
-        {isImage || isVideo ? (
+        {isImage ? (
           <img
             src={directUrl}
             alt=""

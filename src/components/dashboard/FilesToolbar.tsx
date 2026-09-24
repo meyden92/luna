@@ -18,12 +18,16 @@ const TYPE_ITEMS: readonly SegmentedItem<FilesType>[] = [
   { value: 'file', label: 'Documents' },
 ];
 
-const SORT_LABELS: Record<FilesSort, string> = {
-  newest: 'Newest first',
-  oldest: 'Oldest first',
-  name: 'Name A–Z',
-  largest: 'Largest first',
-};
+/*
+ * Base UI's SelectValue renders the raw value unless the Select is handed the
+ * options, so the trigger would read "newest" rather than "Newest first".
+ */
+const SORT_ITEMS = [
+  { value: 'newest', label: 'Newest first' },
+  { value: 'oldest', label: 'Oldest first' },
+  { value: 'name', label: 'Name A–Z' },
+  { value: 'largest', label: 'Largest first' },
+] as const satisfies readonly { value: FilesSort; label: string }[];
 
 type FilesToolbarProps = {
   query: string;
@@ -105,6 +109,7 @@ function FilesToolbar({
 
       <div className={styles.end}>
         <Select
+          items={SORT_ITEMS}
           value={sort}
           onValueChange={(value) => onSortChange(value as FilesSort)}
         >
@@ -116,12 +121,12 @@ function FilesToolbar({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {Object.entries(SORT_LABELS).map(([value, label]) => (
+            {SORT_ITEMS.map((item) => (
               <SelectItem
-                key={value}
-                value={value}
+                key={item.value}
+                value={item.value}
               >
-                {label}
+                {item.label}
               </SelectItem>
             ))}
           </SelectContent>

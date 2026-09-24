@@ -21,7 +21,7 @@ function AppShell({ signedIn, children }: { signedIn: boolean; children: React.R
     return (
       <>
         <Navigation />
-        <MainContent>{children}</MainContent>
+        <MainContent fixedNav>{children}</MainContent>
       </>
     );
   }

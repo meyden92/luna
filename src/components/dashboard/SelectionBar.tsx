@@ -101,6 +101,7 @@ function SelectionBar({ fileIds, onClear, onDelete }: SelectionBarProps) {
         >
           <MoveToFolderMenu
             asDropdown
+            flat
             fileIds={fileIds}
             onClose={onClear}
           />

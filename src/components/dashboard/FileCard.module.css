@@ -6,6 +6,8 @@
    * an aspect-ratio.
    */
   .root {
+    /* The chips ask the card how much room they have, not the viewport. */
+    container-type: inline-size;
     position: absolute;
     inset: 0;
     border-radius: var(--radius-lg);
@@ -288,10 +290,38 @@
     }
   }
 
+  .chipLabel {
+    /* Kept out of the flow when hidden so the chip collapses to its icon. */
+    display: contents;
+  }
+
+  /*
+   * Two labelled chips plus the menu do not fit a portrait thumbnail, and a
+   * flex row that cannot fit does not shrink — it spills past the card and out
+   * of the page, which is where the horizontal scrollbar came from. Below the
+   * width that holds both labels, the chips become their icons.
+   */
+  @container (width < 20rem) {
+    .chipLabel {
+      display: none;
+    }
+
+    .chip {
+      width: 28px;
+      padding: 0;
+      justify-content: center;
+    }
+  }
+
+  /* The same thing on demand, at any width: the icon-only user tweak. */
   .chip[data-icon-only] {
     width: 28px;
     padding: 0;
     justify-content: center;
+
+    & .chipLabel {
+      display: none;
+    }
   }
 
   .menuChip {

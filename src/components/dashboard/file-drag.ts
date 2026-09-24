@@ -5,9 +5,18 @@
  */
 export const FILE_DRAG_TYPE = 'application/x-lunashare-files';
 
-/** Ids from a drag that started on a file card, or null for any other drag. */
+/**
+ * Whether a drag carries file cards — the only question answerable during
+ * dragenter/dragover, where the drag data store is in protected mode and
+ * `getData()` returns an empty string however the drag was started.
+ */
+export function isFileDrag(event: React.DragEvent): boolean {
+  return event.dataTransfer.types.includes(FILE_DRAG_TYPE);
+}
+
+/** Ids from a drag that started on a file card, readable on drop only. */
 export function readDraggedFileIds(event: React.DragEvent): string[] | null {
-  if (!event.dataTransfer.types.includes(FILE_DRAG_TYPE)) return null;
+  if (!isFileDrag(event)) return null;
   try {
     const ids: unknown = JSON.parse(event.dataTransfer.getData(FILE_DRAG_TYPE));
     return Array.isArray(ids) && ids.length > 0 ? (ids as string[]) : null;

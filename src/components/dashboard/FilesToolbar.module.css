@@ -12,8 +12,11 @@
   }
 
   .search {
-    flex: 0 1 18rem;
-    height: 2rem;
+    /* Takes the toolbar's slack, so the field grows instead of the gap beside it. */
+    flex: 1 1 15rem;
+    min-width: 9.375rem;
+    max-width: 27.5rem;
+    --input-group-height: 2rem;
   }
 
   /* The `/` hint. It stops looking like a hint once the field has focus. */

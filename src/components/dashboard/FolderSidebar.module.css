@@ -196,6 +196,11 @@
     font-size: var(--text-xs);
     color: var(--foreground-subtle);
     font-variant-numeric: tabular-nums;
+
+    & b {
+      font-weight: var(--weight-medium);
+      color: var(--foreground-2);
+    }
   }
 
   .meter {

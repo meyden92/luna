@@ -168,9 +168,11 @@ const FileCard = React.memo(function FileCard({
       </button>
 
       {file.private && (
-        <span className={styles.lockBadge}>
+        <span
+          className={styles.lockBadge}
+          title="Private"
+        >
           <Lock size={11} />
-          Private
         </span>
       )}
 
@@ -194,7 +196,7 @@ const FileCard = React.memo(function FileCard({
             }}
           >
             <Copy size={13} />
-            {!iconOnlyActions && 'Copy image'}
+            <span className={styles.chipLabel}>Copy image</span>
           </button>
         )}
         <button
@@ -208,7 +210,7 @@ const FileCard = React.memo(function FileCard({
           }}
         >
           <Link2 size={13} />
-          {!iconOnlyActions && 'Copy link'}
+          <span className={styles.chipLabel}>Copy link</span>
         </button>
         <DropdownMenu>
           <DropdownMenuTrigger

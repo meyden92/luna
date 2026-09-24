@@ -1,4 +1,4 @@
-import { Grid2x2, Rows3, Search, SlidersHorizontal } from 'lucide-react';
+import { Grid2x2, Rows3, Search } from 'lucide-react';
 import * as React from 'react';
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '@/components/ui/input-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -137,7 +137,7 @@ function FilesToolbar({
             className={styles.viewButton}
             aria-label="View options"
           >
-            <SlidersHorizontal size={15} />
+            {layout === 'rows' ? <Rows3 size={15} /> : <Grid2x2 size={15} />}
           </PopoverTrigger>
           <PopoverContent
             align="end"

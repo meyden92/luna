@@ -134,7 +134,7 @@ function FilesPage() {
     mutationFn: (input: { fileId: string; isPrivate: boolean }) => setFilePrivacy({ data: input }),
     onSuccess: (result) => {
       patchGalleryFiles(queryClient, (file) => (file.id === result.id ? { ...file, private: result.isPrivate } : file));
-      toast.success(result.isPrivate ? 'File is private' : 'File is public');
+      toast.success(result.isPrivate ? 'Made private' : 'Made public');
     },
     onError: (error) => toast.error(error.message),
   });

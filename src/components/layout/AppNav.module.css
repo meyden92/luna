@@ -237,7 +237,17 @@
    * own scroll, so there is no scroll listener. Scroll-driven animations are
    * still gated, hence the @supports.
    */
+  /*
+   * The bottom rule and the reading progress both come from the document's own
+   * scroll, so neither needs a listener. Unscrolled, the bar has no edge.
+   */
   @supports (animation-timeline: scroll()) {
+    .root {
+      animation: nav-stuck linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 64px;
+    }
+
     .root::after {
       content: "";
       position: absolute;
@@ -250,6 +260,12 @@
       scale: 0 1;
       animation: nav-progress linear both;
       animation-timeline: scroll(root);
+    }
+  }
+
+  @keyframes nav-stuck {
+    from {
+      border-bottom-color: transparent;
     }
   }
 
@@ -269,6 +285,10 @@
     .links[data-ready] .pill,
     .links[data-ready] .ghost {
       transition: none;
+      animation: none;
+    }
+
+    .root {
       animation: none;
     }
 

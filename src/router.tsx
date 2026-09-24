@@ -99,7 +99,11 @@ export function getRouter() {
       if (canViewTransition()) document.documentElement.dataset.vt = 'page';
     });
     router.subscribe('onResolved', () => {
-      if (document.documentElement.dataset.vt === 'page') delete document.documentElement.dataset.vt;
+      // The route is ready before the animation has played out, so the scope is
+      // held for the length of the longest one (380ms) plus a little slack.
+      setTimeout(() => {
+        if (document.documentElement.dataset.vt === 'page') delete document.documentElement.dataset.vt;
+      }, 500);
     });
   }
 

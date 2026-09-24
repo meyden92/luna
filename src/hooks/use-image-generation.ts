@@ -120,16 +120,17 @@ export function useImageGeneration() {
         // Stream closed → the server has persisted the history row; refresh it.
         queryClient.invalidateQueries({ queryKey: queryKeys.ai.imageGenerationHistory });
         if (finalStatus === 'failed') {
-          toast.error(finalError || 'Image generation failed');
-          return { success: false, error: finalError || 'Image generation failed', generationId };
+          toast.error(finalError || 'Couldn’t generate that image');
+          return { success: false, error: finalError || 'Couldn’t generate that image', generationId };
         }
 
         if (finalError) {
-          toast.error(`Generated ${finalSuccessCount}/${finalTotalCount} images. ${finalError}`);
+          console.warn('Image generation partially failed:', finalError);
+          toast.error(`Generated ${finalSuccessCount} of ${finalTotalCount} images — the rest failed`);
           return { success: true, generationId };
         }
 
-        toast.success(finalTotalCount > 1 ? `Generated ${finalSuccessCount}/${finalTotalCount} images` : 'Image generated');
+        toast.success(finalTotalCount > 1 ? `Generated ${finalSuccessCount} of ${finalTotalCount} images` : 'Image generated');
         return { success: true, generationId };
       } catch (error) {
         if ((error as Error).name === 'AbortError') {
@@ -137,7 +138,7 @@ export function useImageGeneration() {
             status: 'failed',
             error: 'Generation was cancelled',
           });
-          toast('Generation cancelled');
+          toast('Image cancelled');
           return { success: false, error: 'Cancelled' };
         }
 

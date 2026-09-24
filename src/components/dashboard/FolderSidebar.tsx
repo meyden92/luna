@@ -3,7 +3,7 @@ import { ClipboardList, Inbox, LayoutGrid, MoreHorizontal, Pencil, Plus, Trash2 
 import * as React from 'react';
 import { toast } from 'sonner';
 import { ConfirmDeleteDialog } from '@/components/dashboard/ConfirmDeleteDialog';
-import { readDraggedFileIds } from '@/components/dashboard/file-drag';
+import { isFileDrag, readDraggedFileIds } from '@/components/dashboard/file-drag';
 import { AnimatedCount } from '@/components/ui/animated-count';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { FOLDER_COLOR_NONE, nextFolderColor } from '@/libs/folder-colors';
 import { patchGalleryFiles } from '@/libs/gallery-cache';
 import { queryKeys } from '@/libs/query-keys';
 import { formatSize } from '@/libs/utils';
+import { getGalleryCount } from '@/server/fns/files';
 import { createFolder, deleteFolder, updateFolder } from '@/server/fns/folders';
 import { getStorageUsage } from '@/server/fns/storage';
 import styles from './FolderSidebar.module.css';
@@ -67,7 +68,7 @@ function Row({
         onDragOver={
           onDropFiles &&
           ((event) => {
-            if (!readDraggedFileIds(event)) return;
+            if (!isFileDrag(event)) return;
             event.preventDefault();
             event.dataTransfer.dropEffect = 'move';
             setDropping(true);
@@ -153,6 +154,22 @@ function FolderSidebar({ onFormSharesOpen }: FolderSidebarProps) {
   const [renamingId, setRenamingId] = React.useState<string | null>(null);
   const [deletingFolder, setDeletingFolder] = React.useState<FolderRow | null>(null);
 
+  /*
+   * The two scopes that are not folders still have a size, and it is the number
+   * §3.2 compares the page head against — so it comes from the same server count
+   * the head uses rather than from whatever happens to be loaded.
+   */
+  const { data: allFilesCount } = useQuery({
+    queryKey: queryKeys.gallery.count({}),
+    queryFn: () => getGalleryCount({ data: {} }),
+    staleTime: 60 * 1000,
+  });
+  const { data: unfiledCount } = useQuery({
+    queryKey: queryKeys.gallery.count({ excludeFoldered: true }),
+    queryFn: () => getGalleryCount({ data: { excludeFoldered: true } }),
+    staleTime: 60 * 1000,
+  });
+
   const { data: storage } = useQuery({
     queryKey: queryKeys.storage.usage,
     queryFn: () => getStorageUsage(),
@@ -213,12 +230,14 @@ function FolderSidebar({ onFormSharesOpen }: FolderSidebarProps) {
       <Row
         icon={<LayoutGrid size={16} />}
         label="All files"
+        count={allFilesCount}
         active={scope === '*'}
         onSelect={() => select('*')}
       />
       <Row
         icon={<Inbox size={16} />}
         label="Not in a folder"
+        count={unfiledCount}
         active={scope === null}
         onSelect={() => select(null)}
         onDropFiles={(ids) => moveFilesTo(ids, null)}
@@ -308,9 +327,9 @@ function FolderSidebar({ onFormSharesOpen }: FolderSidebarProps) {
       <div className={styles.storage}>
         <div className={styles.storageRow}>
           <span>Storage</span>
-          <span>
+          <b>
             {formatSize(usedBytes, { trim: true })} of {formatSize(quotaBytes, { trim: true })}
-          </span>
+          </b>
         </div>
         <div
           className={styles.meter}

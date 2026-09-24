@@ -18,6 +18,7 @@ declare const styles: {
   readonly "menuLink": string;
   readonly "nav-ghost-in": string;
   readonly "nav-progress": string;
+  readonly "nav-stuck": string;
   readonly "pill": string;
   readonly "root": string;
 };

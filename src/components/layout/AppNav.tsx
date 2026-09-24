@@ -225,7 +225,7 @@ function AppNav({ canAccessAdmin = false }: { canAccessAdmin?: boolean }) {
         <button
           type="button"
           className={styles.iconButton}
-          aria-label={isDark ? 'Switch to light appearance' : 'Switch to dark appearance'}
+          aria-label={appearanceReady ? (isDark ? 'Switch to light appearance' : 'Switch to dark appearance') : 'Toggle appearance'}
           onClick={() => setTheme(isDark ? 'light' : 'dark')}
         >
           {appearanceReady && !isDark ? <Moon size={15} /> : <Sun size={15} />}

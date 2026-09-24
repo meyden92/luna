@@ -4,6 +4,7 @@ declare const styles: {
   readonly "card-reveal": string;
   readonly "check": string;
   readonly "chip": string;
+  readonly "chipLabel": string;
   readonly "durationBadge": string;
   readonly "image": string;
   readonly "lockBadge": string;

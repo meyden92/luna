@@ -17,6 +17,7 @@ import {
   FormSubscribe,
   FormWithSchema,
 } from '@/components/ui/tanstack-form';
+import { Textarea } from '@/components/ui/textarea';
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import { authClient } from '@/libs/auth/auth-client';
 import { getAvatarUrl } from '@/libs/utils';
@@ -26,6 +27,10 @@ import { updateUserProfile } from '@/server/fns/user';
 import styles from './profile-panel.module.css';
 import { SettingsPanel } from './settings-panel';
 import { SettingsRow } from './settings-row';
+
+// Mirrors the limits in `updateProfileSchema`.
+const BIO_MAX_LENGTH = 100;
+const DESCRIPTION_MAX_LENGTH = 1000;
 
 function readAsBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -147,9 +152,9 @@ interface ProfilePanelContentProps {
   username: string;
   image: string | null;
   isProfilePublic: boolean;
-  /** Not shown as a control here — only carried along so saving the public-profile
-   *  switch can send a complete, valid `updateUserProfile` payload. */
   receiveEmail: boolean;
+  bio: string;
+  description: string;
 }
 
 function ProfilePanelContent({
@@ -157,24 +162,37 @@ function ProfilePanelContent({
   username,
   image: initialImage,
   isProfilePublic: initialIsProfilePublic,
-  receiveEmail,
+  receiveEmail: initialReceiveEmail,
+  bio: initialBio,
+  description: initialDescription,
 }: ProfilePanelContentProps) {
   const queryClient = useQueryClient();
   const fileInput = useRef<HTMLInputElement>(null);
   const [image, setImage] = useState(initialImage);
   const [isReadingAvatar, setIsReadingAvatar] = useState(false);
 
-  // `committedName`/`committedIsPublic` are what the server has saved; `name`
-  // and `isPublic` are the drafts the Input/Switch show. Each starts equal to
-  // its committed value, diverges as the owner edits, and the committed value
-  // moves the instant a save succeeds — so the save bar cannot flash back on
-  // while the session refetch it also kicks off is still in flight.
+  // `committedX`/`x` pairs: `committedX` is what the server has saved, `x` is
+  // the draft the control shows. Each starts equal to its committed value,
+  // diverges as the owner edits, and the committed value moves the instant a
+  // save succeeds — so the save bar cannot flash back on while the session
+  // refetch it also kicks off is still in flight.
   const [committedName, setCommittedName] = useState(initialName);
   const [name, setName] = useState(initialName);
   const [committedIsPublic, setCommittedIsPublic] = useState(initialIsProfilePublic);
   const [isPublic, setIsPublic] = useState(initialIsProfilePublic);
+  const [committedReceiveEmail, setCommittedReceiveEmail] = useState(initialReceiveEmail);
+  const [receiveEmail, setReceiveEmail] = useState(initialReceiveEmail);
+  const [committedBio, setCommittedBio] = useState(initialBio);
+  const [bio, setBio] = useState(initialBio);
+  const [committedDescription, setCommittedDescription] = useState(initialDescription);
+  const [description, setDescription] = useState(initialDescription);
   const trimmedName = name.trim();
-  const isDirty = trimmedName !== committedName || isPublic !== committedIsPublic;
+  const isDirty =
+    trimmedName !== committedName ||
+    isPublic !== committedIsPublic ||
+    receiveEmail !== committedReceiveEmail ||
+    bio !== committedBio ||
+    description !== committedDescription;
 
   const settleAvatar = (next: string | null) => {
     setImage(next);
@@ -216,7 +234,19 @@ function ProfilePanelContent({
   };
 
   const saveProfile = useMutation({
-    mutationFn: async ({ nextName, nextIsPublic }: { nextName: string; nextIsPublic: boolean }) => {
+    mutationFn: async ({
+      nextName,
+      nextIsPublic,
+      nextReceiveEmail,
+      nextBio,
+      nextDescription,
+    }: {
+      nextName: string;
+      nextIsPublic: boolean;
+      nextReceiveEmail: boolean;
+      nextBio: string;
+      nextDescription: string;
+    }) => {
       const tasks: Promise<unknown>[] = [];
       if (nextName !== committedName) {
         tasks.push(
@@ -225,18 +255,28 @@ function ProfilePanelContent({
           }),
         );
       }
-      if (nextIsPublic !== committedIsPublic) {
-        // `receiveEmails` is required by the schema even though this switch
-        // doesn't touch it — sent unchanged so it is left alone.
-        tasks.push(updateUserProfile({ data: { isProfilePublic: nextIsPublic, receiveEmails: receiveEmail } }));
+      if (
+        nextIsPublic !== committedIsPublic ||
+        nextReceiveEmail !== committedReceiveEmail ||
+        nextBio !== committedBio ||
+        nextDescription !== committedDescription
+      ) {
+        tasks.push(
+          updateUserProfile({
+            data: { isProfilePublic: nextIsPublic, receiveEmails: nextReceiveEmail, bio: nextBio, description: nextDescription },
+          }),
+        );
       }
       await Promise.all(tasks);
-      return { nextName, nextIsPublic };
+      return { nextName, nextIsPublic, nextReceiveEmail, nextBio, nextDescription };
     },
-    onSuccess: ({ nextName, nextIsPublic }) => {
+    onSuccess: ({ nextName, nextIsPublic, nextReceiveEmail, nextBio, nextDescription }) => {
       toast.success('Profile saved');
       setCommittedName(nextName);
       setCommittedIsPublic(nextIsPublic);
+      setCommittedReceiveEmail(nextReceiveEmail);
+      setCommittedBio(nextBio);
+      setCommittedDescription(nextDescription);
       void authClient.getSession({ query: { disableCookieCache: true } });
       void queryClient.invalidateQueries();
     },
@@ -303,6 +343,30 @@ function ProfilePanelContent({
           />
         </SettingsRow>
         <SettingsRow
+          label="Bio"
+          hint="Shown next to your name on your public profile."
+        >
+          <Textarea
+            aria-label="Bio"
+            className={styles.textarea}
+            value={bio}
+            maxLength={BIO_MAX_LENGTH}
+            onChange={(e) => setBio(e.target.value)}
+          />
+        </SettingsRow>
+        <SettingsRow
+          label="Description"
+          hint="Shown further down your public profile page."
+        >
+          <Textarea
+            aria-label="Description"
+            className={styles.textarea}
+            value={description}
+            maxLength={DESCRIPTION_MAX_LENGTH}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </SettingsRow>
+        <SettingsRow
           label="Username"
           hint="Used to sign in. Can’t be changed here."
         >
@@ -322,6 +386,16 @@ function ProfilePanelContent({
             onCheckedChange={(checked) => setIsPublic(Boolean(checked))}
           />
         </SettingsRow>
+        <SettingsRow
+          label="Marketing emails"
+          hint="Receive occasional emails about LunaShare."
+        >
+          <Switch
+            aria-label="Marketing emails"
+            checked={receiveEmail}
+            onCheckedChange={(checked) => setReceiveEmail(Boolean(checked))}
+          />
+        </SettingsRow>
         <SettingsRow label="Password">
           <ChangePasswordDialog />
         </SettingsRow>
@@ -335,6 +409,9 @@ function ProfilePanelContent({
             onClick={() => {
               setName(committedName);
               setIsPublic(committedIsPublic);
+              setReceiveEmail(committedReceiveEmail);
+              setBio(committedBio);
+              setDescription(committedDescription);
             }}
           >
             Discard
@@ -342,7 +419,15 @@ function ProfilePanelContent({
           <Button
             size="sm"
             disabled={trimmedName.length === 0 || saveProfile.isPending}
-            onClick={() => saveProfile.mutate({ nextName: trimmedName, nextIsPublic: isPublic })}
+            onClick={() =>
+              saveProfile.mutate({
+                nextName: trimmedName,
+                nextIsPublic: isPublic,
+                nextReceiveEmail: receiveEmail,
+                nextBio: bio,
+                nextDescription: description,
+              })
+            }
           >
             Save changes
           </Button>
@@ -355,10 +440,12 @@ function ProfilePanelContent({
 interface ProfilePanelProps {
   isProfilePublic: boolean;
   receiveEmail: boolean;
+  bio: string | null;
+  description: string | null;
 }
 
-/** Profile: avatar, display name, read-only username, public-profile switch and a password change. */
-export function ProfilePanel({ isProfilePublic, receiveEmail }: ProfilePanelProps) {
+/** Profile: avatar, display name, bio/description, read-only username, public-profile and marketing-email switches, and a password change. */
+export function ProfilePanel({ isProfilePublic, receiveEmail, bio, description }: ProfilePanelProps) {
   const { data: session } = authClient.useSession();
   const user = session?.user;
   if (!user) return null;
@@ -371,6 +458,8 @@ export function ProfilePanel({ isProfilePublic, receiveEmail }: ProfilePanelProp
       image={user.image ?? null}
       isProfilePublic={isProfilePublic}
       receiveEmail={receiveEmail}
+      bio={bio ?? ''}
+      description={description ?? ''}
     />
   );
 }

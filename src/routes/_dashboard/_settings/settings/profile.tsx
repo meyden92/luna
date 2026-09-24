@@ -20,6 +20,8 @@ function SettingsProfilePage() {
       <ProfilePanel
         isProfilePublic={settings.isProfilePublic}
         receiveEmail={settings.receiveEmail}
+        bio={settings.bio}
+        description={settings.description}
       />
     </SettingsSection>
   );

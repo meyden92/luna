@@ -11,3 +11,4 @@ declare const styles: {
   readonly "stage": string;
 };
 export = styles;
+

@@ -1,0 +1,114 @@
+@layer components {
+  .root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-3);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+  }
+
+  .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-1) 0;
+  }
+
+  /* A page title scaled for a 300px column rather than the full width. */
+  .title {
+    margin: 0;
+    font-family: var(--font-title);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-heading);
+    line-height: 1.1;
+    color: var(--foreground);
+  }
+
+  .subtitle {
+    margin: 0;
+    padding-inline: var(--space-1);
+    font-size: var(--text-xs);
+    color: var(--foreground-subtle);
+  }
+
+  .rows {
+    display: flex;
+    flex-direction: column;
+    /* Rows read as one stack, so they sit closer than a spacing step. */
+    gap: 2px;
+  }
+
+  .row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    transition: background-color var(--duration-fast) ease;
+
+    &:hover {
+      background-color: var(--muted);
+    }
+  }
+
+  .row[data-active] {
+    background-color: var(--accent);
+  }
+
+  /* The whole name/meta block selects the automation; the switch stays separate. */
+  .select {
+    flex: 1;
+    min-width: 0;
+    display: block;
+    border: 0;
+    padding: 0;
+    background: none;
+    text-align: left;
+    transition: scale 350ms var(--spring);
+
+    &:active {
+      scale: 0.96;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ring);
+      outline-offset: 2px;
+      border-radius: var(--radius-sm);
+    }
+  }
+
+  .name {
+    display: block;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--foreground);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* A paused automation still lists, but reads as inactive. */
+  .row[data-paused] .name {
+    color: var(--muted-foreground);
+  }
+
+  .meta {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--text-xs);
+    color: var(--foreground-subtle);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .row,
+    .select {
+      transition: none;
+    }
+  }
+}

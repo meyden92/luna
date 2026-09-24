@@ -10,7 +10,6 @@ const ProfileSettingsValidator = z.object({
   isProfilePublic: z.boolean(),
   bio: z.string().max(PROFILE_BIO_MAX_LENGTH).optional(),
   description: z.string().max(PROFILE_DESCRIPTION_MAX_LENGTH).optional(),
-  showAllFilesIncludesFoldered: z.boolean().optional(),
 });
 
 export type ProfileSettingsPayload = z.infer<typeof ProfileSettingsValidator>;

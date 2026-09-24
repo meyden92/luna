@@ -34,6 +34,8 @@ type EditImageResult = {
   index: number;
   originalImageUrl?: string[];
   resultImageUrl?: string;
+  /** The saved file, so the client never has to find it again by its URL. */
+  fileId?: string;
   success?: boolean;
   error?: string;
 };
@@ -59,6 +61,8 @@ async function handle(request: Request): Promise<Response> {
   const editingModelId = formData.get('editingModelId') as string;
   const imageCount = Number.parseInt((formData.get('imageCount') as string) || '1', 10);
   const generationId = (formData.get('generationId') as string) || crypto.randomUUID();
+  // Where "Save results to" wants them; applied at insert, not patched after.
+  const saveToFolderId = (formData.get('saveToFolderId') as string) || null;
 
   if (!editingModelId) {
     return new Response(JSON.stringify({ error: 'Editing model ID is required' }), {
@@ -254,16 +258,17 @@ async function handle(request: Request): Promise<Response> {
                   const ts = Date.now();
                   const slug = editingModel.apiModelName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
                   const fname = `${slug}_result_${ts}_${index + 1}.png`;
-                  const { url } = await uploadGeneratedImageToS3({
+                  const { url, fileId } = await uploadGeneratedImageToS3({
                     imageUrl: outputUrl,
                     fileName: fname,
                     userId: user.id,
                     tags: `image-editing, ${editingModel.label}, ai`,
                     title: `ai-${fname}`,
+                    folderId: saveToFolderId,
                     signal: abortSignal,
                     logPrefix: '[edit-image]',
                   });
-                  results[index] = { index: index + 1, originalImageUrl: imageUrls, resultImageUrl: url, success: true };
+                  results[index] = { index: index + 1, originalImageUrl: imageUrls, resultImageUrl: url, fileId, success: true };
                 } catch (error) {
                   if (isAbortError(error) || abortSignal.aborted) throw error;
                   results[index] = { index: index + 1, error: uploadGeneratedImageErrorMessage(error, 'Failed to upload generated image') };

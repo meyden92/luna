@@ -1,33 +1,18 @@
-import {
-  addEdge,
-  applyEdgeChanges,
-  applyNodeChanges,
-  Background,
-  type Connection,
-  Controls,
-  type Edge,
-  type EdgeChange,
-  MiniMap,
-  type Node,
-  type NodeChange,
-  ReactFlow,
-} from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { GitBranch, Pause, Play, Plus, Save, Trash2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Pause, Play, Plus } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { AutomationDetail } from '@/components/automations/AutomationDetail';
+import { AutomationList, type AutomationListItem } from '@/components/automations/AutomationList';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { cn } from '@/libs/utils';
-import { type FlowGraph, type FlowNode, flowGraphSchema } from '@/schemas/flow-schema';
-import { createFlow, deleteFlow, listFlowRuns, listFlows, updateFlow } from '@/server/fns/flows';
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
+import { useFolders } from '@/contexts/FoldersContext';
+import type { JsonValue } from '@/db/schema/json';
+import { asTriggerType, incompleteReason, type LinearFlow, type TriggerType, toFlowGraph, toLinearFlow } from '@/libs/flows/linear-flow';
+import { startViewTransition } from '@/libs/view-transition';
+import { type FlowGraph, flowGraphSchema } from '@/schemas/flow-schema';
+import { createFlow, deleteFlow, listFlows, updateFlow } from '@/server/fns/flows';
 import styles from './automations.module.css';
 
 export const Route = createFileRoute('/_dashboard/automations')({
@@ -35,553 +20,203 @@ export const Route = createFileRoute('/_dashboard/automations')({
   component: AutomationsPage,
 });
 
-const triggerTypes = ['upload', 'view', 'form-submit', 'schedule', 'manual'] as const;
-const actionTypes = ['tag', 'privacy', 'route-folder', 'condition'] as const;
-const conditionFields = ['title', 'contentType', 'tags'] as const;
+type FlowRow = Awaited<ReturnType<typeof listFlows>>[number];
 
-type TriggerType = (typeof triggerTypes)[number];
-type ActionType = (typeof actionTypes)[number];
-type CanvasNodeData = {
-  label: string;
-  nodeType: FlowNode['type'];
-  summary: string;
-};
+const FLOWS_KEY = ['flows'] as const;
 
+/** How long after the last keystroke the draft is written back. */
+const SAVE_DELAY = 600;
+
+// A validated graph is JSON by construction, but its zod type carries optional
+// properties, which `JsonValue` (a jsonb column's type) cannot express. Same cast
+// src/server/fns/flows.ts makes, kept to this one place on the client.
+const asStoredGraph = (graph: FlowGraph): JsonValue => graph as unknown as JsonValue;
+
+/**
+ * Automations: the list of rules on the left, the selected rule's chain on the
+ * right.
+ *
+ * The query cache is the draft. Every edit rewrites the cached row and schedules
+ * a debounced save, which means there is no second copy of the flow to keep in
+ * step and the list and the detail pane always agree. Nothing invalidates the
+ * cache after a save for the same reason — the local row is already the truth.
+ */
 function AutomationsPage() {
   const queryClient = useQueryClient();
-  const { data: flows = [] } = useQuery({ queryKey: ['flows'], queryFn: () => listFlows() });
-  const [selectedFlowId, setSelectedFlowId] = useState<string | null>(null);
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [name, setName] = useState('New automation');
-  const [enabled, setEnabled] = useState(true);
-  const [triggerType, setTriggerType] = useState<TriggerType>('upload');
-  const [nodes, setNodes] = useState<Node<CanvasNodeData>[]>([]);
-  const [edges, setEdges] = useState<Edge[]>([]);
-  const selectedFlow = flows.find((flow) => flow.id === selectedFlowId) ?? flows[0] ?? null;
-  const selectedFlowGraph = useMemo(() => parseStoredGraph(selectedFlow?.graph), [selectedFlow?.graph]);
-  const selectedNode = useMemo(() => nodes.find((node) => node.id === selectedNodeId) ?? null, [nodes, selectedNodeId]);
-  const { data: runs = [] } = useQuery({
-    queryKey: ['flows', selectedFlow?.id, 'runs'],
-    queryFn: () => (selectedFlow ? listFlowRuns({ data: { id: selectedFlow.id } }) : Promise.resolve([])),
-    enabled: Boolean(selectedFlow),
+  const { folders } = useFolders();
+  const { data: rows = [] } = useQuery({
+    queryKey: FLOWS_KEY,
+    queryFn: () => listFlows(),
+    staleTime: Number.POSITIVE_INFINITY,
   });
 
-  useEffect(() => {
-    if (!selectedFlow) {
-      const graph = starterGraph('upload');
-      setName('Tag incoming uploads');
-      setEnabled(true);
-      setTriggerType('upload');
-      setNodes(toCanvasNodes(graph));
-      setEdges(toCanvasEdges(graph));
-      setSelectedNodeId('trigger');
-      return;
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const active = rows.find((row) => row.id === activeId) ?? rows[0] ?? null;
+  const activeFlow = useMemo(() => (active ? toLinearFlow(active.graph, active.triggerType) : null), [active]);
+
+  const save = useMutation({
+    mutationFn: (input: { id: string; name: string; enabled: boolean; triggerType: TriggerType; graph: FlowGraph }) =>
+      updateFlow({ data: input }),
+    onError: () => toast('Could not save the automation'),
+  });
+
+  // One pending row at a time: a later edit replaces the earlier one, and the
+  // flush on unmount keeps the last keystroke from being lost on navigation.
+  const pending = useRef<FlowRow | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const saveNow = () => {
+    const row = pending.current;
+    pending.current = null;
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
     }
+    if (!row) return;
 
-    const graph = selectedFlowGraph ?? starterGraph(selectedFlow.triggerType as TriggerType);
-    setSelectedFlowId(selectedFlow.id);
-    setName(selectedFlow.name);
-    setEnabled(selectedFlow.enabled);
-    setTriggerType(selectedFlow.triggerType as TriggerType);
-    setNodes(toCanvasNodes(graph));
-    setEdges(toCanvasEdges(graph));
-    setSelectedNodeId(graph.nodes[0]?.id ?? null);
-  }, [selectedFlow, selectedFlowGraph]);
+    const linear = toLinearFlow(row.graph, row.triggerType);
+    // An unfinished step cannot be stored; the detail pane says which one.
+    if (incompleteReason({ name: row.name, steps: linear.steps })) return;
+    const graph = flowGraphSchema.safeParse(toFlowGraph(linear));
+    if (!graph.success) return;
 
-  const createMutation = useMutation({
-    mutationFn: async () => {
-      const graph = toFlowGraph(nodes, edges, triggerType);
-      return createFlow({ data: { name, triggerType, enabled, graph } });
-    },
-    onSuccess: async (flow) => {
-      queryClient.invalidateQueries({ queryKey: ['flows'] });
-      setSelectedFlowId(flow.id);
-      toast.success('Flow created');
-    },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'Failed to create flow');
-    },
-  });
+    save.mutate({
+      id: row.id,
+      name: row.name,
+      enabled: row.enabled,
+      triggerType: asTriggerType(row.triggerType),
+      graph: graph.data,
+    });
+  };
 
-  const updateMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedFlow) throw new Error('Select a flow first');
-      const graph = toFlowGraph(nodes, edges, triggerType);
-      return updateFlow({ data: { id: selectedFlow.id, name, triggerType, enabled, graph } });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['flows'] });
-      toast.success('Flow saved');
-    },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'Failed to save flow');
-    },
-  });
+  // The unmount cleanup runs with the first render's closure, so it reaches the
+  // latest `saveNow` through a ref rather than saving a stale row.
+  const saveNowRef = useRef(saveNow);
+  saveNowRef.current = saveNow;
+  useEffect(() => () => saveNowRef.current(), []);
 
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedFlow) throw new Error('Select a flow first');
-      return deleteFlow({ data: { id: selectedFlow.id } });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['flows'] });
-      setSelectedFlowId(null);
-      toast.success('Flow paused and archived');
-    },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'Failed to delete flow');
-    },
-  });
+  /** Rewrite one cached row and queue it for saving. */
+  const writeRow = (id: string, change: (row: FlowRow) => FlowRow) => {
+    let next: FlowRow | undefined;
+    queryClient.setQueryData<FlowRow[]>(FLOWS_KEY, (current) =>
+      current?.map((row) => {
+        if (row.id !== id) return row;
+        next = change(row);
+        return next;
+      }),
+    );
+    if (!next) return;
+    pending.current = next;
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(saveNow, SAVE_DELAY);
+  };
 
-  const onNodesChange = (changes: NodeChange<Node<CanvasNodeData>>[]) => setNodes((current) => applyNodeChanges(changes, current));
-  const onEdgesChange = (changes: EdgeChange<Edge>[]) => setEdges((current) => applyEdgeChanges(changes, current));
-  const onConnect = (connection: Connection) => {
-    setEdges((current) =>
-      addEdge(
-        {
-          ...connection,
-          id: `${connection.source}-${connection.target}-${Date.now()}`,
-          animated: true,
-          type: 'smoothstep',
+  const create = useMutation({
+    mutationFn: () =>
+      createFlow({
+        data: {
+          name: 'New automation',
+          triggerType: 'upload',
+          enabled: false,
+          graph: toFlowGraph({ trigger: 'upload', steps: [] }),
         },
-        current,
-      ),
-    );
+      }),
+    onSuccess: (row) => {
+      queryClient.setQueryData<FlowRow[]>(FLOWS_KEY, (current) => [row, ...(current ?? [])]);
+      startViewTransition(() => setActiveId(row.id), 'page');
+    },
+    onError: () => toast('Could not create the automation'),
+  });
+
+  /**
+   * Deleting retires the flow (`isActive`), which is what drops it from
+   * `listOwnedFlows`. Selection moves to the automation that took its place in
+   * the list, or to the one above it when the last row went.
+   */
+  const remove = useMutation({
+    mutationFn: (id: string) => deleteFlow({ data: { id } }),
+    onSuccess: (_result, id) => {
+      // A queued save for a row that no longer exists would resurrect nothing but noise.
+      if (pending.current?.id === id) pending.current = null;
+
+      let next: string | null = null;
+      queryClient.setQueryData<FlowRow[]>(FLOWS_KEY, (current = []) => {
+        const index = current.findIndex((row) => row.id === id);
+        const remaining = current.filter((row) => row.id !== id);
+        next = remaining[index]?.id ?? remaining[index - 1]?.id ?? null;
+        return remaining;
+      });
+
+      startViewTransition(() => setActiveId(next), 'page');
+      toast('Automation deleted');
+    },
+    onError: () => toast('Could not delete the automation'),
+  });
+
+  const toggle = (id: string, enabled: boolean) => {
+    const row = rows.find((candidate) => candidate.id === id);
+    if (!row) return;
+    writeRow(id, (current) => ({ ...current, enabled }));
+    toast(`${row.name} is ${enabled ? 'on' : 'paused'}`, { icon: enabled ? <Play aria-hidden /> : <Pause aria-hidden /> });
   };
 
-  const resetDraft = () => {
-    const graph = starterGraph('upload');
-    setSelectedFlowId(null);
-    setSelectedNodeId('trigger');
-    setName('Tag incoming uploads');
-    setEnabled(true);
-    setTriggerType('upload');
-    setNodes(toCanvasNodes(graph));
-    setEdges(toCanvasEdges(graph));
-  };
+  const items: AutomationListItem[] = useMemo(
+    () =>
+      rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        enabled: row.enabled,
+        trigger: asTriggerType(row.triggerType),
+        stepCount: toLinearFlow(row.graph, row.triggerType).steps.length,
+      })),
+    [rows],
+  );
 
-  const updateTriggerType = (next: TriggerType) => {
-    setTriggerType(next);
-    setNodes((current) =>
-      current.map((node) =>
-        node.id === 'trigger'
-          ? toCanvasNode({ id: node.id, type: 'trigger', position: node.position, config: { triggerType: next } })
-          : node,
-      ),
-    );
-  };
-
-  const addActionNode = (type: ActionType) => {
-    const id = `${type}-${Date.now()}`;
-    const node = defaultFlowNode(type, id, { x: 260 + nodes.length * 36, y: 80 + nodes.length * 28 });
-    setNodes((current) => [...current, toCanvasNode(node)]);
-    setSelectedNodeId(id);
-  };
-
-  const updateSelectedNode = (node: FlowNode) => {
-    setNodes((current) => current.map((candidate) => (candidate.id === node.id ? toCanvasNode(node) : candidate)));
-  };
+  const applyFlow = (id: string, flow: LinearFlow) =>
+    writeRow(id, (current) => ({ ...current, triggerType: flow.trigger, graph: asStoredGraph(toFlowGraph(flow)) }));
 
   return (
-    <div className={styles.root}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={cn('type-2xl weight-bold', styles.title)}>
-            <GitBranch className={styles.titleIcon} />
-            Automations
-          </h1>
-          <p className={cn('type-sm', styles.subtitle)}>Build typed workflows with drag-and-wire nodes, then inspect every run.</p>
-        </div>
-        <div className={styles.headerActions}>
-          <Button
-            variant="outline"
-            onClick={resetDraft}
-          >
-            <Plus className={styles.icon} />
-            New draft
-          </Button>
-          <Button
-            variant="outline"
-            disabled={!selectedFlow || deleteMutation.isPending}
-            onClick={() => deleteMutation.mutate()}
-          >
-            <Trash2 className={styles.icon} />
-            Archive
-          </Button>
-          <Button
-            onClick={() => (selectedFlow ? updateMutation.mutate() : createMutation.mutate())}
-            disabled={createMutation.isPending || updateMutation.isPending}
-          >
-            <Save className={styles.icon} />
-            {selectedFlow ? 'Save flow' : 'Create flow'}
-          </Button>
-        </div>
-      </div>
-
-      <div className={styles.layout}>
-        <Card className={styles.rowSpan2}>
-          <CardHeader>
-            <CardTitle>Flows</CardTitle>
-            <CardDescription>Enabled flows can run globally or from a token binding.</CardDescription>
-          </CardHeader>
-          <CardContent className={styles.flowList}>
-            {flows.map((flow) => (
-              <button
-                key={flow.id}
-                type="button"
-                onClick={() => setSelectedFlowId(flow.id)}
-                className={styles.flowItem}
-                data-active={selectedFlow?.id === flow.id}
-              >
-                <span className={styles.flowItemHead}>
-                  <span className={styles.flowItemName}>{flow.name}</span>
-                  {flow.enabled ? (
-                    <Play className={cn(styles.icon, styles.flowStateIcon)} />
-                  ) : (
-                    <Pause
-                      className={cn(styles.icon, styles.flowStateIcon)}
-                      data-tone="muted"
-                    />
-                  )}
-                </span>
-                <span className={styles.flowItemMeta}>
-                  {flow.triggerType} · v{flow.version}
-                </span>
-              </button>
-            ))}
-            {flows.length === 0 ? <div className={styles.empty}>Create a flow from the canvas draft.</div> : null}
-          </CardContent>
-        </Card>
-
-        <Card className={styles.canvasCard}>
-          <CardHeader>
-            <div className={styles.canvasHeader}>
-              <div>
-                <CardTitle>Flow Canvas</CardTitle>
-                <CardDescription>Drag nodes, connect actions, and save the validated graph.</CardDescription>
-              </div>
-              <div className={styles.canvasActions}>
-                {actionTypes.map((type) => (
-                  <Button
-                    key={type}
-                    size="sm"
-                    variant="outline"
-                    onClick={() => addActionNode(type)}
-                  >
-                    <Plus className={styles.icon} />
-                    {nodeTitle(type)}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className={styles.canvasFrame}>
-              <ReactFlow
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                onConnect={onConnect}
-                onNodeClick={(_, node) => setSelectedNodeId(node.id)}
-                fitView
-              >
-                <Background />
-                <Controls />
-                <MiniMap
-                  pannable
-                  zoomable
-                />
-              </ReactFlow>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className={styles.rowSpan2}>
-          <CardHeader>
-            <CardTitle>Inspector</CardTitle>
-            <CardDescription>{selectedNode ? selectedNode.data.label : 'Select a node to edit its config.'}</CardDescription>
-          </CardHeader>
-          <CardContent className={styles.inspectorBody}>
-            <div className={styles.field}>
-              <Label htmlFor="flow-name">Name</Label>
-              <Input
-                id="flow-name"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-              />
-            </div>
-            <div className={styles.field}>
-              <Label>Trigger</Label>
-              <Select
-                value={triggerType}
-                onValueChange={(value) => updateTriggerType(value as TriggerType)}
-              >
-                <SelectTrigger className={styles.selectFull}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {triggerTypes.map((type) => (
-                    <SelectItem
-                      key={type}
-                      value={type}
-                    >
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <label className={styles.toggleRow}>
-              <span>{enabled ? 'Enabled' : 'Paused'}</span>
-              <Switch
-                checked={enabled}
-                onCheckedChange={setEnabled}
-              />
-            </label>
-
-            <NodeInspector
-              node={selectedNode ? canvasNodeToFlowNode(selectedNode, triggerType) : null}
-              onChange={updateSelectedNode}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Runs</CardTitle>
-            <CardDescription>{selectedFlow ? selectedFlow.name : 'Create or select a saved flow'}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Trigger</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead>Started</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {runs.map((run) => (
-                  <TableRow key={run.id}>
-                    <TableCell className="weight-medium">{run.status}</TableCell>
-                    <TableCell>{run.triggeredBy}</TableCell>
-                    <TableCell>{run.duration ? `${run.duration} ms` : '-'}</TableCell>
-                    <TableCell>{new Date(run.startedAt).toLocaleString()}</TableCell>
-                  </TableRow>
-                ))}
-                {runs.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={4}
-                      className={styles.runsErrorCell}
-                    >
-                      No runs recorded.
-                    </TableCell>
-                  </TableRow>
-                ) : null}
-              </TableBody>
-            </Table>
-            {runs.map((run) => (
-              <p
-                key={`${run.id}-error`}
-                className={styles.runError}
-              >
-                {run.error}
-              </p>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
+    <div className={styles.split}>
+      <AutomationList
+        items={items}
+        activeId={active?.id ?? null}
+        creating={create.isPending}
+        onSelect={(id) => startViewTransition(() => setActiveId(id), 'page')}
+        onToggle={toggle}
+        onCreate={() => create.mutate()}
+      />
+      {active && activeFlow ? (
+        // Keyed on the automation so switching resets the pane's own state — the
+        // open delete dialog, and the cards' entry animation.
+        <AutomationDetail
+          key={active.id}
+          name={active.name}
+          enabled={active.enabled}
+          flow={activeFlow}
+          folders={folders}
+          deleting={remove.isPending}
+          onNameChange={(name) => writeRow(active.id, (current) => ({ ...current, name }))}
+          onEnabledChange={(enabled) => writeRow(active.id, (current) => ({ ...current, enabled }))}
+          onFlowChange={(flow) => applyFlow(active.id, flow)}
+          onDelete={() => remove.mutate(active.id)}
+        />
+      ) : (
+        <Empty>
+          <EmptyHeader>
+            <EmptyTitle>No automations yet</EmptyTitle>
+            <EmptyDescription>Create one to sort, tag and protect files the moment they arrive.</EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button
+              disabled={create.isPending}
+              onClick={() => create.mutate()}
+            >
+              <Plus />
+              New automation
+            </Button>
+          </EmptyContent>
+        </Empty>
+      )}
     </div>
   );
-}
-
-function NodeInspector({ node, onChange }: { node: FlowNode | null; onChange: (node: FlowNode) => void }) {
-  if (!node) return <div className={styles.inspectorEmpty}>No node selected.</div>;
-
-  if (node.type === 'trigger') {
-    return <div className={styles.inspectorNote}>The trigger node follows the flow trigger above.</div>;
-  }
-
-  if (node.type === 'tag') {
-    return (
-      <div className={styles.field}>
-        <Label htmlFor="node-tags">Tags</Label>
-        <Input
-          id="node-tags"
-          value={node.config.tags.join(', ')}
-          onChange={(event) =>
-            onChange({
-              ...node,
-              config: {
-                tags: event.target.value
-                  .split(',')
-                  .map((tag) => tag.trim())
-                  .filter(Boolean),
-              },
-            })
-          }
-        />
-      </div>
-    );
-  }
-
-  if (node.type === 'privacy') {
-    return (
-      <label className={styles.toggleRow}>
-        <span>{node.config.private ? 'Make private' : 'Make public'}</span>
-        <Switch
-          checked={node.config.private}
-          onCheckedChange={(checked) => onChange({ ...node, config: { private: checked } })}
-        />
-      </label>
-    );
-  }
-
-  if (node.type === 'route-folder') {
-    return (
-      <div className={styles.field}>
-        <Label htmlFor="node-folder">Folder ID</Label>
-        <Input
-          id="node-folder"
-          value={node.config.folderId}
-          onChange={(event) => onChange({ ...node, config: { folderId: event.target.value } })}
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div className={styles.fieldStack}>
-      <div className={styles.field}>
-        <Label>Field</Label>
-        <Select
-          value={node.config.field}
-          onValueChange={(value) => onChange({ ...node, config: { ...node.config, field: value as (typeof conditionFields)[number] } })}
-        >
-          <SelectTrigger className={styles.selectFull}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {conditionFields.map((field) => (
-              <SelectItem
-                key={field}
-                value={field}
-              >
-                {field}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className={styles.field}>
-        <Label htmlFor="node-contains">Contains</Label>
-        <Input
-          id="node-contains"
-          value={node.config.contains}
-          onChange={(event) => onChange({ ...node, config: { ...node.config, contains: event.target.value } })}
-        />
-      </div>
-    </div>
-  );
-}
-
-function parseStoredGraph(graph: unknown): FlowGraph | null {
-  const parsed = flowGraphSchema.safeParse(graph);
-  return parsed.success ? parsed.data : null;
-}
-
-function starterGraph(triggerType: TriggerType): FlowGraph {
-  return {
-    nodes: [
-      { id: 'trigger', type: 'trigger', position: { x: 0, y: 120 }, config: { triggerType } },
-      { id: 'tag', type: 'tag', position: { x: 300, y: 120 }, config: { tags: ['automated'] } },
-    ],
-    edges: [{ id: 'trigger-tag', from: 'trigger', to: 'tag' }],
-  };
-}
-
-function toCanvasNodes(graph: FlowGraph): Node<CanvasNodeData>[] {
-  return graph.nodes.map(toCanvasNode);
-}
-
-function toCanvasNode(node: FlowNode): Node<CanvasNodeData> {
-  return {
-    id: node.id,
-    type: 'default',
-    position: node.position,
-    data: {
-      label: nodeTitle(node.type),
-      nodeType: node.type,
-      summary: nodeSummary(node),
-    },
-    className: node.type === 'trigger' ? styles.flowNodeTrigger : styles.flowNodeDefault,
-  };
-}
-
-function toCanvasEdges(graph: FlowGraph): Edge[] {
-  return graph.edges.map((edge) => ({
-    id: edge.id,
-    source: edge.from,
-    target: edge.to,
-    animated: true,
-    type: 'smoothstep',
-  }));
-}
-
-function toFlowGraph(nodes: Node<CanvasNodeData>[], edges: Edge[], triggerType: TriggerType): FlowGraph {
-  const graph = {
-    nodes: nodes.map((node) => canvasNodeToFlowNode(node, triggerType)),
-    edges: edges.flatMap((edge) => (edge.source && edge.target ? [{ id: edge.id, from: edge.source, to: edge.target }] : [])),
-  };
-  return flowGraphSchema.parse(graph);
-}
-
-function canvasNodeToFlowNode(node: Node<CanvasNodeData>, triggerType: TriggerType): FlowNode {
-  const base = { id: node.id, position: node.position };
-  if (node.data.nodeType === 'trigger') return { ...base, type: 'trigger', config: { triggerType } };
-  if (node.data.nodeType === 'privacy') return { ...base, type: 'privacy', config: parsePrivacy(node.data.summary) };
-  if (node.data.nodeType === 'route-folder')
-    return { ...base, type: 'route-folder', config: { folderId: node.data.summary.replace(/^Folder: /, '') } };
-  if (node.data.nodeType === 'condition') {
-    const [field = 'title', contains = ''] = node.data.summary.split(' contains ');
-    return { ...base, type: 'condition', config: { field: field as (typeof conditionFields)[number], contains } };
-  }
-  return {
-    ...base,
-    type: 'tag',
-    config: {
-      tags: node.data.summary
-        .replace(/^Tags: /, '')
-        .split(',')
-        .map((tag) => tag.trim())
-        .filter(Boolean),
-    },
-  };
-}
-
-function defaultFlowNode(type: ActionType, id: string, position: { x: number; y: number }): FlowNode {
-  if (type === 'privacy') return { id, type, position, config: { private: true } };
-  if (type === 'route-folder') return { id, type, position, config: { folderId: '' } };
-  if (type === 'condition') return { id, type, position, config: { field: 'title', contains: 'screenshot' } };
-  return { id, type, position, config: { tags: ['automated'] } };
-}
-
-function nodeTitle(type: FlowNode['type']) {
-  if (type === 'route-folder') return 'Route folder';
-  return type.charAt(0).toUpperCase() + type.slice(1);
-}
-
-function nodeSummary(node: FlowNode) {
-  if (node.type === 'trigger') return node.config.triggerType;
-  if (node.type === 'privacy') return node.config.private ? 'Private' : 'Public';
-  if (node.type === 'route-folder') return `Folder: ${node.config.folderId}`;
-  if (node.type === 'condition') return `${node.config.field} contains ${node.config.contains}`;
-  return `Tags: ${node.config.tags.join(',')}`;
-}
-
-function parsePrivacy(summary: string) {
-  return { private: summary === 'Private' };
 }

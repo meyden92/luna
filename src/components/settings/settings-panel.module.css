@@ -1,0 +1,42 @@
+@layer components {
+  .root {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background: var(--card);
+    overflow: hidden;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    /* 18px top/bottom is the prototype's own one-off, not on the spacing scale. */
+    padding: 18px var(--space-5);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .headerText {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .headerTitle {
+    /* 15px is the spec's own one-off; the scale jumps from 14px straight to 16px. */
+    font-size: 15px;
+    font-weight: var(--weight-semibold);
+  }
+
+  .headerDescription {
+    margin-top: 2px;
+    /* 13px is the spec's own one-off, between --text-xs (12px) and --text-sm (14px). */
+    font-size: 13px;
+    color: var(--muted-foreground);
+  }
+
+  .headerAction {
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+}

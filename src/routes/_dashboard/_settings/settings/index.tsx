@@ -1,34 +1,40 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import UserSettings from '@/components/settings/user-profile-settings';
-import { Separator } from '@/components/ui/separator';
-import { cn } from '@/libs/utils';
+import { SettingsSection } from '@/components/settings/settings-section';
+import { SharexPanel } from '@/components/settings/sharex-panel';
+import { UploadDefaultsPanel } from '@/components/settings/upload-defaults-panel';
+import { UploadTokensPanel } from '@/components/settings/upload-tokens-panel';
+import { queryKeys } from '@/libs/query-keys';
 import { settingsOverviewQuery } from '@/routes/_dashboard/_settings';
-import styles from './index.module.css';
+import { listFolders } from '@/server/fns/folders';
 
 export const Route = createFileRoute('/_dashboard/_settings/settings/')({
-  head: () => ({ meta: [{ title: 'Settings | LunaShare' }] }),
-  component: SettingsGeneralPage,
+  head: () => ({ meta: [{ title: 'Uploads & ShareX | LunaShare' }] }),
+  component: SettingsUploadsPage,
 });
 
-function SettingsGeneralPage() {
+function SettingsUploadsPage() {
   const { data: settings } = useSuspenseQuery(settingsOverviewQuery);
+  const { data: folders = [] } = useQuery<{ id: string; name: string }[]>({
+    queryKey: queryKeys.folders.all,
+    queryFn: async () => listFolders() as Promise<{ id: string; name: string }[]>,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+
+  const enabledTokens = settings.tokens.filter((token) => token.enabled);
+  const primaryToken = enabledTokens[0] ?? null;
 
   return (
-    <div className="stack space-6">
-      <div>
-        <h3 className="type-lg weight-medium">Profile</h3>
-        <p className={cn('type-sm', styles.subtitle)}>This is how others will see you on the site.</p>
-      </div>
-      <Separator />
-      <UserSettings
-        className={styles.full}
-        receiveEmails={settings.receiveEmail}
-        isProfilePublic={settings.isProfilePublic}
-        bio={settings.bio || ''}
-        description={settings.description || ''}
-        showAllFilesIncludesFoldered={settings.showAllFilesIncludesFoldered}
+    <SettingsSection
+      title="Uploads & ShareX"
+      description="Connect ShareX or other apps, and choose what happens to new uploads."
+    >
+      <SharexPanel primaryToken={primaryToken} />
+      <UploadTokensPanel tokens={settings.tokens} />
+      <UploadDefaultsPanel
+        tokens={settings.tokens}
+        folders={folders}
       />
-    </div>
+    </SettingsSection>
   );
 }

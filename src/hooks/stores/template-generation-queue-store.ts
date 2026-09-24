@@ -7,6 +7,8 @@ export interface TemplateGenerationResult {
   resultImageUrl: string;
   finalPrompt: string;
   generationId: string; // DB generation ID
+  /** The file the result was stored as, so "Save to files" needs no lookup. */
+  fileId?: string;
 }
 
 export interface TemplateGenerationInputImage {

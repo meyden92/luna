@@ -1,0 +1,27 @@
+@layer components {
+  /* Narrower than the Sheet default: four short fields need no more width. */
+  div.sheet[data-side="right"] {
+    width: 25rem;
+    max-width: none;
+  }
+
+  .body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-6);
+    padding: 0 var(--space-6) var(--space-6);
+    overflow-y: auto;
+  }
+
+  /* Reset and Done sit at opposite ends, unlike the Sheet's stacked default. */
+  div.footer {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .folderTrigger {
+    width: 100%;
+  }
+}

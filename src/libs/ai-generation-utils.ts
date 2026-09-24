@@ -31,6 +31,8 @@ type UploadImageOptions = {
   userId: string;
   tags: string;
   title: string;
+  /** Where the run asked its results to be saved, or null for no folder. */
+  folderId?: string | null;
   signal?: AbortSignal;
   logPrefix: string;
 };
@@ -191,6 +193,7 @@ export async function uploadGeneratedImageToS3({
   userId,
   tags,
   title,
+  folderId,
   signal,
   logPrefix,
 }: UploadImageOptions): Promise<{ url: string; fileId: string }> {
@@ -236,6 +239,7 @@ export async function uploadGeneratedImageToS3({
         tags,
         title,
         contentType: 'image/png',
+        folderId: folderId ?? null,
       },
       userId,
     );

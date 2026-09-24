@@ -32,4 +32,18 @@
   .lineContent {
     display: table-cell;
   }
+
+  /* Overlay variant for the Snippets editor: no box of its own, so it lines up
+     exactly with the transparent textarea and gutter the editor draws around it. */
+  .overlayPre {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    font: inherit;
+    white-space: pre;
+  }
+
+  .overlayLine {
+    display: block;
+  }
 }

@@ -1,0 +1,96 @@
+@layer components {
+  .root {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+  }
+
+  .topBar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-6);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .titleInput {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    font-family: inherit;
+    font-size: var(--text-xl);
+    line-height: var(--leading-xl);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-heading);
+    color: var(--foreground);
+    outline: none;
+    padding: var(--space-1) 0;
+    border-bottom: 1px solid transparent;
+    transition: border-color 150ms ease-out;
+  }
+
+  .titleInput:focus {
+    border-bottom-color: var(--ring);
+  }
+
+  .optsRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-6);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .footer {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-6);
+    border-top: 1px solid var(--border);
+    font-size: var(--text-xs);
+    color: var(--foreground-subtle);
+  }
+
+  .status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .statusDot {
+    /* No spacing token lands on 7px; this dot is a one-off decorative size. */
+    width: 7px;
+    height: 7px;
+    border-radius: var(--radius-full);
+    background: var(--primary);
+  }
+
+  .statusDot[data-saving] {
+    background: var(--warning);
+    animation: snippet-save-pulse 1s infinite;
+  }
+
+  .counts {
+    margin-left: auto;
+  }
+
+  @keyframes snippet-save-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.4;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .statusDot[data-saving] {
+      animation-duration: 0.01ms;
+      animation-iteration-count: 1;
+    }
+  }
+}

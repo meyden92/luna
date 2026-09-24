@@ -1,0 +1,132 @@
+@layer components {
+  .root {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-6);
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* The name is edited in place, so it looks like the heading it is until focused. */
+  .name {
+    flex: 1;
+    min-width: 0;
+    padding-block: var(--space-1);
+    border: 0;
+    border-bottom: 1px solid transparent;
+    background: none;
+    font-family: var(--font-title);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+    letter-spacing: -0.01em;
+    color: var(--foreground);
+
+    &:focus {
+      outline: none;
+      border-bottom-color: var(--ring);
+    }
+  }
+
+  .state {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--foreground-2);
+  }
+
+  .body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: var(--space-6) var(--space-8) var(--space-20);
+  }
+
+  /* The reading column. 720px is the measure the sentence and the cards share. */
+  .chain {
+    display: flex;
+    flex-direction: column;
+    max-width: 45rem;
+    margin-inline: auto;
+  }
+
+  .summary {
+    margin: 0 0 var(--space-6);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-lg);
+    background-color: var(--muted);
+    font-size: var(--text-sm);
+    line-height: 1.55;
+    color: var(--foreground-2);
+  }
+
+  .summaryValue {
+    font-weight: var(--weight-semibold);
+    color: var(--foreground);
+  }
+
+  /*
+   * The hairline joining two cards. 28px tall and 2px wide are the line itself
+   * rather than steps on the spacing scale; the left offset lines it up with the
+   * centre of the 36px icon tile inside the card's 16px padding.
+   */
+  .connector {
+    position: relative;
+    width: 2px;
+    height: 1.75rem;
+    margin-left: calc(var(--space-4) + 1.125rem - 1px);
+    overflow: hidden;
+    background-color: var(--border);
+  }
+
+  /* A glow travelling down the line: the automation is live and would run. */
+  .connector::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: -100%;
+    width: 2px;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent, var(--primary), transparent);
+    animation: connectorGlow 1600ms linear infinite;
+  }
+
+  @keyframes connectorGlow {
+    to {
+      top: 100%;
+    }
+  }
+
+  /* Paused: nothing flows, so the line is bare. */
+  .root[data-paused] .connector::after {
+    display: none;
+  }
+
+  .add {
+    align-self: flex-start;
+    margin-left: var(--space-4);
+  }
+
+  .addMenu {
+    min-width: 13.75rem;
+  }
+
+  .incomplete {
+    margin: var(--space-4) 0 0;
+    font-size: var(--text-xs);
+    color: var(--foreground-subtle);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .connector::after {
+      display: none;
+    }
+  }
+}

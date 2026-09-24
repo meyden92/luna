@@ -1,17 +1,19 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useRef } from 'react';
 import { toast } from 'sonner';
-import type { ImageItem } from '@/components/ai/editor/SortableImageCard';
+import type { ReferenceImage } from '@/components/ai/reference-image';
 import { type GenerationStatus, useImageEditorQueueStore } from '@/hooks/stores/image-editor-queue-store';
 import { queryKeys } from '@/libs/query-keys';
 import { streamSSE } from '@/libs/sse';
 
 export interface EditGenerateParams {
-  images: ImageItem[];
+  images: ReferenceImage[];
   modelId: string;
   modelLabel: string;
   fieldValues: Record<string, unknown>;
   imageCount?: number;
+  /** Folder the edited files are inserted into, or null to leave them unsorted. */
+  saveToFolderId?: string | null;
 }
 
 interface StreamEvent {
@@ -22,6 +24,7 @@ interface StreamEvent {
   results?: Array<{
     index: number;
     resultImageUrl?: string;
+    fileId?: string;
     success?: boolean;
     error?: string;
   }>;
@@ -40,7 +43,7 @@ export function useEditImageGeneration() {
 
   const generate = useCallback(
     async (params: EditGenerateParams) => {
-      const { images, modelId, modelLabel, fieldValues, imageCount = 1 } = params;
+      const { images, modelId, modelLabel, fieldValues, imageCount = 1, saveToFolderId = null } = params;
 
       let cacheInvalidated = false;
 
@@ -67,6 +70,8 @@ export function useEditImageGeneration() {
       formData.append('editingModelId', modelId);
       formData.append('imageCount', imageCount.toString());
       formData.append('generationId', generationId);
+      // Empty means "no folder": the file is still stored, just unsorted.
+      formData.append('saveToFolderId', saveToFolderId ?? '');
 
       // Append images
       for (let i = 0; i < images.length; i++) {
@@ -126,6 +131,7 @@ export function useEditImageGeneration() {
                       results: data.results.map((r) => ({
                         index: r.index,
                         resultImageUrl: r.resultImageUrl,
+                        fileId: r.fileId,
                         success: r.success,
                         error: r.error,
                       })),
@@ -165,6 +171,7 @@ export function useEditImageGeneration() {
             status: 'failed',
             error: 'Generation was cancelled',
           });
+          toast('Generation cancelled');
           return { success: false, error: 'Cancelled' };
         }
 

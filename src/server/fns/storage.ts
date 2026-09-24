@@ -1,6 +1,5 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
-import { listOwnerCachedImages } from '@/db/queries/admin';
 import { storageByKind, storageUsage } from '@/db/queries/files';
 import { userStorageQuotaMiB } from '@/db/queries/storage';
 import { env } from '@/libs/env';
@@ -62,48 +61,6 @@ export const proxyImage = createServerFn({ method: 'POST' })
     });
   });
 
-const cacheImagesSchema = z.object({
-  page: z.number().int().min(1).default(1),
-  limit: z.number().int().min(1).max(200).default(50),
-  purpose: z.string().optional(),
-});
-
-export const listCachedImages = createServerFn({ method: 'GET' })
-  .middleware(appMiddleware({ auth: 'user' }))
-  .validator(cacheImagesSchema)
-  .handler(async ({ data, context }) => {
-    const { images, totalCount } = await listOwnerCachedImages({
-      ownerId: userIdFromCtx(context),
-      purpose: data.purpose ?? 'image-edit',
-      // One extra row is what tells the pager whether another page exists.
-      limit: data.limit + 1,
-      offset: (data.page - 1) * data.limit,
-    });
-
-    const hasMore = images.length > data.limit;
-    const responseImages = hasMore ? images.slice(0, data.limit) : images;
-
-    return {
-      images: responseImages.map((image) => ({
-        key: `cache/${image.hash}.png`,
-        url: image.url,
-        lastModified: image.createdAt.toISOString(),
-        size: image.size,
-        hash: image.hash,
-        filename: image.filename,
-        contentType: image.contentType,
-      })),
-      hasMore,
-      nextPage: hasMore ? data.page + 1 : null,
-      totalCount,
-    };
-  });
-
-/**
- * What the storage meter needs: how much is used and how much there is. The
- * quota comes back with the usage because every caller that shows one shows the
- * other — "2.98 of 10 GB" is one reading, not two.
- */
 export const getStorageUsage = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'user' }))
   .handler(

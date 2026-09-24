@@ -34,6 +34,9 @@ const generateImageBodySchema = z
     generationModelId: z.string().min(1),
     generationId: z.preprocess((value) => (typeof value === 'string' && value.length > 0 ? value : undefined), z.string().optional()),
     prompt: z.preprocess((value) => (typeof value === 'string' ? value : ''), z.string()),
+    /* Where "Save results to" wants them. Applied at insert, so nothing has to
+       find the file again afterwards by matching its URL. */
+    saveToFolderId: z.string().nullish(),
   })
   .catchall(z.unknown());
 
@@ -198,7 +201,7 @@ async function handle(request: Request): Promise<Response> {
           return;
         }
 
-        const results: Array<{ index: number; resultImageUrl?: string; success?: boolean; error?: string }> = [];
+        const results: Array<{ index: number; resultImageUrl?: string; fileId?: string; success?: boolean; error?: string }> = [];
 
         send({ status: 'processing', progress: 85, message: 'Saving results...' });
 
@@ -210,16 +213,17 @@ async function handle(request: Request): Promise<Response> {
             const ts = Date.now();
             const slug = generationModel.apiModelName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
             const filename = `${slug}_result_${ts}_${i + 1}.png`;
-            const { url } = await uploadGeneratedImageToS3({
+            const { url, fileId } = await uploadGeneratedImageToS3({
               imageUrl,
               fileName: filename,
               userId: user.id,
               tags: `image-generation, ${generationModel.label}, ai`,
               title: `ai-${filename}`,
+              folderId: body.saveToFolderId ?? null,
               signal: abortSignal,
               logPrefix: '[generate-image]',
             });
-            results.push({ index: i + 1, resultImageUrl: url, success: true });
+            results.push({ index: i + 1, resultImageUrl: url, fileId, success: true });
           } catch (error) {
             if (isAbortError(error) || abortSignal.aborted) throw error;
             results.push({ index: i + 1, error: uploadGeneratedImageErrorMessage(error, 'Failed to upload generated image') });

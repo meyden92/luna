@@ -1,0 +1,99 @@
+@layer components {
+  .root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    width: var(--split-list-width);
+    flex-shrink: 0;
+    padding: var(--space-4) var(--space-3);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+  }
+
+  .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-1);
+  }
+
+  .title {
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-heading);
+  }
+
+  .rows {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-lg);
+    text-align: left;
+    transition:
+      background-color 150ms ease-out,
+      scale 350ms var(--spring);
+  }
+
+  .row:hover {
+    background: var(--muted);
+  }
+
+  .row:active {
+    scale: 0.98;
+  }
+
+  .row[data-active] {
+    background: var(--accent);
+  }
+
+  .rowTitle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    overflow: hidden;
+  }
+
+  .lockIcon {
+    flex-shrink: 0;
+    opacity: 0.6;
+  }
+
+  .rowTitleText {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .rowMeta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--foreground-subtle);
+  }
+
+  .language {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    padding: 1px var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--muted-strong);
+    color: var(--foreground-2);
+  }
+
+  .noMatches {
+    padding: var(--space-3);
+    font-size: var(--text-sm);
+    color: var(--foreground-subtle);
+  }
+}

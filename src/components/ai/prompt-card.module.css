@@ -1,0 +1,91 @@
+@layer components {
+  .card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-2xl);
+    background-color: var(--card);
+    box-shadow: var(--shadow-md);
+    transition:
+      border-color var(--duration-base) ease,
+      box-shadow 300ms ease;
+  }
+
+  /*
+   * Focus lives on the card, not the textarea: the whole surface is the field.
+   * The third shadow is the mint glow that pools below the card.
+   */
+  .card:focus-within {
+    border-color: color-mix(in oklab, var(--primary) 60%, var(--border));
+    box-shadow:
+      var(--shadow-md),
+      0 0 0 3px color-mix(in oklab, var(--ring) 18%, transparent),
+      0 18px 40px -24px color-mix(in oklab, var(--primary) 50%, transparent);
+  }
+
+  .slots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: var(--space-4) var(--space-4) 0;
+  }
+
+  /*
+   * Overrides the Textarea surface: inside the card there is no second border,
+   * fill or shadow. Element-qualified so it wins over `.root` regardless of the
+   * order the two modules end up in the components layer.
+   */
+  textarea.input {
+    /* One step above --text-base: the prompt is the largest text on the page. */
+    --prompt-size: 1.0625rem;
+
+    min-height: 5.75rem;
+    padding: 18px var(--space-5) var(--space-2);
+    border: 0;
+    background-color: transparent;
+    box-shadow: none;
+    font-size: var(--prompt-size);
+    line-height: 1.5;
+
+    &:hover {
+      border: 0;
+      background-color: transparent;
+    }
+
+    &:focus-visible {
+      transform: none;
+      border: 0;
+      background-color: transparent;
+      box-shadow: none;
+    }
+
+    @media (width >= 768px) {
+      font-size: var(--prompt-size);
+      line-height: 1.5;
+    }
+  }
+
+  textarea.input[data-compact] {
+    min-height: 4rem;
+  }
+
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 10px var(--space-3) var(--space-3) 14px;
+  }
+
+  .action {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+  }
+
+  .hint {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--foreground-subtle);
+    white-space: nowrap;
+  }
+}

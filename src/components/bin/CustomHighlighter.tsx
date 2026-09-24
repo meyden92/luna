@@ -10,16 +10,64 @@ interface CodeBlockProps {
   language?: string;
 }
 
-export default function CodeBlock({ code, language = 'text' }: CodeBlockProps) {
+/** The prism-react-renderer theme for the active Appearance, resolved once mounted so SSR doesn't guess the OS theme. */
+function useHighlightTheme() {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const theme = mounted && resolvedTheme === 'dark' ? themes.vsDark : themes.github;
+  return mounted && resolvedTheme === 'dark' ? themes.vsDark : themes.github;
+}
+
+/**
+ * Colour-only token rendering shared with the read-only `CodeBlock` below.
+ * The Snippets editor layers this behind a transparent, editable textarea for a
+ * live highlighted overlay, so it takes no background or padding of its own —
+ * the caller owns the box, gutter and line numbers.
+ */
+export function HighlightedCode({ code, language = 'text', className }: CodeBlockProps & { className?: string }) {
+  const theme = useHighlightTheme();
+
+  return (
+    <Highlight
+      theme={theme}
+      code={code}
+      language={language}
+    >
+      {({ className: prismClassName, tokens, getLineProps, getTokenProps }) => (
+        <pre className={`${prismClassName} ${styles.overlayPre}${className ? ` ${className}` : ''}`}>
+          {tokens.map((line, lineIdx) => {
+            const lineKey = lineIdx;
+            return (
+              <div
+                key={lineKey}
+                {...getLineProps({ line })}
+                className={styles.overlayLine}
+              >
+                {line.map((token, tokenIdx) => {
+                  const tokenKey = tokenIdx;
+                  return (
+                    <span
+                      key={tokenKey}
+                      {...getTokenProps({ token })}
+                    />
+                  );
+                })}
+              </div>
+            );
+          })}
+        </pre>
+      )}
+    </Highlight>
+  );
+}
+
+export default function CodeBlock({ code, language = 'text' }: CodeBlockProps) {
+  const theme = useHighlightTheme();
+  const [copied, setCopied] = useState(false);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(code).then(() => {

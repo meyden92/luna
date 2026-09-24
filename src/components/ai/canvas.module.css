@@ -1,0 +1,75 @@
+@layer components {
+  .canvas {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    margin-top: 28px;
+  }
+
+  /*
+   * Overrides the Empty dashed outline: the canvas is a filled well the results
+   * will land in, not an outline around missing content.
+   */
+  div.well {
+    min-height: 26.25rem;
+    padding: var(--space-10);
+    border: 0;
+    border-radius: var(--radius-3xl);
+    background-color: var(--muted);
+  }
+
+  .title {
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+    font-weight: var(--weight-semibold);
+  }
+
+  .description {
+    max-width: 40ch;
+  }
+
+  .ideas {
+    flex-direction: row;
+    flex-wrap: wrap;
+    max-width: none;
+    gap: var(--space-2);
+    margin-top: 6px;
+  }
+
+  .idea {
+    padding: var(--space-2) 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    background-color: var(--card);
+    font-family: inherit;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--foreground-2);
+    transition:
+      border-color var(--duration-fast) ease,
+      color var(--duration-fast) ease,
+      translate var(--duration-fast) ease,
+      scale 350ms var(--spring);
+
+    &:hover {
+      border-color: var(--primary);
+      color: var(--foreground);
+      translate: 0 -1px;
+    }
+
+    &:active {
+      scale: 0.96;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ring);
+      outline-offset: 2px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .idea {
+      transition: none;
+    }
+  }
+}

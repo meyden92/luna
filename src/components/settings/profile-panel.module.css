@@ -1,0 +1,78 @@
+@layer components {
+  .avatarRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  /* The real file input is hidden; the "Change" button proxies the click. */
+  .fileInput {
+    display: none;
+  }
+
+  /* Rows keep their control from stretching the full width of the panel. */
+  .input {
+    max-width: 360px;
+  }
+
+  .passwordForm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  .spinner {
+    width: var(--space-4);
+    height: var(--space-4);
+    margin-right: var(--space-2);
+    animation: profile-panel-spin 1s linear infinite;
+  }
+
+  @keyframes profile-panel-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Sticks to the bottom of the viewport as the page scrolls, rather than
+     floating over it — it lives in normal flow, after the panel. */
+  .saveBar {
+    position: sticky;
+    bottom: var(--space-5);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-5);
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background: var(--popover);
+    box-shadow: var(--shadow-lg);
+    font-size: 13px;
+    animation: profile-panel-rise-in var(--duration-base) var(--ease-out-expo) both;
+
+    & span {
+      margin-right: auto;
+      color: var(--foreground-2);
+    }
+  }
+
+  @keyframes profile-panel-rise-in {
+    from {
+      opacity: 0;
+      translate: 0 var(--space-2);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spinner {
+      animation-duration: 0.01ms;
+      animation-iteration-count: 1;
+    }
+
+    .saveBar {
+      animation: none;
+    }
+  }
+}

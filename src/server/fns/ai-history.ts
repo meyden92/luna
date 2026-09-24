@@ -109,7 +109,7 @@ export interface TemplateHistoryItem {
   inputPreviews: string[];
   batchId: string;
   batchIndex: number;
-  result?: { originalImageUrls: string[]; resultImageUrl: string; finalPrompt: string; generationId: string };
+  result?: { originalImageUrls: string[]; resultImageUrl: string; finalPrompt: string; generationId: string; fileId?: string };
   error?: string;
 }
 
@@ -132,7 +132,9 @@ export const listTemplateGenerations = createServerFn({ method: 'GET' })
         inputPreviews: originalImageUrls,
         batchId: r.id,
         batchIndex: 0,
-        result: resultImageUrl ? { originalImageUrls, resultImageUrl, finalPrompt: r.finalPrompt, generationId: r.id } : undefined,
+        result: resultImageUrl
+          ? { originalImageUrls, resultImageUrl, finalPrompt: r.finalPrompt, generationId: r.id, fileId: r.resultFile?.id }
+          : undefined,
         error: r.errorMessage ?? undefined,
       };
     });

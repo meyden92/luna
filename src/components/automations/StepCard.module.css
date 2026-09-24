@@ -1,0 +1,67 @@
+@layer components {
+  /*
+   * The tile column is fixed so every card's glyph, and the connector that hangs
+   * below it, sit on the same vertical line. The trailing `auto` column holds the
+   * delete button; the trigger simply leaves it empty.
+   */
+  .root {
+    display: grid;
+    grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+    gap: var(--space-3);
+    align-items: start;
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background-color: var(--card);
+    /* A card added to the chain rises into place rather than appearing. */
+    animation: stepRise 500ms var(--ease-out-expo) both;
+  }
+
+  @keyframes stepRise {
+    from {
+      opacity: 0;
+      translate: 0 10px;
+    }
+  }
+
+  .tile {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-lg);
+    background-color: var(--muted);
+    color: var(--foreground-2);
+  }
+
+  /* Mint marks where the chain starts, and nothing else on the screen. */
+  .root[data-tone="trigger"] .tile {
+    background-color: var(--primary-tint);
+    color: var(--primary-strong);
+  }
+
+  .kind {
+    margin-bottom: var(--space-1);
+    font-size: var(--text-label);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--foreground-subtle);
+  }
+
+  /* The fields wrap rather than squeeze, so a long folder name keeps its select. */
+  .fields {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--foreground-2);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .root {
+      animation: none;
+    }
+  }
+}

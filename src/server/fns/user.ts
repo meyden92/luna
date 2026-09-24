@@ -8,15 +8,6 @@ import { appMiddleware } from '@/server/server-fn';
 
 const SHAREX_UPLOAD_PATH = '/api/upload/sharex';
 
-export const getUserSettings = createServerFn({ method: 'GET' })
-  .middleware(appMiddleware({ auth: 'user' }))
-  .handler(async ({ context }) => {
-    const { getUserPreferences } = await import('@/db/queries/auth');
-    const preferences = await getUserPreferences(userIdFromCtx(context));
-    if (!preferences) throw new Error('User not found');
-    return preferences;
-  });
-
 export const updateUserProfile = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'user' }))
   .validator(updateProfileSchema)
@@ -30,7 +21,6 @@ export const updateUserProfile = createServerFn({ method: 'POST' })
         isProfilePublic: data.isProfilePublic,
         bio: data.bio,
         description: data.description,
-        showAllFilesIncludesFoldered: data.showAllFilesIncludesFoldered,
       },
       userId,
     );

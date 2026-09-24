@@ -47,9 +47,6 @@ export const queryKeys = {
   formShares: {
     all: ['form-shares'] as const,
   },
-  userSettings: {
-    all: ['user-settings'] as const,
-  },
   bins: {
     all: ['dashboard', 'bins'] as const,
     mine: ['dashboard', 'bins', 'mine'] as const,

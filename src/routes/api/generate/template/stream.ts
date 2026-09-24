@@ -401,7 +401,7 @@ async function handle(request: Request): Promise<Response> {
                     replicateStatus: finalPrediction.status,
                     resultFileId: fileId,
                   });
-                  results[index] = { index, originalImageUrls: imageUrls, resultImageUrl: url, generationId, success: true };
+                  results[index] = { index, originalImageUrls: imageUrls, resultImageUrl: url, generationId, fileId, success: true };
                 } catch (error) {
                   if (isAbortError(error) || abortSignal.aborted) throw error;
                   console.error('Error uploading result:', error);

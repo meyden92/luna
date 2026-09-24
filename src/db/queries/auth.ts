@@ -76,15 +76,6 @@ export function authDatabaseAdapter() {
   return drizzleAdapter(db, { provider: 'pg', schema, transaction: true });
 }
 
-/** The dashboard's per-user display preference. */
-export async function getUserPreferences(userId: string, handle: AuditHandle = db) {
-  const [row] = await handle
-    .select({ showAllFilesIncludesFoldered: user.showAllFilesIncludesFoldered })
-    .from(user)
-    .where(eq(user.id, userId));
-  return row;
-}
-
 /** The user fields the settings page renders. */
 export async function getSettingsProfile(userId: string, handle: AuditHandle = db) {
   const [row] = await handle
@@ -97,7 +88,6 @@ export async function getSettingsProfile(userId: string, handle: AuditHandle = d
       isProfilePublic: user.isProfilePublic,
       bio: user.bio,
       description: user.description,
-      showAllFilesIncludesFoldered: user.showAllFilesIncludesFoldered,
     })
     .from(user)
     .where(eq(user.id, userId));
@@ -116,7 +106,6 @@ export type ProfileUpdate = {
   isProfilePublic?: boolean;
   bio?: string | null;
   description?: string | null;
-  showAllFilesIncludesFoldered?: boolean;
 };
 
 /**

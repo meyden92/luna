@@ -1,22 +1,27 @@
 import { expect } from '@playwright/test';
 import { test } from '../fixtures/auth';
 
-test.describe('AI feature pages', () => {
-  test('AI generate page renders Prompt Generation heading', async ({ authenticatedPage }) => {
+test.describe('Generate', () => {
+  test('the four tabs live on one screen', async ({ authenticatedPage }) => {
     await authenticatedPage.goto('/ai/generate');
     await expect(authenticatedPage).toHaveURL(/\/ai\/generate/);
-    await expect(authenticatedPage.getByRole('heading', { name: /prompt generation/i, level: 1 })).toBeVisible();
+
+    for (const label of ['Create', 'Edit an image', 'Templates', 'History']) {
+      await expect(authenticatedPage.getByRole('tab', { name: label })).toBeVisible();
+    }
   });
 
-  test('AI edit page renders Image Generation heading', async ({ authenticatedPage }) => {
-    await authenticatedPage.goto('/ai/edit');
-    await expect(authenticatedPage).toHaveURL(/\/ai\/edit/);
-    await expect(authenticatedPage.getByRole('heading', { name: /image generation/i, level: 1 })).toBeVisible();
+  test('Create asks for a prompt, not for pixel dimensions', async ({ authenticatedPage }) => {
+    await authenticatedPage.goto('/ai/generate');
+
+    await expect(authenticatedPage.getByPlaceholder(/describe the image you want/i)).toBeVisible();
+    // Shape replaced the width and height sliders; the jargon moved to the drawer.
+    await expect(authenticatedPage.getByRole('group', { name: /shape/i })).toBeVisible();
+    await expect(authenticatedPage.getByText(/inference steps/i)).toHaveCount(0);
   });
 
-  test('AI templates page renders Template Generation heading', async ({ authenticatedPage }) => {
-    await authenticatedPage.goto('/ai/templates');
-    await expect(authenticatedPage).toHaveURL(/\/ai\/templates/);
-    await expect(authenticatedPage.getByRole('heading', { name: /template generation/i, level: 1 })).toBeVisible();
+  test('a tab is reachable by URL, so it can be linked to', async ({ authenticatedPage }) => {
+    await authenticatedPage.goto('/ai/generate?tab=history');
+    await expect(authenticatedPage.getByRole('tab', { name: 'History', selected: true })).toBeVisible();
   });
 });

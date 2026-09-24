@@ -1,0 +1,102 @@
+@layer components {
+  .runner {
+    display: grid;
+    align-items: start;
+    grid-template-columns: 21.25rem minmax(0, 1fr);
+    gap: 28px;
+
+    /* One column below the tablet break: the form stacks above the results. */
+    @media (width < 900px) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .form {
+    position: sticky;
+    /* Clears the fixed navigation, which the page scrolls under. */
+    top: calc(var(--nav-height) + var(--space-4));
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background-color: var(--card);
+  }
+
+  .back {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    gap: var(--space-1);
+    border: 0;
+    background: none;
+    font-family: inherit;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+    transition: color var(--duration-fast) ease;
+
+    &:hover {
+      color: var(--foreground);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ring);
+      outline-offset: 2px;
+    }
+  }
+
+  .name {
+    font-family: var(--font-title);
+    font-size: var(--text-lg);
+    line-height: var(--leading-lg);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-heading);
+  }
+
+  .description {
+    margin-top: 2px;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--muted-foreground);
+  }
+
+  /*
+   * Variable dropdowns can hold long option labels that do not fit the 340px
+   * form. They scroll rather than wrap, like the Files type filter: the
+   * travelling pill is one element measured from `offsetLeft` and only moves in
+   * X, so a second row would stretch it two rows tall and park it behind the
+   * wrong option.
+   */
+  .segmented {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  /* Element prefixed to out-specify `input`'s own full-width `.root`. */
+  input.number {
+    width: 6rem;
+  }
+
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .generate {
+    width: 100%;
+  }
+
+  /* The runner's canvas sits level with the form, not 28px below a prompt card. */
+  .canvas {
+    margin-top: 0;
+  }
+}

@@ -40,7 +40,6 @@ export const user = pgTable(
     role: text('role'),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
     isDeleted: boolean('is_deleted').default(false).notNull(),
-    showAllFilesIncludesFoldered: boolean('show_all_files_includes_foldered').default(true).notNull(),
     isSuperAdmin: boolean('is_super_admin').default(false).notNull(),
     // Already snake_case in production (added later via a Prisma @map) — do not double-convert.
     storageQuotaMiB: integer('storage_quota_mib').default(2048).notNull(),

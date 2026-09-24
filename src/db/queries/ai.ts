@@ -737,7 +737,7 @@ export function listTemplateGenerationHistory(userId: string, limit: number) {
     where: { userId },
     orderBy: { createdAt: 'desc' },
     limit,
-    with: { resultFile: { columns: { url: true } }, template: { columns: { name: true } } },
+    with: { resultFile: { columns: { id: true, url: true } }, template: { columns: { name: true } } },
   });
 }
 

@@ -1,6 +1,6 @@
 export const SUPPORTED_LANGUAGES = [
   { value: 'auto', label: 'Auto-detect' },
-  { value: 'text', label: 'Plain Text' },
+  { value: 'text', label: 'Plain text' },
   { value: 'bash', label: 'Bash' },
   { value: 'c', label: 'C' },
   { value: 'cpp', label: 'C++' },

@@ -1,0 +1,25 @@
+@layer components {
+  .root {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /*
+   * `--n` is registered as an <integer> in motion.css, which is the only reason
+   * it can be transitioned at all. The counter reads the tweened value, so the
+   * digits step through every number on the way.
+   */
+  .tweened {
+    counter-reset: n var(--n);
+    transition: --n 700ms var(--ease-out-expo);
+
+    &::after {
+      content: counter(n);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tweened {
+      transition: none;
+    }
+  }
+}

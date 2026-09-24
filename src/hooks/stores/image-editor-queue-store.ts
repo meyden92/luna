@@ -8,6 +8,8 @@ export type MutationResponse = {
     originalImageUrl?: string | string[];
     prediction?: Prediction;
     resultImageUrl?: string;
+    /** The stored file the image became. Absent when saving it failed. */
+    fileId?: string;
     success?: boolean;
     error?: string;
   }>;

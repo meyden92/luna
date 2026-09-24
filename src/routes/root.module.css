@@ -1,14 +1,17 @@
 @layer components {
-  /* The document and body must both be full height so the shell below can hand a
-     bounded height to the scrolling main region. */
+  /*
+   * `min-height`, not `height`. A sticky element can only stick inside its
+   * containing block, so a shell pinned to exactly 100vh let the nav scroll away
+   * as soon as the page was taller than one screen. Growing with the content
+   * keeps the document itself the scroller and the nav stuck to the top of it.
+   */
   .document,
   .body {
-    height: 100%;
+    min-height: 100%;
   }
 
-  /* Fixed-height page shell: header chrome on top, the scrolling main under it. */
   .shell {
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
   }

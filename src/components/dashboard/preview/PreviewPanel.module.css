@@ -1,0 +1,188 @@
+@layer components {
+  /*
+   * One column of blocks with an even rhythm between them. The blocks read top
+   * to bottom in order of how often they are used: what the file is, the two
+   * copy actions, the things that change it, then the facts, then delete.
+   */
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    padding: var(--space-5);
+    border-left: 1px solid var(--border);
+    background: var(--card);
+    overflow-y: auto;
+  }
+
+  .header {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .identity {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* A file name has no spaces to break at, so it breaks wherever it must. */
+  .name {
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    font-weight: var(--weight-semibold);
+    overflow-wrap: anywhere;
+  }
+
+  .meta {
+    margin: 0;
+    margin-top: 0.125rem;
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--foreground-subtle);
+  }
+
+  /* Copy image and Copy link: full width, label left, shortcut chip right. */
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+
+    & [data-slot="button"] {
+      width: 100%;
+      justify-content: flex-start;
+    }
+  }
+
+  /* Tinted from the button's own text colour so one rule covers both variants. */
+  .kbd {
+    height: 1.125rem;
+    display: inline-flex;
+    align-items: center;
+    padding-inline: var(--space-2);
+    margin-left: auto;
+    border-radius: var(--radius-sm);
+    background: color-mix(in oklab, currentColor 12%, transparent);
+    color: inherit;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    opacity: 0.75;
+  }
+
+  /* Secondary destinations, quiet enough not to compete with the two buttons. */
+  .links {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    /* Pulled up against the buttons they belong to. */
+    margin-top: calc(var(--space-2) * -1);
+  }
+
+  .link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    height: 2rem;
+    padding-inline: var(--space-2);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+    color: var(--foreground-2);
+    text-decoration: none;
+    transition:
+      background-color var(--duration-fast) ease,
+      color var(--duration-fast) ease,
+      scale 350ms var(--spring);
+
+    &:hover {
+      background: var(--muted);
+      color: var(--foreground);
+    }
+
+    &:active {
+      scale: 0.96;
+    }
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .fieldLabel {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    font-weight: var(--weight-semibold);
+    color: var(--foreground-2);
+  }
+
+  /* The Select trigger is `width: fit-content` by default at the same weight,
+     so this has to outrank it to fill the panel's column. */
+  .selectTrigger[data-slot="select-trigger"] {
+    width: 100%;
+  }
+
+  /* A label and its hint on the left, the control on the right. */
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .hint {
+    display: block;
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--foreground-subtle);
+  }
+
+  /* Facts, label left and value right, under a rule that separates them from
+     the controls above. */
+  .details {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-2) var(--space-4);
+    margin: 0;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+
+    & dt {
+      color: var(--foreground-subtle);
+    }
+
+    & dd {
+      margin: 0;
+      color: var(--foreground-2);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  /* Delete sits at the very bottom of the panel, however short the panel is. */
+  .footer {
+    margin-top: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .link {
+      transition-duration: 0.01ms;
+
+      &:active {
+        scale: 1;
+      }
+    }
+  }
+
+  /* A ghost button in the destructive colour. The ghost variant sets its own
+     colour at two classes' worth of weight, so this names the variant to
+     outrank it rather than depending on which module the bundler emits last. */
+  .delete[data-slot="button"][data-variant="ghost"] {
+    width: 100%;
+    justify-content: flex-start;
+    color: var(--destructive);
+  }
+}

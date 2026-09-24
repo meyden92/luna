@@ -1,17 +1,19 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useRef } from 'react';
 import { toast } from 'sonner';
-import type { ImageItem } from '@/components/ai/editor/SortableImageCard';
+import type { ReferenceImage } from '@/components/ai/reference-image';
 import { type GenerationStatus, useImageEditorQueueStore } from '@/hooks/stores/image-editor-queue-store';
 import { queryKeys } from '@/libs/query-keys';
 import { streamSSE } from '@/libs/sse';
 
 export interface EditGenerateParams {
-  images: ImageItem[];
+  images: ReferenceImage[];
   modelId: string;
   modelLabel: string;
   fieldValues: Record<string, unknown>;
   imageCount?: number;
+  /** Folder the edited files are inserted into, or null to leave them unsorted. */
+  saveToFolderId?: string | null;
 }
 
 interface StreamEvent {
@@ -22,6 +24,7 @@ interface StreamEvent {
   results?: Array<{
     index: number;
     resultImageUrl?: string;
+    fileId?: string;
     success?: boolean;
     error?: string;
   }>;
@@ -40,7 +43,7 @@ export function useEditImageGeneration() {
 
   const generate = useCallback(
     async (params: EditGenerateParams) => {
-      const { images, modelId, modelLabel, fieldValues, imageCount = 1 } = params;
+      const { images, modelId, modelLabel, fieldValues, imageCount = 1, saveToFolderId = null } = params;
 
       let cacheInvalidated = false;
 
@@ -67,6 +70,8 @@ export function useEditImageGeneration() {
       formData.append('editingModelId', modelId);
       formData.append('imageCount', imageCount.toString());
       formData.append('generationId', generationId);
+      // Empty means "no folder": the file is still stored, just unsorted.
+      formData.append('saveToFolderId', saveToFolderId ?? '');
 
       // Append images
       for (let i = 0; i < images.length; i++) {
@@ -126,6 +131,7 @@ export function useEditImageGeneration() {
                       results: data.results.map((r) => ({
                         index: r.index,
                         resultImageUrl: r.resultImageUrl,
+                        fileId: r.fileId,
                         success: r.success,
                         error: r.error,
                       })),
@@ -148,16 +154,17 @@ export function useEditImageGeneration() {
         // Stream closed → the server has persisted the history row; refresh it.
         queryClient.invalidateQueries({ queryKey: queryKeys.ai.imageEditHistory });
         if (finalStatus === 'failed') {
-          toast.error(finalError || 'Image edit failed');
-          return { success: false, error: finalError || 'Image edit failed', generationId };
+          toast.error(finalError || 'Couldn’t edit that image');
+          return { success: false, error: finalError || 'Couldn’t edit that image', generationId };
         }
 
         if (finalError) {
-          toast.error(`Edited ${finalSuccessCount}/${finalTotalCount} images. ${finalError}`);
+          console.warn('Image edit partially failed:', finalError);
+          toast.error(`Edited ${finalSuccessCount} of ${finalTotalCount} images — the rest failed`);
           return { success: true, generationId };
         }
 
-        toast.success(finalTotalCount > 1 ? `Edited ${finalSuccessCount}/${finalTotalCount} images` : 'Image edit complete');
+        toast.success(finalTotalCount > 1 ? `Edited ${finalSuccessCount} of ${finalTotalCount} images` : 'Image edited');
         return { success: true, generationId };
       } catch (error) {
         if ((error as Error).name === 'AbortError') {
@@ -165,6 +172,7 @@ export function useEditImageGeneration() {
             status: 'failed',
             error: 'Generation was cancelled',
           });
+          toast('Image cancelled');
           return { success: false, error: 'Cancelled' };
         }
 

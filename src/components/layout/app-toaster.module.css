@@ -1,0 +1,105 @@
+@layer components {
+  .toast {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background-color: var(--popover);
+    color: var(--foreground);
+    box-shadow: var(--shadow-lg);
+    font-size: var(--text-meta);
+    font-weight: var(--weight-medium);
+
+    /*
+     * Sonner owns the vertical stacking transform, so the entry only adds the
+     * fade and the spring settle on top of it.
+     */
+    opacity: 0;
+    translate: 0 -12px;
+    transition:
+      opacity 300ms ease,
+      translate 450ms var(--spring);
+
+    &[data-mounted="true"] {
+      opacity: 1;
+      translate: 0 0;
+    }
+
+    &[data-removed="true"] {
+      opacity: 0;
+    }
+  }
+
+  .title {
+    font-weight: var(--weight-medium);
+  }
+
+  .description {
+    margin-top: 2px;
+    color: var(--foreground-subtle);
+    font-weight: var(--weight-normal);
+  }
+
+  /* A toast reports a success far more often than a problem, so the icon reads
+     as the accent; `.error` below is the exception. */
+  .icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    color: var(--primary-strong);
+
+    & svg {
+      width: 15px;
+      height: 15px;
+    }
+  }
+
+  .error .icon {
+    color: var(--destructive);
+  }
+
+  .actionButton,
+  .cancelButton {
+    height: 1.5rem;
+    margin-inline-start: auto;
+    padding-inline: var(--space-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background-color: var(--card);
+    font-family: inherit;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    color: var(--foreground);
+    white-space: nowrap;
+
+    &:hover {
+      background-color: var(--muted);
+    }
+  }
+
+  .closeButton {
+    display: grid;
+    place-items: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: none;
+    color: var(--foreground-subtle);
+
+    &:hover {
+      background-color: var(--muted);
+      color: var(--foreground);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .toast {
+      opacity: 1;
+      translate: 0 0;
+      transition: none;
+    }
+  }
+}

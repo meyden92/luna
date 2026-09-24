@@ -6,10 +6,9 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { Suspense } from 'react';
-import { Toaster } from 'sonner';
-import Navigation from '@/components/landing/Navigation';
+import { AppShell } from '@/components/layout/AppShell';
+import { AppToaster } from '@/components/layout/app-toaster';
 import { ImpersonationBar } from '@/components/layout/ImpersonationBar';
-import { MainContent } from '@/components/layout/MainContent';
 import { ThemeProvider } from '@/components/layout/theme-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { queryKeys } from '@/libs/query-keys';
@@ -58,7 +57,7 @@ export const Route = createRootRouteWithContext<RootRouteContext>()({
 });
 
 function RootComponent() {
-  const { queryClient, initialTheme } = Route.useRouteContext();
+  const { queryClient, initialTheme, session } = Route.useRouteContext();
 
   // Resolves from process.env during SSR and from the injected snapshot in the
   // browser, so both renders produce identical markup.
@@ -97,12 +96,11 @@ function RootComponent() {
                 </a>
                 <div className={styles.shell}>
                   <ImpersonationBar />
-                  <Navigation />
-                  <MainContent>
+                  <AppShell signedIn={Boolean(session?.user?.id)}>
                     <Outlet />
-                  </MainContent>
+                  </AppShell>
                 </div>
-                <Toaster toastOptions={{ duration: 6000 }} />
+                <AppToaster />
               </TooltipProvider>
             </ThemeProvider>
             {(import.meta as any).env?.DEV ? (

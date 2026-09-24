@@ -1,0 +1,326 @@
+@layer components {
+  .root {
+    /*
+     * The bar is excluded from the page transition: named, but with its
+     * animation cancelled in motion.css terms — the old snapshot is dropped and
+     * the new one does not animate — so the nav holds still while the page
+     * under it crossfades.
+     */
+    view-transition-name: nav;
+
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+    height: var(--nav-height);
+    padding-inline: var(--space-5);
+    border-bottom: 1px solid var(--border);
+    /* Translucent so content scrolling under it stays legible as a hint of motion. */
+    background-color: color-mix(in oklab, var(--background) 88%, transparent);
+    backdrop-filter: blur(14px);
+  }
+
+  .brand {
+    display: flex;
+    flex-shrink: 0;
+  }
+
+  .logo {
+    height: 26px;
+    width: auto;
+  }
+
+  /* One logo per Appearance: the mark itself changes, not just its colour. */
+  .logoDark {
+    display: none;
+  }
+
+  [data-theme="dark"] .logoLight {
+    display: none;
+  }
+
+  [data-theme="dark"] .logoDark {
+    display: block;
+  }
+
+  .links {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    gap: 2px;
+    min-width: 0;
+    /*
+     * The design is desktop-only, but "don't optimise" is not "let it break":
+     * narrow enough and the links outgrow their box, and without this they
+     * paint straight through the Upload button beside them. Scrolling keeps
+     * every link reachable and costs the desktop layout nothing.
+     */
+    overflow-x: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    height: 2rem;
+    padding-inline: var(--space-3);
+    border: 0;
+    border-radius: var(--radius-lg);
+    background: none;
+    font-family: inherit;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--muted-foreground);
+    white-space: nowrap;
+    transition:
+      color var(--duration-fast) ease,
+      scale 350ms var(--spring);
+
+    &:hover {
+      color: var(--foreground);
+    }
+
+    &:active {
+      scale: 0.96;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ring);
+      outline-offset: 2px;
+    }
+  }
+
+  .link[data-active] {
+    color: var(--accent-foreground);
+  }
+
+  .chevron {
+    width: 13px;
+    height: 13px;
+    opacity: 0.6;
+  }
+
+  /*
+   * The travelling highlights. `z-index: -1` inside the links' own isolation
+   * keeps them behind the labels without a stacking context per link, so the
+   * text is never covered. Both boxes are measured in AppNav.tsx and written as
+   * inline `translate` and `width`.
+   */
+  .pill,
+  .ghost {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    height: 2rem;
+    border-radius: var(--radius-lg);
+    pointer-events: none;
+  }
+
+  .pill {
+    background-color: var(--accent);
+    /* A hairline ring keeps the neutral fill legible against the neutral bar. */
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--foreground) 6%, transparent);
+  }
+
+  .ghost {
+    background-color: var(--muted);
+    opacity: 0.7;
+  }
+
+  /* Only once measured: on first paint the pill is placed, not animated into place. */
+  .links[data-ready] .pill {
+    transition:
+      translate 550ms var(--spring),
+      width 550ms var(--spring);
+  }
+
+  .links[data-ready] .ghost {
+    transition:
+      translate 300ms var(--ease-out-expo),
+      width 300ms var(--ease-out-expo);
+    animation: nav-ghost-in 150ms both;
+  }
+
+  @keyframes nav-ghost-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-shrink: 0;
+    margin-inline-start: auto;
+  }
+
+  .iconButton {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background-color: var(--card);
+    color: var(--foreground-2);
+    transition:
+      background-color var(--duration-fast) ease,
+      border-color var(--duration-fast) ease,
+      color var(--duration-fast) ease,
+      scale 350ms var(--spring);
+
+    &:hover {
+      border-color: var(--input);
+      background-color: var(--muted);
+      color: var(--foreground);
+    }
+
+    &:active {
+      scale: 0.96;
+    }
+  }
+
+  .avatarTrigger {
+    display: flex;
+    border: 0;
+    border-radius: var(--radius-full);
+    background: none;
+    transition: scale 350ms var(--spring);
+
+    &:active {
+      scale: 0.96;
+    }
+  }
+
+  .avatar {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .avatarFallback {
+    background-color: var(--accent);
+    color: var(--accent-foreground);
+    font-weight: var(--weight-semibold);
+  }
+
+  .accountMenu {
+    width: 13.75rem;
+  }
+
+  .accountHeader {
+    padding: var(--space-2) var(--space-3) 10px;
+
+    & strong {
+      display: block;
+      font-size: var(--text-sm);
+      font-weight: var(--weight-semibold);
+    }
+
+    & span {
+      font-size: var(--text-xs);
+      color: var(--muted-foreground);
+    }
+  }
+
+  .menuLink {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    color: inherit;
+  }
+
+  .menuIcon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  /*
+   * Reading progress: a hairline along the bottom edge driven by the document's
+   * own scroll, so there is no scroll listener. Scroll-driven animations are
+   * still gated, hence the @supports.
+   */
+  /*
+   * The bottom rule and the reading progress both come from the document's own
+   * scroll, so neither needs a listener. Unscrolled, the bar has no edge.
+   */
+  @supports (animation-timeline: scroll()) {
+    .root {
+      animation: nav-stuck linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 64px;
+    }
+
+    .root::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -1px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--primary));
+      transform-origin: left;
+      scale: 0 1;
+      animation: nav-progress linear both;
+      animation-timeline: scroll(root);
+    }
+  }
+
+  @keyframes nav-stuck {
+    from {
+      border-bottom-color: transparent;
+    }
+  }
+
+  @keyframes nav-progress {
+    from {
+      scale: 0 1;
+    }
+    to {
+      scale: 1 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .link,
+    .iconButton,
+    .avatarTrigger,
+    .links[data-ready] .pill,
+    .links[data-ready] .ghost {
+      transition: none;
+      animation: none;
+    }
+
+    .root {
+      animation: none;
+    }
+
+    .root::after {
+      display: none;
+    }
+  }
+}
+
+/*
+ * The nav is named for the view transition, so it needs the pseudo-elements
+ * silenced too — and those are document children, not module children. Keeping
+ * the pair next to the rule that names it is clearer than filing it in
+ * motion.css away from its only reason to exist.
+ */
+::view-transition-old(nav) {
+  display: none;
+}
+
+::view-transition-new(nav) {
+  animation: none;
+}

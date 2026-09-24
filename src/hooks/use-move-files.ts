@@ -125,20 +125,19 @@ export function useMoveFiles() {
       queryClient.invalidateQueries({ queryKey: queryKeys.gallery.all, refetchType: 'none' });
       queryClient.invalidateQueries({ queryKey: queryKeys.folders.all, refetchType: 'none' });
 
-      const folderName = data.folderId ? folders.find((f) => f.id === data.folderId)?.name || 'Unknown Folder' : 'Root';
-      const fileLabel = variables.fileIds.length === 1 ? 'File' : `${variables.fileIds.length} files`;
-      const action = data.folderId ? 'moved to' : 'removed from folder, moved to';
-
-      toast.success(`${fileLabel} ${action} ${folderName}`, { duration: 3000 });
+      const count = variables.fileIds.length;
+      const label = count === 1 ? 'File' : `${count} files`;
+      const folderName = data.folderId ? folders.find((f) => f.id === data.folderId)?.name : null;
+      toast.success(folderName ? `${label} moved to “${folderName}”` : `${label} moved out of the folder`);
     },
-    onError: (error, _vars, context) => {
+    onError: (_error, variables, context) => {
       if (context) {
         queryClient.setQueryData(queryKeys.folders.all, context.previousFolders);
         context.previousGalleries.forEach(([key, data]) => {
           queryClient.setQueryData(key, data);
         });
       }
-      toast.error(`Failed to move files: ${error.message}`);
+      toast.error(variables.fileIds.length === 1 ? 'Could not move the file' : 'Could not move the files');
     },
   });
 

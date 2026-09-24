@@ -30,7 +30,6 @@ export interface SettingsOverview {
   }[];
   fileExtensions: { id: string; label: string; value: number; color: string }[];
   generatorStats: { totalGenerations: number; successfulGenerations: number; failedGenerations: number };
-  showAllFilesIncludesFoldered: boolean;
 }
 
 export const getSettingsOverview = createServerFn({ method: 'GET' })
@@ -119,6 +118,5 @@ export const getSettingsOverview = createServerFn({ method: 'GET' })
       })),
       fileExtensions,
       generatorStats: { totalGenerations, successfulGenerations, failedGenerations },
-      showAllFilesIncludesFoldered: user.showAllFilesIncludesFoldered,
     };
   });

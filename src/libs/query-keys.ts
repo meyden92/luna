@@ -9,7 +9,7 @@ export interface GalleryFilters {
   search?: string;
   startDate?: string;
   endDate?: string;
-  fileType?: 'image' | 'video' | 'file';
+  fileType?: 'image' | 'video' | 'audio' | 'file';
   fileTypeOperator?: 'is' | 'is not';
   folderId?: string | null;
   privacy?: 'public' | 'private';
@@ -24,6 +24,7 @@ export const queryKeys = {
   gallery: {
     all: ['gallery'] as const,
     list: (filters?: GalleryFilters) => ['gallery', filters] as const,
+    count: (filters?: GalleryFilters) => ['gallery', 'count', filters] as const,
   },
   folders: {
     all: ['folders'] as const,
@@ -45,9 +46,6 @@ export const queryKeys = {
   },
   formShares: {
     all: ['form-shares'] as const,
-  },
-  userSettings: {
-    all: ['user-settings'] as const,
   },
   bins: {
     all: ['dashboard', 'bins'] as const,

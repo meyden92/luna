@@ -8,9 +8,6 @@ interface GalleryStoreState {
   setIsPlaying: (isPlaying: boolean) => void;
   audioRef: H5AudioPlayer | null;
   setAudioRef: (ref: H5AudioPlayer | null) => void;
-  // Used to trigger gallery scroll when lightbox closes
-  scrollToIndex: number | null;
-  setScrollToIndex: (index: number | null) => void;
 }
 
 export const useGalleryStore = create<GalleryStoreState>((set) => ({
@@ -20,6 +17,4 @@ export const useGalleryStore = create<GalleryStoreState>((set) => ({
   setIsPlaying: (isPlaying) => set({ isPlaying }),
   audioRef: null,
   setAudioRef: (ref) => set({ audioRef: ref }),
-  scrollToIndex: null,
-  setScrollToIndex: (index) => set({ scrollToIndex: index }),
 }));

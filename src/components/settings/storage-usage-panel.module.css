@@ -1,0 +1,65 @@
+@layer components {
+  .body {
+    padding: var(--space-5);
+    display: flex;
+    flex-direction: column;
+    /* 14px is the spec's own one-off gap between the number, the bar and the legend. */
+    gap: 14px;
+  }
+
+  .big {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+
+  .bigValue {
+    font-size: var(--text-page-title);
+    /* 650 sits between --weight-semibold and --weight-bold; the spec's own one-off. */
+    font-weight: 650;
+    letter-spacing: var(--tracking-heading);
+  }
+
+  .bigLabel {
+    font-size: var(--text-sm);
+    color: var(--muted-foreground);
+  }
+
+  .stack {
+    display: flex;
+    height: 10px;
+    gap: 2px;
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    background: var(--muted-strong);
+  }
+
+  .segment {
+    display: block;
+    height: 100%;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    font-size: 13px;
+    color: var(--foreground-2);
+  }
+
+  .legendItem {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .legendSwatch {
+    width: var(--space-2);
+    height: var(--space-2);
+    border-radius: 2px;
+  }
+
+  .legendSize {
+    color: var(--foreground-subtle);
+  }
+}

@@ -1,148 +1,69 @@
 import { create } from 'zustand';
 import type { GalleryFilters, GallerySortField } from '@/libs/query-keys';
 
-interface GalleryFiltersStore {
-  filters: GalleryFilters;
-  // Pending values
-  searchValue: string;
-  startDate: string;
-  endDate: string;
-  fileType: string;
-  fileTypeOperator: 'is' | 'is not';
-  folderId: string | null;
-  privacy: string;
-  tags: string[];
-  tagsOperator: 'is' | 'is not' | 'one of' | 'none of';
-  sortBy: GallerySortField;
-  sortDirection: 'asc' | 'desc';
-  // Setters
-  setSearchValue: (value: string) => void;
-  setStartDate: (value: string) => void;
-  setEndDate: (value: string) => void;
-  setFileType: (value: string, operator?: 'is' | 'is not') => void;
-  setFolderId: (value: string | null) => void;
-  setPrivacy: (value: string) => void;
-  setTags: (value: string[], operator?: 'is' | 'is not' | 'one of' | 'none of') => void;
-  setTagsOperator: (operator: 'is' | 'is not' | 'one of' | 'none of') => void;
-  addTag: (tag: string) => void;
-  removeTag: (tag: string) => void;
-  setSort: (sortBy: GallerySortField, sortDirection: 'asc' | 'desc') => void;
-  // Actions
-  applyFilters: () => void;
-  clearFilters: () => void;
-  removeFilter: (key: keyof GalleryFilters) => void;
+/**
+ * Which files are in view: every file, the ones in no folder at all, or one
+ * folder's. `'*'` and `null` are distinct answers, which is why the scope is not
+ * just a nullable folder id.
+ */
+export type FilesScope = '*' | null | (string & {});
+
+/** The toolbar's type filter. "Documents" means none of the other three. */
+export type FilesType = 'all' | 'image' | 'video' | 'audio' | 'file';
+
+/**
+ * The toolbar offers four orderings rather than a field and a direction,
+ * because "Largest first" is one decision, not two.
+ */
+export type FilesSort = 'newest' | 'oldest' | 'name' | 'largest';
+
+const SORT_TO_QUERY: Record<FilesSort, { sortBy: GallerySortField; sortDirection: 'asc' | 'desc' }> = {
+  newest: { sortBy: 'createdAt', sortDirection: 'desc' },
+  oldest: { sortBy: 'createdAt', sortDirection: 'asc' },
+  name: { sortBy: 'name', sortDirection: 'asc' },
+  largest: { sortBy: 'size', sortDirection: 'desc' },
+};
+
+interface GalleryFiltersState {
+  scope: FilesScope;
+  query: string;
+  type: FilesType;
+  sort: FilesSort;
+  setScope: (scope: FilesScope) => void;
+  setQuery: (query: string) => void;
+  setType: (type: FilesType) => void;
+  setSort: (sort: FilesSort) => void;
+  /** Back to every file, no search and no type filter. The empty state's button. */
+  clear: () => void;
 }
 
-export const useGalleryFilters = create<GalleryFiltersStore>((set, get) => ({
-  filters: {},
-  searchValue: '',
-  startDate: '',
-  endDate: '',
-  fileType: 'all',
-  fileTypeOperator: 'is',
-  folderId: null,
-  privacy: 'all',
-  tags: [],
-  tagsOperator: 'one of',
-  sortBy: 'createdAt',
-  sortDirection: 'desc',
-
-  setSearchValue: (value) => set({ searchValue: value }),
-  setStartDate: (value) => set({ startDate: value }),
-  setEndDate: (value) => set({ endDate: value }),
-  setFileType: (value, operator = 'is') => set({ fileType: value, fileTypeOperator: operator }),
-  setFolderId: (value) => set({ folderId: value }),
-  setPrivacy: (value) => set({ privacy: value }),
-  setTags: (value, operator) => set({ tags: value, ...(operator ? { tagsOperator: operator } : {}) }),
-  setTagsOperator: (operator) => set({ tagsOperator: operator }),
-  addTag: (tag) => {
-    const { tags } = get();
-    if (!tags.includes(tag)) {
-      set({ tags: [...tags, tag] });
-    }
-  },
-  removeTag: (tag) => {
-    const { tags } = get();
-    set({ tags: tags.filter((t) => t !== tag) });
-  },
-  setSort: (sortBy, sortDirection) => set({ sortBy, sortDirection }),
-
-  applyFilters: () => {
-    const { searchValue, startDate, endDate, fileType, fileTypeOperator, folderId, privacy, tags, tagsOperator, sortBy, sortDirection } =
-      get();
-    set({
-      filters: {
-        search: searchValue.trim() || undefined,
-        startDate: startDate || undefined,
-        endDate: endDate || undefined,
-        fileType: fileType !== 'all' ? (fileType as GalleryFilters['fileType']) : undefined,
-        fileTypeOperator: fileType !== 'all' ? fileTypeOperator : undefined,
-        folderId: folderId || undefined,
-        privacy: privacy !== 'all' ? (privacy as GalleryFilters['privacy']) : undefined,
-        tags: tags.length > 0 ? tags : undefined,
-        tagsOperator: tags.length > 0 ? tagsOperator : undefined,
-        sortBy,
-        sortDirection,
-      },
-    });
-  },
-
-  clearFilters: () => {
-    set({
-      searchValue: '',
-      startDate: '',
-      endDate: '',
-      fileType: 'all',
-      fileTypeOperator: 'is',
-      folderId: null,
-      privacy: 'all',
-      tags: [],
-      tagsOperator: 'one of',
-      sortBy: 'createdAt',
-      sortDirection: 'desc',
-      filters: {},
-    });
-  },
-
-  removeFilter: (key) => {
-    const state = get();
-    const updates: Partial<GalleryFiltersStore> = {};
-
-    switch (key) {
-      case 'search':
-        updates.searchValue = '';
-        break;
-      case 'startDate':
-        updates.startDate = '';
-        break;
-      case 'endDate':
-        updates.endDate = '';
-        break;
-      case 'fileType':
-        updates.fileType = 'all';
-        updates.fileTypeOperator = 'is';
-        break;
-      case 'folderId':
-        updates.folderId = null;
-        break;
-      case 'privacy':
-        updates.privacy = 'all';
-        break;
-      case 'tags':
-        updates.tags = [];
-        updates.tagsOperator = 'one of';
-        break;
-    }
-
-    const newFilters = { ...state.filters };
-    delete newFilters[key];
-    if (key === 'fileType') {
-      delete newFilters.fileTypeOperator;
-    }
-    if (key === 'tags') {
-      delete newFilters.tagsOperator;
-    }
-
-    set({ ...updates, filters: newFilters });
-  },
+/**
+ * The Files screen's scope and filters.
+ *
+ * Every change applies immediately — there is no pending state to commit,
+ * because the toolbar's four controls replaced a filter bar where a filter was
+ * built up and then applied.
+ */
+export const useGalleryFilters = create<GalleryFiltersState>((set) => ({
+  scope: '*',
+  query: '',
+  type: 'all',
+  sort: 'newest',
+  setScope: (scope) => set({ scope }),
+  setQuery: (query) => set({ query }),
+  setType: (type) => set({ type }),
+  setSort: (sort) => set({ sort }),
+  clear: () => set({ scope: '*', query: '', type: 'all' }),
 }));
+
+/** The scope and filters as the gallery query expects them. */
+export function toGalleryFilters(state: Pick<GalleryFiltersState, 'scope' | 'query' | 'type' | 'sort'>): GalleryFilters {
+  return {
+    search: state.query.trim() || undefined,
+    fileType: state.type === 'all' ? undefined : state.type,
+    folderId: typeof state.scope === 'string' && state.scope !== '*' ? state.scope : undefined,
+    // "Not in a folder" is the null scope; '*' places no folder condition at all.
+    excludeFoldered: state.scope === null ? true : undefined,
+    ...SORT_TO_QUERY[state.sort],
+  };
+}

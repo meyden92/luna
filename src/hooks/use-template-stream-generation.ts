@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useRef } from 'react';
 import { toast } from 'sonner';
-import type { ImageItem } from '@/components/ai/editor/SortableImageCard';
+import type { ReferenceImage } from '@/components/ai/reference-image';
 import { type TemplateGenerationStatus, useTemplateGenerationQueueStore } from '@/hooks/stores/template-generation-queue-store';
 import { queryKeys } from '@/libs/query-keys';
 import { streamSSE } from '@/libs/sse';
@@ -13,7 +13,7 @@ export interface Template {
 
 export interface TemplateGenerateParams {
   template: Template;
-  images: ImageItem[];
+  images: ReferenceImage[];
   variableValues: Record<string, unknown>;
   imageCount: number;
 }
@@ -187,6 +187,7 @@ export function useTemplateStreamGeneration() {
             status: 'failed',
             error: 'Generation was cancelled',
           });
+          toast('Generation cancelled');
           return { success: false, error: 'Cancelled' };
         }
 

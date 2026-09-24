@@ -1,0 +1,105 @@
+@layer components {
+  .slots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .slot {
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+    width: 5.5rem;
+    height: 5.5rem;
+    border: 0;
+    border-radius: var(--radius-lg);
+    background-color: var(--muted);
+    padding: 0;
+    /* A newly added reference pops in so the row reads as having changed. */
+    animation: slot-pop 400ms var(--spring) both;
+
+    & img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  @keyframes slot-pop {
+    from {
+      scale: 0.8;
+      opacity: 0;
+    }
+  }
+
+  .remove {
+    position: absolute;
+    top: var(--space-1);
+    right: var(--space-1);
+    display: grid;
+    width: 1.375rem;
+    height: 1.375rem;
+    border: 0;
+    border-radius: var(--radius-full);
+    background-color: var(--scrim);
+    color: var(--on-scrim);
+    opacity: 0;
+    place-items: center;
+    transition: opacity var(--duration-fast) ease;
+
+    &:focus-visible {
+      opacity: 1;
+      outline: 2px solid var(--ring);
+      outline-offset: 2px;
+    }
+  }
+
+  .slot:hover .remove,
+  .slot:focus-within .remove {
+    opacity: 1;
+  }
+
+  .add {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    border: 1.5px dashed var(--input);
+    background-color: transparent;
+    font-family: inherit;
+    font-size: var(--text-label);
+    font-weight: var(--weight-medium);
+    color: var(--muted-foreground);
+    animation: none;
+    transition:
+      border-color var(--duration-base) ease,
+      background-color var(--duration-base) ease,
+      color var(--duration-base) ease,
+      scale 350ms var(--spring);
+
+    &:hover {
+      border-color: var(--primary);
+      background-color: var(--accent);
+      color: var(--foreground);
+    }
+
+    &:active {
+      scale: 0.96;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ring);
+      outline-offset: 2px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slot,
+    .add,
+    .remove {
+      animation: none;
+      transition: none;
+    }
+  }
+}

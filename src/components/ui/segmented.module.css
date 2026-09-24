@@ -1,0 +1,99 @@
+@layer components {
+  .root {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background-color: var(--muted);
+  }
+
+  /*
+   * The travelling pill. `translate` and `width` are set inline from the active
+   * option's measured box; the transition only exists once `data-measured` says
+   * those numbers are real, so the pill appears in place rather than sliding in
+   * from the left on first paint.
+   */
+  .pill {
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    left: 0;
+    z-index: 0;
+    border-radius: calc(var(--radius-lg) - 2px);
+    background-color: var(--card);
+    box-shadow: var(--shadow-sm);
+    pointer-events: none;
+  }
+
+  .root[data-measured] .pill {
+    transition:
+      translate 450ms var(--spring),
+      width 450ms var(--spring);
+  }
+
+  .option {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    height: 1.625rem;
+    padding-inline: 10px;
+    border: 0;
+    border-radius: calc(var(--radius-lg) - 2px);
+    background: none;
+    font-family: inherit;
+    font-size: var(--text-meta);
+    font-weight: var(--weight-medium);
+    color: var(--muted-foreground);
+    white-space: nowrap;
+    transition:
+      color var(--duration-fast) ease,
+      background-color var(--duration-fast) ease,
+      scale 350ms var(--spring);
+
+    &:hover:not(:disabled) {
+      color: var(--foreground);
+    }
+
+    &:active:not(:disabled) {
+      scale: 0.96;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ring);
+      outline-offset: 2px;
+    }
+
+    &:disabled {
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    & svg {
+      flex-shrink: 0;
+      pointer-events: none;
+    }
+  }
+
+  .option[data-active] {
+    color: var(--foreground);
+  }
+
+  /* Without a measured pill there is nothing behind the active option, so it
+     carries its own surface — the same look, without the travel. */
+  .root:not([data-measured]) .option[data-active] {
+    background-color: var(--card);
+    box-shadow: var(--shadow-sm);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .root[data-measured] .pill,
+    .option {
+      transition: none;
+    }
+  }
+}

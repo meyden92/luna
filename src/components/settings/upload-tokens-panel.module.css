@@ -1,0 +1,47 @@
+@layer components {
+  .empty {
+    padding: var(--space-5);
+    font-size: var(--text-sm);
+    color: var(--muted-foreground);
+  }
+
+  .nameCell {
+    font-weight: var(--weight-medium);
+  }
+
+  .muted {
+    color: var(--foreground-subtle);
+  }
+
+  .actionsCell {
+    text-align: right;
+  }
+
+  .revoke {
+    color: var(--destructive);
+
+    &:hover {
+      color: var(--destructive);
+    }
+  }
+
+  /* Matches the reveal dialog's token box: mono text on `--muted`. */
+  .tokenBox {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    /* 10px/12px is the spec's own one-off padding for this box. */
+    padding: 10px var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--muted);
+  }
+
+  .tokenValue {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    word-break: break-all;
+  }
+}

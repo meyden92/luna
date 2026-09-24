@@ -1,16 +1,18 @@
-import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
+import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import BinList from '@/components/bin/BinList';
-import BinUploader from '@/components/bin/BinUploader';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from 'react';
+import { SnippetEditor } from '@/components/bin/SnippetEditor';
+import { SnippetList } from '@/components/bin/SnippetList';
+import type { Bin } from '@/components/bin/types';
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
 import { queryKeys } from '@/libs/query-keys';
-import { cn } from '@/libs/utils';
-import { listMySnippets } from '@/server/fns/dashboard/snippets';
+import { startViewTransition } from '@/libs/view-transition';
+import { createBin, listBins } from '@/server/fns/bins';
 import styles from './index.module.css';
 
 const myBinsQuery = queryOptions({
   queryKey: queryKeys.bins.mine,
-  queryFn: () => listMySnippets(),
+  queryFn: () => listBins(),
 });
 
 export const Route = createFileRoute('/_dashboard/_bin/bin/')({
@@ -21,79 +23,55 @@ export const Route = createFileRoute('/_dashboard/_bin/bin/')({
 
 function BinPage() {
   const { data: bins } = useSuspenseQuery(myBinsQuery);
+  const queryClient = useQueryClient();
+  const [activeId, setActiveId] = useState<string | null>(bins[0]?.id ?? null);
+  const [query, setQuery] = useState('');
+
+  const active = bins.find((bin) => bin.id === activeId) ?? null;
+
+  const { mutate: create } = useMutation({
+    mutationFn: () => createBin({ data: { title: 'Untitled snippet', snippet: '', isPublic: false } }),
+    onSuccess: (bin) => {
+      queryClient.setQueryData<Bin[]>(queryKeys.bins.mine, (current) => [bin, ...(current ?? [])]);
+      startViewTransition(() => setActiveId(bin.id), 'page');
+    },
+  });
+
+  const selectSnippet = (id: string) => {
+    if (id === activeId) return;
+    startViewTransition(() => setActiveId(id), 'page');
+  };
+
+  // The list already dropped the row by the time this runs; pick whatever is next.
+  const handleDeleted = (id: string) => {
+    const rest = bins.filter((bin) => bin.id !== id);
+    startViewTransition(() => setActiveId(rest[0]?.id ?? null), 'page');
+  };
 
   return (
-    <div className="container stack space-8 pad-y-8">
-      <div className={styles.header}>
-        <h1 className={cn('type-4xl weight-bold', styles.title)}>Your Snippets</h1>
-        <p className={cn('type-lg', styles.subtitle)}>
-          Store, organize, and share your code snippets securely. All snippets are private by default.
-        </p>
-      </div>
-
-      <Card className={styles.card}>
-        <CardHeader className="pad-y-4">
-          <CardTitle className={cn('type-xl', styles.cardTitle)}>
-            <div className={styles.iconWell}>
-              <svg
-                className={styles.icon}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                role="img"
-                aria-label="Create new snippet"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-            </div>
-            Create New Snippet
-          </CardTitle>
-          <CardDescription className="type-base">Share your code with better syntax highlighting and organization</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <BinUploader />
-        </CardContent>
-      </Card>
-
-      <Card className={styles.card}>
-        <CardHeader className="pad-y-4">
-          <CardTitle className={cn('type-xl', styles.cardTitle)}>
-            <div
-              className={styles.iconWell}
-              data-tone="info"
-            >
-              <svg
-                className={styles.icon}
-                data-tone="info"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                role="img"
-                aria-label={`My Snippets (${bins.length})`}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                />
-              </svg>
-            </div>
-            My Snippets ({bins.length})
-          </CardTitle>
-          <CardDescription className="type-base">
-            {bins.length > 0 ? 'Click any snippet to view it in a new tab' : 'Your uploaded snippets will appear here'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <BinList bins={bins} />
-        </CardContent>
-      </Card>
+    <div className={styles.root}>
+      <SnippetList
+        bins={bins}
+        activeId={activeId}
+        query={query}
+        onQueryChange={setQuery}
+        onSelect={selectSnippet}
+        onCreate={() => create()}
+      />
+      {active ? (
+        <SnippetEditor
+          key={active.id}
+          bin={active}
+          onDeleted={handleDeleted}
+        />
+      ) : (
+        <Empty className={styles.placeholder}>
+          <EmptyHeader>
+            <EmptyTitle>No snippet selected</EmptyTitle>
+            <EmptyDescription>Select a snippet or create a new one.</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      )}
     </div>
   );
 }

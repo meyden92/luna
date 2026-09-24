@@ -1,8 +1,9 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
-import { listOwnerCachedImages } from '@/db/queries/admin';
-import { storageUsage } from '@/db/queries/files';
+import { storageByKind, storageUsage } from '@/db/queries/files';
+import { userStorageQuotaMiB } from '@/db/queries/storage';
 import { env } from '@/libs/env';
+import { storageQuotaMiBToBytes } from '@/libs/storage-quota';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
 
@@ -60,46 +61,23 @@ export const proxyImage = createServerFn({ method: 'POST' })
     });
   });
 
-const cacheImagesSchema = z.object({
-  page: z.number().int().min(1).default(1),
-  limit: z.number().int().min(1).max(200).default(50),
-  purpose: z.string().optional(),
-});
-
-export const listCachedImages = createServerFn({ method: 'GET' })
-  .middleware(appMiddleware({ auth: 'user' }))
-  .validator(cacheImagesSchema)
-  .handler(async ({ data, context }) => {
-    const { images, totalCount } = await listOwnerCachedImages({
-      ownerId: userIdFromCtx(context),
-      purpose: data.purpose ?? 'image-edit',
-      // One extra row is what tells the pager whether another page exists.
-      limit: data.limit + 1,
-      offset: (data.page - 1) * data.limit,
-    });
-
-    const hasMore = images.length > data.limit;
-    const responseImages = hasMore ? images.slice(0, data.limit) : images;
-
-    return {
-      images: responseImages.map((image) => ({
-        key: `cache/${image.hash}.png`,
-        url: image.url,
-        lastModified: image.createdAt.toISOString(),
-        size: image.size,
-        hash: image.hash,
-        filename: image.filename,
-        contentType: image.contentType,
-      })),
-      hasMore,
-      nextPage: hasMore ? data.page + 1 : null,
-      totalCount,
-    };
-  });
-
 export const getStorageUsage = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'user' }))
-  .handler(async ({ context }): Promise<{ totalBytes: number; fileCount: number }> => {
-    const { totalBytes, fileCount } = await storageUsage(userIdFromCtx(context));
-    return { totalBytes, fileCount };
-  });
+  .handler(
+    async ({
+      context,
+    }): Promise<{
+      totalBytes: number;
+      fileCount: number;
+      quotaBytes: number;
+      byKind: { image: number; video: number; audio: number; other: number };
+    }> => {
+      const userId = userIdFromCtx(context);
+      const [{ totalBytes, fileCount }, quotaMiB, byKind] = await Promise.all([
+        storageUsage(userId),
+        userStorageQuotaMiB(userId),
+        storageByKind(userId),
+      ]);
+      return { totalBytes, fileCount, quotaBytes: storageQuotaMiBToBytes(quotaMiB), byKind };
+    },
+  );

@@ -1,0 +1,49 @@
+@layer components {
+  .fileCell {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  /* 36px is the spec's own one-off thumbnail size. */
+  .thumb {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--muted);
+    display: grid;
+    place-items: center;
+    color: var(--muted-foreground);
+  }
+
+  .thumbImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .thumbIcon {
+    width: var(--space-4);
+    height: var(--space-4);
+  }
+
+  .name {
+    font-weight: var(--weight-medium);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .actionsCell {
+    text-align: right;
+  }
+
+  .empty {
+    padding: var(--space-5);
+    font-size: var(--text-sm);
+    color: var(--muted-foreground);
+  }
+}

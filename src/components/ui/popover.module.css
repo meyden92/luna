@@ -15,7 +15,7 @@
     gap: var(--space-4);
     width: var(--width);
     padding: var(--space-4);
-    border: 1px solid color-mix(in oklch, var(--border) 70%, transparent);
+    border: 1px solid var(--border);
     border-radius: var(--radius-xl);
     background-color: var(--popover);
     color: var(--popover-foreground);

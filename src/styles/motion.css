@@ -1,0 +1,86 @@
+/*
+ * Document-level motion in `@layer base`: the things a CSS Module cannot reach.
+ *
+ * View-transition pseudo-elements are children of the document, not of a
+ * component, and `@property` is a document-level registration — so both live
+ * here rather than in a module (ADR 0003). Everything a component *can* own,
+ * it owns: hover lifts, pill slides and press feedback sit in the module next
+ * to the component. Easings and durations come from tokens.css.
+ *
+ * `startViewTransition` sets `html[data-vt]` for the duration of a transition
+ * (see src/libs/view-transition.ts) so the rules below can scope themselves to
+ * the kind of change that is happening.
+ */
+@layer base {
+  /*
+   * Animated integer: transition --n and a counter renders the tweened value.
+   * Used by the folder counts and the selection bar through <AnimatedCount>.
+   * Browsers without `@property` fall back to the plain number.
+   */
+  @property --n {
+    syntax: "<integer>";
+    inherits: false;
+    initial-value: 0;
+  }
+
+  /*
+   * Opt an element into gliding to its new position during a `gallery`
+   * transition by giving it `data-vt-name` and a `--vt-name`. The name is only
+   * live for the duration, because two elements may not share one and the
+   * gallery holds hundreds of them.
+   */
+  html[data-vt="gallery"] [data-vt-name] {
+    view-transition-name: var(--vt-name);
+  }
+
+  @keyframes vt-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes vt-rise-in {
+    from {
+      opacity: 0;
+      translate: 0 10px;
+    }
+  }
+
+  /*
+   * Every animation here is opt-in rather than overridden: under reduced motion
+   * these rules never apply, so nothing needs `!important` to undo them. The
+   * helper also declines to start a transition at all in that case, which keeps
+   * transitions the app does not own — a browser default — still quiet.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    ::view-transition-group(*) {
+      animation-duration: 450ms;
+      animation-timing-function: var(--ease-out-expo);
+    }
+
+    /* `page`: the old page leaves, then the new one rises into place. */
+    html[data-vt="page"]::view-transition-old(root) {
+      animation: vt-fade-out 160ms ease both;
+    }
+
+    html[data-vt="page"]::view-transition-new(root) {
+      animation: vt-rise-in 380ms var(--ease-out-expo) both;
+    }
+
+    /* `gallery`: the cards carry the motion, so the root barely crossfades. */
+    html[data-vt="gallery"]::view-transition-old(root),
+    html[data-vt="gallery"]::view-transition-new(root) {
+      animation-duration: 200ms;
+    }
+
+    /* `preview`: one shared element morphs between the card and the stage. */
+    ::view-transition-group(preview-media) {
+      z-index: 100;
+      animation-duration: 500ms;
+    }
+
+    ::view-transition-image-pair(preview-media) {
+      isolation: auto;
+    }
+  }
+}

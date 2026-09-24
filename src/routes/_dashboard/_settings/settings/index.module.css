@@ -1,9 +1,0 @@
-@layer components {
-  .full {
-    width: 100%;
-  }
-
-  .subtitle {
-    color: var(--muted-foreground);
-  }
-}

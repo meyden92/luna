@@ -1,0 +1,26 @@
+@layer components {
+  /* Fixed widths keep the controls in a column down the chain instead of each
+     card sizing itself to its own longest option. */
+  .triggerSelect {
+    min-width: 16.25rem;
+  }
+
+  .fieldSelect {
+    min-width: 8.75rem;
+  }
+
+  .folderSelect {
+    min-width: 12.5rem;
+  }
+
+  .textInput {
+    width: 12.5rem;
+    height: 2rem;
+  }
+
+  /* Stands in for a control that cannot be offered yet, and says why. */
+  .note {
+    font-size: var(--text-xs);
+    color: var(--foreground-subtle);
+  }
+}

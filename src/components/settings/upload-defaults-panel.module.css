@@ -1,0 +1,11 @@
+@layer components {
+  .select {
+    width: 240px;
+  }
+
+  .hint {
+    padding: var(--space-3) var(--space-5);
+    font-size: var(--text-xs);
+    color: var(--foreground-subtle);
+  }
+}

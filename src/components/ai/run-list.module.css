@@ -1,0 +1,92 @@
+@layer components {
+  .run {
+    /* Each run rises in as it is added to the top of the canvas. */
+    animation: run-rise 500ms var(--ease-out-expo) both;
+  }
+
+  @keyframes run-rise {
+    from {
+      opacity: 0;
+      translate: 0 10px;
+    }
+  }
+
+  .head {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-4);
+    margin-bottom: var(--space-3);
+  }
+
+  .headText {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .thumbs {
+    display: flex;
+    flex-shrink: 0;
+    gap: var(--space-1);
+
+    & img {
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: var(--radius-md);
+      object-fit: cover;
+    }
+  }
+
+  .prompt {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 0.9375rem;
+    line-height: 1.45;
+    font-weight: var(--weight-medium);
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .meta {
+    margin-top: 2px;
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--foreground-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* "Generating…" reads as live: a highlight travels through the letters. */
+  .working {
+    background: linear-gradient(90deg, var(--foreground-subtle) 35%, var(--foreground) 50%, var(--foreground-subtle) 65%);
+    background-size: 200% 100%;
+    background-clip: text;
+    color: transparent;
+    animation: run-shimmer 1600ms linear infinite;
+  }
+
+  @keyframes run-shimmer {
+    from {
+      background-position: 100% 0;
+    }
+
+    to {
+      background-position: -100% 0;
+    }
+  }
+
+  .grid {
+    display: grid;
+    gap: 10px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .run,
+    .working {
+      animation: none;
+    }
+
+    .working {
+      background: none;
+      color: var(--foreground-subtle);
+    }
+  }
+}

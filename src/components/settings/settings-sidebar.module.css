@@ -1,30 +1,38 @@
 @layer components {
-  /* Horizontal tab strip on small screens, a rail from lg up. */
   .root {
+    position: sticky;
+    top: calc(var(--nav-height) + var(--space-8));
+    align-self: start;
     display: flex;
-    gap: var(--space-2);
+    flex-direction: column;
+    gap: 2px;
+  }
 
-    @media (width >= 1024px) {
-      flex-direction: column;
-      gap: var(--space-1);
-    }
+  .title {
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-semibold);
+    letter-spacing: -0.01em;
+    margin-bottom: var(--space-4);
+    padding-inline: var(--space-3);
   }
 
   .item {
     justify-content: flex-start;
+    gap: var(--space-3);
+    color: var(--foreground-2);
   }
 
   .item[data-active] {
-    background: var(--muted);
+    background: var(--accent);
+    color: var(--accent-foreground);
 
     &:hover {
-      background: var(--muted);
+      background: var(--accent);
     }
   }
 
   .icon {
     width: var(--space-4);
     height: var(--space-4);
-    margin-right: var(--space-2);
   }
 }

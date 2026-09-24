@@ -1,0 +1,127 @@
+@layer components {
+  .root {
+    display: flex;
+    flex-direction: column;
+    /* 10px, off the spacing scale, because the prototype's split column is 10px. */
+    gap: 0.625rem;
+    width: var(--split-list-width);
+    flex-shrink: 0;
+    padding: var(--space-4) var(--space-3);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+  }
+
+  .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-1);
+  }
+
+  /* Shared with the Automations split head: the prototype's 22px snapped to the
+     nearest type step, since a one-off 22px token is not worth carrying. */
+  .title {
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-heading);
+  }
+
+  /* The prototype's search box is shorter than a standalone field. */
+  .search {
+    --input-group-height: 2rem;
+  }
+
+  .rows {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  /*
+   * A row rises into place rather than appearing, staggered down the list by the
+   * `animationDelay` the component sets per index — so a search that narrows the
+   * list reads as the remaining rows arriving, not as a flicker.
+   */
+  .row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-lg);
+    text-align: left;
+    transition:
+      background-color 150ms ease-out,
+      scale 350ms var(--spring);
+    animation: rowRise 500ms var(--ease-out-expo) both;
+  }
+
+  @keyframes rowRise {
+    from {
+      opacity: 0;
+      translate: 0 10px;
+    }
+  }
+
+  .row:hover {
+    background: var(--muted);
+  }
+
+  .row:active {
+    scale: 0.98;
+  }
+
+  .row[data-active] {
+    background: var(--accent);
+  }
+
+  .rowTitle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    overflow: hidden;
+  }
+
+  .lockIcon {
+    flex-shrink: 0;
+    opacity: 0.6;
+  }
+
+  .rowTitleText {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .rowMeta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--foreground-subtle);
+  }
+
+  .language {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    padding: 1px var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--muted-strong);
+    color: var(--foreground-2);
+  }
+
+  .noMatches {
+    padding: var(--space-3);
+    font-size: var(--text-sm);
+    color: var(--foreground-subtle);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .row {
+      transition: none;
+      animation: none;
+    }
+  }
+}

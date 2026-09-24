@@ -6,6 +6,8 @@ export type GenerationMutationResponse = {
     index: number;
     prediction?: Prediction;
     resultImageUrl?: string;
+    /** The stored file the image became. Absent when saving it failed. */
+    fileId?: string;
     success?: boolean;
     error?: string;
   }>;

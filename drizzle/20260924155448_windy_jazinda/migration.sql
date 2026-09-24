@@ -1,0 +1,1 @@
+ALTER TABLE "user" DROP COLUMN "show_all_files_includes_foldered";

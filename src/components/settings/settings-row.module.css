@@ -1,0 +1,34 @@
+@layer components {
+  .root {
+    display: grid;
+    /* 220px label column is the spec's own fixed dimension, not on the scale. */
+    grid-template-columns: 220px minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-6);
+    padding: var(--space-4) var(--space-5);
+
+    & + & {
+      border-top: 1px solid var(--border);
+    }
+  }
+
+  .label {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .labelText {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+  }
+
+  .hint {
+    margin-top: 2px;
+    font-size: var(--text-xs);
+    color: var(--foreground-subtle);
+  }
+
+  .control {
+    min-width: 0;
+  }
+}

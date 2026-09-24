@@ -1,0 +1,43 @@
+@layer components {
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  /* A switch sits beside its label rather than under it. */
+  .field[data-row] {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .label {
+    justify-content: space-between;
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    font-weight: var(--weight-semibold);
+    color: var(--foreground-2);
+  }
+
+  /* The span form has to repeat the label's own box, which comes from ui/label. */
+  .name {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    user-select: none;
+  }
+
+  .hint {
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--foreground-subtle);
+  }
+
+  .value {
+    font-weight: var(--weight-medium);
+    color: var(--foreground-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+}

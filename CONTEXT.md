@@ -47,3 +47,31 @@ One named value on the shared visual scale (a colour role, a spacing step, a
 type size, a radius) that every part of the UI reads from instead of choosing
 its own. Unrelated to a Token, which is an upload credential.
 _Avoid_: Token, variable, CSS variable
+
+## Workspace
+
+**Files**:
+The screen where a User finds their own files and copies one. Named for what it
+holds rather than for being the landing page; its route is still `/dashboard`.
+_Avoid_: Dashboard, gallery, home
+
+**Scope**:
+Which files Files is showing: all of them, the ones in no folder, or one folder's.
+"No folder" is an answer, not the absence of one, which is why it is not simply a
+nullable folder.
+_Avoid_: Filter, view, folder selection
+
+**Preview**:
+The full-screen view of one file, with the image on a stage and its details
+beside it. The thumbnail grows into it and back.
+_Avoid_: Lightbox, modal, viewer
+
+**Snippet**:
+A piece of text or code a User saves and shares by link. The code calls the table
+and its routes `bin`, which is history, not vocabulary.
+_Avoid_: Bin, paste, gist
+
+**Automation**:
+A rule that runs on a User's files by itself — sorting, tagging or hiding them
+when something happens. Read as a sentence, stored as a chain of steps.
+_Avoid_: Flow, workflow, rule engine

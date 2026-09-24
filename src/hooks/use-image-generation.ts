@@ -10,6 +10,8 @@ export interface GenerateParams {
   modelLabel: string;
   fieldValues: Record<string, unknown>;
   prompt: string;
+  /** Folder the generated files are inserted into, or null to leave them unsorted. */
+  saveToFolderId?: string | null;
 }
 
 interface StreamEvent {
@@ -20,6 +22,7 @@ interface StreamEvent {
   results?: Array<{
     index: number;
     resultImageUrl?: string;
+    fileId?: string;
     success?: boolean;
     error?: string;
   }>;
@@ -37,7 +40,7 @@ export function useImageGeneration() {
 
   const generate = useCallback(
     async (params: GenerateParams) => {
-      const { modelId, modelLabel, fieldValues, prompt } = params;
+      const { modelId, modelLabel, fieldValues, prompt, saveToFolderId = null } = params;
 
       // Create generation ID
       const generationId = crypto.randomUUID();
@@ -66,10 +69,13 @@ export function useImageGeneration() {
           headers: {
             'Content-Type': 'application/json',
           },
+          // The folder is written last: a model may not declare a field by that
+          // name, but if it ever did, the destination is not its to override.
           body: JSON.stringify({
             generationModelId: modelId,
             generationId,
             ...fieldValues,
+            saveToFolderId,
           }),
           signal: abortController.signal,
           onEvent: (event) => {
@@ -91,6 +97,7 @@ export function useImageGeneration() {
                       results: data.results.map((r) => ({
                         index: r.index,
                         resultImageUrl: r.resultImageUrl,
+                        fileId: r.fileId,
                         success: r.success,
                         error: r.error,
                       })),
@@ -113,16 +120,17 @@ export function useImageGeneration() {
         // Stream closed → the server has persisted the history row; refresh it.
         queryClient.invalidateQueries({ queryKey: queryKeys.ai.imageGenerationHistory });
         if (finalStatus === 'failed') {
-          toast.error(finalError || 'Image generation failed');
-          return { success: false, error: finalError || 'Image generation failed', generationId };
+          toast.error(finalError || 'Couldn’t generate that image');
+          return { success: false, error: finalError || 'Couldn’t generate that image', generationId };
         }
 
         if (finalError) {
-          toast.error(`Generated ${finalSuccessCount}/${finalTotalCount} images. ${finalError}`);
+          console.warn('Image generation partially failed:', finalError);
+          toast.error(`Generated ${finalSuccessCount} of ${finalTotalCount} images — the rest failed`);
           return { success: true, generationId };
         }
 
-        toast.success(finalTotalCount > 1 ? `Generated ${finalSuccessCount}/${finalTotalCount} images` : 'Image generated');
+        toast.success(finalTotalCount > 1 ? `Generated ${finalSuccessCount} of ${finalTotalCount} images` : 'Image generated');
         return { success: true, generationId };
       } catch (error) {
         if ((error as Error).name === 'AbortError') {
@@ -130,6 +138,7 @@ export function useImageGeneration() {
             status: 'failed',
             error: 'Generation was cancelled',
           });
+          toast('Image cancelled');
           return { success: false, error: 'Cancelled' };
         }
 

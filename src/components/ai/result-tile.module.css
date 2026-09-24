@@ -1,0 +1,171 @@
+@layer components {
+  .tile {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+    background-color: var(--muted);
+  }
+
+  .image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Develops into focus once it arrives; the delay staggers a run's tiles. */
+    animation: result-develop 1100ms var(--ease-out-expo) both;
+    animation-delay: var(--develop-delay, 0ms);
+  }
+
+  @keyframes result-develop {
+    from {
+      filter: blur(18px) saturate(0.4);
+      scale: 1.08;
+      opacity: 0.3;
+    }
+  }
+
+  /*
+   * Overrides the Skeleton pulse with a sweep, so a tile that is still
+   * generating reads as work in progress rather than a placeholder.
+   */
+  div.shimmer {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    background: linear-gradient(100deg, var(--muted) 30%, var(--muted-strong) 50%, var(--muted) 70%);
+    background-size: 200% 100%;
+    animation: result-sweep 1300ms linear infinite;
+  }
+
+  @keyframes result-sweep {
+    from {
+      background-position: 100% 0;
+    }
+
+    to {
+      background-position: -100% 0;
+    }
+  }
+
+  .failed {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    text-align: center;
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: var(--muted-foreground);
+
+    & svg {
+      color: var(--destructive);
+    }
+  }
+
+  .shade {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(to top, var(--scrim), transparent 45%);
+    opacity: 0;
+    transition: opacity var(--duration-fast) ease;
+  }
+
+  .actions {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    left: 10px;
+    display: flex;
+    gap: var(--space-1);
+    opacity: 0;
+    translate: 0 4px;
+    transition:
+      opacity var(--duration-fast) ease,
+      translate var(--duration-fast) ease;
+  }
+
+  .tile:hover .shade,
+  .tile:focus-within .shade {
+    opacity: 1;
+  }
+
+  .tile:hover .actions,
+  .tile:focus-within .actions {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  /* The last chip in the row is the overflow menu, pushed to the far edge. */
+  .actions > :last-child {
+    margin-left: auto;
+  }
+
+  .chip {
+    display: inline-flex;
+    height: 1.75rem;
+    align-items: center;
+    gap: 6px;
+    padding-inline: 10px;
+    border: 0;
+    border-radius: var(--radius-md);
+    background-color: color-mix(in oklab, var(--card) 94%, transparent);
+    backdrop-filter: blur(8px);
+    box-shadow: var(--shadow-sm);
+    font-family: inherit;
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    font-weight: var(--weight-medium);
+    color: var(--foreground);
+    white-space: nowrap;
+    transition:
+      background-color var(--duration-fast) ease,
+      color var(--duration-fast) ease,
+      scale 350ms var(--spring);
+
+    &:hover {
+      background-color: var(--card);
+      color: var(--accent-foreground);
+    }
+
+    &:active {
+      scale: 0.96;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ring);
+      outline-offset: 2px;
+    }
+
+    & svg {
+      flex-shrink: 0;
+    }
+
+    &[data-icon] {
+      width: 1.75rem;
+      justify-content: center;
+      padding-inline: 0;
+    }
+
+    /* Stating a fact, not offering an action. */
+    &[data-muted] {
+      color: var(--muted-foreground);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .image,
+    div.shimmer {
+      animation: none;
+    }
+
+    .actions,
+    .shade,
+    .chip {
+      transition: none;
+    }
+  }
+}

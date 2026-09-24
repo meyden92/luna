@@ -48,9 +48,9 @@ function matchesFileType(file: GalleryFile, filters?: GalleryFilters): boolean {
     return true;
   }
 
-  const isImage = file.contentType.startsWith('image/');
-  const isVideo = file.contentType.startsWith('video/');
-  const typeMatches = filters.fileType === 'image' ? isImage : filters.fileType === 'video' ? isVideo : !isImage && !isVideo;
+  const kind = file.contentType.split('/')[0];
+  // 'file' is "Documents": none of the recognised media kinds.
+  const typeMatches = filters.fileType === 'file' ? !['image', 'video', 'audio'].includes(kind ?? '') : kind === filters.fileType;
 
   return filters.fileTypeOperator === 'is not' ? !typeMatches : typeMatches;
 }

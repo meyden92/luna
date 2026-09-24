@@ -51,7 +51,7 @@ export type GalleryFilters = {
   search?: string;
   startDate?: string;
   endDate?: string;
-  fileType?: 'image' | 'video' | 'file';
+  fileType?: 'image' | 'video' | 'audio' | 'file';
   fileTypeOperator?: 'is' | 'is not';
   folderId?: string | null;
   privacy?: 'public' | 'private';
@@ -70,34 +70,16 @@ const SORT_COLUMNS = {
 } as const;
 
 /**
- * The gallery listing — the heaviest query in the application.
+ * Everything that narrows the gallery except the cursor — shared so the page
+ * query and the total count cannot drift apart. The head used to read "30+"
+ * beside a sidebar total of 4256 precisely because they were computed
+ * differently.
  *
  * A core select rather than the relational API: the filter set needs OR-groups
- * and negation the relational `where` DSL cannot express, and the keyset cursor
- * has to be written explicitly to keep using the composite index
- * `file_ownerId_isDeleted_createdAt_id_idx`.
- *
- * Prisma's offset-style `cursor` + `skip: 1` becomes a row-value comparison
- * against the cursor row's sort key. That is the same result and it stays on the
- * index, where a growing OFFSET would not.
+ * and negation the relational `where` DSL cannot express.
  */
-export async function listGallery(ownerId: string, filters: GalleryFilters, handle: AuditHandle = db) {
-  const {
-    cursor,
-    limit = 10,
-    search,
-    startDate,
-    endDate,
-    fileType,
-    fileTypeOperator,
-    folderId,
-    privacy,
-    tags,
-    tagsOperator,
-    excludeFoldered,
-    sortBy = 'createdAt',
-    sortDirection = 'desc',
-  } = filters;
+function galleryConditions(ownerId: string, filters: GalleryFilters): (SQL | undefined)[] {
+  const { search, startDate, endDate, fileType, fileTypeOperator, folderId, privacy, tags, tagsOperator, excludeFoldered } = filters;
 
   const conditions: (SQL | undefined)[] = [eq(file.ownerId, ownerId), eq(file.isDeleted, false)];
 
@@ -110,12 +92,16 @@ export async function listGallery(ownerId: string, filters: GalleryFilters, hand
   if (startDate) conditions.push(gte(file.createdAt, new Date(startDate)));
   if (endDate) conditions.push(lte(file.createdAt, new Date(endDate)));
 
-  const isImage = ilike(file.contentType, 'image/%');
-  const isVideo = ilike(file.contentType, 'video/%');
   if (fileType) {
     const negated = fileTypeOperator === 'is not';
-    const matcher = fileType === 'image' ? isImage : fileType === 'video' ? isVideo : or(isImage, isVideo);
-    // 'file' means "neither image nor video", so its polarity is inverted.
+    const byKind = {
+      image: ilike(file.contentType, 'image/%'),
+      video: ilike(file.contentType, 'video/%'),
+      audio: ilike(file.contentType, 'audio/%'),
+    };
+    // 'file' is the toolbar's "Documents": none of the recognised media kinds,
+    // so it matches the same expression with its polarity inverted.
+    const matcher = fileType === 'file' ? or(byKind.image, byKind.video, byKind.audio) : byKind[fileType];
     const wantsMatch = fileType === 'file' ? negated : !negated;
     conditions.push(wantsMatch ? matcher : not(matcher as SQL));
   }
@@ -129,6 +115,34 @@ export async function listGallery(ownerId: string, filters: GalleryFilters, hand
     conditions.push(negated ? not(anyTag as SQL) : anyTag);
   }
 
+  return conditions;
+}
+
+/**
+ * How many files the current scope and filters match, regardless of how many
+ * pages have been loaded. This is what the page head counts.
+ */
+export async function countGallery(ownerId: string, filters: GalleryFilters, handle: AuditHandle = db): Promise<number> {
+  const [row] = await handle
+    .select({ total: count() })
+    .from(file)
+    .where(and(...galleryConditions(ownerId, filters)));
+  return row?.total ?? 0;
+}
+
+/**
+ * One page of the gallery — the heaviest query in the application.
+ *
+ * The keyset cursor is written explicitly to keep using the composite index
+ * `file_ownerId_isDeleted_createdAt_id_idx`: Prisma's offset-style `cursor` +
+ * `skip: 1` became a row-value comparison against the cursor row's sort key.
+ * That is the same result and it stays on the index, where a growing OFFSET
+ * would not.
+ */
+export async function listGallery(ownerId: string, filters: GalleryFilters, handle: AuditHandle = db) {
+  const { cursor, limit = 10, sortBy = 'createdAt', sortDirection = 'desc' } = filters;
+
+  const conditions = galleryConditions(ownerId, filters);
   const sortColumn = SORT_COLUMNS[sortBy] ?? file.createdAt;
   const descending = sortDirection === 'desc';
 
@@ -211,6 +225,27 @@ export function findBySha256(sha256: string, handle: AuditHandle = db) {
 }
 
 /** Total bytes and file count for an owner — an aggregate, so a core select. */
+/**
+ * Bytes per media kind, for the Storage bar. One grouped aggregate rather than
+ * summing the rows the gallery happens to have loaded — which could only ever
+ * report a floor.
+ */
+export async function storageByKind(ownerId: string, handle: AuditHandle = db) {
+  const kind = sql<string>`split_part(${file.contentType}, '/', 1)`;
+  const rows = await handle
+    .select({ kind, bytes: sum(file.size) })
+    .from(file)
+    .where(and(eq(file.ownerId, ownerId), eq(file.isDeleted, false)))
+    .groupBy(kind);
+
+  const totals = { image: 0, video: 0, audio: 0, other: 0 };
+  for (const row of rows) {
+    const bucket = row.kind === 'image' || row.kind === 'video' || row.kind === 'audio' ? row.kind : 'other';
+    totals[bucket] += Number(row.bytes ?? 0);
+  }
+  return totals;
+}
+
 export async function storageUsage(ownerId: string, handle: AuditHandle = db) {
   const [row] = await handle
     .select({ totalBytes: sum(file.size), fileCount: count() })

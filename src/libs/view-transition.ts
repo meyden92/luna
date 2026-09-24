@@ -25,11 +25,14 @@ export function canViewTransition(): boolean {
  * The update is wrapped in `flushSync` so React has painted the new DOM before
  * the browser takes its "after" snapshot. Where a transition isn't available
  * the update simply runs, so callers never need to branch.
+ *
+ * Resolves once the animation has finished — which is when a caller that lent
+ * an element its `view-transition-name` can take it back.
  */
-export function startViewTransition(update: () => void, kind: ViewTransitionKind = 'page'): void {
+export function startViewTransition(update: () => void, kind: ViewTransitionKind = 'page'): Promise<void> {
   if (!canViewTransition()) {
     update();
-    return;
+    return Promise.resolve();
   }
 
   const root = document.documentElement;
@@ -41,7 +44,11 @@ export function startViewTransition(update: () => void, kind: ViewTransitionKind
 
   // A second transition may already have claimed the attribute by the time this
   // one finishes; only the current owner clears it.
-  transition.finished.finally(() => {
-    if (root.dataset.vt === kind) delete root.dataset.vt;
-  });
+  return transition.finished
+    .catch(() => {
+      // A transition skipped or interrupted by the next one is not an error here.
+    })
+    .finally(() => {
+      if (root.dataset.vt === kind) delete root.dataset.vt;
+    });
 }

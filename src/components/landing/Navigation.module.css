@@ -1,6 +1,5 @@
 @layer components {
-  /* Fixed translucent bar. It drops in on first paint and sits below the
-     impersonation strip when one is showing. */
+  /* Fixed translucent bar, dropping in on first paint. */
   .root {
     position: fixed;
     top: 0;
@@ -10,10 +9,6 @@
     background: color-mix(in oklab, var(--background) 86%, transparent);
     backdrop-filter: blur(14px);
     animation: nav-enter 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  }
-
-  .root[data-offset] {
-    top: var(--space-12);
   }
 
   @keyframes nav-enter {
@@ -70,85 +65,6 @@
     display: block;
   }
 
-  .links {
-    display: none;
-    flex: 1;
-    align-items: center;
-    gap: var(--space-1);
-    font-size: var(--text-sm);
-    font-weight: var(--weight-medium);
-    color: var(--muted-foreground);
-
-    @media (width >= 1024px) {
-      display: flex;
-    }
-  }
-
-  .linkSkeleton {
-    width: var(--space-20);
-    height: var(--space-5);
-  }
-
-  .link {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1);
-    padding-block: var(--space-2);
-    padding-inline: var(--space-3);
-    border-radius: var(--radius-lg);
-    transition:
-      color 150ms ease,
-      background-color 150ms ease;
-
-    &:hover {
-      background: var(--muted);
-      color: var(--foreground);
-    }
-  }
-
-  /* Active product-nav item: an underscore rule tucked inside the pill. */
-  .link[data-active] {
-    color: var(--foreground);
-  }
-
-  .link[data-active]::after {
-    content: "";
-    position: absolute;
-    right: var(--space-3);
-    bottom: 1px;
-    left: var(--space-3);
-    height: 2px;
-    border-radius: 2px;
-    background: var(--primary);
-  }
-
-  .chevron {
-    width: var(--space-3);
-    height: var(--space-3);
-    opacity: 0.7;
-  }
-
-  .menuContent {
-    width: 14rem;
-  }
-
-  .menuLink {
-    display: flex;
-    width: 100%;
-    align-items: center;
-    gap: var(--space-2);
-  }
-
-  .menuLink[data-active] {
-    color: var(--primary-strong);
-  }
-
-  .menuIcon {
-    width: var(--space-4);
-    height: var(--space-4);
-  }
-
   .actions {
     display: flex;
     flex-shrink: 0;
@@ -174,62 +90,6 @@
       background: var(--muted);
       transform: translateY(-1px);
     }
-  }
-
-  .menuButton {
-    @media (width >= 1024px) {
-      display: none;
-    }
-  }
-
-  .buttonIcon {
-    width: var(--space-4);
-    height: var(--space-4);
-  }
-
-  .avatarSkeleton {
-    width: var(--space-10);
-    height: var(--space-10);
-    border-radius: var(--radius-full);
-  }
-
-  .avatar {
-    width: var(--space-10);
-    height: var(--space-10);
-    border: 1px solid var(--border);
-  }
-
-  .avatarFallback {
-    background: var(--accent);
-    color: var(--primary-strong);
-  }
-
-  .accountName {
-    font-size: var(--text-sm);
-    font-weight: var(--weight-medium);
-    line-height: 1;
-  }
-
-  .accountEmail {
-    margin-top: var(--space-1);
-    font-size: var(--text-xs);
-    line-height: 1;
-    color: var(--muted-foreground);
-  }
-
-  .accountLink {
-    display: flex;
-    align-items: center;
-  }
-
-  .accountLinkDanger {
-    color: var(--destructive);
-  }
-
-  .accountIcon {
-    width: var(--space-4);
-    height: var(--space-4);
-    margin-right: var(--space-2);
   }
 
   .signIn {
@@ -275,111 +135,5 @@
   .openAppIcon {
     width: 0.875rem;
     height: 0.875rem;
-  }
-
-  /* ---- Mobile drawer ----------------------------------------------------- */
-  .drawer {
-    padding-block: var(--space-4);
-    padding-inline: var(--space-6);
-    border-top: 1px solid var(--border);
-    background: var(--background);
-
-    @media (width >= 1024px) {
-      display: none;
-    }
-  }
-
-  .drawerList {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-  }
-
-  .drawerGroup {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-  }
-
-  /* Drawer rows carry the active marker as a left rule. */
-  .drawerItem {
-    display: flex;
-    width: 100%;
-    align-items: center;
-    gap: var(--space-3);
-    padding-block: var(--space-2);
-    padding-inline: var(--space-3);
-    border-left: 2px solid transparent;
-    border-radius: var(--radius-lg);
-    font-size: var(--text-sm);
-    font-weight: var(--weight-medium);
-    color: var(--muted-foreground);
-    transition:
-      color 150ms ease,
-      border-color 150ms ease;
-
-    &:hover {
-      border-left-color: var(--input);
-      color: var(--foreground);
-    }
-  }
-
-  .drawerToggle {
-    justify-content: space-between;
-  }
-
-  .drawerItem[data-active] {
-    border-left-color: var(--primary);
-    color: var(--primary-strong);
-  }
-
-  .drawerToggleLabel {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-  }
-
-  .drawerChevron {
-    width: var(--space-4);
-    height: var(--space-4);
-    transition: transform 150ms ease;
-  }
-
-  .drawerChevron[data-open] {
-    transform: rotate(180deg);
-  }
-
-  .drawerChildren {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    margin-left: var(--space-6);
-    padding-left: var(--space-3);
-    border-left: 1px solid var(--border);
-  }
-
-  .drawerChild {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    padding-block: var(--space-2);
-    padding-inline: var(--space-3);
-    font-size: var(--text-sm);
-    font-weight: var(--weight-medium);
-    color: var(--muted-foreground);
-    transition: color 150ms ease;
-
-    &:hover {
-      color: var(--foreground);
-    }
-  }
-
-  .drawerChild[data-active] {
-    color: var(--primary-strong);
-  }
-
-  .drawerIcon {
-    width: var(--space-4);
-    height: var(--space-4);
   }
 }

@@ -175,11 +175,14 @@ function postUpload(formData: FormData, onProgress: (loaded: number, total: numb
       try {
         resolve(JSON.parse(xhr.responseText));
       } catch {
-        reject(new Error('Invalid upload response'));
+        // The body is the only clue to why, and it is no use to the person who
+        // pressed Upload, so it goes to the console rather than into the toast.
+        console.warn('Upload response was not JSON', xhr.responseText);
+        reject(new Error('Upload failed, please try again'));
       }
     };
 
-    xhr.onerror = () => reject(new Error('Network error during upload'));
+    xhr.onerror = () => reject(new Error('Upload stopped — check your connection'));
     xhr.onabort = () => reject(new Error('Upload cancelled'));
     xhr.send(formData);
   });

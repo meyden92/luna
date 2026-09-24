@@ -33,6 +33,13 @@
     background: var(--stage);
   }
 
+  /* Image, spinner and failure notice share the one centred cell. */
+  .image,
+  .spinner,
+  .fallback {
+    grid-area: 1 / 1;
+  }
+
   .image {
     max-width: 100%;
     max-height: calc(100vh - var(--space-12) * 2);
@@ -40,6 +47,48 @@
     /* A deep, near-black cast so the image reads as lifted off the stage rather
        than cut into it. --scrim-strong is the app's fixed dark overlay colour. */
     box-shadow: 0 30px 80px -20px var(--scrim-strong);
+    /* Fades in once decoded so a half-painted frame never flashes. The flag is
+       set on the element by Preview.tsx, not through React state. */
+    opacity: 0;
+    transition: opacity 200ms ease;
+
+    &[data-loaded] {
+      opacity: 1;
+    }
+
+    &[data-error] {
+      display: none;
+    }
+  }
+
+  .spinner {
+    width: var(--space-12);
+    height: var(--space-12);
+    color: color-mix(in oklab, var(--on-scrim) 40%, transparent);
+    animation: preview-spin 1s linear infinite;
+    pointer-events: none;
+  }
+
+  .image:is([data-loaded], [data-error]) ~ .spinner {
+    display: none;
+  }
+
+  @keyframes preview-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .fallback {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    color: color-mix(in oklab, var(--on-scrim) 60%, transparent);
+  }
+
+  .image[data-error] ~ .fallback {
+    display: flex;
   }
 
   /* A file with nothing to show: the icon and its extension on a raised slab. */
@@ -111,6 +160,11 @@
   @media (prefers-reduced-motion: reduce) {
     .root {
       animation: none;
+    }
+
+    .spinner {
+      animation-duration: 0.01ms;
+      animation-iteration-count: 1;
     }
 
     .nav {

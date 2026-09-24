@@ -60,6 +60,7 @@ function GenerateWorkspace({
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const promptRef = React.useRef<HTMLTextAreaElement | null>(null);
 
+  const [editModelId, setEditModelId] = React.useState(editingModels[0]?.id ?? '');
   const [editPrompt, setEditPrompt] = React.useState('');
   const [editReferences, setEditReferences] = React.useState<ReferenceImage[]>([]);
   const [editCount, setEditCount] = React.useState(1);
@@ -173,6 +174,7 @@ function GenerateWorkspace({
           count={count}
           onCountChange={setCount}
           settings={settings}
+          onSettingsChange={setSettings}
           onOpenSettings={() => setSettingsOpen(true)}
           onUseInEdit={useInEdit}
           saveToFolderName={saveToFolderName}
@@ -183,6 +185,8 @@ function GenerateWorkspace({
       {tab === 'edit' && (
         <EditPanel
           models={editingModels}
+          modelId={editModelId}
+          onModelChange={setEditModelId}
           references={editReferences}
           onReferencesChange={setEditReferences}
           prompt={editPrompt}

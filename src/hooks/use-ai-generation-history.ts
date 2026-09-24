@@ -88,6 +88,7 @@ function useAiGenerationHistory<TItem extends GenerationQueueItem | GenerationIt
       if (context?.previousSnapshot) restoreGenerationSnapshot(context.previousSnapshot);
       toast.error('Could not clear images — they’re back in your history');
     },
+    onSuccess: () => toast.success('History cleared'),
     onSettled: () => queryClient.invalidateQueries({ queryKey }),
   });
 

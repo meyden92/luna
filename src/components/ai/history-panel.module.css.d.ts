@@ -6,6 +6,8 @@ declare const styles: {
   readonly "grid": string;
   readonly "history-rise": string;
   readonly "prompt": string;
+  readonly "root": string;
+  readonly "toolbar": string;
 };
 export = styles;
 

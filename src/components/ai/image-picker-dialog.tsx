@@ -4,14 +4,23 @@ import * as React from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Segmented, type SegmentedItem } from '@/components/ui/segmented';
 import { Spinner } from '@/components/ui/spinner';
 import { queryKeys } from '@/libs/query-keys';
 import { getCDNImage } from '@/libs/utils';
+import { listPreviousReferenceImages } from '@/server/fns/ai';
 import { getGallery } from '@/server/fns/files';
 import styles from './image-picker-dialog.module.css';
 import { loadImageDimensions, type ReferenceImage, referenceImagesFromUrls } from './reference-image';
 
 const PICKER_FILTERS = { fileType: 'image', limit: 100, sortBy: 'createdAt', sortDirection: 'desc' } as const;
+
+type PickerSource = 'files' | 'previous';
+
+const SOURCE_ITEMS: SegmentedItem<PickerSource>[] = [
+  { value: 'files', label: 'Your files' },
+  { value: 'previous', label: 'Used before' },
+];
 
 interface ImagePickerDialogProps {
   open: boolean;
@@ -19,6 +28,8 @@ interface ImagePickerDialogProps {
   /** How many more images the caller has room for. */
   remaining: number;
   onSelect: (images: ReferenceImage[]) => void;
+  /** Also offer the images uploaded to Edit before, which are kept apart from Files. */
+  previousUploads?: boolean;
 }
 
 /** A local file needs no round trip: it is already the File the stream uploads. */
@@ -33,8 +44,13 @@ async function referenceImagesFromFiles(files: File[]): Promise<ReferenceImage[]
   );
 }
 
-/** Picks reference images from the images already in Files, or from the computer. */
-function ImagePickerDialog({ open, onOpenChange, remaining, onSelect }: ImagePickerDialogProps) {
+/**
+ * Picks reference images from the images already in Files, from the ones used
+ * in Edit before (when `previousUploads` is set), or from the computer. Picks
+ * are kept across a source switch, so one choice can mix both.
+ */
+function ImagePickerDialog({ open, onOpenChange, remaining, onSelect, previousUploads = false }: ImagePickerDialogProps) {
+  const [source, setSource] = React.useState<PickerSource>('files');
   const [picked, setPicked] = React.useState<string[]>([]);
   const [preparing, setPreparing] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -43,18 +59,32 @@ function ImagePickerDialog({ open, onOpenChange, remaining, onSelect }: ImagePic
     queryKey: queryKeys.gallery.list(PICKER_FILTERS),
     queryFn: () => getGallery({ data: PICKER_FILTERS }),
     staleTime: 30_000,
-    enabled: open,
+    enabled: open && source === 'files',
   });
 
-  // Each opening starts from nothing selected.
+  const { data: previous, isLoading: previousLoading } = useQuery({
+    queryKey: queryKeys.cachedImages.byPurpose('image-edit'),
+    queryFn: () => listPreviousReferenceImages(),
+    staleTime: 30_000,
+    enabled: open && source === 'previous',
+  });
+
+  // Each opening starts from nothing selected, on the user's own files.
   React.useEffect(() => {
-    if (open) setPicked([]);
+    if (open) {
+      setPicked([]);
+      setSource('files');
+    }
   }, [open]);
 
   const images = React.useMemo(
-    () => (data?.files ?? []).map((file) => ({ id: file.id, title: file.title, src: getCDNImage(`/${file.ownerId}/${file.url}`) })),
-    [data],
+    () =>
+      source === 'previous'
+        ? (previous ?? []).map((image) => ({ id: image.id, title: image.filename, src: image.url }))
+        : (data?.files ?? []).map((file) => ({ id: file.id, title: file.title, src: getCDNImage(`/${file.ownerId}/${file.url}`) })),
+    [data, previous, source],
   );
+  const loading = source === 'previous' ? previousLoading : isLoading;
 
   const toggle = (src: string) => {
     setPicked((current) => {
@@ -83,15 +113,31 @@ function ImagePickerDialog({ open, onOpenChange, remaining, onSelect }: ImagePic
       <DialogContent size="lg">
         <DialogHeader>
           <DialogTitle>Choose reference images</DialogTitle>
-          <DialogDescription>Pick up to {remaining} from your files.</DialogDescription>
+          <DialogDescription>
+            Pick up to {remaining} from your files{previousUploads ? ' or from images you used before' : ''}.
+          </DialogDescription>
         </DialogHeader>
 
-        {isLoading ? (
+        {previousUploads && (
+          <Segmented
+            label="Where to pick from"
+            items={SOURCE_ITEMS}
+            value={source}
+            onValueChange={setSource}
+            className={styles.sources}
+          />
+        )}
+
+        {loading ? (
           <div className={styles.loading}>
             <Spinner />
           </div>
         ) : images.length === 0 ? (
-          <p className={styles.none}>You have no images yet. Add one from your computer instead.</p>
+          <p className={styles.none}>
+            {source === 'previous'
+              ? 'Nothing used before yet. Images you add to Edit from your computer show up here.'
+              : 'You have no images yet. Add one from your computer instead.'}
+          </p>
         ) : (
           <div className={styles.grid}>
             {images.map((image) => (

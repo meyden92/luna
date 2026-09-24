@@ -10,6 +10,7 @@ import { useEditImageGeneration } from '@/hooks/use-edit-image-generation';
 import { useModelFieldDefaults } from '@/hooks/use-model-field-defaults';
 import { Canvas, CanvasEmpty } from './canvas';
 import { COUNTS, type GenerationModel, promptFromFieldValues } from './generation-options';
+import { ModelSelect } from './model-select';
 import { PromptCard, PromptCardAction, PromptCardBar, PromptCardHint, PromptCardInput, PromptCardSlots } from './prompt-card';
 import { type ReferenceImage, referenceImagesFromUrls } from './reference-image';
 import { ReferenceSlots } from './reference-slots';
@@ -22,6 +23,8 @@ const COUNT_ITEMS: SegmentedItem<string>[] = COUNTS.map((value) => ({ value: Str
 
 interface EditPanelProps {
   models: GenerationModel[];
+  modelId: string;
+  onModelChange: (modelId: string) => void;
   references: ReferenceImage[];
   onReferencesChange: (references: ReferenceImage[]) => void;
   prompt: string;
@@ -59,6 +62,8 @@ function toRun(item: GenerationItem): GenerationRun {
 /** The Edit tab: reference images plus a description of the change to make. */
 function EditPanel({
   models,
+  modelId,
+  onModelChange,
   references,
   onReferencesChange,
   prompt,
@@ -72,7 +77,7 @@ function EditPanel({
   const { generate, cancel } = useEditImageGeneration();
   const [fieldDefaults, setFieldDefaults] = React.useState<Record<string, unknown>>({});
 
-  const model = models[0];
+  const model = models.find((entry) => entry.id === modelId);
   const fields = React.useMemo(() => model?.fields ?? [], [model]);
   useModelFieldDefaults(fields, setFieldDefaults);
 
@@ -142,6 +147,7 @@ function EditPanel({
             images={references}
             onChange={onReferencesChange}
             max={MAX_REFERENCES}
+            previousUploads
           />
         </PromptCardSlots>
         <PromptCardInput
@@ -158,6 +164,11 @@ function EditPanel({
           }}
         />
         <PromptCardBar>
+          <ModelSelect
+            models={models}
+            value={modelId}
+            onValueChange={onModelChange}
+          />
           <Segmented
             label="Number of images"
             items={COUNT_ITEMS}

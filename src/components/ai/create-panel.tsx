@@ -2,7 +2,6 @@ import { SlidersHorizontal, Sparkles } from 'lucide-react';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Segmented, type SegmentedItem } from '@/components/ui/segmented';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { type GenerationQueueItem, useImageGenerationQueueStore } from '@/hooks/stores/image-generation-queue-store';
 import { useImageGeneration } from '@/hooks/use-image-generation';
@@ -16,6 +15,8 @@ import {
   DEFAULT_STEPS,
   type GenerationModel,
   maxImagesPerRun,
+  presetFieldValues,
+  presetValuesFromFieldValues,
   promptFromFieldValues,
   qualityLabel,
   SHAPES,
@@ -23,6 +24,8 @@ import {
   stepsFromFieldValues,
 } from './generation-options';
 import type { GenerationSettings } from './generation-settings-sheet';
+import { ModelSelect } from './model-select';
+import { PresetMenu } from './preset-menu';
 import { PromptCard, PromptCardAction, PromptCardBar, PromptCardHint, PromptCardInput } from './prompt-card';
 import { type GenerationRun, RunList } from './run-list';
 import { resultDownloadFilename, useResultActions } from './use-result-actions';
@@ -45,6 +48,7 @@ interface CreatePanelProps {
   count: number;
   onCountChange: (count: number) => void;
   settings: GenerationSettings;
+  onSettingsChange: (settings: GenerationSettings) => void;
   onOpenSettings: () => void;
   onUseInEdit: (src: string) => void;
   /** Folder finished results are filed into, for the empty state's promise. */
@@ -103,6 +107,7 @@ function CreatePanel({
   count,
   onCountChange,
   settings,
+  onSettingsChange,
   onOpenSettings,
   onUseInEdit,
   saveToFolderName,
@@ -169,6 +174,22 @@ function CreatePanel({
     });
   }, [busy, effectiveCount, fieldDefaults, fields, generate, model, prompt, settings, shape]);
 
+  const currentPresetValues = React.useCallback(
+    () => presetFieldValues(fields, { shape, count: effectiveCount, steps: settings.steps, seed: settings.seed }),
+    [effectiveCount, fields, settings, shape],
+  );
+
+  // A preset only moves the controls it holds; the folder setting is not part of one.
+  const applyPreset = React.useCallback(
+    (fieldValues: Record<string, unknown>) => {
+      const preset = presetValuesFromFieldValues(fieldValues);
+      if (preset.shape) onShapeChange(preset.shape);
+      if (preset.count) onCountChange(preset.count);
+      onSettingsChange({ ...settings, steps: preset.steps ?? settings.steps, seed: preset.seed });
+    },
+    [onCountChange, onSettingsChange, onShapeChange, settings],
+  );
+
   const fillPrompt = (text: string) => {
     onPromptChange(text);
     promptRef.current?.focus();
@@ -192,28 +213,11 @@ function CreatePanel({
           }}
         />
         <PromptCardBar>
-          <Select
+          <ModelSelect
+            models={models}
             value={modelId}
-            onValueChange={(value) => onModelChange(String(value))}
-          >
-            <SelectTrigger
-              size="sm"
-              aria-label="Model"
-              className={styles.modelTrigger}
-            >
-              <SelectValue>{model?.label ?? 'Pick a model'}</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {models.map((entry) => (
-                <SelectItem
-                  key={entry.id}
-                  value={entry.id}
-                >
-                  {entry.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            onValueChange={onModelChange}
+          />
 
           <Segmented
             label="Shape"
@@ -244,6 +248,15 @@ function CreatePanel({
               />
             )}
           </Button>
+
+          {model && (
+            <PresetMenu
+              modelId={model.id}
+              modelLabel={model.label}
+              currentFieldValues={currentPresetValues}
+              onApply={applyPreset}
+            />
+          )}
 
           <PromptCardAction>
             {activeRun ? (

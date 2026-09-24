@@ -10,11 +10,13 @@ interface ReferenceSlotsProps {
   onChange: (images: ReferenceImage[]) => void;
   /** How many references this model or template accepts. */
   max?: number;
+  /** Offer the images used in Edit before as a picker source. */
+  previousUploads?: boolean;
   className?: string;
 }
 
 /** The row of reference images, with a dashed slot that opens the picker. */
-function ReferenceSlots({ images, onChange, max = 4, className }: ReferenceSlotsProps) {
+function ReferenceSlots({ images, onChange, max = 4, previousUploads, className }: ReferenceSlotsProps) {
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const remaining = max - images.length;
 
@@ -56,6 +58,7 @@ function ReferenceSlots({ images, onChange, max = 4, className }: ReferenceSlots
         open={pickerOpen}
         onOpenChange={setPickerOpen}
         remaining={remaining}
+        previousUploads={previousUploads}
         onSelect={(picked) => onChange([...images, ...picked].slice(0, max))}
       />
     </>

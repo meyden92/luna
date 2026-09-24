@@ -4,6 +4,7 @@ declare const styles: {
   readonly "loading": string;
   readonly "none": string;
   readonly "option": string;
+  readonly "sources": string;
 };
 export = styles;
 

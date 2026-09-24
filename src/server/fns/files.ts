@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import {
+  countGallery,
   type GalleryFilters,
   getFileMetadata,
   getOwnedFile,
@@ -41,6 +42,37 @@ export const moveFiles = createServerFn({ method: 'POST' })
     const result = await moveFilesToFolder({ ids: data.fileIds, ownerId: userId, folderId: data.folderId }, userId);
     if (result.updated === 0) throw new Error('No authorized files found');
     return result;
+  });
+
+const setFilePrivacySchema = z.object({ fileId: z.string(), isPrivate: z.boolean() });
+
+/**
+ * Change only whether a link works for anyone, from the card menu, the Preview
+ * switch, or an upload that asked for "Only me".
+ *
+ * Separate from `updateFile`, which needs the title and tags too: sending those
+ * back just to flip a boolean would overwrite whatever another tab had changed
+ * in the meantime. Note `editFileSchema`'s `visible` field is really the private
+ * flag; this one says what it means.
+ */
+export const setFilePrivacy = createServerFn({ method: 'POST' })
+  .middleware(appMiddleware({ auth: 'user' }))
+  .validator(setFilePrivacySchema)
+  .handler(async ({ data, context }): Promise<{ id: string; isPrivate: boolean }> => {
+    const userId = userIdFromCtx(context);
+    const fileInfo = await getOwnedFile(data.fileId, userId);
+    if (!fileInfo) throw new Error('Not authorized to update this file');
+
+    // Storage first, so a failure there cannot leave the database claiming a
+    // privacy the object does not actually have.
+    if (fileInfo.private !== data.isPrivate) {
+      const { fileS3Key, setObjectPrivacy } = await import('@/libs/S3Helper');
+      await setObjectPrivacy(fileS3Key(fileInfo.ownerId, fileInfo.url), data.isPrivate);
+    }
+
+    const result = await updateOwnedFile({ id: data.fileId, ownerId: userId, values: { private: data.isPrivate } }, userId);
+    if (!result) throw new Error('Not authorized to update this file');
+    return { id: result.id, isPrivate: result.private };
   });
 
 export const updateFile = createServerFn({ method: 'POST' })
@@ -104,7 +136,7 @@ const galleryQuerySchema = z.object({
   search: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
-  fileType: z.enum(['image', 'video', 'file']).optional(),
+  fileType: z.enum(['image', 'video', 'audio', 'file']).optional(),
   fileTypeOperator: z.enum(['is', 'is not']).optional(),
   folderId: z.string().nullish(),
   privacy: z.enum(['public', 'private']).optional(),
@@ -119,6 +151,16 @@ export const getGallery = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'user' }))
   .validator(galleryQuerySchema)
   .handler(async ({ data, context }) => listGallery(userIdFromCtx(context), data as GalleryFilters));
+
+/**
+ * How many files the current scope and filters match. Separate from getGallery
+ * because the page head needs the whole total while the grid is still paging
+ * through it — counting the loaded pages instead is what produced "30+".
+ */
+export const getGalleryCount = createServerFn({ method: 'GET' })
+  .middleware(appMiddleware({ auth: 'user' }))
+  .validator(galleryQuerySchema)
+  .handler(async ({ data, context }) => countGallery(userIdFromCtx(context), data as GalleryFilters));
 
 const downloadSchema = z.object({ url: z.string().min(1) });
 

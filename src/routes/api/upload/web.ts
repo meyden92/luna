@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { createFileRoute } from '@tanstack/react-router';
+import { getOwnedFolder } from '@/db/queries/folders';
 import { createUploadedFile, releaseUploadedFile } from '@/db/queries/uploads';
 import type { JsonValue } from '@/db/schema/json';
 import { checkScopedRateLimit, retryAfterSeconds } from '@/libs/api/rate-limit';
@@ -123,6 +124,20 @@ async function handle(request: Request): Promise<Response> {
   const width = parsePositiveInteger(formData.get('width'));
   const height = parsePositiveInteger(formData.get('height'));
 
+  /*
+   * The folder and the visibility the upload asked for. Applied on the way in
+   * rather than patched afterwards: a file the owner marked "Only me" must never
+   * exist as a public object, not even for the round trip it would take to
+   * correct it. Moderation can still override the choice towards private.
+   */
+  const requestedPrivate = formData.get('private')?.toString() === 'true';
+  const requestedFolderId = formData.get('folderId')?.toString() || null;
+  const requestedFolder = requestedFolderId ? await getOwnedFolder(requestedFolderId, userId) : null;
+  if (requestedFolderId && !requestedFolder) {
+    return json({ error: 'Unknown folder', code: 'VALIDATION_FAILED' }, 400);
+  }
+  const isPrivate = requestedPrivate || !moderationGate.allowed;
+
   let dbResult: Awaited<ReturnType<typeof createUploadedFile>>;
   try {
     dbResult = await createUploadedFile(
@@ -133,7 +148,8 @@ async function handle(request: Request): Promise<Response> {
         title: fileName,
         tags: 'web-upload',
         contentType,
-        privateUpload: !moderationGate.allowed,
+        folderId: requestedFolderId,
+        privateUpload: isPrivate,
         hashes: moderationGate.hashes,
         scrubReport: scrubbed.report as unknown as JsonValue,
         dimensions: width && height ? { width, height } : null,
@@ -155,7 +171,7 @@ async function handle(request: Request): Promise<Response> {
         Key: key,
         Body: uploadBuffer,
         ContentType: contentType,
-        ACL: moderationGate.allowed ? 'public-read' : 'private',
+        ACL: isPrivate ? 'private' : 'public-read',
         CacheControl: 'max-age=31536000',
       },
     }).done();
@@ -194,7 +210,8 @@ async function handle(request: Request): Promise<Response> {
       size: dbResult.size,
       contentType: dbResult.contentType,
       metadata: dbResult.metadata ? { width: dbResult.metadata.width, height: dbResult.metadata.height, duration: null } : null,
-      folder: null,
+      // The gallery cache reads the folder's name off the file, so send it back.
+      folder: requestedFolder ? { id: requestedFolder.id, name: requestedFolder.name, color: requestedFolder.color } : null,
     },
   });
 }

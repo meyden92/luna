@@ -1,8 +1,10 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { listOwnerCachedImages } from '@/db/queries/admin';
-import { storageUsage } from '@/db/queries/files';
+import { storageByKind, storageUsage } from '@/db/queries/files';
+import { userStorageQuotaMiB } from '@/db/queries/storage';
 import { env } from '@/libs/env';
+import { storageQuotaMiBToBytes } from '@/libs/storage-quota';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
 
@@ -97,9 +99,28 @@ export const listCachedImages = createServerFn({ method: 'GET' })
     };
   });
 
+/**
+ * What the storage meter needs: how much is used and how much there is. The
+ * quota comes back with the usage because every caller that shows one shows the
+ * other — "2.98 of 10 GB" is one reading, not two.
+ */
 export const getStorageUsage = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'user' }))
-  .handler(async ({ context }): Promise<{ totalBytes: number; fileCount: number }> => {
-    const { totalBytes, fileCount } = await storageUsage(userIdFromCtx(context));
-    return { totalBytes, fileCount };
-  });
+  .handler(
+    async ({
+      context,
+    }): Promise<{
+      totalBytes: number;
+      fileCount: number;
+      quotaBytes: number;
+      byKind: { image: number; video: number; audio: number; other: number };
+    }> => {
+      const userId = userIdFromCtx(context);
+      const [{ totalBytes, fileCount }, quotaMiB, byKind] = await Promise.all([
+        storageUsage(userId),
+        userStorageQuotaMiB(userId),
+        storageByKind(userId),
+      ]);
+      return { totalBytes, fileCount, quotaBytes: storageQuotaMiBToBytes(quotaMiB), byKind };
+    },
+  );

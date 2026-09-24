@@ -1,616 +1,345 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight, Edit3, FileText, FolderPlus, LayoutGrid, List, MoreHorizontal, Trash2 } from 'lucide-react';
-import { useEffect, useOptimistic, useState, useTransition } from 'react';
+import { ClipboardList, Inbox, LayoutGrid, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
+import * as React from 'react';
 import { toast } from 'sonner';
-import { FILE_DRAG_TYPE } from '@/components/dashboard/GalleryEntry';
-import { Button } from '@/components/ui/button';
+import { ConfirmDeleteDialog } from '@/components/dashboard/ConfirmDeleteDialog';
+import { readDraggedFileIds } from '@/components/dashboard/file-drag';
+import { AnimatedCount } from '@/components/ui/animated-count';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useFolders } from '@/contexts/FoldersContext';
-import { useGalleryFilters } from '@/hooks/stores/use-gallery-filters';
-import { useConfirmation } from '@/hooks/use-confirmation';
+import { type FilesScope, useGalleryFilters } from '@/hooks/stores/use-gallery-filters';
 import { useMoveFiles } from '@/hooks/use-move-files';
+import { FOLDER_COLOR_NONE, nextFolderColor } from '@/libs/folder-colors';
 import { patchGalleryFiles } from '@/libs/gallery-cache';
 import { queryKeys } from '@/libs/query-keys';
-import { cn, formatSize } from '@/libs/utils';
+import { formatSize } from '@/libs/utils';
 import { createFolder, deleteFolder, updateFolder } from '@/server/fns/folders';
 import { getStorageUsage } from '@/server/fns/storage';
 import styles from './FolderSidebar.module.css';
 
-type FolderType = {
+type FolderRow = {
   id: string;
   name: string;
   color: string | null;
-  isDeleted: boolean;
-  deletedAt: Date | null;
-  ownerId: string;
   _count: { files: number };
-  createdAt: Date;
-  updatedAt: Date;
 };
 
-type OptimisticFolderAction =
-  | { type: 'create'; folder: FolderType }
-  | { type: 'update'; id: string; updates: Partial<Pick<FolderType, 'name' | 'color'>> }
-  | { type: 'delete'; id: string };
+type FolderSidebarProps = {
+  /** Opens the form-shares list, which the Sharing section links to. */
+  onFormSharesOpen: () => void;
+};
 
-interface FolderSidebarProps {
-  onFormSharesListOpenChange?: (open: boolean) => void;
-  onFormBuilderOpenChange?: (open: boolean) => void;
-  onNavigate?: () => void;
-  collapsible?: boolean;
+/**
+ * One sidebar row. Everything but "All files" is a drop target, so the row owns
+ * the drag state rather than the sidebar tracking an id — a row is either being
+ * dragged over or it is not.
+ */
+function Row({
+  icon,
+  label,
+  count,
+  active,
+  onSelect,
+  onDropFiles,
+  children,
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  count?: number;
+  active: boolean;
+  onSelect: () => void;
+  /** Omitted for "All files", which is where files already are. */
+  onDropFiles?: (fileIds: string[]) => void;
+  /** The hover menu, for rows that have one. */
+  children?: React.ReactNode;
+}) {
+  const [dropping, setDropping] = React.useState(false);
+
+  return (
+    <div className={styles.rowWrap}>
+      <button
+        type="button"
+        className={styles.row}
+        data-active={active || undefined}
+        data-dropping={dropping || undefined}
+        onClick={onSelect}
+        onDragOver={
+          onDropFiles &&
+          ((event) => {
+            if (!readDraggedFileIds(event)) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            setDropping(true);
+          })
+        }
+        onDragLeave={onDropFiles && (() => setDropping(false))}
+        onDrop={
+          onDropFiles &&
+          ((event) => {
+            const ids = readDraggedFileIds(event);
+            setDropping(false);
+            if (!ids) return;
+            event.preventDefault();
+            onDropFiles(ids);
+          })
+        }
+      >
+        {icon}
+        <span className={styles.rowName}>{label}</span>
+        {count !== undefined && (
+          <AnimatedCount
+            value={count}
+            className={styles.rowCount}
+          />
+        )}
+      </button>
+      {children}
+    </div>
+  );
 }
 
-const defaultColors = [
-  '#ef4444', // red-500
-  '#f97316', // orange-500
-  '#eab308', // yellow-500
-  '#22c55e', // green-500
-  '#06b6d4', // cyan-500
-  '#3b82f6', // blue-500
-  '#8b5cf6', // violet-500
-  '#ec4899', // pink-500
-];
+/** The inline "Folder name" field: Enter creates, Esc cancels, blur commits. */
+function NewFolderField({ onCreate, onCancel }: { onCreate: (name: string) => void; onCancel: () => void }) {
+  const [name, setName] = React.useState('');
 
-function SectionLabel({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn(styles.sectionLabel, className)}>{children}</div>;
-}
-
-/** Reads gallery-file ids from a native drag event; null when the drag isn't an internal file drag. */
-function readDraggedFileIds(e: React.DragEvent): string[] | null {
-  if (!e.dataTransfer.types.includes(FILE_DRAG_TYPE)) return null;
-  try {
-    const ids = JSON.parse(e.dataTransfer.getData(FILE_DRAG_TYPE));
-    return Array.isArray(ids) && ids.length > 0 ? ids : null;
-  } catch {
-    return null;
-  }
-}
-
-function FolderSidebar({ onFormSharesListOpenChange, onFormBuilderOpenChange, onNavigate, collapsible = true }: FolderSidebarProps) {
-  const queryClient = useQueryClient();
-  const selectedFolderId = useGalleryFilters((state) => state.filters.folderId ?? null);
-  const setFolderId = useGalleryFilters((state) => state.setFolderId);
-  const applyFilters = useGalleryFilters((state) => state.applyFilters);
-  const onFolderSelect = (folderId: string | null) => {
-    setFolderId(folderId);
-    applyFilters();
-    onNavigate?.();
+  const commit = () => {
+    const trimmed = name.trim();
+    if (trimmed) onCreate(trimmed);
+    else onCancel();
   };
-  const [, startTransition] = useTransition();
-  const [isCreating, setIsCreating] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [newFolderName, setNewFolderName] = useState('');
-  const [editName, setEditName] = useState('');
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [dragTargetId, setDragTargetId] = useState<string | null>(null);
 
-  const { confirm, ConfirmationDialog } = useConfirmation<string>();
+  return (
+    <div className={styles.newFolder}>
+      <Input
+        autoFocus
+        value={name}
+        placeholder="Folder name"
+        aria-label="Folder name"
+        className={styles.newFolderInput}
+        onChange={(event) => setName(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            commit();
+          }
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            onCancel();
+          }
+        }}
+      />
+    </div>
+  );
+}
+
+/**
+ * The Files sidebar: where you are, and where you can drag files to.
+ *
+ * It renders on Files only — it used to live in the `_dashboard` layout, where
+ * it was dead weight on every page that has no files (#57). The collapse-to-rail
+ * mode went with the move: a 232px column that is always there is one less
+ * thing to think about than one that might be 56px wide.
+ */
+function FolderSidebar({ onFormSharesOpen }: FolderSidebarProps) {
+  const queryClient = useQueryClient();
+  const { folders } = useFolders();
+  const scope = useGalleryFilters((state) => state.scope);
+  const setScope = useGalleryFilters((state) => state.setScope);
   const { moveFilesTo } = useMoveFiles();
 
-  const { data: storageUsage } = useQuery({
+  const [creating, setCreating] = React.useState(false);
+  const [renamingId, setRenamingId] = React.useState<string | null>(null);
+  const [deletingFolder, setDeletingFolder] = React.useState<FolderRow | null>(null);
+
+  const { data: storage } = useQuery({
     queryKey: queryKeys.storage.usage,
     queryFn: () => getStorageUsage(),
     staleTime: 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
-  useEffect(() => {
-    setMounted(true);
-    const saved = collapsible ? localStorage.getItem('folderSidebarCollapsed') : null;
-    if (saved !== null) {
-      setIsCollapsed(saved === 'true');
-    }
-  }, [collapsible]);
+  const select = (next: FilesScope) => setScope(next);
 
-  const toggleCollapse = () => {
-    const newState = !isCollapsed;
-    setIsCollapsed(newState);
-    localStorage.setItem('folderSidebarCollapsed', String(newState));
-  };
-
-  const { folders: contextFolders, isLoading } = useFolders();
-  const folders = contextFolders as FolderType[];
-
-  const [optimisticFolders, addOptimisticFolder] = useOptimistic(folders, (state, action: OptimisticFolderAction) => {
-    switch (action.type) {
-      case 'create':
-        return [action.folder, ...state];
-      case 'update':
-        return state.map((folder) => (folder.id === action.id ? { ...folder, ...action.updates } : folder));
-      case 'delete':
-        return state.filter((folder) => folder.id !== action.id);
-      default:
-        return state;
-    }
+  const { mutate: create } = useMutation({
+    mutationFn: (input: { name: string; color: string }) => createFolder({ data: input }),
+    onSuccess: (folder) => {
+      queryClient.setQueryData(queryKeys.folders.all, (old: FolderRow[] = []) => [folder, ...old]);
+      toast.success(`Folder “${folder.name}” created`);
+    },
+    onError: (error) => toast.error(error.message),
   });
 
-  const { mutate: executeCreateFolder } = useMutation({
-    mutationFn: async (input: { name: string; color?: string }) => {
-      return createFolder({ data: input });
-    },
-    onSuccess: (data) => {
-      queryClient.setQueryData(queryKeys.folders.all, (old: FolderType[] = []) => [data, ...old]);
-      toast.success('Folder created successfully');
-      setIsCreating(false);
-      setNewFolderName('');
-    },
-    onError: (error) => {
-      toast.error(`Failed to create folder: ${error.message}`);
-      setIsCreating(false);
-    },
-  });
-
-  const { mutate: executeUpdateFolder } = useMutation({
-    mutationFn: async (input: { id: string; name?: string; color?: string }) => {
-      return updateFolder({ data: input });
-    },
-    onSuccess: (data) => {
-      queryClient.setQueryData(queryKeys.folders.all, (old: FolderType[] = []) =>
-        old.map((folder) => (folder.id === data.id ? data : folder)),
+  const { mutate: rename } = useMutation({
+    mutationFn: (input: { id: string; name: string }) => updateFolder({ data: input }),
+    onSuccess: (folder) => {
+      queryClient.setQueryData(queryKeys.folders.all, (old: FolderRow[] = []) =>
+        old.map((row) => (row.id === folder.id ? { ...row, ...folder } : row)),
       );
-
+      // Cards carry their folder's name, so the cache has copies to correct.
       patchGalleryFiles(queryClient, (file) =>
-        file.folderId === data.id && file.folder ? { ...file, folder: { id: data.id, name: data.name, color: data.color } } : file,
+        file.folderId === folder.id && file.folder ? { ...file, folder: { id: folder.id, name: folder.name, color: folder.color } } : file,
       );
-
-      toast.success('Folder updated successfully');
-      setEditingId(null);
-      setEditName('');
+      toast.success('Folder renamed');
     },
-    onError: (error) => {
-      toast.error(`Failed to update folder: ${error.message}`);
-      setEditingId(null);
-    },
+    onError: (error) => toast.error(error.message),
   });
 
-  const { mutate: executeDeleteFolder } = useMutation({
-    mutationFn: async (input: { id: string }) => {
-      return deleteFolder({ data: { id: input.id } }) as Promise<{ id: string; filesCount: number }>;
-    },
-    onSuccess: (data) => {
-      queryClient.setQueryData(queryKeys.folders.all, (old: FolderType[] = []) => old.filter((folder) => folder.id !== data.id));
+  const { mutate: remove } = useMutation({
+    mutationFn: (id: string) => deleteFolder({ data: { id } }) as Promise<{ id: string; filesCount: number }>,
+    onSuccess: (result) => {
+      queryClient.setQueryData(queryKeys.folders.all, (old: FolderRow[] = []) => old.filter((row) => row.id !== result.id));
       queryClient.invalidateQueries({ queryKey: queryKeys.gallery.all });
-
-      if (selectedFolderId === data.id) {
-        onFolderSelect(null);
-      }
-
-      toast.success(data.filesCount > 0 ? `Folder deleted and ${data.filesCount} files moved to root` : 'Folder deleted successfully');
+      if (scope === result.id) select('*');
+      toast.success(
+        result.filesCount > 0
+          ? `Folder deleted · ${result.filesCount} ${result.filesCount === 1 ? 'file' : 'files'} moved out`
+          : 'Folder deleted',
+      );
     },
-    onError: (error) => {
-      toast.error(`Failed to delete folder: ${error.message}`);
-    },
+    onError: (error) => toast.error(error.message),
   });
 
-  const handleCreateFolder = () => {
-    if (!newFolderName.trim()) return;
-
-    const randomColor = defaultColors[Math.floor(Math.random() * defaultColors.length)] || null;
-    const tempId = `temp-${Date.now()}`;
-
-    startTransition(() => {
-      addOptimisticFolder({
-        type: 'create',
-        folder: {
-          id: tempId,
-          name: newFolderName.trim(),
-          color: randomColor,
-          isDeleted: false,
-          deletedAt: null,
-          ownerId: '',
-          _count: { files: 0 },
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      });
-    });
-
-    executeCreateFolder({
-      name: newFolderName.trim(),
-      color: randomColor || undefined,
-    });
-  };
-
-  const handleUpdateFolder = (id: string) => {
-    if (!editName.trim()) return;
-
-    startTransition(() => {
-      addOptimisticFolder({
-        type: 'update',
-        id,
-        updates: { name: editName.trim() },
-      });
-    });
-
-    executeUpdateFolder({
-      id,
-      name: editName.trim(),
-    });
-  };
-
-  const handleDeleteFolder = (folder: FolderType) => {
-    const fileWord = folder._count.files === 1 ? 'file' : 'files';
-    const message =
-      folder._count.files > 0
-        ? `This will delete "${folder.name}" and move ${folder._count.files} ${fileWord} to the root folder.`
-        : `This will permanently delete "${folder.name}".`;
-
-    confirm({
-      title: 'Delete Folder',
-      description: message,
-      data: folder.id,
-      onConfirm: (folderId) => {
-        startTransition(() => {
-          addOptimisticFolder({
-            type: 'delete',
-            id: folderId,
-          });
-        });
-
-        executeDeleteFolder({ id: folderId });
-      },
-    });
-  };
-
-  const startEditing = (folder: FolderType) => {
-    setEditingId(folder.id);
-    setEditName(folder.name);
-  };
-
-  const cancelEditing = () => {
-    setEditingId(null);
-    setEditName('');
-  };
-
-  const handleFolderDrop = (e: React.DragEvent, folderId: string) => {
-    e.preventDefault();
-    setDragTargetId(null);
-    const ids = readDraggedFileIds(e);
-    if (ids) moveFilesTo(ids, folderId);
-  };
-
-  const dragHandlers = (folderId: string) => ({
-    onDragOver: (e: React.DragEvent) => {
-      if (!e.dataTransfer.types.includes(FILE_DRAG_TYPE)) return;
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      setDragTargetId(folderId);
-    },
-    onDragLeave: (e: React.DragEvent) => {
-      // dragleave also fires when entering a child of the row — ignore those
-      if (e.currentTarget.contains(e.relatedTarget as Node)) return;
-      setDragTargetId((current) => (current === folderId ? null : current));
-    },
-    onDrop: (e: React.DragEvent) => handleFolderDrop(e, folderId),
-  });
-
-  const widthMode = collapsible ? (isCollapsed ? 'rail' : 'panel') : 'full';
-
-  if (!mounted) {
-    return (
-      <div
-        className={styles.shell}
-        data-width={collapsible ? 'panel' : 'full'}
-      >
-        <div className={styles.placeholder}>
-          <div className={styles.placeholderLabel}>Loading…</div>
-        </div>
-      </div>
-    );
-  }
+  const usedBytes = storage?.totalBytes ?? 0;
+  const quotaBytes = storage?.quotaBytes ?? 0;
+  const usedRatio = quotaBytes > 0 ? Math.min(1, usedBytes / quotaBytes) : 0;
 
   return (
-    <>
-      <div
-        className={styles.shell}
-        data-width={widthMode}
-      >
-        <div className={styles.panel}>
-          {collapsible && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className={styles.collapseToggle}
-              onClick={toggleCollapse}
-              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              {isCollapsed ? <ChevronRight className={styles.toggleIcon} /> : <ChevronLeft className={styles.toggleIcon} />}
-            </Button>
-          )}
+    <aside
+      className={styles.root}
+      aria-label="Folders"
+    >
+      <Row
+        icon={<LayoutGrid size={16} />}
+        label="All files"
+        active={scope === '*'}
+        onSelect={() => select('*')}
+      />
+      <Row
+        icon={<Inbox size={16} />}
+        label="Not in a folder"
+        active={scope === null}
+        onSelect={() => select(null)}
+        onDropFiles={(ids) => moveFilesTo(ids, null)}
+      />
 
-          <div className={styles.inner}>
-            {!isCollapsed ? (
-              <div className={styles.body}>
-                <SectionLabel className="margin-bottom-1">Library</SectionLabel>
-                <button
-                  type="button"
-                  onClick={() => onFolderSelect(null)}
-                  aria-current={selectedFolderId === null ? 'true' : undefined}
-                  className={styles.item}
-                  data-active={selectedFolderId === null || undefined}
-                >
-                  <LayoutGrid className={styles.itemIcon} />
-                  <span className={styles.itemLabel}>All files</span>
-                  {storageUsage && <span className={styles.count}>{storageUsage.fileCount}</span>}
-                </button>
+      <div className={styles.sectionLabel}>
+        Folders
+        <button
+          type="button"
+          className={styles.addButton}
+          aria-label="New folder"
+          onClick={() => setCreating(true)}
+        >
+          <Plus size={14} />
+        </button>
+      </div>
 
-                <div className={styles.sectionHeader}>
-                  <SectionLabel>Folders</SectionLabel>
-                  <button
-                    type="button"
-                    className={styles.addFolder}
-                    onClick={() => setIsCreating(true)}
-                    disabled={isCreating}
-                    aria-label="New folder"
-                  >
-                    <FolderPlus className={styles.itemIcon} />
-                  </button>
-                </div>
+      {creating && (
+        <NewFolderField
+          onCreate={(name) => {
+            create({ name, color: nextFolderColor(folders.map((folder) => folder.color)) });
+            setCreating(false);
+          }}
+          onCancel={() => setCreating(false)}
+        />
+      )}
 
-                {isCreating && (
-                  <div className={styles.editCard}>
-                    <Input
-                      placeholder="Folder name"
-                      value={newFolderName}
-                      onChange={(e) => setNewFolderName(e.target.value)}
-                      className={styles.editInput}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          handleCreateFolder();
-                        } else if (e.key === 'Escape') {
-                          setIsCreating(false);
-                          setNewFolderName('');
-                        }
-                      }}
-                      autoFocus
-                    />
-                    <div className={styles.editActions}>
-                      <Button
-                        size="sm"
-                        className={styles.editButton}
-                        onClick={handleCreateFolder}
-                        disabled={!newFolderName.trim()}
-                      >
-                        Create
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className={styles.editButton}
-                        onClick={() => {
-                          setIsCreating(false);
-                          setNewFolderName('');
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                )}
+      {folders.map((folder) =>
+        renamingId === folder.id ? (
+          <NewFolderField
+            key={folder.id}
+            onCreate={(name) => {
+              rename({ id: folder.id, name });
+              setRenamingId(null);
+            }}
+            onCancel={() => setRenamingId(null)}
+          />
+        ) : (
+          <Row
+            key={folder.id}
+            icon={
+              <span
+                className={styles.dot}
+                style={{ backgroundColor: folder.color ?? FOLDER_COLOR_NONE }}
+              />
+            }
+            label={folder.name}
+            count={folder._count.files}
+            active={scope === folder.id}
+            onSelect={() => select(folder.id)}
+            onDropFiles={(ids) => moveFilesTo(ids, folder.id)}
+          >
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className={styles.rowMenu}
+                aria-label={`Actions for ${folder.name}`}
+              >
+                <MoreHorizontal size={14} />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onClick={() => setRenamingId(folder.id)}>
+                  <Pencil size={14} />
+                  Rename
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDeletingFolder(folder)}>
+                  <Trash2 size={14} />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </Row>
+        ),
+      )}
 
-                <div className={styles.folderList}>
-                  {isLoading ? (
-                    <div className={styles.listNote}>Loading...</div>
-                  ) : optimisticFolders.length === 0 ? (
-                    <div className={styles.listNote}>No folders yet</div>
-                  ) : (
-                    optimisticFolders.map((folder) => {
-                      const isSelected = selectedFolderId === folder.id;
-                      const folderColor = folder.color || '#6b7280';
+      <div className={styles.sectionLabel}>Sharing</div>
+      <div className={styles.rowWrap}>
+        <button
+          type="button"
+          className={styles.row}
+          onClick={onFormSharesOpen}
+        >
+          <ClipboardList size={16} />
+          <span className={styles.rowName}>Form shares</span>
+        </button>
+      </div>
 
-                      if (editingId === folder.id) {
-                        return (
-                          <div
-                            key={folder.id}
-                            className={styles.editCard}
-                          >
-                            <Input
-                              value={editName}
-                              onChange={(e) => setEditName(e.target.value)}
-                              className={styles.editInput}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  handleUpdateFolder(folder.id);
-                                } else if (e.key === 'Escape') {
-                                  cancelEditing();
-                                }
-                              }}
-                              autoFocus
-                            />
-                            <div className={styles.editActions}>
-                              <Button
-                                size="sm"
-                                className={styles.editButton}
-                                onClick={() => handleUpdateFolder(folder.id)}
-                                disabled={!editName.trim()}
-                              >
-                                Save
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className={styles.editButton}
-                                onClick={cancelEditing}
-                              >
-                                Cancel
-                              </Button>
-                            </div>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <div
-                          key={folder.id}
-                          className={styles.row}
-                          {...dragHandlers(folder.id)}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => onFolderSelect(folder.id)}
-                            aria-current={isSelected ? 'true' : undefined}
-                            className={styles.item}
-                            data-active={isSelected || undefined}
-                            data-dragover={dragTargetId === folder.id || undefined}
-                          >
-                            <span
-                              className={styles.dot}
-                              style={{ backgroundColor: folderColor }}
-                            />
-                            <span
-                              className={styles.itemLabel}
-                              title={folder.name}
-                            >
-                              {folder.name}
-                            </span>
-                            <span className={styles.count}>{folder._count.files}</span>
-                          </button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger
-                              className={styles.rowMenu}
-                              aria-label="Folder options"
-                            >
-                              <MoreHorizontal className={styles.rowMenuIcon} />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              align="end"
-                              className={styles.menuContent}
-                            >
-                              <DropdownMenuItem onClick={() => startEditing(folder)}>
-                                <Edit3 className={styles.menuIcon} />
-                                Rename
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleDeleteFolder(folder)}
-                                className={styles.menuItemDanger}
-                              >
-                                <Trash2 className={styles.menuIcon} />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-
-                <SectionLabel className="margin-bottom-1 margin-top-4">Utilities</SectionLabel>
-                <button
-                  type="button"
-                  className={styles.item}
-                  onClick={() => {
-                    onFormSharesListOpenChange?.(true);
-                    onNavigate?.();
-                  }}
-                >
-                  <List className={styles.itemIcon} />
-                  <span className={styles.itemLabel}>My form shares</span>
-                </button>
-                <button
-                  type="button"
-                  className={styles.item}
-                  onClick={() => {
-                    onFormBuilderOpenChange?.(true);
-                    onNavigate?.();
-                  }}
-                >
-                  <FileText className={styles.itemIcon} />
-                  <span className={styles.itemLabel}>New form share</span>
-                </button>
-
-                <div className={styles.footer}>
-                  <div className={styles.footerRow}>
-                    <span>{storageUsage ? `${formatSize(storageUsage.totalBytes)} used` : '— used'}</span>
-                    <span>{storageUsage ? `${storageUsage.fileCount} files` : ''}</span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className={styles.rail}>
-                <div className={styles.railScroll}>
-                  <Tooltip>
-                    <TooltipTrigger
-                      className={styles.railItem}
-                      data-active={selectedFolderId === null || undefined}
-                      onClick={() => onFolderSelect(null)}
-                      aria-label="All files"
-                      aria-current={selectedFolderId === null ? 'true' : undefined}
-                    >
-                      <LayoutGrid className={styles.railIcon} />
-                    </TooltipTrigger>
-                    <TooltipContent side="right">All files</TooltipContent>
-                  </Tooltip>
-
-                  <div className={styles.railDivider} />
-
-                  {optimisticFolders.map((folder) => {
-                    const isSelected = selectedFolderId === folder.id;
-                    const folderColor = folder.color || '#6b7280';
-
-                    return (
-                      <Tooltip key={folder.id}>
-                        <TooltipTrigger
-                          className={styles.railItem}
-                          data-active={isSelected || undefined}
-                          data-dragover={dragTargetId === folder.id || undefined}
-                          onClick={() => onFolderSelect(folder.id)}
-                          aria-label={`${folder.name} (${folder._count.files})`}
-                          aria-current={isSelected ? 'true' : undefined}
-                          {...dragHandlers(folder.id)}
-                        >
-                          <span
-                            className={styles.railDot}
-                            style={{ backgroundColor: folderColor }}
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          {folder.name} ({folder._count.files})
-                        </TooltipContent>
-                      </Tooltip>
-                    );
-                  })}
-                </div>
-
-                <div className={styles.railFooter}>
-                  <Tooltip>
-                    <TooltipTrigger
-                      className={styles.railItem}
-                      onClick={() => {
-                        onFormSharesListOpenChange?.(true);
-                        onNavigate?.();
-                      }}
-                      aria-label="My form shares"
-                    >
-                      <List className={styles.railIcon} />
-                    </TooltipTrigger>
-                    <TooltipContent side="right">My form shares</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger
-                      className={styles.railItem}
-                      onClick={() => {
-                        onFormBuilderOpenChange?.(true);
-                        onNavigate?.();
-                      }}
-                      aria-label="New form share"
-                    >
-                      <FileText className={styles.railIcon} />
-                    </TooltipTrigger>
-                    <TooltipContent side="right">New form share</TooltipContent>
-                  </Tooltip>
-                </div>
-              </div>
-            )}
-          </div>
+      <div className={styles.storage}>
+        <div className={styles.storageRow}>
+          <span>Storage</span>
+          <span>
+            {formatSize(usedBytes, { trim: true })} of {formatSize(quotaBytes, { trim: true })}
+          </span>
+        </div>
+        <div
+          className={styles.meter}
+          role="progressbar"
+          aria-label="Storage used"
+          aria-valuenow={Math.round(usedRatio * 100)}
+        >
+          <span
+            className={styles.meterFill}
+            style={{ inlineSize: `${usedRatio * 100}%` }}
+          />
         </div>
       </div>
 
-      <ConfirmationDialog />
-    </>
+      <ConfirmDeleteDialog
+        open={deletingFolder !== null}
+        onOpenChange={(open) => !open && setDeletingFolder(null)}
+        title={deletingFolder ? `Delete “${deletingFolder.name}”?` : ''}
+        description={
+          deletingFolder && deletingFolder._count.files > 0
+            ? `Its ${deletingFolder._count.files} ${deletingFolder._count.files === 1 ? 'file' : 'files'} move out of the folder. The files themselves are kept.`
+            : 'This can’t be undone.'
+        }
+        onConfirm={() => {
+          if (deletingFolder) remove(deletingFolder.id);
+          setDeletingFolder(null);
+        }}
+      />
+    </aside>
   );
 }
 

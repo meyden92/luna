@@ -1,0 +1,124 @@
+@layer components {
+  /*
+   * Two columns over the whole viewport: the stage takes what is left after the
+   * panel. The stage keeps its own dark surface at any Appearance (--stage),
+   * because it sits behind arbitrary imagery.
+   */
+  .root {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--preview-panel-width);
+    animation: preview-in 120ms ease both;
+  }
+
+  @keyframes preview-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  .stage {
+    /* The horizontal breathing room is wider than any spacing step, so the nav
+       buttons never sit on top of the image. */
+    --stage-pad-inline: 4.5rem;
+    /* Round nav buttons big enough to hit without aiming. */
+    --stage-nav-size: 2.75rem;
+
+    position: relative;
+    display: grid;
+    place-items: center;
+    padding: var(--space-12) var(--stage-pad-inline);
+    background: var(--stage);
+  }
+
+  .image {
+    max-width: 100%;
+    max-height: calc(100vh - var(--space-12) * 2);
+    border-radius: var(--radius-xl);
+    /* A deep, near-black cast so the image reads as lifted off the stage rather
+       than cut into it. --scrim-strong is the app's fixed dark overlay colour. */
+    box-shadow: 0 30px 80px -20px var(--scrim-strong);
+  }
+
+  /* A file with nothing to show: the icon and its extension on a raised slab. */
+  .placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    width: 22.5rem;
+    aspect-ratio: 4 / 3;
+    border-radius: var(--radius-3xl);
+    background: color-mix(in oklab, var(--on-scrim) 10%, transparent);
+    color: color-mix(in oklab, var(--on-scrim) 80%, transparent);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+  }
+
+  .nav {
+    position: absolute;
+    top: 50%;
+    display: grid;
+    place-items: center;
+    width: var(--stage-nav-size);
+    height: var(--stage-nav-size);
+    border-radius: var(--radius-full);
+    background: color-mix(in oklab, var(--on-scrim) 8%, transparent);
+    color: var(--on-scrim);
+    translate: 0 -50%;
+    transition:
+      background-color var(--duration-fast) ease,
+      scale 350ms var(--spring);
+
+    &:hover {
+      background: color-mix(in oklab, var(--on-scrim) 16%, transparent);
+    }
+
+    &:active {
+      scale: 0.96;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--on-scrim);
+      outline-offset: 2px;
+    }
+
+    &[data-side="start"] {
+      left: var(--space-4);
+    }
+
+    &[data-side="end"] {
+      right: var(--space-4);
+    }
+  }
+
+  /* Position within the list the arrow keys walk: "3 / 20". */
+  .counter {
+    position: absolute;
+    bottom: var(--space-4);
+    left: 50%;
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
+    color: color-mix(in oklab, var(--on-scrim) 60%, transparent);
+    translate: -50% 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .root {
+      animation: none;
+    }
+
+    .nav {
+      transition-duration: 0.01ms;
+
+      &:active {
+        scale: 1;
+      }
+    }
+  }
+}

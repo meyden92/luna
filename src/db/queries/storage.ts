@@ -1,11 +1,18 @@
 import { eq } from 'drizzle-orm';
 import { evaluateQuota, type StorageQuotaDetails } from '@/libs/storage-quota';
+import type { AuditHandle } from '../audit';
 import type { Tx } from '../client';
+import { db } from '../client';
 import { user } from '../schema/auth';
 import { storageUsage } from './files';
 
 /**
  * Storage accounting reads (issues #15, #12).
+ */
+
+/**
+ * An owner's quota for display. No row lock: nothing is decided on this value,
+ * so a concurrent upload changing it under the read costs nothing.
  */
 
 /**
@@ -21,6 +28,11 @@ import { storageUsage } from './files';
  * Requires a transaction: a row lock outside one is released immediately and
  * buys nothing.
  */
+export async function userStorageQuotaMiB(userId: string, handle: AuditHandle = db): Promise<number | null> {
+  const [row] = await handle.select({ storageQuotaMiB: user.storageQuotaMiB }).from(user).where(eq(user.id, userId));
+  return row?.storageQuotaMiB ?? null;
+}
+
 export async function lockUserStorageQuota(userId: string, tx: Tx): Promise<number | null> {
   const [row] = await tx.select({ storageQuotaMiB: user.storageQuotaMiB }).from(user).where(eq(user.id, userId)).for('update');
   return row?.storageQuotaMiB ?? null;

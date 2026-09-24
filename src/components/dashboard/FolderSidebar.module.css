@@ -1,160 +1,79 @@
 @layer components {
-  .shell {
-    /* Two fixed widths so the rail/panel swap animates instead of jumping. */
-    --rail-width: 4.25rem;
-    --panel-width: 15rem;
-    --item-height: 2.125rem;
-    --icon-xs: 0.75rem;
-    --icon-sm: 0.875rem;
-
-    flex-shrink: 0;
-    height: 100%;
-    width: var(--panel-width);
-    transition: width 300ms ease-in-out;
-  }
-
-  .shell[data-width="rail"] {
-    width: var(--rail-width);
-  }
-
-  /* Embedded in a drawer: the sidebar fills whatever it is given. */
-  .shell[data-width="full"] {
-    width: 100%;
-  }
-
-  .panel {
-    position: relative;
+  .root {
+    position: sticky;
+    top: var(--nav-height);
     display: flex;
     flex-direction: column;
-    height: 100%;
+    gap: 2px;
+    height: calc(100dvh - var(--nav-height));
+    padding: var(--space-4) var(--space-3);
     border-right: 1px solid var(--border);
+    overflow-y: auto;
+
+    /* Desktop-only, per the design. Below md the gallery takes the full width. */
+    @media (width < 768px) {
+      display: none;
+    }
   }
 
-  .collapseToggle {
-    --toggle-size: 1.75rem;
-
-    position: absolute;
-    top: var(--space-3);
-    right: calc(var(--space-3) * -1);
-    z-index: 10;
-    width: var(--toggle-size);
-    height: var(--toggle-size);
-    padding: 0;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-full);
-    background: var(--background);
-    box-shadow: var(--shadow-sm);
-  }
-
-  .toggleIcon {
-    width: var(--icon-xs);
-    height: var(--icon-xs);
-  }
-
-  .inner {
+  /* A row and the menu that appears beside it on hover. */
+  .rowWrap {
     position: relative;
     display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
+    align-items: center;
   }
 
-  /* ---- Expanded panel ---------------------------------------------------- */
-  .body {
-    display: flex;
-    flex: 1;
-    min-height: 0;
-    flex-direction: column;
-    overflow-y: auto;
-    padding-inline: var(--space-3);
-    padding-top: var(--space-4);
-    padding-bottom: var(--space-4);
-  }
-
-  .sectionLabel {
-    padding-inline: var(--space-2);
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    line-height: var(--leading-xs);
-    font-weight: var(--weight-medium);
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    color: var(--foreground-subtle);
-  }
-
-  .sectionHeader {
+  .row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-top: var(--space-4);
-    margin-bottom: var(--space-1);
-  }
-
-  .addFolder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--space-6);
-    height: var(--space-6);
-    margin-right: var(--space-1);
-    margin-block: calc(var(--space-1) * -1);
-    border-radius: var(--radius-md);
-    color: var(--foreground-subtle);
-    transition:
-      color 150ms ease,
-      background-color 150ms ease;
-
-    &:hover {
-      background: var(--muted);
-      color: var(--foreground);
-    }
-
-    &:disabled {
-      opacity: 0.5;
-    }
-  }
-
-  /* Library / folder / utility rows all share this shape. */
-  .item {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
+    gap: 10px;
     width: 100%;
-    height: var(--item-height);
-    padding-inline: var(--space-2);
+    height: 2.125rem;
+    padding-inline: 10px;
+    /* Dashed and transparent, so becoming a drop target costs no layout. */
     border: 1px dashed transparent;
     border-radius: var(--radius-lg);
+    background: none;
+    font-family: inherit;
     font-size: var(--text-sm);
     font-weight: var(--weight-medium);
     text-align: left;
     color: var(--foreground-2);
     transition:
-      color 150ms ease,
-      background-color 150ms ease,
-      border-color 150ms ease;
+      background-color var(--duration-fast) ease,
+      border-color var(--duration-fast) ease,
+      color var(--duration-fast) ease,
+      scale 350ms var(--spring);
 
     &:hover {
-      background: var(--muted);
+      background-color: var(--muted);
+    }
+
+    &:active {
+      scale: 0.96;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--ring);
+      outline-offset: -2px;
+    }
+
+    & svg {
+      flex-shrink: 0;
     }
   }
 
-  .item[data-active] {
-    background: var(--accent);
+  .row[data-active] {
+    background-color: var(--accent);
     color: var(--accent-foreground);
   }
 
-  .item[data-dragover] {
+  .row[data-dropping] {
     border-color: var(--primary);
-    background: var(--accent);
+    background-color: var(--accent);
   }
 
-  .itemIcon {
-    flex-shrink: 0;
-    width: var(--icon-sm);
-    height: var(--icon-sm);
-  }
-
-  .itemLabel {
+  .rowName {
     flex: 1;
     min-width: 0;
     overflow: hidden;
@@ -162,245 +81,144 @@
     white-space: nowrap;
   }
 
-  .count {
-    font-family: var(--font-mono);
+  .rowCount {
+    margin-inline-start: auto;
     font-size: var(--text-xs);
     color: var(--foreground-subtle);
   }
 
-  /* ---- Inline create / rename card --------------------------------------- */
-  .editCard {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    margin-bottom: var(--space-2);
-    padding: var(--space-2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    background: var(--background);
-  }
-
-  .editInput {
-    height: 2.25rem;
-    border-radius: var(--radius-md);
-    font-size: var(--text-sm);
-  }
-
-  .editActions {
-    display: flex;
-    gap: var(--space-2);
-  }
-
-  .editButton {
-    flex: 1;
-    height: var(--space-8);
-    border-radius: var(--radius-md);
-    font-size: var(--text-xs);
-  }
-
-  /* ---- Folder list ------------------------------------------------------- */
-  .folderList {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-  }
-
-  .listNote {
-    padding: var(--space-4);
-    border: 1px dashed var(--input);
-    border-radius: var(--radius-lg);
-    font-size: var(--text-xs);
-    color: var(--foreground-subtle);
-  }
-
-  .row {
-    position: relative;
-  }
-
-  .row .count {
-    transition: opacity 150ms ease;
-  }
-
-  .row .item[data-active] .count {
+  .row[data-active] .rowCount {
     color: inherit;
-    opacity: 0.75;
+    opacity: 0.7;
   }
 
+  /*
+   * Rename and delete, hidden until the row is hovered or the menu has focus.
+   * It sits over the count rather than beside it: the count is information and
+   * the menu is an action, and only one of them is wanted at a time.
+   */
   .rowMenu {
     position: absolute;
-    top: 50%;
-    right: var(--space-1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--space-6);
-    height: var(--space-6);
-    transform: translateY(-50%);
+    inset-inline-end: 6px;
+    display: grid;
+    place-items: center;
+    width: 1.375rem;
+    height: 1.375rem;
+    border: 0;
     border-radius: var(--radius-md);
+    background-color: var(--muted-strong);
     color: var(--foreground-subtle);
     opacity: 0;
-    transition:
-      opacity 150ms ease,
-      color 150ms ease,
-      background-color 150ms ease;
+    transition: opacity var(--duration-fast) ease;
 
     &:hover {
-      background: var(--muted-strong);
       color: var(--foreground);
     }
 
-    &[data-state="open"] {
+    &:focus-visible {
       opacity: 1;
+      outline: 2px solid var(--ring);
+      outline-offset: 1px;
     }
   }
 
-  /* The file count gives way to the options trigger on hover. */
-  .row:hover .count {
-    opacity: 0;
-  }
-
-  .row:hover .rowMenu {
+  .rowWrap:hover .rowMenu,
+  .rowMenu[aria-expanded="true"] {
     opacity: 1;
   }
 
-  .rowMenuIcon {
-    width: var(--icon-sm);
-    height: var(--icon-sm);
-  }
-
-  .menuContent {
-    width: 9rem;
-  }
-
-  .menuIcon {
-    width: var(--icon-xs);
-    height: var(--icon-xs);
-    margin-right: var(--space-2);
-  }
-
-  .menuItemDanger {
-    color: var(--destructive);
-  }
-
-  /* ---- Storage footer ---------------------------------------------------- */
-  .footer {
-    margin-top: auto;
-    padding-inline: var(--space-2);
-    padding-top: var(--space-3);
-    border-top: 1px solid var(--border);
-  }
-
-  .footerRow {
+  /* "FOLDERS", "SHARING": the quietest text on the screen. */
+  .sectionLabel {
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
+    margin: 14px 0 var(--space-1);
+    padding-inline: 10px;
+    font-size: var(--text-label);
+    font-weight: var(--weight-medium);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
     color: var(--foreground-subtle);
   }
 
-  /* ---- Collapsed rail ---------------------------------------------------- */
-  .rail {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    overflow: hidden;
-    padding-inline: var(--space-2);
-    padding-top: var(--space-3);
-    padding-bottom: var(--space-2);
-  }
-
-  .railScroll {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-2);
-    overflow-y: auto;
-  }
-
-  .railItem {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--space-10);
-    height: var(--space-10);
-    padding: 0;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    background: var(--background);
+  .addButton {
+    display: grid;
+    place-items: center;
+    width: 1.375rem;
+    height: 1.375rem;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: none;
+    color: var(--foreground-subtle);
     transition:
-      color 150ms ease,
-      background-color 150ms ease,
-      border-color 150ms ease;
+      background-color var(--duration-fast) ease,
+      color var(--duration-fast) ease,
+      scale 350ms var(--spring);
 
     &:hover {
-      background: var(--muted);
+      background-color: var(--muted);
+      color: var(--foreground);
+    }
+
+    &:active {
+      scale: 0.96;
     }
   }
 
-  .railItem[data-active] {
-    border-color: color-mix(in oklab, var(--primary) 40%, transparent);
-    background: var(--accent);
-    color: var(--accent-foreground);
+  .newFolder {
+    padding-block: 2px var(--space-1);
   }
 
-  .railItem[data-dragover] {
-    border-style: dashed;
-    border-color: var(--primary);
-    background: var(--accent);
+  .newFolderInput {
+    height: 2rem;
   }
 
-  .railIcon {
-    width: var(--space-4);
-    height: var(--space-4);
-  }
-
-  .railDivider {
-    width: var(--space-8);
-    height: 1px;
-    margin-block: var(--space-1);
-    background: var(--border);
-  }
-
-  .railFooter {
-    display: flex;
-    flex-shrink: 0;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-2);
-    margin-top: var(--space-2);
-    padding-top: var(--space-3);
-    border-top: 1px solid var(--border);
-  }
-
-  /* Folder colour dot; the colour itself is per-folder runtime data. */
   .dot {
     flex-shrink: 0;
-    width: var(--space-2);
-    height: var(--space-2);
+    width: 10px;
+    height: 10px;
     margin-inline: 3px;
     border-radius: var(--radius-full);
   }
 
-  .railDot {
-    width: var(--space-2);
-    height: var(--space-2);
-    border-radius: var(--radius-full);
+  /* Pinned to the bottom of the column, whatever the folder list does. */
+  .storage {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: auto;
+    padding: 12px 10px var(--space-1);
   }
 
-  /* ---- Pre-hydration placeholder ----------------------------------------- */
-  .placeholder {
-    height: 100%;
-    padding: var(--space-3);
-    border-right: 1px solid var(--border);
-  }
-
-  .placeholderLabel {
-    padding: var(--space-2);
-    font-family: var(--font-mono);
+  .storageRow {
+    display: flex;
+    justify-content: space-between;
     font-size: var(--text-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
     color: var(--foreground-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .meter {
+    height: 6px;
+    border-radius: var(--radius-full);
+    background-color: var(--muted-strong);
+    overflow: hidden;
+  }
+
+  .meterFill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background-color: var(--primary);
+    transition: inline-size 700ms var(--ease-out-expo);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .row,
+    .addButton,
+    .rowMenu,
+    .meterFill {
+      transition: none;
+    }
   }
 }

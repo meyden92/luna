@@ -154,16 +154,17 @@ export function useEditImageGeneration() {
         // Stream closed → the server has persisted the history row; refresh it.
         queryClient.invalidateQueries({ queryKey: queryKeys.ai.imageEditHistory });
         if (finalStatus === 'failed') {
-          toast.error(finalError || 'Image edit failed');
-          return { success: false, error: finalError || 'Image edit failed', generationId };
+          toast.error(finalError || 'Couldn’t edit that image');
+          return { success: false, error: finalError || 'Couldn’t edit that image', generationId };
         }
 
         if (finalError) {
-          toast.error(`Edited ${finalSuccessCount}/${finalTotalCount} images. ${finalError}`);
+          console.warn('Image edit partially failed:', finalError);
+          toast.error(`Edited ${finalSuccessCount} of ${finalTotalCount} images — the rest failed`);
           return { success: true, generationId };
         }
 
-        toast.success(finalTotalCount > 1 ? `Edited ${finalSuccessCount}/${finalTotalCount} images` : 'Image edit complete');
+        toast.success(finalTotalCount > 1 ? `Edited ${finalSuccessCount} of ${finalTotalCount} images` : 'Image edited');
         return { success: true, generationId };
       } catch (error) {
         if ((error as Error).name === 'AbortError') {
@@ -171,7 +172,7 @@ export function useEditImageGeneration() {
             status: 'failed',
             error: 'Generation was cancelled',
           });
-          toast('Generation cancelled');
+          toast('Image cancelled');
           return { success: false, error: 'Cancelled' };
         }
 

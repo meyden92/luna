@@ -50,7 +50,7 @@ export function UploadDefaultsPanel({ tokens, folders }: UploadDefaultsPanelProp
       );
       await queryClient.invalidateQueries({ queryKey: settingsOverviewQuery.queryKey });
     } catch {
-      toast.error('Failed to update upload defaults');
+      toast.error('Could not update upload defaults');
     } finally {
       setIsSaving(false);
     }
@@ -63,7 +63,13 @@ export function UploadDefaultsPanel({ tokens, folders }: UploadDefaultsPanelProp
         description="Applies to ShareX and the Upload button."
       />
       <SettingsRow label="Folder">
+        {/* Base UI's SelectValue renders the raw value unless the root is handed the
+            options, so the trigger would read a folder's UUID rather than its name. */}
         <Select
+          items={[
+            { value: ROOT_FOLDER_VALUE, label: 'Not in a folder' },
+            ...folders.map((folder) => ({ value: folder.id, label: folder.name })),
+          ]}
           value={primary?.folderId ?? ROOT_FOLDER_VALUE}
           onValueChange={(value) => void applyToAllTokens({ folderId: value === ROOT_FOLDER_VALUE ? null : value })}
           disabled={!primary || isSaving}

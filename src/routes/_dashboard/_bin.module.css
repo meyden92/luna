@@ -1,6 +1,6 @@
 @layer components {
   /* The split view below fills the space under the fixed nav and scrolls its own panes. */
   .root {
-    height: calc(100vh - var(--nav-height));
+    height: calc(100dvh - var(--nav-height));
   }
 }

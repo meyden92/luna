@@ -10,7 +10,7 @@ import { useTemplateGenerationHistory } from '@/hooks/use-template-generation-hi
 import { useTemplateStreamGeneration } from '@/hooks/use-template-stream-generation';
 import type { TemplateVariable } from '@/types/template';
 import { Canvas, CanvasEmpty } from './canvas';
-import { Field, FieldLabel, FieldName } from './field';
+import { Field, FieldHint, FieldLabel, FieldName } from './field';
 import { COUNTS } from './generation-options';
 import type { ReferenceImage } from './reference-image';
 import { ReferenceSlots } from './reference-slots';
@@ -31,16 +31,38 @@ interface TemplateRunnerProps {
   onUseInEdit: (src: string) => void;
 }
 
+/**
+ * How a run names itself: the template plus the options this run chose, e.g.
+ * "Studio portrait · Warm, Square". Never the substituted model prompt — that is
+ * an internal string, and §11 rules out developer jargon in the interface.
+ */
+function runLabel(templateName: string, variables: TemplateVariable[], values: Record<string, unknown>): string {
+  const chosen = variables
+    .map((variable) => {
+      const value = values[variable.name];
+      // A switch contributes its own label when on, and nothing when off.
+      if (variable.type === 'boolean') return value ? variable.label : null;
+      if (value === undefined || value === '' || value === '__NOTHING__') return null;
+      if (variable.type === 'dropdown') {
+        return variableOptions(variable).find((option) => option.value === value)?.label ?? String(value);
+      }
+      return String(value);
+    })
+    .filter(Boolean);
+
+  return chosen.length > 0 ? `${templateName} · ${chosen.join(', ')}` : templateName;
+}
+
 /** A batch is one press of Generate; its items are that batch's images. */
-function toRun(items: TemplateGenerationItem[]): GenerationRun {
+function toRun(items: TemplateGenerationItem[], variables: TemplateVariable[]): GenerationRun {
   const ordered = [...items].sort((a, b) => a.batchIndex - b.batchIndex);
   const first = ordered[0]!;
   const loading = ordered.some((item) => item.status === 'queued' || item.status === 'uploading' || item.status === 'processing');
 
   return {
     id: first.batchId,
-    prompt: first.result?.finalPrompt ?? first.templateName,
-    meta: first.templateName,
+    prompt: runLabel(first.templateName, variables, first.variableValues),
+    meta: 'Template',
     createdAt: first.createdAt,
     loading,
     ratio: 1,
@@ -86,6 +108,10 @@ function VariableControl({
       <Input
         id={`variable-${variable.name}`}
         type="number"
+        // 1–10, as the design's number field does: templates count things like
+        // people or props, never zero of them and never hundreds.
+        min={1}
+        max={10}
         className={styles.number}
         value={String(value ?? '')}
         onChange={(event) => onChange(event.target.value)}
@@ -96,7 +122,6 @@ function VariableControl({
   return (
     <Input
       id={`variable-${variable.name}`}
-      placeholder={variable.description ?? undefined}
       value={String(value ?? '')}
       onChange={(event) => onChange(event.target.value)}
     />
@@ -128,8 +153,8 @@ function TemplateRunner({
       if (batch) batch.push(item);
       else batches.set(item.batchId, [item]);
     }
-    return [...batches.values()].map(toRun).sort((a, b) => b.createdAt - a.createdAt);
-  }, [generations, template.id]);
+    return [...batches.values()].map((batch) => toRun(batch, variables)).sort((a, b) => b.createdAt - a.createdAt);
+  }, [generations, template.id, variables]);
 
   // Only one batch is ever in flight, and it is the one Cancel aborts.
   const activeRun = runs.find((run) => run.loading);
@@ -140,21 +165,27 @@ function TemplateRunner({
     return value === undefined || value === '' || value === '__NOTHING__';
   });
 
+  // §6.3 offers *up to* `inputImageCount` photo slots, so one photo is enough to
+  // run: filling every slot is an option, not a requirement.
   const blocker =
-    references.length < template.inputImageCount
-      ? template.inputImageCount === 1
-        ? 'Add a photo first'
-        : `Add ${template.inputImageCount - references.length} more photos`
-      : missingRequired.length > 0
-        ? `Fill in ${missingRequired[0]!.label}`
-        : null;
+    references.length === 0 ? 'Add a photo first' : missingRequired.length > 0 ? `Fill in ${missingRequired[0]!.label}` : null;
 
+  // The template's own bounds. A disabled option takes no pointer events, so the
+  // reason cannot live in a `title` — it is said under the control instead.
   const countItems: SegmentedItem<string>[] = COUNTS.map((value) => ({
     value: String(value),
     label: `${value}×`,
-    disabled: value > template.maxImageCount,
-    title: value > template.maxImageCount ? `This template makes up to ${template.maxImageCount} images` : undefined,
+    disabled: value < template.minImageCount || value > template.maxImageCount,
   }));
+  const atLeast = template.minImageCount > COUNTS[0];
+  const atMost = template.maxImageCount < Math.max(...COUNTS);
+  const countHint = atLeast
+    ? atMost
+      ? `This template makes between ${template.minImageCount} and ${template.maxImageCount} images`
+      : `This template makes at least ${template.minImageCount} images`
+    : atMost
+      ? `This template makes up to ${template.maxImageCount} ${template.maxImageCount === 1 ? 'image' : 'images'}`
+      : null;
 
   const run = () => {
     if (blocker || busy) return;
@@ -207,6 +238,10 @@ function TemplateRunner({
               value={values[variable.name]}
               onChange={(value) => onValuesChange({ ...values, [variable.name]: value })}
             />
+            {/* Under the control, not as a placeholder: an explanation that
+                disappears the moment you type is no explanation. A switch's
+                field is a single row, which has no place to put one. */}
+            {variable.description && variable.type !== 'boolean' && <FieldHint>{variable.description}</FieldHint>}
           </Field>
         ))}
 
@@ -218,6 +253,7 @@ function TemplateRunner({
             value={String(count)}
             onValueChange={(value) => onCountChange(Number(value))}
           />
+          {countHint && <FieldHint>{countHint}</FieldHint>}
         </Field>
 
         <div className={styles.actions}>

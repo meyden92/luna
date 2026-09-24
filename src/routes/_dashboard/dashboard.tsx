@@ -150,7 +150,7 @@ function FilesPage() {
       return;
     }
     try {
-      await copyImageToClipboard(directUrlFor(file));
+      await copyImageToClipboard(file.id);
       toast.success('Image copied to clipboard');
     } catch {
       toast.error('Could not copy the image');

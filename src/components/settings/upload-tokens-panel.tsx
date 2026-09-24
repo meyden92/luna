@@ -41,7 +41,7 @@ export function UploadTokensPanel({ tokens }: UploadTokensPanelProps) {
 
   const { mutate: createToken, isPending: isCreating } = useAppMutation(createUserToken, {
     invalidates: [settingsOverviewQuery.queryKey],
-    errorMessage: 'Failed to create token',
+    errorMessage: 'Could not create token',
     onSuccess: (token) => {
       setIsCreateOpen(false);
       setName('');
@@ -52,7 +52,7 @@ export function UploadTokensPanel({ tokens }: UploadTokensPanelProps) {
   const { mutate: revokeToken } = useAppMutation(deleteUserToken, {
     invalidates: [settingsOverviewQuery.queryKey],
     successMessage: 'Token revoked',
-    errorMessage: 'Failed to revoke token',
+    errorMessage: 'Could not revoke token',
   });
 
   const copyToClipboard = async (text: string) => {
@@ -60,7 +60,7 @@ export function UploadTokensPanel({ tokens }: UploadTokensPanelProps) {
       await navigator.clipboard.writeText(text);
       toast.success('Token copied');
     } catch {
-      toast.error('Failed to copy token');
+      toast.error('Could not copy token');
     }
   };
 

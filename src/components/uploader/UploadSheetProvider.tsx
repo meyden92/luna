@@ -88,7 +88,7 @@ export function UploadSheetProvider({ children }: { children: React.ReactNode })
 
     for (const file of files) {
       const error = getUploadValidationError(file);
-      if (error) rejected.push(`${file.name}: ${error}`);
+      if (error) rejected.push(`${file.name} — ${error}`);
       else accepted.push(file);
     }
 

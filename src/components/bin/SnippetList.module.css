@@ -2,7 +2,8 @@
   .root {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    /* 10px, off the spacing scale, because the prototype's split column is 10px. */
+    gap: 0.625rem;
     width: var(--split-list-width);
     flex-shrink: 0;
     padding: var(--space-4) var(--space-3);
@@ -17,10 +18,17 @@
     padding: 0 var(--space-1);
   }
 
+  /* Shared with the Automations split head: the prototype's 22px snapped to the
+     nearest type step, since a one-off 22px token is not worth carrying. */
   .title {
     font-size: var(--text-xl);
     font-weight: var(--weight-semibold);
     letter-spacing: var(--tracking-heading);
+  }
+
+  /* The prototype's search box is shorter than a standalone field. */
+  .search {
+    --input-group-height: 2rem;
   }
 
   .rows {
@@ -29,6 +37,11 @@
     gap: 2px;
   }
 
+  /*
+   * A row rises into place rather than appearing, staggered down the list by the
+   * `animationDelay` the component sets per index — so a search that narrows the
+   * list reads as the remaining rows arriving, not as a flicker.
+   */
   .row {
     display: flex;
     flex-direction: column;
@@ -40,6 +53,14 @@
     transition:
       background-color 150ms ease-out,
       scale 350ms var(--spring);
+    animation: rowRise 500ms var(--ease-out-expo) both;
+  }
+
+  @keyframes rowRise {
+    from {
+      opacity: 0;
+      translate: 0 10px;
+    }
   }
 
   .row:hover {
@@ -95,5 +116,12 @@
     padding: var(--space-3);
     font-size: var(--text-sm);
     color: var(--foreground-subtle);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .row {
+      transition: none;
+      animation: none;
+    }
   }
 }

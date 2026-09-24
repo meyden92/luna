@@ -57,7 +57,7 @@ function ChangePasswordDialog() {
         return;
       }
 
-      toast.success('Password changed. Other devices have been signed out.');
+      toast.success('Password changed — other devices signed out');
       setOpen(false);
     },
   };
@@ -234,7 +234,7 @@ function ProfilePanelContent({
       return { nextName, nextIsPublic };
     },
     onSuccess: ({ nextName, nextIsPublic }) => {
-      toast.success('Profile updated');
+      toast.success('Profile saved');
       setCommittedName(nextName);
       setCommittedIsPublic(nextIsPublic);
       void authClient.getSession({ query: { disableCookieCache: true } });

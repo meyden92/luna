@@ -166,10 +166,10 @@ export function summarizeFlow({ trigger, steps }: LinearFlow, folderName: (folde
 export function incompleteReason({ name, steps }: { name: string; steps: StepNode[] }): string | null {
   if (!name.trim()) return 'Give this automation a name — until then it is not saved.';
   if (steps.some((step) => step.type === 'condition' && !step.config.contains.trim())) {
-    return 'Type the text an "Only if" step should look for — until then this automation is not saved.';
+    return 'Type the text an “Only if” step should look for — until then this automation is not saved.';
   }
   if (steps.some((step) => step.type === 'route-folder' && !step.config.folderId)) {
-    return 'Pick a folder for the "Move to folder" step — until then this automation is not saved.';
+    return 'Pick a folder for the “Move to folder” step — until then this automation is not saved.';
   }
   return null;
 }

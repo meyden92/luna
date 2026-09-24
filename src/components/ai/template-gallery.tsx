@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { ImageIcon, Plus } from 'lucide-react';
 import type * as React from 'react';
-import { CanvasEmpty } from './canvas';
+import { cn } from '@/libs/utils';
 import { type AiTemplate, resolveTemplateVariables, templatePreviewImages } from './template-data';
 import styles from './template-gallery.module.css';
 
@@ -17,17 +17,12 @@ function trackSpotlight(event: React.PointerEvent<HTMLElement>) {
   event.currentTarget.style.setProperty('--my', `${event.clientY - bounds.top}px`);
 }
 
-/** The Templates tab before a template is chosen. */
+/**
+ * The Templates tab before a template is chosen. There is no separate empty
+ * state: with nothing built yet the dashed "New template" card is the only card,
+ * and it is exactly the one thing a first-time visitor needs.
+ */
 function TemplateGallery({ templates, onOpen }: TemplateGalleryProps) {
-  if (templates.length === 0) {
-    return (
-      <CanvasEmpty
-        title="No templates yet"
-        description="A template turns a photo plus a few options into a finished image. Build one to get started."
-      />
-    );
-  }
-
   return (
     <div className={styles.grid}>
       {templates.map((template, index) => {
@@ -72,7 +67,10 @@ function TemplateGallery({ templates, onOpen }: TemplateGalleryProps) {
 
       <Link
         to="/admin/templates/create"
-        className={styles.new}
+        className={cn(styles.card, styles.new)}
+        // Runtime value: it is the last card, so it rises after the real ones.
+        style={{ animationDelay: `${templates.length * 60}ms` }}
+        onPointerMove={trackSpotlight}
       >
         <Plus size={18} />
         New template

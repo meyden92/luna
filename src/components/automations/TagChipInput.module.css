@@ -12,7 +12,9 @@
     align-items: center;
     gap: var(--space-1);
     height: 1.625rem;
-    padding-inline: var(--space-3) var(--space-1);
+    /* 10px/6px, off the spacing scale: the label needs more room than the remove
+       button, which brings its own 18px hit area. */
+    padding-inline: 0.625rem 0.375rem;
     border-radius: var(--radius-full);
     background-color: var(--muted-strong);
     font-size: var(--text-xs);

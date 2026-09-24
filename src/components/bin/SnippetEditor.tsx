@@ -126,7 +126,7 @@ export function SnippetEditor({ bin, onDeleted }: SnippetEditorProps) {
       const updated = await updateBin({ data: input });
       queryClient.setQueryData<Bin[]>(queryKeys.bins.mine, (bins) => bins?.map((b) => (b.id === updated.id ? updated : b)));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Could not save the snippet', { richColors: true });
+      toast.error(error instanceof Error ? error.message : 'Could not save the snippet');
     } finally {
       if (editTokenRef.current === token) setSaving(false);
     }
@@ -136,11 +136,11 @@ export function SnippetEditor({ bin, onDeleted }: SnippetEditorProps) {
     mutationFn: () => deleteBin({ data: { id: bin.id } }),
     onSuccess: () => {
       queryClient.setQueryData<Bin[]>(queryKeys.bins.mine, (bins) => bins?.filter((b) => b.id !== bin.id));
-      toast.success('Snippet deleted', { richColors: true });
+      toast.success('Snippet deleted');
       setConfirmOpen(false);
       onDeleted(bin.id);
     },
-    onError: (error: Error) => toast.error(error.message || 'Could not delete the snippet', { richColors: true }),
+    onError: (error: Error) => toast.error(error.message || 'Could not delete the snippet'),
   });
 
   /** Applies an edit locally, then validates and schedules the debounced save. Nothing is persisted while invalid. */
@@ -167,12 +167,12 @@ export function SnippetEditor({ bin, onDeleted }: SnippetEditorProps) {
 
   const copyCode = async () => {
     await navigator.clipboard.writeText(content);
-    toast.success('Code copied', { richColors: true });
+    toast.success('Code copied');
   };
 
   const copyLink = async () => {
     await navigator.clipboard.writeText(`${window.location.origin}/bin/${bin.id}`);
-    toast.success('Link copied', { richColors: true });
+    toast.success('Link copied');
   };
 
   const footerText = invalid ? 'Needs a 3+ character title and 10+ characters of code to save' : saving ? 'Saving…' : 'Saved';
@@ -205,18 +205,17 @@ export function SnippetEditor({ bin, onDeleted }: SnippetEditorProps) {
             Copy link
           </Button>
         ) : (
+          // A disabled button swallows its own hover, so the tooltip hangs off a wrapper.
           <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  size="sm"
-                  variant="outline"
-                  aria-disabled
-                />
-              }
-            >
-              <Link2 />
-              Copy link
+            <TooltipTrigger render={<span />}>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled
+              >
+                <Link2 />
+                Copy link
+              </Button>
             </TooltipTrigger>
             <TooltipContent>Make it public to share a link</TooltipContent>
           </Tooltip>
@@ -254,7 +253,10 @@ export function SnippetEditor({ bin, onDeleted }: SnippetEditorProps) {
         </DropdownMenu>
       </div>
       <div className={styles.optsRow}>
+        {/* Base UI's SelectValue renders the raw value unless the root is handed the
+            options, so the trigger would read "typescript" rather than "TypeScript". */}
         <Select
+          items={SUPPORTED_LANGUAGES}
           value={language}
           onValueChange={(value) => value && commit({ language: value })}
         >

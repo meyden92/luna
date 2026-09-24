@@ -28,7 +28,12 @@
     max-width: 40ch;
   }
 
-  .ideas {
+  /*
+   * The idea chips are a wrapping row, not Empty's centred column. Element
+   * prefixed like `div.well` above: a bare class only ties with `empty`'s own
+   * `.content`, so the chips would stack or not depending on bundle order.
+   */
+  div.ideas {
     flex-direction: row;
     flex-wrap: wrap;
     max-width: none;

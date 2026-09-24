@@ -86,6 +86,19 @@ export function qualityLabel(steps: number): string {
 export const COUNTS = [1, 2, 4] as const;
 
 /**
+ * The count option a run should start on for a source that declares its own
+ * bounds. Templates store `minImageCount`/`maxImageCount` as free numbers, so a
+ * template asking for 3 matches no option at all: seeding 3 would leave the
+ * segmented control with no active option and nothing for the unmeasured
+ * fallback to style, while still submitting 3. This lands on the smallest option
+ * that satisfies the minimum without exceeding the maximum.
+ */
+export function startingCount(min: number, max: number): number {
+  const allowed = COUNTS.filter((value) => value <= max);
+  return allowed.find((value) => value >= min) ?? allowed.at(-1) ?? COUNTS[0];
+}
+
+/**
  * How many images one run of this model can return. Models without a count
  * field produce a single image, which is why the higher count options are
  * disabled rather than silently ignored.

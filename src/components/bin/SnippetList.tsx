@@ -36,7 +36,7 @@ export function SnippetList({ bins, activeId, query, onQueryChange, onSelect, on
           New
         </Button>
       </div>
-      <InputGroup>
+      <InputGroup className={styles.search}>
         <InputGroupAddon>
           <Search />
         </InputGroupAddon>
@@ -48,11 +48,13 @@ export function SnippetList({ bins, activeId, query, onQueryChange, onSelect, on
         />
       </InputGroup>
       <div className={styles.rows}>
-        {filtered.map((bin) => (
+        {filtered.map((bin, index) => (
           <button
             key={bin.id}
             type="button"
             className={styles.row}
+            // The rows rise in one after another rather than all at once.
+            style={{ animationDelay: `${index * 40}ms` }}
             data-active={bin.id === activeId || undefined}
             onClick={() => onSelect(bin.id)}
           >

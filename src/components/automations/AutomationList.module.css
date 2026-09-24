@@ -2,7 +2,8 @@
   .root {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    /* 10px, off the spacing scale, because the prototype's split column is 10px. */
+    gap: 0.625rem;
     padding: var(--space-4) var(--space-3);
     border-right: 1px solid var(--border);
     overflow-y: auto;
@@ -16,11 +17,15 @@
     padding: var(--space-1) var(--space-1) 0;
   }
 
-  /* A page title scaled for a 300px column rather than the full width. */
+  /*
+   * A page title scaled for a 300px column rather than the full width, and the
+   * same size as the Snippets split head — the prototype's 22px snapped to the
+   * nearest type step, since a one-off 22px token is not worth carrying.
+   */
   .title {
     margin: 0;
     font-family: var(--font-title);
-    font-size: var(--text-2xl);
+    font-size: var(--text-xl);
     font-weight: var(--weight-semibold);
     letter-spacing: var(--tracking-heading);
     line-height: 1.1;

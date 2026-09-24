@@ -34,7 +34,6 @@ function MoveToFolderMenu({ fileIds, onClose, asDropdown = false, flat = false }
     <Item disabled>Loading…</Item>
   ) : (
     <>
-      {/* Root folder option */}
       <Item onClick={() => handleMoveToFolder(null)}>
         <FolderOpen className={styles.icon} />
         Not in a folder

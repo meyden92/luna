@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
 import { copyImageToClipboard } from '@/libs/image-clipboard';
-import { type PreviewFile, previewFileUrl, previewShareUrl } from './preview-file';
+import { type PreviewFile, previewShareUrl } from './preview-file';
 
 /**
  * The Preview's clipboard actions: the image write itself is shared with the
@@ -11,7 +11,7 @@ import { type PreviewFile, previewFileUrl, previewShareUrl } from './preview-fil
 /** Put the image itself on the clipboard, ready to paste into a chat or a doc. */
 export async function copyPreviewImage(file: PreviewFile): Promise<void> {
   try {
-    await copyImageToClipboard(previewFileUrl(file));
+    await copyImageToClipboard(file.id);
     toast('Image copied to clipboard');
   } catch {
     toast.error('Could not copy the image');

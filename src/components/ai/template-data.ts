@@ -1,4 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
+import { normalizeOption } from '@/components/admin/utils/option-utils';
 import { queryKeys } from '@/libs/query-keys';
 import { getTemplateImageUrl } from '@/libs/utils';
 import { listAiTemplates } from '@/server/fns/ai';
@@ -66,11 +67,16 @@ export function resolveTemplateVariables(template: AiTemplate): TemplateVariable
   return [...inline, ...global].filter((variable) => variable.enabled !== false);
 }
 
-/** Dropdown options normalised: legacy templates store bare strings. */
+/**
+ * Dropdown options normalised: legacy templates store bare strings. Options the
+ * admin switched off are dropped rather than offered as dead choices, which is
+ * what every other consumer of `normalizeOption` already does.
+ */
 export function variableOptions(variable: TemplateVariable): Array<{ label: string; value: string }> {
-  return (variable.options ?? []).map((option) =>
-    typeof option === 'string' ? { label: option, value: option } : { label: option.label, value: option.value },
-  );
+  return (variable.options ?? [])
+    .map(normalizeOption)
+    .filter((option) => option.enabled)
+    .map((option) => ({ label: option.label, value: option.value }));
 }
 
 /** Cover images for a template card; `previewImages` is a JSON array of bucket keys. */
@@ -91,10 +97,14 @@ export function templateVariableDefaults(variables: TemplateVariable[]): Record<
   for (const variable of variables) {
     if (variable.type === 'boolean') {
       values[variable.name] = variable.defaultValue === 'true';
+    } else if (variable.type === 'dropdown') {
+      // A default the admin has since switched off is no longer an option, and
+      // seeding it would leave the segmented control with nothing active.
+      const options = variableOptions(variable);
+      const chosen = options.find((option) => option.value === variable.defaultValue);
+      values[variable.name] = chosen?.value ?? options[0]?.value ?? '';
     } else if (variable.defaultValue != null && variable.defaultValue !== '') {
       values[variable.name] = variable.defaultValue;
-    } else if (variable.type === 'dropdown') {
-      values[variable.name] = variableOptions(variable)[0]?.value ?? '';
     } else {
       values[variable.name] = '';
     }

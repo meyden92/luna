@@ -51,6 +51,18 @@
     display: flex;
     gap: 2px;
     min-width: 0;
+    /*
+     * The design is desktop-only, but "don't optimise" is not "let it break":
+     * narrow enough and the links outgrow their box, and without this they
+     * paint straight through the Upload button beside them. Scrolling keeps
+     * every link reachable and costs the desktop layout nothing.
+     */
+    overflow-x: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 
   .link {
@@ -147,6 +159,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-2);
+    flex-shrink: 0;
     margin-inline-start: auto;
   }
 

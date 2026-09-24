@@ -6,7 +6,7 @@ import { startViewTransition } from '@/libs/view-transition';
 import { CreatePanel } from './create-panel';
 import { EditPanel } from './edit-panel';
 import styles from './generate-workspace.module.css';
-import { DEFAULT_SHAPE, DEFAULT_STEPS, type GenerationModel } from './generation-options';
+import { DEFAULT_SHAPE, DEFAULT_STEPS, type GenerationModel, startingCount } from './generation-options';
 import { type GenerationSettings, GenerationSettingsSheet } from './generation-settings-sheet';
 import { HistoryPanel } from './history-panel';
 import { type ReferenceImage, referenceImageFromUrl } from './reference-image';
@@ -54,7 +54,8 @@ function GenerateWorkspace({
   const [modelId, setModelId] = React.useState(generationModels[0]?.id ?? '');
   const [prompt, setPrompt] = React.useState('');
   const [shape, setShape] = React.useState<string>(DEFAULT_SHAPE);
-  const [count, setCount] = React.useState(1);
+  // Two by default: a pair to choose between is more use than a single image.
+  const [count, setCount] = React.useState(2);
   const [settings, setSettings] = React.useState<GenerationSettings>(DEFAULT_SETTINGS);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const promptRef = React.useRef<HTMLTextAreaElement | null>(null);
@@ -127,7 +128,7 @@ function GenerateWorkspace({
         setTemplateId(nextId);
         setTemplateReferences([]);
         setTemplateValues(next ? templateVariableDefaults(resolveTemplateVariables(next)) : {});
-        setTemplateCount(next?.minImageCount ?? 1);
+        setTemplateCount(next ? startingCount(next.minImageCount, next.maxImageCount) : 1);
       }, 'page');
     },
     [templates],

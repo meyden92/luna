@@ -62,7 +62,7 @@ function useAiGenerationHistory<TItem extends GenerationQueueItem | GenerationIt
         queryClient.setQueryData(queryKey, context.previousDbItems);
       }
       if (context?.previousSnapshot) restoreGenerationSnapshot(context.previousSnapshot);
-      toast.error('Failed to remove generation');
+      toast.error('Could not delete image — it’s back in your history');
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey }),
   });
@@ -86,7 +86,7 @@ function useAiGenerationHistory<TItem extends GenerationQueueItem | GenerationIt
         queryClient.setQueryData(queryKey, context.previousDbItems);
       }
       if (context?.previousSnapshot) restoreGenerationSnapshot(context.previousSnapshot);
-      toast.error('Failed to clear completed generations');
+      toast.error('Could not clear images — they’re back in your history');
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey }),
   });

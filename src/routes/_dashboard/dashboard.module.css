@@ -35,7 +35,7 @@
 
   .count {
     margin: 0;
-    font-size: var(--text-sm);
+    font-size: var(--text-meta);
     color: var(--foreground-subtle);
     font-variant-numeric: tabular-nums;
   }

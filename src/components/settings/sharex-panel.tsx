@@ -34,7 +34,7 @@ interface SharexPanelProps {
 /** The ShareX card: one Download button, wired to whichever upload token the config should use. */
 export function SharexPanel({ primaryToken }: SharexPanelProps) {
   const { mutate: createConfig, isPending } = useAppMutation(getShareXConfig, {
-    errorMessage: 'Failed to create ShareX config',
+    errorMessage: 'Could not create ShareX config',
     onSuccess: (config) => {
       downloadSharexConfig(JSON.stringify(config, null, 2), sharexConfigFilename(primaryToken?.name ?? 'sharex'));
       toast.success('LunaShare.sxcu downloaded');

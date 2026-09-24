@@ -299,9 +299,10 @@
    * Two labelled chips plus the menu do not fit a portrait thumbnail, and a
    * flex row that cannot fit does not shrink — it spills past the card and out
    * of the page, which is where the horizontal scrollbar came from. Below the
-   * width that holds both labels, the chips become their icons.
+   * width the two labels need (about 260px plus the 8px insets), the chips
+   * become their icons.
    */
-  @container (width < 20rem) {
+  @container (width < 17.5rem) {
     .chipLabel {
       display: none;
     }

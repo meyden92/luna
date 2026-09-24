@@ -62,12 +62,26 @@
     color: var(--muted-foreground);
   }
 
-  /* Variable dropdowns can hold long option labels, so they wrap in the column. */
+  /*
+   * Variable dropdowns can hold long option labels that do not fit the 340px
+   * form. They scroll rather than wrap, like the Files type filter: the
+   * travelling pill is one element measured from `offsetLeft` and only moves in
+   * X, so a second row would stretch it two rows tall and park it behind the
+   * wrong option.
+   */
   .segmented {
-    flex-wrap: wrap;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 
-  .number {
+  /* Element prefixed to out-specify `input`'s own full-width `.root`. */
+  input.number {
     width: 6rem;
   }
 

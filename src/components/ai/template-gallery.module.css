@@ -96,8 +96,9 @@
     font-weight: var(--weight-semibold);
   }
 
+  /* Secondary to the 14px name, so it takes the 13px metadata step. */
   .description {
-    font-size: var(--text-sm);
+    font-size: var(--text-meta);
     line-height: var(--leading-sm);
     color: var(--muted-foreground);
   }
@@ -109,32 +110,28 @@
     color: var(--foreground-subtle);
   }
 
-  /* The way out to the builder, which this round did not redesign. */
+  /*
+   * The way out to the builder, which this round did not redesign. Worn
+   * alongside `.card`, so it inherits the rise, the 3px lift, the shadow and the
+   * spotlight; this rule only states how a dashed placeholder differs from a
+   * real template. It follows `.card` in the file, so the shared declarations
+   * resolve here without needing to be more specific.
+   */
   .new {
-    display: flex;
     min-height: 15rem;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: var(--space-2);
-    border: 1px dashed var(--border);
-    border-radius: var(--radius-xl);
+    border-style: dashed;
+    background-color: transparent;
     font-size: var(--text-sm);
     line-height: var(--leading-sm);
     font-weight: var(--weight-medium);
     color: var(--muted-foreground);
-    transition:
-      border-color var(--duration-base) ease,
-      color var(--duration-base) ease;
 
     &:hover {
       border-color: var(--primary);
       color: var(--foreground);
-    }
-
-    &:focus-visible {
-      outline: 2px solid var(--ring);
-      outline-offset: 2px;
     }
   }
 

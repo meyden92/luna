@@ -223,6 +223,7 @@ function AutomationDetail({
                 <StepCard
                   kind={STEP_LABELS[step.type]}
                   icon={<StepIcon size={16} />}
+                  vtName={`step-${step.id}`}
                   onRemove={() => removeStep(step.id)}
                 >
                   <StepFields

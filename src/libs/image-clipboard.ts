@@ -5,6 +5,18 @@
  */
 
 /**
+ * Where the bytes are read from: the app's own delivery route, keyed by file id.
+ *
+ * Not the CDN. The CDN is a different origin and answers without CORS headers,
+ * so `fetch` on it fails outright — which is exactly what stopped Copy image
+ * working. `<img src>` and the direct link still point at the CDN, because
+ * rendering an image cross-origin is fine and reading it is not.
+ */
+export function clipboardImageUrl(fileId: string): string {
+  return `/api/d/${encodeURIComponent(fileId)}`;
+}
+
+/**
  * Fetch an image and hand back a PNG.
  *
  * Browsers only accept `image/png` on the clipboard, so a webp, jpeg or avif
@@ -30,13 +42,13 @@ async function fetchAsPng(url: string): Promise<Blob> {
 }
 
 /**
- * Copy the image at `url`.
+ * Copy an owned file's image.
  *
  * The blob is handed to `ClipboardItem` as a promise rather than awaited first,
  * because `clipboard.write` has to be reached while the click or keypress that
  * asked for it still counts as a user gesture. Rejects on failure so the caller
  * can say so — this module shows nothing itself.
  */
-export async function copyImageToClipboard(url: string): Promise<void> {
-  await navigator.clipboard.write([new ClipboardItem({ 'image/png': fetchAsPng(url) })]);
+export async function copyImageToClipboard(fileId: string): Promise<void> {
+  await navigator.clipboard.write([new ClipboardItem({ 'image/png': fetchAsPng(clipboardImageUrl(fileId)) })]);
 }

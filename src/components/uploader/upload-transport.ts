@@ -12,9 +12,15 @@ import type { GalleryFile } from '@/types/project';
 
 const MAX_WEB_UPLOAD_BYTES = 200 * 1024 * 1024;
 
-/** The `accept` list for a file input, matching the content types below. */
+/*
+ * The `accept` list for a file input, covering what `isAllowedUploadContentType`
+ * below takes so nothing that would upload fine is greyed out in the browse
+ * dialog. `accept` only understands the three `image|video|audio/*` wildcards, so
+ * the `application/vnd.*` family it also allows is listed by extension instead;
+ * `application/octet-stream` is the type a file the OS cannot identify arrives as.
+ */
 export const UPLOAD_ACCEPT =
-  'image/*,video/*,audio/*,text/*,application/gzip,application/json,application/pdf,application/x-7z-compressed,application/x-rar-compressed,application/x-tar,application/x-zip-compressed,application/xml,application/zip,.7z,.gz,.json,.pdf,.rar,.tar,.xml,.zip,.doc,.docx,.ppt,.pptx,.xls,.xlsx';
+  'image/*,video/*,audio/*,text/*,application/gzip,application/json,application/octet-stream,application/pdf,application/x-7z-compressed,application/x-rar-compressed,application/x-tar,application/x-zip-compressed,application/xml,application/zip,.7z,.gz,.json,.pdf,.rar,.tar,.xml,.zip,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.odt,.ods,.odp';
 
 function normalizeUploadContentType(contentType: string | null | undefined): string {
   const normalized = contentType?.trim().toLowerCase();
@@ -43,18 +49,25 @@ function isAllowedUploadContentType(contentType: string): boolean {
   );
 }
 
-/** The reason this file cannot be uploaded, or undefined when it can. */
+/**
+ * The reason this file cannot be uploaded, or undefined when it can.
+ *
+ * Returned as a lowercase fragment meant to be read after the file name (see
+ * `addFiles` in UploadSheetProvider) — the MIME type a rejection is actually
+ * based on means nothing to a person, so it goes to the console instead.
+ */
 export function getUploadValidationError(file: File): string | undefined {
   if (file.size <= 0) {
-    return 'File is empty';
+    return 'it is empty';
   }
   if (file.size > MAX_WEB_UPLOAD_BYTES) {
-    return `File is larger than ${formatSize(MAX_WEB_UPLOAD_BYTES)}`;
+    return `it is larger than ${formatSize(MAX_WEB_UPLOAD_BYTES)}`;
   }
 
   const contentType = normalizeUploadContentType(file.type);
   if (!isAllowedUploadContentType(contentType)) {
-    return `Unsupported file type: ${contentType}`;
+    console.warn(`Rejected upload "${file.name}": unsupported content type "${contentType}"`);
+    return 'this kind of file can’t be uploaded';
   }
 
   return undefined;
@@ -135,7 +148,8 @@ function toUploadError(status: number, responseText: string): UploadError {
     if (responseText) return new UploadError(responseText);
   }
 
-  return new UploadError(`Upload failed with status ${status}`);
+  console.warn(`Upload failed with status ${status}`, responseText);
+  return new UploadError('Upload failed, please try again');
 }
 
 /**

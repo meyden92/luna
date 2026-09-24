@@ -15,10 +15,19 @@ import { TagChipInput } from './TagChipInput';
 
 type FolderOption = { id: string; name: string };
 
+/*
+ * Base UI's SelectValue renders the raw value unless the Select root is handed
+ * the options, so these triggers would read "upload" and "title" rather than
+ * their labels. Same reason the folder select below builds its items inline.
+ */
+const TRIGGER_ITEMS = TRIGGER_TYPES.map((trigger) => ({ value: trigger, label: TRIGGER_LABELS[trigger] }));
+const CONDITION_FIELD_ITEMS = CONDITION_FIELDS.map((field) => ({ value: field, label: CONDITION_FIELD_LABELS[field] }));
+
 /** The "When" select. Its width is fixed so the longest trigger label fits on one line. */
 function TriggerField({ value, onChange }: { value: TriggerType; onChange: (trigger: TriggerType) => void }) {
   return (
     <Select
+      items={TRIGGER_ITEMS}
       value={value}
       onValueChange={(next: string | null) => next && onChange(next as TriggerType)}
     >
@@ -30,12 +39,12 @@ function TriggerField({ value, onChange }: { value: TriggerType; onChange: (trig
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        {TRIGGER_TYPES.map((trigger) => (
+        {TRIGGER_ITEMS.map((item) => (
           <SelectItem
-            key={trigger}
-            value={trigger}
+            key={item.value}
+            value={item.value}
           >
-            {TRIGGER_LABELS[trigger]}
+            {item.label}
           </SelectItem>
         ))}
       </SelectContent>
@@ -52,6 +61,7 @@ function StepFields({ step, folders, onChange }: { step: StepNode; folders: Fold
     return (
       <>
         <Select
+          items={CONDITION_FIELD_ITEMS}
           value={step.config.field}
           onValueChange={(next: string | null) => next && onChange({ ...step, config: { ...step.config, field: next as ConditionField } })}
         >
@@ -63,12 +73,12 @@ function StepFields({ step, folders, onChange }: { step: StepNode; folders: Fold
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {CONDITION_FIELDS.map((field) => (
+            {CONDITION_FIELD_ITEMS.map((item) => (
               <SelectItem
-                key={field}
-                value={field}
+                key={item.value}
+                value={item.value}
               >
-                {CONDITION_FIELD_LABELS[field]}
+                {item.label}
               </SelectItem>
             ))}
           </SelectContent>
@@ -91,6 +101,7 @@ function StepFields({ step, folders, onChange }: { step: StepNode; folders: Fold
 
     return (
       <Select
+        items={folders.map((folder) => ({ value: folder.id, label: folder.name }))}
         value={step.config.folderId || null}
         onValueChange={(next: string | null) => next && onChange({ ...step, config: { folderId: next } })}
       >

@@ -4,8 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Segmented, type SegmentedItem } from '@/components/ui/segmented';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import type { GenerationQueueItem } from '@/hooks/stores/image-generation-queue-store';
-import { useImageGenerationHistory } from '@/hooks/use-ai-generation-history';
+import { type GenerationQueueItem, useImageGenerationQueueStore } from '@/hooks/stores/image-generation-queue-store';
 import { useImageGeneration } from '@/hooks/use-image-generation';
 import { useModelFieldDefaults } from '@/hooks/use-model-field-defaults';
 import { Canvas, CanvasEmpty, IdeaChip } from './canvas';
@@ -109,7 +108,14 @@ function CreatePanel({
   saveToFolderName,
   promptRef,
 }: CreatePanelProps) {
-  const { generations } = useImageGenerationHistory();
+  /*
+   * Create's runs are session state (§12): this is the live queue store, which
+   * holds only what this session generated and is not persisted. Merging the
+   * stored history in instead would make Create a second History tab — the empty
+   * state and its example prompts would be unreachable forever after the first
+   * generation, and every past image would mount and replay its rise animation.
+   */
+  const generations = useImageGenerationQueueStore((state) => state.generations);
   const { generate, cancel } = useImageGeneration();
   const [fieldDefaults, setFieldDefaults] = React.useState<Record<string, unknown>>({});
 
@@ -123,14 +129,20 @@ function CreatePanel({
   const busy = activeRun !== undefined;
 
   // A model that returns one image at a time cannot honour 2× or 4×, so those
-  // options are disabled and say so rather than quietly producing one image.
+  // options are disabled. The reason is said beside the control rather than in a
+  // `title`: a disabled option takes no pointer events, so no tooltip can fire.
   const maxImages = maxImagesPerRun(fields);
   const countItems: SegmentedItem<string>[] = COUNTS.map((value) => ({
     value: String(value),
     label: `${value}×`,
     disabled: value > maxImages,
-    title: value > maxImages ? `${model?.label ?? 'This model'} makes one image at a time` : undefined,
   }));
+  const countHint =
+    maxImages >= Math.max(...COUNTS)
+      ? null
+      : maxImages === 1
+        ? `${model?.label ?? 'This model'} makes one image at a time`
+        : `${model?.label ?? 'This model'} makes up to ${maxImages} images at a time`;
   // Switching to a single-image model must not leave a stale 4× standing.
   const effectiveCount = Math.min(count, maxImages);
 
@@ -216,6 +228,7 @@ function CreatePanel({
             value={String(effectiveCount)}
             onValueChange={(value) => onCountChange(Number(value))}
           />
+          {countHint && <PromptCardHint>{countHint}</PromptCardHint>}
 
           <Button
             variant="ghost"

@@ -43,7 +43,8 @@
   .prompt {
     display: -webkit-box;
     overflow: hidden;
-    font-size: var(--text-sm);
+    /* 13px metadata step: the card's subject is its cover, not this caption. */
+    font-size: var(--text-meta);
     line-height: 1.4;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;

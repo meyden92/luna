@@ -10,9 +10,9 @@
     min-width: 0;
     align-items: center;
     height: var(--input-group-height);
-    border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+    border: 1px solid var(--input);
     border-radius: var(--radius-lg);
-    background-color: color-mix(in oklab, var(--muted) 35%, transparent);
+    background-color: var(--muted);
     box-shadow: var(--shadow-sm);
     outline: none;
     transition:

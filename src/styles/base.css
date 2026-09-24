@@ -5,6 +5,8 @@
  */
 @layer base {
   html {
+    /* Lets height animate to and from `auto`, which the Automations connectors use. */
+    interpolate-size: allow-keywords;
     scrollbar-gutter: stable;
     scrollbar-color: var(--input) transparent;
     scrollbar-width: thin;
@@ -17,27 +19,6 @@
     font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-image:
-      radial-gradient(ellipse 900px 500px at 85% -10%, color-mix(in oklab, var(--primary) 9%, transparent), transparent 60%),
-      radial-gradient(ellipse 700px 400px at -10% 30%, color-mix(in oklab, var(--primary) 5%, transparent), transparent 60%);
-    background-attachment: fixed;
-  }
-
-  /* Paper-grain overlay across the whole document. */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    opacity: 0.5;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-    mix-blend-mode: multiply;
-  }
-
-  [data-theme="dark"] body::before {
-    mix-blend-mode: screen;
-    opacity: 0.35;
   }
 
   * {

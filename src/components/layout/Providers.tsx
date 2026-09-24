@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { PropsWithChildren } from 'react';
 import { useState } from 'react';
-import { Toaster } from 'sonner';
 import { TooltipProvider } from '../ui/tooltip';
+import { AppToaster } from './app-toaster';
 
 type ProvidersProps = PropsWithChildren;
 
@@ -15,7 +15,7 @@ const Providers = ({ children, ...props }: ProvidersProps) => {
       {...props}
     >
       <TooltipProvider delay={200}>{children}</TooltipProvider>
-      <Toaster toastOptions={{ duration: 6000 }} />
+      <AppToaster />
     </QueryClientProvider>
   );
 };

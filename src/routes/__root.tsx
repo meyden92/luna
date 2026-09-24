@@ -6,8 +6,8 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { Suspense } from 'react';
-import { Toaster } from 'sonner';
 import Navigation from '@/components/landing/Navigation';
+import { AppToaster } from '@/components/layout/app-toaster';
 import { ImpersonationBar } from '@/components/layout/ImpersonationBar';
 import { MainContent } from '@/components/layout/MainContent';
 import { ThemeProvider } from '@/components/layout/theme-provider';
@@ -102,7 +102,7 @@ function RootComponent() {
                     <Outlet />
                   </MainContent>
                 </div>
-                <Toaster toastOptions={{ duration: 6000 }} />
+                <AppToaster />
               </TooltipProvider>
             </ThemeProvider>
             {(import.meta as any).env?.DEV ? (

@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { getFileIcon } from '@/libs/utils';
 import styles from './Preview.module.css';
 import { PreviewPanel } from './PreviewPanel';
+import { PreviewStrip } from './PreviewStrip';
 import { copyPreviewImage, copyPreviewLink } from './preview-clipboard';
 import { isPreviewImage, type PreviewFile, previewExtensionLabel, previewFileUrl } from './preview-file';
 
@@ -20,6 +21,9 @@ export type PreviewProps = {
   onDelete: (fileId: string) => void;
   onMoveToFolder: (fileId: string, folderId: string | null) => void;
   onVisibilityChange: (fileId: string, isPrivate: boolean) => void;
+  /** Fetches the gallery's next page; absent when everything has loaded. */
+  onLoadMore?: () => void;
+  loadingMore: boolean;
 };
 
 /** How many neighbours either side are fetched ahead so ← → feel instant. */
@@ -59,11 +63,21 @@ function NeighbourPreload({ files, index }: { files: readonly PreviewFile[]; ind
 }
 
 /**
- * Full-screen Preview: the image on a dark stage, and a panel of everything that
- * can be done with the file. The gallery owns which file is open and hands the
+ * Full-screen Preview: the image on a dark stage, a filmstrip of the loaded
+ * files, and a panel of everything that can be done with the file. The gallery owns which file is open and hands the
  * whole filtered, sorted list over, so ← → walk what the owner is looking at.
  */
-export function Preview({ fileId, files, onClose, onNavigate, onDelete, onMoveToFolder, onVisibilityChange }: PreviewProps) {
+export function Preview({
+  fileId,
+  files,
+  onClose,
+  onNavigate,
+  onDelete,
+  onMoveToFolder,
+  onVisibilityChange,
+  onLoadMore,
+  loadingMore,
+}: PreviewProps) {
   const index = fileId === null ? -1 : files.findIndex((candidate) => candidate.id === fileId);
   const file = index === -1 ? undefined : files[index];
   const previous = index > 0 ? files[index - 1] : undefined;
@@ -225,6 +239,14 @@ export function Preview({ fileId, files, onClose, onNavigate, onDelete, onMoveTo
           {index + 1} / {files.length}
         </p>
       </div>
+
+      <PreviewStrip
+        files={files}
+        index={index}
+        onNavigate={onNavigate}
+        onLoadMore={onLoadMore}
+        loadingMore={loadingMore}
+      />
 
       <PreviewPanel
         file={file}

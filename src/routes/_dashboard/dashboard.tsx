@@ -333,6 +333,8 @@ function FilesPage() {
         onDelete={(fileId) => setConfirmDeleteIds([fileId])}
         onMoveToFolder={(fileId, folderId) => moveFilesTo([fileId], folderId)}
         onVisibilityChange={(fileId, isPrivate) => setVisibility({ fileId, isPrivate })}
+        onLoadMore={hasNextPage ? fetchNextPage : undefined}
+        loadingMore={isFetchingNextPage}
       />
 
       <ConfirmDeleteDialog

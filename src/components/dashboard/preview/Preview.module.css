@@ -1,7 +1,7 @@
 @layer components {
   /*
-   * Two columns over the whole viewport: the stage takes what is left after the
-   * panel. The stage keeps its own dark surface at any Appearance (--stage),
+   * Three columns over the whole viewport: the stage takes what is left after
+   * the filmstrip and the panel. The stage keeps its own dark surface at any Appearance (--stage),
    * because it sits behind arbitrary imagery.
    */
   .root {
@@ -9,7 +9,7 @@
     inset: 0;
     z-index: 70;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) var(--preview-panel-width);
+    grid-template-columns: minmax(0, 1fr) 10rem var(--preview-panel-width);
     animation: preview-in 120ms ease both;
   }
 

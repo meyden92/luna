@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import { listOwnerCachedImages } from '@/db/queries/admin';
 import * as ai from '@/db/queries/ai';
 import { softDeleteFiles } from '@/db/queries/files';
 import { markTemplateGenerationFailed } from '@/db/queries/tasks';
@@ -22,6 +23,26 @@ export const listAiModels = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     if (data.type === 'generation') return ai.listActiveGenerationModels();
     return ai.listActiveEditingModels();
+  });
+
+/** How many past uploads the Edit picker offers, newest first. */
+const PREVIOUS_REFERENCES_LIMIT = 100;
+
+/**
+ * Reference images this user uploaded to Edit before. Every Edit upload is kept
+ * as a `CachedImage` (purpose `image-edit`), so it can be picked again without
+ * finding the original file on the computer.
+ */
+export const listPreviousReferenceImages = createServerFn({ method: 'GET' })
+  .middleware(appMiddleware({ auth: 'user' }))
+  .handler(async ({ context }) => {
+    const { images } = await listOwnerCachedImages({
+      ownerId: userIdFromCtx(context),
+      purpose: 'image-edit',
+      limit: PREVIOUS_REFERENCES_LIMIT,
+      offset: 0,
+    });
+    return images.map((image) => ({ id: image.id, url: image.url, filename: image.filename }));
   });
 
 export const listAiTemplates = createServerFn({ method: 'GET' })

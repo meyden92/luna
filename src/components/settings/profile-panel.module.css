@@ -16,6 +16,11 @@
     max-width: 360px;
   }
 
+  .textarea {
+    max-width: 360px;
+    resize: vertical;
+  }
+
   .passwordForm {
     display: flex;
     flex-direction: column;

@@ -44,7 +44,6 @@ export const getViewableFile = createServerFn({ method: 'GET' })
     return id;
   })
   .handler(async ({ data: id }): Promise<ViewableFileResult> => {
-    const startedAt = Date.now();
     const info = await getViewableFileRow(id);
     if (!info) return { status: 'not-found' };
 
@@ -78,17 +77,9 @@ export const getViewableFile = createServerFn({ method: 'GET' })
 
     const cdnUrl = info.private ? `/api/d/${info.id}` : getCDNImage(`/${info.ownerId}/${info.url}`);
     const { getPublicOrigin } = await import('@/libs/request-origin');
-    const [{ recordViewEvent }, { recordEgress }] = await Promise.all([
-      import('@/libs/analytics/view-events'),
-      import('@/libs/egress/record'),
-    ]);
-    void recordViewEvent({ targetKind: 'file', targetId: info.id, ownerId: info.ownerId, serverMs: Date.now() - startedAt }).catch(
-      () => undefined,
-    );
     if (!info.private) {
-      void recordEgress({ ownerId: info.ownerId, fileId: info.id, bytes: info.size, rendition: 'original', wasEstimated: true }).catch(
-        () => undefined,
-      );
+      const { recordEgress } = await import('@/libs/egress/record');
+      void recordEgress({ ownerId: info.ownerId, bytes: info.size }).catch(() => undefined);
     }
 
     return {

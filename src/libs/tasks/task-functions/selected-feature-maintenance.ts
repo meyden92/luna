@@ -1,5 +1,5 @@
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { deleteFileRenditions, deleteRawAnalyticsBefore, listStaleFileRenditions } from '@/db/queries/tasks';
+import { deleteFileRenditions, listStaleFileRenditions } from '@/db/queries/tasks';
 import { env } from '@/libs/env';
 import { s3Client } from '@/libs/S3Helper';
 import type { TaskFunction } from '@/types/tasks';
@@ -15,10 +15,4 @@ export const pruneFileRenditionsExecutor: TaskFunction = async (...args) => {
 
   await deleteFileRenditions(renditions.map((rendition) => rendition.id));
   return { deleted: renditions.length };
-};
-
-export const pruneRawAnalyticsExecutor: TaskFunction = async (...args) => {
-  const days = typeof args[0] === 'number' ? args[0] : 90;
-  const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-  return await deleteRawAnalyticsBefore(cutoff);
 };

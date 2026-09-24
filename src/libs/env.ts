@@ -23,7 +23,6 @@ const envSchema = z.object({
   }),
   RENDITION_SIGNING_SECRET: z.string().min(16).optional(),
   DELIVERY_COOKIE_SECRET: z.string().min(16).optional(),
-  ANALYTICS_SALT: z.string().min(16).optional(),
   TRUSTED_PROXY_HOPS: z.coerce.number().int().min(0).default(0),
   MAX_SHAREX_UPLOAD_BYTES: z.coerce
     .number()

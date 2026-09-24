@@ -1,13 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
-import {
-  createOwnedFlow,
-  deactivateOwnedFlow,
-  getOwnedFlow,
-  listFlowRuns as listFlowRunsQuery,
-  listOwnedFlows,
-  updateOwnedFlow,
-} from '@/db/queries/flows';
+import { createOwnedFlow, deactivateOwnedFlow, listOwnedFlows, updateOwnedFlow } from '@/db/queries/flows';
 import type { JsonValue } from '@/db/schema/json';
 import { createFlowSchema, type FlowGraph, updateFlowSchema } from '@/schemas/flow-schema';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
@@ -65,13 +58,4 @@ export const deleteFlow = createServerFn({ method: 'POST' })
     const retired = await deactivateOwnedFlow({ id: data.id, ownerId: userId }, userId);
     if (!retired) throw new Error('Flow not found');
     return { success: true };
-  });
-
-export const listFlowRuns = createServerFn({ method: 'POST' })
-  .middleware(appMiddleware({ auth: 'user' }))
-  .validator(flowIdSchema)
-  .handler(async ({ data, context }) => {
-    const flow = await getOwnedFlow(data.id, userIdFromCtx(context));
-    if (!flow) throw new Error('Flow not found');
-    return listFlowRunsQuery(flow.id);
   });

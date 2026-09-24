@@ -28,13 +28,7 @@ async function handle(request: Request, fileId: string): Promise<Response> {
     }),
   );
   const body = Buffer.from(await object.Body!.transformToByteArray());
-  await recordEgress({
-    ownerId: file.ownerId,
-    fileId: file.id,
-    bytes: body.byteLength,
-    rendition: 'original',
-    wasEstimated: false,
-  });
+  await recordEgress({ ownerId: file.ownerId, bytes: body.byteLength });
 
   const headers = new Headers({
     'Content-Type': file.contentType,

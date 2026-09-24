@@ -22,7 +22,6 @@ import { useUploadSheet } from '@/contexts/upload-sheet';
 import { useBulkSelection } from '@/hooks/stores/use-bulk-selection';
 import { toGalleryFilters, useGalleryFilters } from '@/hooks/stores/use-gallery-filters';
 import { sizeMetrics, useGalleryView } from '@/hooks/stores/use-gallery-view';
-import { useClipboard } from '@/hooks/use-copy-to-clipboard';
 import { galleryQueryOptions, useGallery } from '@/hooks/use-gallery';
 import { useMoveFiles } from '@/hooks/use-move-files';
 import { deleteGalleryFiles, patchGalleryFiles } from '@/libs/gallery-cache';
@@ -57,9 +56,39 @@ function scopeTitle(scope: string | null, folders: readonly { id: string; name: 
   return folders.find((folder) => folder.id === scope)?.name ?? 'Folder';
 }
 
+/** The file's page in the app, which is what "Copy link" copies. */
+const linkFor = (fileId: string) => `${window.location.origin}/view/${fileId}`;
+
+/*
+ * Copies the file's link. `navigator.clipboard` directly rather than
+ * `useClipboard`, whose `copy` is new every render and would break the cards' memo.
+ */
+async function copyLink(fileId: string) {
+  try {
+    await navigator.clipboard.writeText(linkFor(fileId));
+    toast.success('Link copied');
+  } catch {
+    toast.error('Could not copy the link');
+  }
+}
+
+/** Copies the image itself, or the link for a file that is not an image. */
+async function copyImage(file: GalleryFile) {
+  // A non-image has no image to put on the clipboard, so the link stands in.
+  if (!file.contentType.startsWith('image/')) {
+    await copyLink(file.id);
+    return;
+  }
+  try {
+    await copyImageToClipboard(file.id);
+    toast.success('Image copied to clipboard');
+  } catch {
+    toast.error('Could not copy the image');
+  }
+}
+
 function FilesPage() {
   const queryClient = useQueryClient();
-  const clipboard = useClipboard();
   const upload = useUploadSheet();
   const { moveFilesTo } = useMoveFiles();
   const { session } = Route.useRouteContext();
@@ -139,30 +168,10 @@ function FilesPage() {
     onError: (error) => toast.error(error.message),
   });
 
-  const linkFor = (fileId: string) => `${window.location.origin}/view/${fileId}`;
-  const directUrlFor = (file: GalleryFile) => getCDNImage(`/${ownerId}/${file.url}`);
+  const directUrlFor = React.useCallback((file: GalleryFile) => getCDNImage(`/${ownerId}/${file.url}`), [ownerId]);
 
-  const copyImage = async (file: GalleryFile) => {
-    // A non-image has no image to put on the clipboard, so the link stands in.
-    if (!file.contentType.startsWith('image/')) {
-      clipboard.copy(linkFor(file.id));
-      toast.success('Link copied');
-      return;
-    }
-    try {
-      await copyImageToClipboard(file.id);
-      toast.success('Image copied to clipboard');
-    } catch {
-      toast.error('Could not copy the image');
-    }
-  };
-
-  const copyLink = (fileId: string) => {
-    clipboard.copy(linkFor(fileId));
-    toast.success('Link copied');
-  };
-
-  const openPreview = (fileId: string) => morphIntoPreview(fileId, () => setPreviewId(fileId));
+  // Stable, like every handler FileCard gets, so its memo holds.
+  const openPreview = React.useCallback((fileId: string) => morphIntoPreview(fileId, () => setPreviewId(fileId)), []);
   const closePreview = () => {
     const closing = previewId;
     if (!closing) return;
@@ -170,6 +179,43 @@ function FilesPage() {
     // A file opened from a link leaves the param behind; closing should clear it.
     if (linkedFileId) navigate({ search: {}, replace: true });
   };
+
+  // The ⋯ menu of one card, built only when that menu opens.
+  const renderMenu = React.useCallback(
+    (file: GalleryFile) => (
+      <>
+        <DropdownMenuItem onClick={() => window.open(directUrlFor(file), '_blank', 'noopener')}>
+          <ExternalLink size={14} />
+          Open direct link
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          render={
+            <a
+              href={`/api/download?url=${encodeURIComponent(directUrlFor(file))}`}
+              download={file.title ?? undefined}
+            >
+              <Download size={14} />
+              Download
+            </a>
+          }
+        />
+        <MoveToFolderMenu
+          asDropdown
+          fileIds={[file.id]}
+        />
+        <DropdownMenuItem onClick={() => setVisibility({ fileId: file.id, isPrivate: !file.private })}>
+          {file.private ? <Unlock size={14} /> : <Lock size={14} />}
+          {file.private ? 'Make public' : 'Make private'}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => setConfirmDeleteIds([file.id])}>
+          <Trash2 size={14} />
+          Delete
+        </DropdownMenuItem>
+      </>
+    ),
+    [directUrlFor, setVisibility],
+  );
 
   /* Filters and sorts glide rather than cut, so cards keep their identity. */
   const withGalleryTransition = (update: () => void) => startViewTransition(update, 'gallery');
@@ -274,43 +320,12 @@ function FilesPage() {
                 selected={selectedFiles.has(file.id)}
                 selecting={selecting}
                 iconOnlyActions={false}
-                dragIds={selectedFiles.has(file.id) ? selectedIds : [file.id]}
-                onOpen={() => openPreview(file.id)}
-                onToggleSelect={() => toggleFile(file.id)}
-                onCopyImage={() => void copyImage(file)}
-                onCopyLink={() => copyLink(file.id)}
-                menuItems={
-                  <>
-                    <DropdownMenuItem onClick={() => window.open(directUrlFor(file), '_blank', 'noopener')}>
-                      <ExternalLink size={14} />
-                      Open direct link
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      render={
-                        <a
-                          href={`/api/download?url=${encodeURIComponent(directUrlFor(file))}`}
-                          download={file.title ?? undefined}
-                        >
-                          <Download size={14} />
-                          Download
-                        </a>
-                      }
-                    />
-                    <MoveToFolderMenu
-                      asDropdown
-                      fileIds={[file.id]}
-                    />
-                    <DropdownMenuItem onClick={() => setVisibility({ fileId: file.id, isPrivate: !file.private })}>
-                      {file.private ? <Unlock size={14} /> : <Lock size={14} />}
-                      {file.private ? 'Make public' : 'Make private'}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setConfirmDeleteIds([file.id])}>
-                      <Trash2 size={14} />
-                      Delete
-                    </DropdownMenuItem>
-                  </>
-                }
+                dragIds={selectedFiles.has(file.id) ? selectedIds : undefined}
+                onOpen={openPreview}
+                onToggleSelect={toggleFile}
+                onCopyImage={copyImage}
+                onCopyLink={copyLink}
+                renderMenu={renderMenu}
               />
             )}
           />

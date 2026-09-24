@@ -1,0 +1,5 @@
+@layer components {
+  .trigger {
+    min-width: 8rem;
+  }
+}

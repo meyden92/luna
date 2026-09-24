@@ -6,7 +6,7 @@ import { env } from '@/libs/env';
  *
  * Prefers a dedicated secret when configured; otherwise derives from the shared
  * application secret. Because each purpose uses a distinct HKDF `info` label, the
- * signing domains (rendition URLs, delivery cookies, visitor hashes) never share
+ * signing domains (rendition URLs, delivery cookies) never share
  * the same raw key even when they fall back to the same base secret — a leak in
  * one domain no longer forges the others.
  */

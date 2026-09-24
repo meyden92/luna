@@ -7,6 +7,7 @@ declare const styles: {
   readonly "profile-panel-spin": string;
   readonly "saveBar": string;
   readonly "spinner": string;
+  readonly "textarea": string;
 };
 export = styles;
 

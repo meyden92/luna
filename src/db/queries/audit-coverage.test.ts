@@ -259,9 +259,6 @@ afterAll(async () => {
   await db.delete(M.token).where(eq(M.token.userId, ownerId));
   if (createdTaskIds.length > 0) await db.delete(M.task).where(inArray(M.task.id, createdTaskIds));
   await db.delete(M.task).where(eq(M.task.id, fixture.taskId));
-  await db.delete(M.viewEvent).where(eq(M.viewEvent.targetId, fixture.fileId));
-  await db.delete(M.viewDailyRollup).where(eq(M.viewDailyRollup.targetId, fixture.fileId));
-  await db.delete(M.egressEvent).where(eq(M.egressEvent.ownerId, ownerId));
   await db.delete(M.egressRollup).where(eq(M.egressRollup.ownerId, ownerId));
   await db.delete(M.cachedImage).where(eq(M.cachedImage.ownerId, ownerId));
   await db.delete(M.fileRendition).where(eq(M.fileRendition.sourceFileId, fixture.fileId));
@@ -726,43 +723,9 @@ describe.skipIf(!hasDatabase)('unaudited models produce no audit rows', () => {
   });
 
   test('the analytics writes are not audited', async () => {
-    const now = new Date();
-    await M.analytics.recordView({
-      targetKind: 'file',
-      targetId: fixture.fileId,
-      ownerId,
-      day: M.analytics.utcDay(now),
-      createdAt: now,
-      visitorHash: hex(runId, 64),
-      country: 'DE',
-      referrerHost: null,
-      deviceClass: 'desktop',
-      serverMs: 5,
-    });
-    const [view] = await db.select({ id: M.viewEvent.id }).from(M.viewEvent).where(eq(M.viewEvent.targetId, fixture.fileId));
-    const [rollup] = await db
-      .select({ id: M.viewDailyRollup.id })
-      .from(M.viewDailyRollup)
-      .where(eq(M.viewDailyRollup.targetId, fixture.fileId));
-    if (!view || !rollup) throw new Error('view rows missing');
-    await expectUnaudited('ViewEvent', view.id);
-    await expectUnaudited('ViewDailyRollup', rollup.id);
-
-    const period = M.analytics.utcMonth(now);
-    await M.analytics.insertEgressEvent({
-      ownerId,
-      bytes: 10,
-      fileId: fixture.fileId,
-      tokenId: null,
-      formShareId: null,
-      rendition: 'original',
-      wasEstimated: false,
-    });
-    await M.analytics.upsertEgressRollup({ ownerId, period, bytes: 10, fileId: fixture.fileId, tokenId: null, rendition: 'original' });
-    const [egressEvent] = await db.select({ id: M.egressEvent.id }).from(M.egressEvent).where(eq(M.egressEvent.ownerId, ownerId));
+    await M.analytics.upsertEgressRollup({ ownerId, period: M.analytics.utcMonth(new Date()), bytes: 10 });
     const [egressRollup] = await db.select({ id: M.egressRollup.id }).from(M.egressRollup).where(eq(M.egressRollup.ownerId, ownerId));
-    if (!egressEvent || !egressRollup) throw new Error('egress rows missing');
-    await expectUnaudited('EgressEvent', egressEvent.id);
+    if (!egressRollup) throw new Error('egress rollup row missing');
     await expectUnaudited('EgressRollup', egressRollup.id);
   });
 

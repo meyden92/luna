@@ -25,17 +25,24 @@ export type FileCardProps = {
   selecting: boolean;
   /** Chips carry their labels unless the owner has asked for icons only. */
   iconOnlyActions: boolean;
-  onOpen: () => void;
-  onToggleSelect: () => void;
-  onCopyImage: () => void;
-  onCopyLink: () => void;
-  /**
-   * Every file id this card's drag should carry — itself, or the whole selection
-   * when it is part of one.
+  /*
+   * The handlers take the file rather than closing over it, so the page can pass
+   * the same function to every card and the memo holds.
    */
-  dragIds: readonly string[];
-  /** The ⋯ menu's items, so the card holds no folder or mutation logic of its own. */
-  menuItems: React.ReactNode;
+  onOpen: (fileId: string) => void;
+  onToggleSelect: (fileId: string) => void;
+  onCopyImage: (file: GalleryFile) => void;
+  onCopyLink: (fileId: string) => void;
+  /**
+   * The whole selection, passed only while this card is part of it; its drag
+   * then carries every selected file. Without it the drag carries just this one.
+   */
+  dragIds?: readonly string[];
+  /**
+   * Builds the ⋯ menu's items, so the card holds no folder or mutation logic of
+   * its own. Called only while the menu is open.
+   */
+  renderMenu: (file: GalleryFile) => React.ReactNode;
 };
 
 /**
@@ -60,7 +67,7 @@ const FileCard = React.memo(function FileCard({
   onCopyImage,
   onCopyLink,
   dragIds,
-  menuItems,
+  renderMenu,
 }: FileCardProps) {
   const directUrl = getCDNImage(`/${file.ownerId}/${file.url}`);
   const isImage = file.contentType.startsWith('image/');
@@ -76,25 +83,25 @@ const FileCard = React.memo(function FileCard({
   const handleClick = (event: React.MouseEvent) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || selecting) {
       event.preventDefault();
-      onToggleSelect();
+      onToggleSelect(file.id);
       return;
     }
-    onOpen();
+    onOpen(file.id);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      if (selecting) onToggleSelect();
-      else onOpen();
+      if (selecting) onToggleSelect(file.id);
+      else onOpen(file.id);
       return;
     }
 
     if (event.key.toLowerCase() === 'c' && (event.metaKey || event.ctrlKey)) {
       event.preventDefault();
       // ⇧⌘C is always the link; ⌘C is the image, or the link when there is no image.
-      if (event.shiftKey || !isImage) onCopyLink();
-      else onCopyImage();
+      if (event.shiftKey || !isImage) onCopyLink(file.id);
+      else onCopyImage(file);
     }
   };
 
@@ -121,7 +128,7 @@ const FileCard = React.memo(function FileCard({
       draggable
       onDragStart={(event) => {
         event.dataTransfer.effectAllowed = 'move';
-        event.dataTransfer.setData(FILE_DRAG_TYPE, JSON.stringify(dragIds));
+        event.dataTransfer.setData(FILE_DRAG_TYPE, JSON.stringify(dragIds ?? [file.id]));
       }}
       // Feeds the cursor spotlight in the module.
       onPointerMove={(event) => {
@@ -161,7 +168,7 @@ const FileCard = React.memo(function FileCard({
         aria-label={selected ? 'Deselect' : 'Select'}
         onClick={(event) => {
           event.stopPropagation();
-          onToggleSelect();
+          onToggleSelect(file.id);
         }}
       >
         <Check size={13} />
@@ -192,7 +199,7 @@ const FileCard = React.memo(function FileCard({
             data-icon-only={iconOnlyActions || undefined}
             onClick={(event) => {
               event.stopPropagation();
-              onCopyImage();
+              onCopyImage(file);
             }}
           >
             <Copy size={13} />
@@ -206,7 +213,7 @@ const FileCard = React.memo(function FileCard({
           data-icon-only={iconOnlyActions || undefined}
           onClick={(event) => {
             event.stopPropagation();
-            onCopyLink();
+            onCopyLink(file.id);
           }}
         >
           <Link2 size={13} />
@@ -220,11 +227,21 @@ const FileCard = React.memo(function FileCard({
           >
             <MoreHorizontal size={14} />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">{menuItems}</DropdownMenuContent>
+          <DropdownMenuContent align="end">
+            <MenuItems
+              file={file}
+              renderMenu={renderMenu}
+            />
+          </DropdownMenuContent>
         </DropdownMenu>
       </div>
     </article>
   );
 });
+
+/** The menu mounts its content only while open, so this runs `renderMenu` only then. */
+function MenuItems({ file, renderMenu }: { file: GalleryFile; renderMenu: FileCardProps['renderMenu'] }) {
+  return renderMenu(file);
+}
 
 export { FileCard };

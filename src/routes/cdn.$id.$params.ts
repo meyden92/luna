@@ -18,13 +18,7 @@ async function handle(request: Request, id: string, params: string): Promise<Res
   }
 
   const rendition = await getOrCreateRendition({ file, params: parsed });
-  await recordEgress({
-    ownerId: file.ownerId,
-    fileId: file.id,
-    bytes: rendition.size,
-    rendition: 'rendition',
-    wasEstimated: false,
-  });
+  await recordEgress({ ownerId: file.ownerId, bytes: rendition.size });
 
   const object = await s3Client.send(new GetObjectCommand({ Bucket: env.AWS_BUCKET_NAME, Key: rendition.s3Key }));
   const body = Buffer.from(await object.Body!.transformToByteArray());

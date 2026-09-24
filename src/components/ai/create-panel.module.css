@@ -7,10 +7,6 @@
     opacity: 0.8;
   }
 
-  .modelTrigger {
-    min-width: 8rem;
-  }
-
   /* Marks the quality button when the settings are no longer the defaults. */
   .changed {
     width: 6px;

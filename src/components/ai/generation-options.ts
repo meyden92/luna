@@ -191,3 +191,39 @@ export function promptFromFieldValues(fieldValues: Record<string, unknown> | und
   const value = fieldValues?.prompt;
   return typeof value === 'string' && value.length > 0 ? value : fallback;
 }
+
+/** The Create values a saved preset restores. A value the preset does not hold is absent. */
+export interface PresetValues {
+  shape?: string;
+  count?: number;
+  steps?: number;
+  /** Always set: a preset saved without a seed means a random one. */
+  seed: string;
+}
+
+/**
+ * The field values a preset stores: only what the Create tab controls, written
+ * onto this model's fields. The model's own defaults are left out so applying a
+ * preset never turns a default seed into a fixed one.
+ */
+export function presetFieldValues(fields: ModelFieldRow[], settings: Omit<GenerationInputValues, 'prompt'>): Record<string, unknown> {
+  const { prompt: _prompt, ...values } = buildGenerationInput(fields, {}, { ...settings, prompt: '' });
+  return values;
+}
+
+/** Reads a saved preset's field values back into the Create controls they came from. */
+export function presetValuesFromFieldValues(fieldValues: Record<string, unknown>): PresetValues {
+  const hasShape =
+    typeof (fieldValues.aspect_ratio ?? fieldValues.aspectRatio) === 'string' ||
+    (fieldValues.width !== undefined && fieldValues.height !== undefined);
+  const shape = hasShape ? shapeFromFieldValues(fieldValues).value : undefined;
+  const count = FIELD_ALIASES.count.some((alias) => fieldValues[alias] !== undefined) ? countFromFieldValues(fieldValues) : undefined;
+  const seed = Number(fieldValues.seed);
+
+  return {
+    shape: SHAPES.some((entry) => entry.value === shape) ? shape : undefined,
+    count: COUNTS.find((value) => value === count),
+    steps: stepsFromFieldValues(fieldValues) ?? undefined,
+    seed: fieldValues.seed !== undefined && fieldValues.seed !== null && Number.isFinite(seed) ? String(seed) : '',
+  };
+}

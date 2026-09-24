@@ -39,13 +39,7 @@ async function handle(request: Request): Promise<Response> {
     if (!allowedByCookie && !allowedByUser) return json({ error: viewerId ? 'Forbidden' : 'Unauthorized' }, viewerId ? 403 : 401);
   }
 
-  await recordEgress({
-    ownerId: file.ownerId,
-    fileId: file.id,
-    bytes: file.size,
-    rendition: 'download',
-    wasEstimated: true,
-  });
+  await recordEgress({ ownerId: file.ownerId, bytes: file.size });
   const signedUrl = await getDownloadSignedUrl(fileS3Key(file.ownerId, file.url), downloadFilename(file.title, file.url));
   return Response.redirect(signedUrl, 302);
 }

@@ -190,12 +190,3 @@ export async function completeFlowRun(
     .set({ status, duration, completedAt, logs, error: error ?? null, updatedAt: completedAt })
     .where(eq(flowRun.id, id));
 }
-
-/**
- * The most recent runs of a flow, newest first. The table is empty in production
- * — flow runs were excluded from the data migration — so the caller must render
- * an empty history correctly.
- */
-export function listFlowRuns(flowId: string, limit = 50, handle: AuditHandle = db) {
-  return handle.select().from(flowRun).where(eq(flowRun.flowId, flowId)).orderBy(desc(flowRun.startedAt)).limit(limit);
-}

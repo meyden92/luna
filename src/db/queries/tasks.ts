@@ -4,7 +4,6 @@ import { type AuditHandle, writeAuditLog } from '../audit';
 import { db } from '../client';
 import { cachedImage } from '../schema/admin';
 import { template, templateGeneration } from '../schema/ai';
-import { egressEvent, viewEvent } from '../schema/analytics';
 import { session, user } from '../schema/auth';
 import { task, taskExecution } from '../schema/automation';
 import { file, fileMetadata, fileRendition } from '../schema/files';
@@ -28,16 +27,16 @@ import { ensureStorageQuotaAvailable } from './storage';
  *     scheduler on every boot and every run, and it is a record of a machine
  *     running — exactly the reason `TaskExecution` is in `UNAUDITED_MODELS`.
  *     The Prisma extension audited it because it could not tell the two apart.
- *   - `TaskExecution`, `Session`, `CachedImage`, `FileRendition`, `ViewEvent`,
- *     `EgressEvent` and `FileMetadata` are all unaudited, per `UNAUDITED_MODELS`.
+ *   - `TaskExecution`, `Session`, `CachedImage`, `FileRendition` and
+ *     `FileMetadata` are all unaudited, per `UNAUDITED_MODELS`.
  *   - `File` and `TemplateGeneration` are audited, and the two writes this
  *     module makes against them carry the audit call.
  *
  * Several task functions reach into other domains (cached images, renditions,
- * analytics, template generations, file metadata). Those queries live here
- * rather than in the owning domain's module because the scheduled task that
- * needs them lives here, and each is a maintenance read or bulk prune with no
- * other caller — moving them would split one task's implementation across five
+ * template generations, file metadata). Those queries live here rather than in
+ * the owning domain's module because the scheduled task that needs them lives
+ * here, and each is a maintenance read or bulk prune with no other caller —
+ * moving them would split one task's implementation across four
  * modules to satisfy a filing rule. If a second caller ever appears, that is the
  * signal to move the query to the owning module, not before.
  */
@@ -495,15 +494,6 @@ export async function deleteFileRenditions(ids: string[]): Promise<number> {
   if (ids.length === 0) return 0;
   const deleted = await db.delete(fileRendition).where(inArray(fileRendition.id, ids));
   return deleted.rowCount ?? 0;
-}
-
-/** Raw analytics rows are unaudited by definition (`UNAUDITED_MODELS`: analytics). */
-export async function deleteRawAnalyticsBefore(cutoff: Date): Promise<{ viewEvents: number; egressEvents: number }> {
-  const [views, egress] = await Promise.all([
-    db.delete(viewEvent).where(lt(viewEvent.createdAt, cutoff)),
-    db.delete(egressEvent).where(lt(egressEvent.createdAt, cutoff)),
-  ]);
-  return { viewEvents: views.rowCount ?? 0, egressEvents: egress.rowCount ?? 0 };
 }
 
 /**

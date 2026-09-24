@@ -43,15 +43,6 @@ const DEFAULT_TASKS: DefaultTask[] = [
     timeout: 300000,
     maxRetries: 3,
   },
-  {
-    name: 'prune-raw-analytics',
-    description: 'Deletes raw view and egress events after rollups have been retained',
-    cronExpression: '30 3 * * *',
-    taskFunction: 'pruneRawAnalytics',
-    timeout: 300000,
-    maxRetries: 3,
-    args: [90],
-  },
 ];
 
 /**

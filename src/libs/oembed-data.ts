@@ -1,6 +1,6 @@
 import type { PublicEmbedFile } from '@/libs/oembed';
 
-// Server-only: reaches the database, analytics, and egress. Never import this
+// Server-only: reaches the database and egress. Never import this
 // from a client route directly — go through getPublicEmbedFile (server fn).
 export async function findPublicEmbedFile(id: string): Promise<PublicEmbedFile | null> {
   const [{ getEmbeddableFile }, { getCDNImage }, { getPublicOrigin }] = await Promise.all([
@@ -13,14 +13,8 @@ export async function findPublicEmbedFile(id: string): Promise<PublicEmbedFile |
   if (!file) return null;
 
   const origin = getPublicOrigin();
-  const [{ recordViewEvent }, { recordEgress }] = await Promise.all([
-    import('@/libs/analytics/view-events'),
-    import('@/libs/egress/record'),
-  ]);
-  void recordViewEvent({ targetKind: 'file', targetId: file.id, ownerId: file.ownerId }).catch(() => undefined);
-  void recordEgress({ ownerId: file.ownerId, fileId: file.id, bytes: file.size, rendition: 'embed', wasEstimated: true }).catch(
-    () => undefined,
-  );
+  const { recordEgress } = await import('@/libs/egress/record');
+  void recordEgress({ ownerId: file.ownerId, bytes: file.size }).catch(() => undefined);
   return {
     id: file.id,
     title: file.title,

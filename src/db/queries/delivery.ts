@@ -32,7 +32,6 @@ const AUDIO_CONTENT_TYPES = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp3'
 
 /**
  * `file_rendition.param_hash` is deliberately NOT case-normalised, matching the
- * decision recorded for `view_event.visitor_hash` under issue #41 and the
  * "hash-shaped columns not normalised" note in `scripts/db/transform-tables.ts`.
  *
  * The reasoning, not an inherited oversight: the only producer of this value on

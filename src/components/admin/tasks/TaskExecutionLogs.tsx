@@ -32,6 +32,8 @@ export default function TaskExecutionLogs({ taskId, showTaskColumn = true }: Tas
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchFilter, setSearchFilter] = useState('');
+  // Search text actually sent to the server; only updated by the Search button or Enter.
+  const [appliedSearch, setAppliedSearch] = useState('');
   const [daysFilter, setDaysFilter] = useState('7');
   const [page, setPage] = useState(1);
   const [cursor, setCursor] = useState<string | undefined>();
@@ -74,8 +76,8 @@ export default function TaskExecutionLogs({ taskId, showTaskColumn = true }: Tas
         parsedParams.status = statusFilter;
       }
 
-      if (searchFilter.trim()) {
-        parsedParams.search = searchFilter.trim();
+      if (appliedSearch) {
+        parsedParams.search = appliedSearch;
       }
 
       const data = await getAllTaskLogs({ data: parsedParams });
@@ -85,13 +87,14 @@ export default function TaskExecutionLogs({ taskId, showTaskColumn = true }: Tas
     } finally {
       setLoading(false);
     }
-  }, [cursor, daysFilter, direction, taskId, statusFilter, searchFilter]);
+  }, [cursor, daysFilter, direction, taskId, statusFilter, appliedSearch]);
 
   useEffect(() => {
     fetchLogs();
   }, [fetchLogs]);
 
   const handleSearch = () => {
+    setAppliedSearch(searchFilter.trim());
     resetPagination();
   };
 
@@ -231,10 +234,7 @@ export default function TaskExecutionLogs({ taskId, showTaskColumn = true }: Tas
               <Input
                 placeholder="Search by task name or error..."
                 value={searchFilter}
-                onChange={(e) => {
-                  setSearchFilter(e.target.value);
-                  resetPagination();
-                }}
+                onChange={(e) => setSearchFilter(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 className={styles.searchInput}
               />

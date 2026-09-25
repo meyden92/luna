@@ -1,11 +1,61 @@
 import { Maximize2 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { PromptExpandDialog } from '@/components/ai/editor/PromptExpandDialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/libs/utils';
 import type { TemplateVariable } from '@/types/template';
 import styles from './autocomplete-textarea.module.css';
+
+// Text-layout styles a mirror div must share with the textarea to wrap identically.
+const MIRRORED_STYLES = [
+  'box-sizing',
+  'padding-top',
+  'padding-right',
+  'padding-bottom',
+  'padding-left',
+  'font-family',
+  'font-size',
+  'font-weight',
+  'font-style',
+  'letter-spacing',
+  'line-height',
+  'text-transform',
+  'word-spacing',
+  'tab-size',
+] as const;
+
+// Returns the coordinates just below the caret at `position`, relative to the
+// textarea's border box. Lays the text out in a hidden mirror div with the
+// textarea's computed styles and measures a marker placed at the caret.
+function getCaretCoordinates(textarea: HTMLTextAreaElement, position: number) {
+  const computed = getComputedStyle(textarea);
+  const mirror = document.createElement('div');
+  for (const name of MIRRORED_STYLES) {
+    mirror.style.setProperty(name, computed.getPropertyValue(name));
+  }
+  mirror.style.position = 'absolute';
+  mirror.style.visibility = 'hidden';
+  mirror.style.whiteSpace = 'pre-wrap';
+  mirror.style.overflowWrap = 'break-word';
+  mirror.style.border = '0';
+  // clientWidth excludes the border and scrollbar, matching the textarea's wrap width.
+  mirror.style.boxSizing = 'border-box';
+  mirror.style.width = `${textarea.clientWidth}px`;
+  mirror.textContent = textarea.value.substring(0, position);
+
+  const marker = document.createElement('span');
+  marker.textContent = '\u200b';
+  mirror.append(marker);
+  document.body.append(mirror);
+
+  const coordinates = {
+    top: textarea.clientTop + marker.offsetTop + marker.offsetHeight - textarea.scrollTop,
+    left: textarea.clientLeft + marker.offsetLeft - textarea.scrollLeft,
+  };
+  mirror.remove();
+  return coordinates;
+}
 
 interface AutocompleteTextareaProps {
   value: string;
@@ -34,6 +84,7 @@ export function AutocompleteTextarea({
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
 
   const enabledVariables = useMemo(() => variables.filter((v) => v.enabled !== false && v.name.trim() !== ''), [variables]);
 
@@ -59,6 +110,15 @@ export function AutocompleteTextarea({
       document.removeEventListener('click', handleClickOutside);
     };
   }, [showAutocomplete]);
+
+  // Keep the popup inside the editor, clamped against its rendered width.
+  useLayoutEffect(() => {
+    const popup = popupRef.current;
+    const container = popup?.offsetParent;
+    if (!popup || !(container instanceof HTMLElement)) return;
+    const maxLeft = container.clientWidth - popup.offsetWidth;
+    popup.style.left = `${Math.max(0, Math.min(autocompletePosition.left, maxLeft))}px`;
+  }, [autocompletePosition]);
 
   // Sync scroll between textarea and backdrop
   const handleScroll = () => {
@@ -134,18 +194,8 @@ export function AutocompleteTextarea({
 
   const updateAutocompleteState = (textarea: HTMLTextAreaElement) => {
     const { selectionStart } = textarea;
-    const textBeforeCursor = textarea.value.substring(0, selectionStart);
-    const lines = textBeforeCursor.split('\n');
-    const currentLineIndex = lines.length - 1;
-    const currentLineText = lines[currentLineIndex] || '';
-
-    const lineHeight = 20; // Assumed line height
-    const charWidth = 8; // Assumed char width for monospace
-
-    const top = (currentLineIndex + 1) * lineHeight + 10;
-    const left = Math.min(currentLineText.length * charWidth + 20, textarea.clientWidth - 200);
-
-    setAutocompletePosition({ top, left });
+    // The textarea sits at the editor's origin, so its coordinates are the popup's.
+    setAutocompletePosition(getCaretCoordinates(textarea, selectionStart));
     setCursorPosition(selectionStart);
     setFilterText('');
     setActiveIndex(0);
@@ -300,11 +350,10 @@ export function AutocompleteTextarea({
 
         {showAutocomplete && (
           <div
+            ref={popupRef}
             className={styles.popupAnchor}
-            style={{
-              top: `${autocompletePosition.top}px`,
-              left: `${autocompletePosition.left}px`,
-            }}
+            // `left` is set by the clamping layout effect above.
+            style={{ top: `${autocompletePosition.top}px` }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className={styles.popup}>

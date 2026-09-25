@@ -12,6 +12,7 @@
       "!!**/.nitro",
       "!!**/.tanstack",
       "!**/*.d.ts",
+      "!!**/drizzle/**/snapshot.json",
       "!!**/.agents",
       "!!**/.claude",
       "!!**/playwright-report",

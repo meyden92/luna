@@ -168,23 +168,19 @@ export function ImageSelector({ selectedImages, onAddLocalImages, onRemoveImage,
 
       {/* Image Upload */}
       <div className="stack space-4">
-        <input
-          id="image-upload"
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handleLocalUpload}
-          className="hide"
-        />
-
-        <div
-          className={styles.dropzone}
-          onClick={() => document.getElementById('image-upload')?.click()}
-        >
+        {/* The label makes the whole zone open the picker; the sr-only input keeps it keyboard-focusable. */}
+        <label className={styles.dropzone}>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleLocalUpload}
+            className="sr-only"
+          />
           <Upload className={styles.dropzoneIcon} />
-          <p className={styles.dropzoneTitle}>Click to upload images</p>
-          <p className={styles.dropzoneHint}>Select multiple images from your device</p>
-        </div>
+          <span className={styles.dropzoneTitle}>Click to upload images</span>
+          <span className={styles.dropzoneHint}>Select multiple images from your device</span>
+        </label>
       </div>
     </div>
   );

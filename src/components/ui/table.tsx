@@ -3,15 +3,16 @@ import type * as React from 'react';
 import { cn } from '@/libs/utils';
 import styles from './table.module.css';
 
+// `className` styles the outer scroll container (the root element); all other props go to the <table>.
 function Table({ className, ...props }: React.ComponentProps<'table'>) {
   return (
     <div
       data-slot="table-container"
-      className={styles.container}
+      className={cn(styles.container, className)}
     >
       <table
         data-slot="table"
-        className={cn(styles.table, className)}
+        className={styles.table}
         {...props}
       />
     </div>

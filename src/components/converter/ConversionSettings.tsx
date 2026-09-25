@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,7 +14,6 @@ interface ConversionSettingsProps {
   onFormatChange: (format: AudioFormat) => void;
   onPresetChange: (preset: QualityPreset) => void;
   onConvert: () => void;
-  isLoading?: boolean;
 }
 
 const PRESET_DESCRIPTIONS: Record<QualityPreset, string> = {
@@ -30,8 +30,9 @@ export function ConversionSettings({
   onFormatChange,
   onPresetChange,
   onConvert,
-  isLoading = false,
 }: ConversionSettingsProps) {
+  const formatId = useId();
+  const presetId = useId();
   const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
 
   return (
@@ -65,12 +66,17 @@ export function ConversionSettings({
         </CardHeader>
         <CardContent className="stack">
           <div className="stack space-2">
-            <label className={styles.fieldLabel}>Output Format</label>
+            <label
+              htmlFor={formatId}
+              className={styles.fieldLabel}
+            >
+              Output Format
+            </label>
             <Select
               value={selectedFormat}
               onValueChange={(val) => val && onFormatChange(val as AudioFormat)}
             >
-              <SelectTrigger>
+              <SelectTrigger id={formatId}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -87,12 +93,17 @@ export function ConversionSettings({
           </div>
 
           <div className="stack space-2">
-            <label className={styles.fieldLabel}>Quality Preset</label>
+            <label
+              htmlFor={presetId}
+              className={styles.fieldLabel}
+            >
+              Quality Preset
+            </label>
             <Select
               value={selectedPreset}
               onValueChange={(val) => val && onPresetChange(val as QualityPreset)}
             >
-              <SelectTrigger>
+              <SelectTrigger id={presetId}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -108,11 +119,10 @@ export function ConversionSettings({
 
       <Button
         onClick={onConvert}
-        disabled={isLoading}
         className={styles.convert}
         size="lg"
       >
-        {isLoading ? 'Converting...' : 'Convert to Audio'}
+        Convert to Audio
       </Button>
     </div>
   );

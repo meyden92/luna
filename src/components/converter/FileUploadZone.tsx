@@ -6,10 +6,9 @@ import styles from './FileUploadZone.module.css';
 
 interface FileUploadZoneProps {
   onFileSelect: (file: File, format: string) => void;
-  isLoading?: boolean;
 }
 
-export function FileUploadZone({ onFileSelect, isLoading = false }: FileUploadZoneProps) {
+export function FileUploadZone({ onFileSelect }: FileUploadZoneProps) {
   const [isDragOver, setIsDragOver] = useState(false);
 
   const validateAndSelectFile = useCallback(
@@ -87,7 +86,6 @@ export function FileUploadZone({ onFileSelect, isLoading = false }: FileUploadZo
     <div
       className={styles.dropzone}
       data-active={isDragOver || undefined}
-      data-loading={isLoading || undefined}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -103,7 +101,6 @@ export function FileUploadZone({ onFileSelect, isLoading = false }: FileUploadZo
           accept="video/*"
           className="sr-only"
           onChange={handleInputChange}
-          disabled={isLoading}
         />
       </label>
     </div>

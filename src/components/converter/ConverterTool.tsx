@@ -122,12 +122,7 @@ export function ConverterTool() {
             <CardDescription>Convert video files to audio format entirely in your browser</CardDescription>
           </CardHeader>
           <CardContent className={styles.body}>
-            {phase === 'idle' && (
-              <FileUploadZone
-                onFileSelect={handleFileSelect}
-                isLoading={false}
-              />
-            )}
+            {phase === 'idle' && <FileUploadZone onFileSelect={handleFileSelect} />}
 
             {phase === 'file-selected' && selectedFile && (
               <ConversionSettings
@@ -138,7 +133,6 @@ export function ConverterTool() {
                 onFormatChange={setSelectedFormat}
                 onPresetChange={setSelectedPreset}
                 onConvert={handleConvert}
-                isLoading={false}
               />
             )}
 

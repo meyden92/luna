@@ -227,7 +227,11 @@ const FileCard = React.memo(function FileCard({
           >
             <MoreHorizontal size={14} />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          {/* The content is portalled, but React still bubbles its clicks to the card, which would open the Preview. */}
+          <DropdownMenuContent
+            align="end"
+            onClick={(event) => event.stopPropagation()}
+          >
             <MenuItems
               file={file}
               renderMenu={renderMenu}

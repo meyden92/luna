@@ -922,20 +922,22 @@ export function SwitchField({
       asyncDebounceMs={asyncDebounceMs}
       renderFieldAction={({ value, onChange, isValidating }) => (
         <FormItem className={cn(styles.switchItem, className)}>
-          <div className={styles.switchBody}>
-            <FormLabel className={cn(styles.switchLabel, disabled && styles.labelDisabled)}>
-              {label}
-              {isValidating && <span className={cn(styles.hint, styles.hintSmall)}>(validating...)</span>}
-            </FormLabel>
-            {description && <FormDescription>{description}</FormDescription>}
+          <div className={styles.switchRow}>
+            <div className={styles.switchBody}>
+              <FormLabel className={cn(styles.switchLabel, disabled && styles.labelDisabled)}>
+                {label}
+                {isValidating && <span className={cn(styles.hint, styles.hintSmall)}>(validating...)</span>}
+              </FormLabel>
+              {description && <FormDescription>{description}</FormDescription>}
+            </div>
+            <FormControl>
+              <Switch
+                checked={Boolean(value)}
+                onCheckedChange={onChange}
+                disabled={disabled}
+              />
+            </FormControl>
           </div>
-          <FormControl>
-            <Switch
-              checked={Boolean(value)}
-              onCheckedChange={onChange}
-              disabled={disabled}
-            />
-          </FormControl>
           <FormMessage />
         </FormItem>
       )}

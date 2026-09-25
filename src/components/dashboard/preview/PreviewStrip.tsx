@@ -10,8 +10,8 @@ type PreviewStripProps = {
   onNavigate: (fileId: string) => void;
 };
 
-/** Approximate height of a thumbnail row: a 16:9 frame in the 10rem column plus its gap. */
-const ITEM_HEIGHT = 90;
+/** Initial row-height guess (16:9 frame in the 10rem column plus its gap); rows are then measured. */
+const ESTIMATED_ITEM_HEIGHT = 90;
 /** How close to the viewport edge the active thumbnail may get before the strip scrolls. */
 const EDGE_THRESHOLD = 90;
 
@@ -70,7 +70,7 @@ export function PreviewStrip({ files, index, onNavigate }: PreviewStripProps) {
   const virtualizer = useVirtualizer({
     count: files.length,
     getScrollElement: () => scrollerRef.current,
-    estimateSize: () => ITEM_HEIGHT,
+    estimateSize: () => ESTIMATED_ITEM_HEIGHT,
     overscan: 5,
   });
 
@@ -89,11 +89,11 @@ export function PreviewStrip({ files, index, onNavigate }: PreviewStripProps) {
     const isScrollingDown = index > prevIndexRef.current;
     prevIndexRef.current = index;
 
-    const itemStart = virtualizer.getOffsetForIndex(index, 'start')?.[0] ?? 0;
-    const itemEnd = itemStart + ITEM_HEIGHT;
+    const item = virtualizer.measurementsCache[index];
+    if (!item) return;
     const viewportTop = scroller.scrollTop;
     const viewportBottom = viewportTop + scroller.clientHeight;
-    const isNearEdge = isScrollingDown ? itemEnd > viewportBottom - EDGE_THRESHOLD : itemStart < viewportTop + EDGE_THRESHOLD;
+    const isNearEdge = isScrollingDown ? item.end > viewportBottom - EDGE_THRESHOLD : item.start < viewportTop + EDGE_THRESHOLD;
 
     // Park the active thumbnail at the far side of travel so the next steps stay in view.
     if (isNearEdge) {
@@ -117,6 +117,8 @@ export function PreviewStrip({ files, index, onNavigate }: PreviewStripProps) {
           return (
             <div
               key={file.id}
+              ref={virtualizer.measureElement}
+              data-index={item.index}
               className={styles.row}
               style={{ top: item.start }}
             >

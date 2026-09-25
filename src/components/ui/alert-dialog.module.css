@@ -4,7 +4,9 @@
     position: fixed;
     inset: 0;
     isolation: isolate;
-    z-index: 50;
+    /* Above Preview's lightbox (z-index: 70, Preview.module.css) — a
+       confirmation must always be reachable, even over a full-screen takeover. */
+    z-index: 80;
     background-color: var(--scrim-strong);
     backdrop-filter: blur(4px);
     transition-property: opacity, overlay, display;
@@ -25,7 +27,7 @@
     position: fixed;
     top: 50%;
     left: 50%;
-    z-index: 50;
+    z-index: 80;
     translate: -50% -50%;
     display: grid;
     gap: var(--space-6);

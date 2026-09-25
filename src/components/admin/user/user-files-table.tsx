@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type { file } from '@/db/schema/files';
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import { useConfirmation } from '@/hooks/use-confirmation';
+import { queryKeys } from '@/libs/query-keys';
 import { formatSize } from '@/libs/utils';
 import { deleteAdminUserFile } from '@/server/fns/admin/users';
 import FilePreview from './file-preview';
@@ -75,9 +76,8 @@ export default function UserFilesTable({
   const { mutate: deleteFile, isPending: isDeletingFile } = useAppMutation(deleteAdminUserFile, {
     successMessage: 'File deleted successfully',
     errorMessage: 'Failed to delete file',
-    onSuccess: () => {
-      window.location.reload(); // Simple refresh for now
-    },
+    // Prefix of the user's detail and files queries, so both refetch.
+    invalidates: [queryKeys.admin.user(userId)],
   });
 
   const handlePreview = (file: File) => {

@@ -26,6 +26,7 @@ declare const styles: {
   readonly "switchBody": string;
   readonly "switchItem": string;
   readonly "switchLabel": string;
+  readonly "switchRow": string;
 };
 export = styles;
 

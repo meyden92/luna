@@ -50,29 +50,29 @@ export function ImageGridGenerator() {
   );
 
   const handleDownload = useCallback(async () => {
-    if (!canvasRef.current || !canGenerate) return;
+    const canvas = canvasRef.current;
+    if (!canvas || !canGenerate) return;
 
     setGenerating(true);
     try {
-      canvasRef.current.toBlob((blob) => {
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `image-grid-${Math.round(actualCanvasSize.width)}x${Math.round(actualCanvasSize.height)}.png`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          toast.success('Image grid downloaded successfully!');
-        } else {
-          toast.error('Failed to generate image grid');
-        }
-        setGenerating(false);
-      }, 'image/png');
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) {
+        toast.error('Failed to generate image grid');
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `image-grid-${Math.round(actualCanvasSize.width)}x${Math.round(actualCanvasSize.height)}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success('Image grid downloaded successfully!');
     } catch (error) {
       console.error('Download error:', error);
       toast.error('Failed to download image grid');
+    } finally {
       setGenerating(false);
     }
   }, [canGenerate, actualCanvasSize, setGenerating]);

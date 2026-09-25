@@ -3,6 +3,7 @@ import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { z } from 'zod';
 import { CreateUserDialog } from '@/components/admin/user/create-user-dialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -203,12 +204,13 @@ function AdminUsersPage() {
                   <TableRow key={user.id}>
                     <TableCell className="weight-medium">
                       <div className={styles.userCell}>
-                        <img
-                          src={getAvatarUrl(user.image) ?? '/default-avatar.png'}
-                          alt={user.name}
-                          width={32}
-                          height={32}
-                        />
+                        <Avatar>
+                          <AvatarImage
+                            src={getAvatarUrl(user.image) ?? ''}
+                            alt={user.name}
+                          />
+                          <AvatarFallback>{user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                        </Avatar>
                         <Link
                           to="/admin/users/$userid"
                           params={{ userid: user.id }}

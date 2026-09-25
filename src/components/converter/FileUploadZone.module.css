@@ -18,11 +18,6 @@
     background: color-mix(in oklab, var(--primary) 10%, transparent);
   }
 
-  .dropzone[data-loading] {
-    opacity: 0.5;
-    pointer-events: none;
-  }
-
   .label {
     display: flex;
     flex-direction: column;

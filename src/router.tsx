@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import { createRouter as createTanStackRouter } from '@tanstack/react-router';
+import { createRouter as createTanStackRouter, type ErrorComponentProps } from '@tanstack/react-router';
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/libs/utils';
@@ -34,11 +34,11 @@ function RoutePending() {
   );
 }
 
-function RouteError({ error }: { error: Error }) {
+function RouteError({ error }: ErrorComponentProps) {
   return (
     <div className={styles.error}>
       <p className="type-sm weight-medium">Something went wrong while loading this page.</p>
-      <p className={cn(styles.errorMessage, 'type-xs')}>{error.message}</p>
+      <p className={cn(styles.errorMessage, 'type-xs')}>{error instanceof Error ? error.message : String(error)}</p>
       <button
         type="button"
         onClick={() => window.location.reload()}

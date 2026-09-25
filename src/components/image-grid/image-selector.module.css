@@ -137,6 +137,7 @@
   }
 
   .dropzone {
+    display: block;
     padding: var(--space-8);
     text-align: center;
     border: 2px dashed var(--input);
@@ -153,6 +154,11 @@
     border-color: var(--primary);
   }
 
+  .dropzone:has(:focus-visible) {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
   .dropzoneIcon {
     width: var(--space-12);
     height: var(--space-12);
@@ -161,6 +167,7 @@
   }
 
   .dropzoneTitle {
+    display: block;
     margin-bottom: var(--space-2);
     color: var(--foreground);
     font-size: var(--text-lg);
@@ -169,6 +176,7 @@
   }
 
   .dropzoneHint {
+    display: block;
     font-size: var(--text-sm);
     line-height: var(--leading-sm);
   }

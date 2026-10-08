@@ -89,11 +89,12 @@ export default function UserStorageInfo({
               Storage Quota
             </Label>
             <div className={styles.quotaRow}>
+              {/* `step="any"`: quotas are stored in whole MiB, so any fraction of a GiB is valid. */}
               <Input
                 id="storage-quota-gib"
                 type="number"
                 min="0"
-                step="0.25"
+                step="any"
                 value={quotaGiB}
                 onChange={(event) => setQuotaGiB(event.target.value)}
                 disabled={isPending}

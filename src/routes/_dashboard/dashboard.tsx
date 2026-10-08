@@ -191,7 +191,7 @@ function FilesPage() {
         <DropdownMenuItem
           render={
             <a
-              href={`/api/download?url=${encodeURIComponent(directUrlFor(file))}`}
+              href={`/api/download?id=${encodeURIComponent(file.id)}`}
               download={file.title ?? undefined}
             >
               <Download size={14} />

@@ -37,7 +37,7 @@ function SelectionBar({ fileIds, onClear, onDelete }: SelectionBarProps) {
       const response = await fetch('/api/download-zip', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileIds }),
+        body: JSON.stringify({ ids: fileIds }),
       });
       if (!response.ok) throw new Error(`Download failed (${response.status})`);
 

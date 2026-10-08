@@ -1,102 +1,66 @@
-# E2E Tests (Playwright)
+# End-to-end tests
 
-End-to-end tests for LunaShare. Run against the real TanStack Start app and a real PostgreSQL instance.
+The suite runs against a disposable installation of LunaShare, never against the
+dev server or the dev database. Why: `docs/adr/0006-e2e-runs-the-production-image-in-a-disposable-stack.md`.
 
-## Quickstart
+## Running
 
-```bash
-# 1. one-time: download chromium
-bun run test:e2e:install
-
-# 2. ensure DATABASE_URL and BETTER_AUTH_SECRET are exported (or in .env / .env.local)
-
-# 3. run all tests (auto-starts bun run dev on :3000)
-bun run test:e2e
-
-# 4. interactive runner
-bun run test:e2e:ui
-
-# 5. headed (watch the browser)
-bun run test:e2e:headed
+```sh
+bun run test:e2e                                   # whole suite
+bun run test:e2e -- tests/e2e/admin/landing.spec.ts
+bun run test:e2e -- --grep "admin"
+bun run test:e2e -- --ui                           # or --headed, --debug
+bun run test:e2e:report                            # open the last HTML report
 ```
 
-The HTML report is written to `playwright-report/index.html` after a run.
+Every argument after `--` goes to `playwright test`. The `setup` project always
+runs first, because the other specs depend on its stored sessions.
 
-## How auth works
+Needs Docker (with Compose), Bun, an internet connection and Playwright's
+Chromium (`bun run test:e2e:install`). No `.env`, no dev database, no dev server.
 
-Sign-in is a username and password (issue #54), so the auth specs drive the real
-login form. Every other suite still starts from a forged session cookie: those
-tests are about files and admin screens, and making each of them sign in would
-slow the suite down to prove something `auth/login.spec.ts` already proves.
+## What a run does
 
-`global-setup.ts` runs once before the suite. It:
+`scripts/e2e/run.ts`, step by step (each step is logged with an `[e2e]` prefix):
 
-1. Upserts two test users in the dev DB:
-   - `e2e-user@lunashare.test` — regular user
-   - `e2e-admin@lunashare.test` — `isSuperAdmin: true`
-2. Gives each a Username and a password Account, hashed with Better-Auth's own
-   primitive so it cannot drift from what sign-in verifies against
-   (`TEST_USER_USERNAME` / `TEST_PASSWORD` in `utils/db.ts`).
-3. Creates a `Session` row per user with a random token.
-4. Signs the token using `BETTER_AUTH_SECRET` (HMAC-SHA256, base64) — same scheme Better-Auth's `setSignedCookie` uses.
-5. Writes Playwright `storageState` JSON to `tests/e2e/.auth/{userId}.json` and exports the paths via `E2E_USER_STORAGE` / `E2E_ADMIN_STORAGE`.
+1. Removes anything a crashed run left behind (Compose projects named `lunashare-e2e-*`).
+2. Picks free ports and generates every secret fresh.
+3. Builds the production `Dockerfile` from the working tree as `lunashare:e2e`.
+4. Starts Postgres and RustFS (`docker-compose.e2e.yml`), creates the bucket with an anonymous-read policy.
+5. Starts the app. Its entrypoint applies the migrations, as in a deployment.
+6. Bootstraps the admin the operator's way: a User row, then `auth:set-credentials` inside the app container.
+7. Runs Playwright with the stack described in `E2E_*` env vars (`stack-env.ts`).
+8. Removes the stack and its volumes, also after a failure, Ctrl-C or SIGTERM. The image and build cache stay.
 
-Tests then use the `authenticatedPage` / `adminPage` fixtures from `fixtures/auth.ts`, which open a browser context preloaded with the right session cookie.
+The run exits with Playwright's exit code. Reports, traces, screenshots and
+videos stay in `playwright-report/` and `test-results/` after the stack is gone.
+Replicate is never configured, so nothing costs money.
 
-`global-teardown.ts` deletes every `User` whose email ends with `@lunashare.test`. Sessions/Accounts cascade. Set `E2E_KEEP_DATA=1` to skip cleanup when debugging.
+## Writing a spec
 
-## Layout
+Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
 
-```
-tests/e2e/
-├── .auth/                  # generated session JSON (gitignored)
-├── fixtures/
-│   ├── auth.ts             # authenticatedPage, adminPage
-│   └── locale.ts           # setLocale(context, 'en' | 'de')
-├── utils/
-│   ├── db.ts               # Drizzle seeding handle + test constants
-│   └── sign-cookie.ts      # HMAC signing matching better-call/setSignedCookie
-├── public/                 # tests for unauthenticated routes
-├── auth/                   # tests for /login + auth gating
-├── dashboard/              # tests using authenticatedPage
-├── admin/                  # tests using adminPage
-├── i18n/                   # locale switching
-├── global-setup.ts
-└── global-teardown.ts
-```
+| Fixture | What it is |
+| --- | --- |
+| `adminPage`, `adminRequest` | Page / API context signed in as the bootstrap admin |
+| `page`, `context`, `request` | Playwright's own, signed out |
+| `bucket` | `{ client, name }`: an S3 client on the stack's RustFS |
+| `db` | Drizzle on the stack's Postgres. Reads, and backdating `file.created_at` only |
+| `stack` | The `E2E_*` values (base URL, CDN URL, admin credentials, …) |
 
-## Writing a new test
+Every browser and API context sends its own random `cf-connecting-ip`, because
+production keys the sign-in rate limiter on it. Sessions come from the real login
+form in `setup/auth.setup.ts`; never forge one or hard-code a cookie name.
 
-For unauthenticated routes, import from `@playwright/test`:
+For a control that is inert until hydration, use `clickUntil` from `utils/hydration.ts`
+rather than a timeout.
 
-```ts
-import { expect, test } from '@playwright/test';
+## Things that differ from dev
 
-test('public landing renders', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-});
-```
-
-For authenticated routes, import `test` from `../fixtures/auth` (and `expect` from `@playwright/test`):
-
-```ts
-import { expect } from '@playwright/test';
-import { test } from '../fixtures/auth';
-
-test('dashboard loads', async ({ authenticatedPage }) => {
-  await authenticatedPage.goto('/dashboard');
-  await expect(authenticatedPage).toHaveURL(/\/dashboard/);
-});
-```
-
-## Required env vars
-
-- `DATABASE_URL` — PostgreSQL connection (same as the dev app uses).
-- `BETTER_AUTH_SECRET` — must match the value the running app uses; otherwise the signed cookie will be rejected by `auth.api.getSession`.
-
-Optional:
-
-- `PLAYWRIGHT_BASE_URL` (default `http://localhost:3000`)
-- `PLAYWRIGHT_PORT` (default `3000`)
-- `E2E_KEEP_DATA=1` — skip teardown for post-mortem debugging.
+- Production mode: `Secure` cookies (Chromium accepts them on `http://localhost`),
+  the sign-in rate limiter, and the Bun server's 10 second idle timeout.
+- The app reaches RustFS as `host.docker.internal`, and the test browser maps that
+  name to `127.0.0.1` (`--host-resolver-rules` in `playwright.config.ts`), because
+  presigned URLs sign the host. Node-side code (`bucket`) uses `127.0.0.1` directly.
+- RustFS ignores per-object ACLs, so every object is readable at its raw bucket URL.
+  Assert privacy at the app's surfaces (`/view`, `/cdn`, `/api/d`, `/api/download`), never at the bucket.

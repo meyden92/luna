@@ -342,7 +342,8 @@ function FileMetaSection({
 }) {
   const [activeShareDialog, setActiveShareDialog] = useState<'qr' | 'embed' | null>(null);
   const shareTitle = info.title || 'LunaShare file';
-  const embedCode = `<iframe src="${escapeHtmlAttribute(shareUrl)}" title="${escapeHtmlAttribute(shareTitle)}" width="640" height="360" loading="lazy" allowfullscreen></iframe>`;
+  const embedUrl = `${new URL(shareUrl).origin}/embed/${info.id}`;
+  const embedCode = `<iframe src="${escapeHtmlAttribute(embedUrl)}" title="${escapeHtmlAttribute(shareTitle)}" width="640" height="360" loading="lazy" allowfullscreen></iframe>`;
   const handleShare = useCallback(async () => {
     try {
       if (navigator.share) {

@@ -36,6 +36,50 @@ The run exits with Playwright's exit code. Reports, traces, screenshots and
 videos stay in `playwright-report/` and `test-results/` after the stack is gone.
 Replicate is never configured, so nothing costs money.
 
+## Users
+
+The `setup` projects run before every spec, in order (`playwright.config.ts`):
+
+1. `setup/auth.setup.ts`: the bootstrap admin signs in through `/login`.
+2. `setup/users.setup.ts`: the admin creates every other user through the "Create user"
+   dialog on `/admin/users`, sets the quota user's quota on its detail screen, and each
+   user signs in through `/login`. Sessions go to `.auth/<role>.json` (gitignored).
+3. `setup/gallery.setup.ts`: seeds the gallery user (below).
+
+| Role | Username | For |
+| --- | --- | --- |
+| `admin` | `e2eadmin` | Admin screens |
+| `gallery` | `e2e-gallery` | The read-only seeded dataset. No spec may change its data |
+| `quota` | `e2e-quota` | Quota of `QUOTA_USER_QUOTA_MIB` (4 MiB), so a few corpus files exceed it |
+| `empty` | `e2e-empty` | No files, for empty states |
+| `worker<N>` | `e2e-worker<N>` | One per Playwright worker, for specs that change data |
+
+`fixtures/users.ts` has the credentials (`fixtureUser(role)`; passwords are derived from
+the run's random admin password, so a spec that signs in through the form can compute them).
+
+## The gallery dataset
+
+`fixtures/gallery.ts` describes exactly what the gallery user holds, so specs assert against
+data rather than literals:
+
+- `GALLERY_UPLOADS`: 125 files (more than four pages of 30): the whole corpus, then copies
+  titled `<stem> (2)<ext>`, `<stem> (3)<ext>`. Each has its `source` corpus entry, its
+  folder (`Travel`, `Work`, `Archive` or `null` for "Not in a folder") and whether it is private.
+- `dateAnchors(now)`: the calendar points files are backdated to, each with the date-group
+  heading the Files screen shows for it. Today, yesterday, earlier this week (Wednesday
+  onwards only), earlier this month (when the 2nd is before this week), the 15th of the
+  three previous months, and June 15 last year. All UTC, away from midnight.
+- `galleryDataset(seededAt)` adds `createdAt` and `group` to every file (all distinct, so
+  date sorts have one right order), the `groups` newest first, and `totalBytes`.
+- `matchesSearch(file, term)`: what the Files search box finds. ShareX tags every upload
+  `sharex-upload`, so a term inside that word matches everything.
+
+Seeding goes through the app: a Token from Settings, folders from the Files sidebar, ShareX
+uploads (two at a time, paced under the 60-per-minute limit, which takes about two minutes),
+the Token's folder default, and the card menu's "Make private". The only direct write is
+backdating `file.created_at`. Setup records the moment it computed the dates from in
+`.auth/gallery-seed.json`; the `gallery` fixture rebuilds the dataset from it.
+
 ## Writing a spec
 
 Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
@@ -43,17 +87,27 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
 | Fixture | What it is |
 | --- | --- |
 | `adminPage`, `adminRequest` | Page / API context signed in as the bootstrap admin |
+| `galleryPage`, `galleryRequest` | The gallery user |
+| `workerPage`, `workerRequest` | This worker's own user (`testInfo.parallelIndex`) |
+| `quotaPage`, `quotaRequest` | The quota user |
+| `emptyPage`, `emptyRequest` | The empty user |
 | `page`, `context`, `request` | Playwright's own, signed out |
+| `gallery` | The seeded dataset (`GalleryDataset`) |
+| `corpus` | The fixture files: `files`, and the lookups `file`, `byKind`, `edgeCase`, `uploadable` |
 | `bucket` | `{ client, name }`: an S3 client on the stack's RustFS |
 | `db` | Drizzle on the stack's Postgres. Reads, and backdating `file.created_at` only |
 | `stack` | The `E2E_*` values (base URL, CDN URL, admin credentials, …) |
 
-Every browser and API context sends its own random `cf-connecting-ip`, because
-production keys the sign-in rate limiter on it. Sessions come from the real login
-form in `setup/auth.setup.ts`; never forge one or hard-code a cookie name.
-
-For a control that is inert until hydration, use `clickUntil` from `utils/hydration.ts`
-rather than a timeout.
+- Specs that change data use the worker user and only assert on items they created,
+  found by a title unique to the test. Specs that assert totals use the gallery, quota
+  or empty user.
+- Every browser and API context sends its own random `cf-connecting-ip`, because
+  production keys the sign-in rate limiter on it. Sessions come from the real login
+  form; never forge one or hard-code a cookie name. `utils/sign-in.ts` signs in a fresh context.
+- Uploads are rate limited per user (60 per minute for each upload route, and ShareX
+  allows two in flight). Spread heavy uploading across workers instead of working around it.
+- For a control that is inert until hydration, use `clickUntil` from `utils/hydration.ts`
+  rather than a timeout.
 
 ## Things that differ from dev
 

@@ -30,8 +30,11 @@ export default defineConfig({
   },
 
   projects: [
-    // Signs in the fixed users through the real form and stores their sessions.
-    { name: 'setup', testMatch: /.*\.setup\.ts/, use: browser },
-    { name: 'chromium', dependencies: ['setup'], use: browser },
+    // The fixed users and their sessions, in order: the admin signs in, creates
+    // and signs in the other users, then the gallery user is seeded.
+    { name: 'setup', testMatch: /auth\.setup\.ts/, use: browser },
+    { name: 'setup-users', testMatch: /users\.setup\.ts/, dependencies: ['setup'], use: browser },
+    { name: 'setup-gallery', testMatch: /gallery\.setup\.ts/, dependencies: ['setup-users'], use: browser },
+    { name: 'chromium', dependencies: ['setup-gallery'], use: browser },
   ],
 });

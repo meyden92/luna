@@ -1,14 +1,30 @@
 import { S3Client } from '@aws-sdk/client-s3';
 import { type APIRequestContext, type Browser, test as base, type Page, type PlaywrightWorkerArgs } from '@playwright/test';
 import { S3_REGION, type StackEnv, stackEnv } from '../stack-env';
+import { CORPUS, corpusByKind, corpusEdgeCase, corpusFile, corpusUploadable } from './corpus';
 import { createTestDb, type TestDb } from './db';
-import { clientIpHeader, type Role, storageStatePath } from './users';
+import { type GalleryDataset, seededGallery } from './gallery';
+import { clientIpHeader, type Role, storageStatePath, workerRole } from './users';
 
+/**
+ * Per-user pages and API contexts, each signed in through the setup project and
+ * sending its own `cf-connecting-ip`. Roles are described in `users.ts`.
+ */
 type TestFixtures = {
-  /** A page signed in as the bootstrap admin, with its own `cf-connecting-ip`. */
   adminPage: Page;
-  /** API calls as the bootstrap admin, with its own `cf-connecting-ip`. */
   adminRequest: APIRequestContext;
+  /** Owner of the read-only seeded dataset (`gallery`). Never change its data. */
+  galleryPage: Page;
+  galleryRequest: APIRequestContext;
+  /** This worker's own user, for specs that change data. */
+  workerPage: Page;
+  workerRequest: APIRequestContext;
+  /** Has a quota of `QUOTA_USER_QUOTA_MIB`. */
+  quotaPage: Page;
+  quotaRequest: APIRequestContext;
+  /** Has no files. */
+  emptyPage: Page;
+  emptyRequest: APIRequestContext;
 };
 
 type WorkerFixtures = {
@@ -17,6 +33,18 @@ type WorkerFixtures = {
   bucket: { client: S3Client; name: string };
   /** See `createTestDb`: reads, and backdating `file.created_at` only. */
   db: TestDb;
+  /** The fixture files (`corpus.ts`): the whole manifest and its lookups. */
+  corpus: typeof corpus;
+  /** The gallery user's dataset as this run seeded it (`gallery.ts`). */
+  gallery: GalleryDataset;
+};
+
+const corpus = {
+  files: CORPUS,
+  file: corpusFile,
+  byKind: corpusByKind,
+  edgeCase: corpusEdgeCase,
+  uploadable: corpusUploadable,
 };
 
 /**
@@ -78,6 +106,20 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
     { scope: 'worker' },
   ],
 
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright requires the destructuring pattern.
+  corpus: [async ({}, use) => use(corpus), { scope: 'worker' }],
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright requires the destructuring pattern.
+  gallery: [async ({}, use) => use(seededGallery()), { scope: 'worker' }],
+
   adminPage: async ({ browser }, use) => withRolePage(browser, 'admin', use),
   adminRequest: async ({ playwright, stack }, use) => withRoleRequest(playwright, stack.E2E_BASE_URL, 'admin', use),
+  galleryPage: async ({ browser }, use) => withRolePage(browser, 'gallery', use),
+  galleryRequest: async ({ playwright, stack }, use) => withRoleRequest(playwright, stack.E2E_BASE_URL, 'gallery', use),
+  workerPage: async ({ browser }, use, testInfo) => withRolePage(browser, workerRole(testInfo.parallelIndex), use),
+  workerRequest: async ({ playwright, stack }, use, testInfo) =>
+    withRoleRequest(playwright, stack.E2E_BASE_URL, workerRole(testInfo.parallelIndex), use),
+  quotaPage: async ({ browser }, use) => withRolePage(browser, 'quota', use),
+  quotaRequest: async ({ playwright, stack }, use) => withRoleRequest(playwright, stack.E2E_BASE_URL, 'quota', use),
+  emptyPage: async ({ browser }, use) => withRolePage(browser, 'empty', use),
+  emptyRequest: async ({ playwright, stack }, use) => withRoleRequest(playwright, stack.E2E_BASE_URL, 'empty', use),
 });

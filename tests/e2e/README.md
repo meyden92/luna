@@ -103,7 +103,8 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
   or empty user.
 - Every browser and API context sends its own random `cf-connecting-ip`, because
   production keys the sign-in rate limiter on it. Sessions come from the real login
-  form; never forge one or hard-code a cookie name. `utils/sign-in.ts` signs in a fresh context.
+  form; never forge one or hard-code a cookie name. `utils/sign-in.ts` signs in a fresh context
+  (`signInThroughForm`), or submits a `/login` form the page is already on (`submitLoginForm`, for `?redirect=` flows).
 - Uploads are rate limited per user (60 per minute for each upload route, and ShareX
   allows two in flight). Spread heavy uploading across workers instead of working around it.
 - For a control that is inert until hydration, use `clickUntil` from `utils/hydration.ts`

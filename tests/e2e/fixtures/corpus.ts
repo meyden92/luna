@@ -41,8 +41,8 @@ export type EdgeCase =
   | 'unsupported-type'
   /** No extension, so the browser sends no type and it arrives as `application/octet-stream`. */
   | 'no-extension'
-  /** `.ts` is `video/mp2t` to the browser, so the app files TypeScript source under video. */
-  | 'ts-reads-as-video';
+  /** `.ts` arrives as `video/mp2t`; the app sniffs it as TypeScript source and stores `text/plain`. */
+  | 'ts-declared-as-mpeg-ts';
 
 export interface CorpusEntry {
   /** File name in `files/`, also the name it uploads under. */
@@ -172,7 +172,7 @@ const rawEntries: RawEntry[] = [
   { name: 'clip.mp4', mimeType: 'video/mp4', kind: 'video', size: 13922, dimensions: { width: 320, height: 240 }, webUpload: 200 },
   { name: 'notes.txt', mimeType: 'text/plain', kind: 'file', size: 115, webUpload: 200 },
   { name: 'readme.md', mimeType: 'text/markdown', kind: 'file', size: 102, webUpload: 200 },
-  { name: 'snippet.ts', mimeType: 'video/mp2t', kind: 'video', size: 95, edgeCase: 'ts-reads-as-video', webUpload: 200 },
+  { name: 'snippet.ts', mimeType: 'video/mp2t', kind: 'file', size: 95, edgeCase: 'ts-declared-as-mpeg-ts', webUpload: 200 },
   { name: 'script.py', mimeType: 'application/octet-stream', kind: 'file', size: 112, webUpload: 200 },
   { name: 'server.go', mimeType: 'application/octet-stream', kind: 'file', size: 72, webUpload: 200 },
   { name: 'styles.css', mimeType: 'text/css', kind: 'file', size: 78, webUpload: 200 },

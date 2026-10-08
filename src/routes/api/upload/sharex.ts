@@ -14,6 +14,7 @@ import { UnauthorizedError } from '@/libs/rbac/guards';
 import { getCdnUrl } from '@/libs/runtime-config';
 import { s3Client } from '@/libs/S3Helper';
 import { StorageQuotaExceededError, storageQuotaExceededPayload } from '@/libs/storage-quota';
+import { resolveUploadContentType } from '@/libs/upload-content-type';
 
 const MULTIPART_OVERHEAD_BYTES = 1024 * 1024;
 let inFlightSharexUploads = 0;
@@ -128,8 +129,8 @@ async function handleWithUploadSlot(request: Request): Promise<Response> {
   const tags = ['sharex-upload', nameParts[0]];
 
   let uploadBuffer: Uint8Array | Buffer = new Uint8Array(await file.arrayBuffer());
-  let uploadContentType = file.type || 'application/octet-stream';
   let uploadFileName = file.name.toString().trim() || 'Untitled';
+  let uploadContentType = resolveUploadContentType(file.type || 'application/octet-stream', uploadFileName, uploadBuffer);
 
   if (tokenRecord.compressImage && uploadContentType.startsWith('image/')) {
     try {

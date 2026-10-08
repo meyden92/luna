@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, notFound } from '@tanstack/react-router';
 import { Home, Search } from 'lucide-react';
 import { useMemo } from 'react';
 import Footer from '@/components/landing/Footer';
@@ -18,9 +18,14 @@ const NOT_FOUND_MESSAGES = [
   'This page was last seen with my lost socks from the dryer.',
 ];
 
+// The catch-all throws notFound() instead of rendering the page as its component,
+// so the server answers 404 rather than 200 for a URL no route matches.
 export const Route = createFileRoute('/$')({
+  loader: () => {
+    throw notFound();
+  },
   head: () => ({ meta: [{ title: '404 - Page Not Found | LunaShare' }] }),
-  component: NotFoundPage,
+  notFoundComponent: NotFoundPage,
 });
 
 function NotFoundPage() {

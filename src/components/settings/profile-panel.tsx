@@ -337,6 +337,7 @@ function ProfilePanelContent({
           hint="Doesn’t have to be unique."
         >
           <Input
+            aria-label="Display name"
             className={styles.input}
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -371,6 +372,7 @@ function ProfilePanelContent({
           hint="Used to sign in. Can’t be changed here."
         >
           <Input
+            aria-label="Username"
             className={styles.input}
             value={username}
             readOnly
@@ -382,6 +384,7 @@ function ProfilePanelContent({
           hint="Anyone can see your public profile page and the files on it."
         >
           <Switch
+            aria-label="Public profile"
             checked={isPublic}
             onCheckedChange={(checked) => setIsPublic(Boolean(checked))}
           />

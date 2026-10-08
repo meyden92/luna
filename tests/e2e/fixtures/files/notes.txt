@@ -1,0 +1,3 @@
+LunaShare end-to-end fixture.
+Second line of the plain text file.
+Third line, with unicode: café, naïve, 你好.

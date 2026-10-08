@@ -1,0 +1,11 @@
+{
+  "name": "fixture",
+  "tags": [
+    "a",
+    "b"
+  ],
+  "nested": {
+    "ok": true,
+    "count": 3
+  }
+}

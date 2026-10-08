@@ -1,0 +1,1 @@
+The name of this file has spaces, diacritics, an emoji and CJK: 日本語.

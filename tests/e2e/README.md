@@ -64,3 +64,12 @@ rather than a timeout.
   presigned URLs sign the host. Node-side code (`bucket`) uses `127.0.0.1` directly.
 - RustFS ignores per-object ACLs, so every object is readable at its raw bucket URL.
   Assert privacy at the app's surfaces (`/view`, `/cdn`, `/api/d`, `/api/download`), never at the bucket.
+
+## Fixture corpus
+
+`fixtures/files/` holds the committed files specs upload (about 5 MB); `fixtures/corpus.ts`
+describes each one (type, Files-screen kind, size, dimensions, metadata, edge case, whether
+`/api/upload/web` accepts it) and throws on import if the folder and the table disagree.
+Look files up with `corpusFile`, `corpusByKind`, `corpusEdgeCase`, `corpusUploadable`.
+`generate-corpus.ts` reproduces every non-image file; the images and `clip.mp4` are
+committed outputs of `prep-images.ts` and `make-video.swift`.

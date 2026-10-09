@@ -113,6 +113,9 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
 - `utils/files-screen.ts` reads the Files screen: `cardTitles` and `dateGroups` (what is listed, in page
   order), `loadAll(page, n)` (scrolls until n cards are loaded), `scopeRow`, `countLine`, and `asListed`
   (the page order of a sorted list: files stay together under their date heading, headings ordered by first file).
+- `utils/own-files.ts` gives a data-changing spec its own files: `uniquePrefix`, `uploadOwnFiles` (corpus files through
+  `/api/upload/web`, titled `<prefix> <name>`, optionally in a folder or private), `openOwnFiles` (Files screen narrowed to
+  the prefix by search), `cardOf`, `openCardMenu`, `createFolderThroughSidebar` and `folderIdOf`.
 
 ## Things that differ from dev
 

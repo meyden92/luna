@@ -47,8 +47,9 @@ function isAllowedUploadContentType(contentType: string): boolean {
   );
 }
 
+/** The bare media type: Bun reports a JSON part as `application/json;charset=utf-8`, which the allowlist would not match. */
 function normalizeUploadContentType(contentType: string | null | undefined): string {
-  const normalized = contentType?.trim().toLowerCase();
+  const normalized = contentType?.split(';')[0]?.trim().toLowerCase();
   return normalized || 'application/octet-stream';
 }
 

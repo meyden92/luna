@@ -461,6 +461,7 @@ const AudioPlayerControls: React.FC<AudioPlayerControlsProps> = ({
           {/* Invisible range input for interaction */}
           <input
             type="range"
+            aria-label="Seek"
             min={0}
             max={duration || 100}
             value={currentTime}
@@ -512,6 +513,7 @@ const AudioPlayerControls: React.FC<AudioPlayerControlsProps> = ({
             variant="ghost"
             size="icon"
             onClick={handleClickPrevious}
+            aria-label="Previous track"
             className={styles.navButton}
           >
             <SkipBack />
@@ -534,6 +536,7 @@ const AudioPlayerControls: React.FC<AudioPlayerControlsProps> = ({
             variant="ghost"
             size="icon"
             onClick={handleClickNext}
+            aria-label="Next track"
             className={styles.navButton}
           >
             <SkipForward />

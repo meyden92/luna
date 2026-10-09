@@ -44,6 +44,7 @@ export function DeleteTemplateButton({ templateId, templateName }: DeleteTemplat
           <Button
             variant="destructive"
             size="icon-sm"
+            aria-label={`Delete ${templateName}`}
           />
         }
       >

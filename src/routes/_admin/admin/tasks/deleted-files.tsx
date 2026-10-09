@@ -450,6 +450,7 @@ function DeletedFilesPage() {
                                     type="checkbox"
                                     checked={selectedFiles.includes(file.id)}
                                     onChange={() => handleFileToggle(file.id)}
+                                    aria-label={`Select ${file.title}`}
                                     className="margin-top-1"
                                   />
                                   <div className={styles.fileMain}>

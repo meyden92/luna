@@ -38,6 +38,7 @@ export function TrackHeader({ track }: TrackHeaderProps) {
       <div className={styles.row}>
         <Input
           value={track.name}
+          aria-label="Track name"
           onChange={(e) => updateTrack(track.id, { name: e.target.value })}
           className={styles.nameInput}
         />
@@ -48,6 +49,7 @@ export function TrackHeader({ track }: TrackHeaderProps) {
                 variant="ghost"
                 size="icon-xs"
                 onClick={() => removeTrack(track.id)}
+                aria-label="Delete Track"
               >
                 <Trash2Icon className={styles.icon} />
               </Button>
@@ -67,6 +69,8 @@ export function TrackHeader({ track }: TrackHeaderProps) {
                 variant={track.isMuted ? 'destructive' : 'ghost'}
                 size="icon-xs"
                 onClick={() => updateTrack(track.id, { isMuted: !track.isMuted })}
+                aria-label="Mute"
+                aria-pressed={track.isMuted}
               >
                 {track.isMuted ? <VolumeXIcon className={styles.icon} /> : <span className={styles.toggleLetter}>M</span>}
               </Button>
@@ -83,6 +87,8 @@ export function TrackHeader({ track }: TrackHeaderProps) {
                 variant={track.isSolo ? 'default' : 'ghost'}
                 size="icon-xs"
                 onClick={() => updateTrack(track.id, { isSolo: !track.isSolo })}
+                aria-label="Solo"
+                aria-pressed={track.isSolo}
               >
                 <span className={styles.toggleLetter}>S</span>
               </Button>
@@ -99,6 +105,7 @@ export function TrackHeader({ track }: TrackHeaderProps) {
                 variant="ghost"
                 size="icon-xs"
                 onClick={() => autoAlignTrack(track.id)}
+                aria-label="Auto-align clips"
               >
                 <AlignLeftIcon className={styles.icon} />
               </Button>

@@ -1,4 +1,4 @@
-import { useNavigate, useRouter } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { Ban, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import type { user } from '@/db/schema/auth';
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import { useConfirmation } from '@/hooks/use-confirmation';
+import { queryKeys } from '@/libs/query-keys';
 import { formatSize } from '@/libs/utils';
 import { deleteAdminUser, reactivateUser as reactivateUserFn, suspendUser as suspendUserFn } from '@/server/fns/admin/users';
 import styles from './user-danger-zone.module.css';
@@ -102,31 +103,26 @@ function DeleteUserDialog({
 }
 
 export default function UserDangerZone({ user, fileCount, totalSize }: UserDangerZoneProps) {
-  const router = useRouter();
   const navigate = useNavigate();
 
   const { confirm: suspendConfirm, ConfirmationDialog: SuspendConfirmationDialog } = useConfirmation<string>();
   const { confirm: reactivateConfirm, ConfirmationDialog: ReactivateConfirmationDialog } = useConfirmation<string>();
 
   const { mutate: suspendUser } = useAppMutation(suspendUserFn, {
+    successMessage: 'User suspended successfully',
+    invalidates: [queryKeys.admin.user(user.id), queryKeys.admin.users],
     errorMessage: false,
     onError: (error) => {
       toast.error(error.message, { richColors: true });
-    },
-    onSuccess: () => {
-      router.invalidate();
-      toast.success('User suspended successfully', { richColors: true });
     },
   });
 
   const { mutate: reactivateUser } = useAppMutation(reactivateUserFn, {
+    successMessage: 'User reactivated successfully',
+    invalidates: [queryKeys.admin.user(user.id), queryKeys.admin.users],
     errorMessage: false,
     onError: (error) => {
       toast.error(error.message, { richColors: true });
-    },
-    onSuccess: () => {
-      router.invalidate();
-      toast.success('User reactivated successfully', { richColors: true });
     },
   });
 

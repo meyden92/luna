@@ -117,6 +117,11 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
   `/api/upload/web`, titled `<prefix> <name>`, optionally in a folder or private), `openOwnFiles` (Files screen narrowed to
   the prefix by search), `cardOf`, `openCardMenu`, `createFolderThroughSidebar` and `folderIdOf`.
 - `utils/preview.ts` helps with the Preview overlay: `previewOf(page, title)` (its dialog is named by the file), `previewCounter` ("N / total") and `galleryFileIds(db)` (title -> id of the gallery user's files, to open `/dashboard?file=<id>`).
+- `utils/uploads.ts` helps upload specs: `storedFile(db, bucket, title)` (the row plus the object's bytes; the bucket key is
+  `<ownerId>/<decoded url>`), `bucketKeysContaining`, `createToken`/`revokeToken`/`withToken` (Settings -> Upload tokens;
+  the key is shown once), `sharexPost` (a ShareX POST with the Token in the header or the form), `setTokenOptions`
+  (compress, convert to JPEG and quality have no UI: it replays the `updateTokenSettings` call the page makes; options apply to
+  all of the user's Tokens) and `declaredLengthPost` (declares a `Content-Length` without sending the body).
 
 ## Things that differ from dev
 
@@ -127,6 +132,8 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
   presigned URLs sign the host. Node-side code (`bucket`) uses `127.0.0.1` directly.
 - RustFS ignores per-object ACLs, so every object is readable at its raw bucket URL.
   Assert privacy at the app's surfaces (`/view`, `/cdn`, `/api/d`, `/api/download`), never at the bucket.
+- The stack sets `MAX_SHAREX_UPLOAD_BYTES` to 10 MiB (`docker-compose.e2e.yml`, mirrored as `SHAREX_MAX_UPLOAD_BYTES` in
+  `stack-env.ts`), so the ShareX oversize refusal is tested with a small buffer instead of 200 MiB.
 
 ## Fixture corpus
 

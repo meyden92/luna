@@ -38,3 +38,6 @@ export function stackEnv(): StackEnv {
   }
   return Object.fromEntries(STACK_ENV_KEYS.map((key) => [key, process.env[key]!])) as StackEnv;
 }
+
+/** The app's `MAX_SHAREX_UPLOAD_BYTES` on the stack (10 MiB, set in `docker-compose.e2e.yml`): above every corpus file. */
+export const SHAREX_MAX_UPLOAD_BYTES = 10 * 1024 * 1024;

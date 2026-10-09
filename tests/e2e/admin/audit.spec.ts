@@ -54,12 +54,12 @@ test('creating a user, changing its quota and deleting its file are audited with
     }).toPass({ timeout: 15_000 });
   };
 
-  // The creation is attributed to the new user itself (#170), so only the entry is asserted, not its actor.
   await searchAudit(userId);
   const created = adminPage.getByRole('row').filter({ hasText: 'create' });
   await expect(created).toHaveCount(1);
   await expect(created.getByRole('cell').nth(1)).toHaveText('User');
   await expect(created.getByRole('cell').nth(3)).toHaveText(userId);
+  await expect(created.getByRole('cell').nth(4)).toHaveText(admin!.name);
 
   const updates = adminPage.getByRole('row').filter({ hasText: 'update' });
   await expect(updates).toHaveCount(2);

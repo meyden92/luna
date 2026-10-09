@@ -155,7 +155,7 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
 - The bucket allows cross-origin GETs (`createBucket` in `scripts/e2e/run.ts`), as production's CDN does: the beautifier draws
   bucket images on a canvas ("source image could not be loaded" without it) and the player's `<audio>` is a CORS request.
 - The stack sets `MAX_SHAREX_UPLOAD_BYTES` to 10 MiB (`docker-compose.e2e.yml`, mirrored as `SHAREX_MAX_UPLOAD_BYTES` in
-  `stack-env.ts`), so the ShareX oversize refusal is tested with a small buffer instead of 200 MiB.
+  `stack-env.ts`), so the ShareX oversize refusal is tested with a small buffer instead of 90 MiB.
 
 ## Screenshots
 

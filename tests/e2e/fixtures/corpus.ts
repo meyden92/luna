@@ -11,7 +11,7 @@
  *
  * What is deliberately NOT here: an over-limit file. Oversize is tested at
  * runtime: the sharex limit by lowering `MAX_SHAREX_UPLOAD_BYTES` on a stack
- * (#110), the 200 MB web limit by declaring an oversized `Content-Length`.
+ * (#110), the 90 MB web limit by declaring an oversized `Content-Length`.
  *
  * `mimeType` is what the browser sends for the file through
  * `setInputFiles` (Playwright maps the extension), because that, not the

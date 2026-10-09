@@ -128,30 +128,28 @@ test('a folder deleted while the sheet is open is refused, and the sheet says so
   ).toHaveLength(0);
 });
 
-test('a request declaring more than 200 MB is refused with 413 before any bytes are sent', async ({ workerRequest, stack }) => {
+test('a request declaring more than 90 MB is refused with 413 before any bytes are sent', async ({ workerRequest, stack }) => {
   const { cookies } = await workerRequest.storageState();
   const cookie = cookies.map((item) => `${item.name}=${item.value}`).join('; ');
 
-  const result = await declaredLengthPost(stack.E2E_BASE_URL, '/api/upload/web', { Cookie: cookie }, 210 * MIB);
+  const result = await declaredLengthPost(stack.E2E_BASE_URL, '/api/upload/web', { Cookie: cookie }, 92 * MIB);
 
-  // Bun's own 128 MiB request cap answers before the route does, so the body is empty rather
-  // than the route's PAYLOAD_TOO_LARGE payload (the route's check is covered for ShareX in
-  // sharex.spec.ts, whose limit sits below the cap). See issue #142.
   expect(result.status).toBe(413);
+  expect(JSON.parse(result.body)).toEqual({ error: 'File too large', code: 'PAYLOAD_TOO_LARGE' });
 });
 
-test('a file over 200 MB is turned away by the sheet before it is sent', async ({ workerPage }) => {
+test('a file over 90 MB is turned away by the sheet before it is sent', async ({ workerPage }) => {
   const sheet = await openSheet(workerPage);
   const input = uploadFileInput(workerPage);
 
-  // 201 MiB of zeros built inside the page; pushing that many bytes through the test runner would only be slow.
+  // 91 MiB of zeros built inside the page; pushing that many bytes through the test runner would only be slow.
   await input.evaluate((element: HTMLInputElement) => {
     const transfer = new DataTransfer();
-    transfer.items.add(new File([new Uint8Array(201 * 1024 * 1024)], 'huge.txt', { type: 'text/plain' }));
+    transfer.items.add(new File([new Uint8Array(91 * 1024 * 1024)], 'huge.txt', { type: 'text/plain' }));
     element.files = transfer.files;
     element.dispatchEvent(new Event('change', { bubbles: true }));
   });
 
-  await expect(workerPage.getByText('Can’t upload huge.txt — it is larger than 200.00 MB')).toBeVisible();
+  await expect(workerPage.getByText('Can’t upload huge.txt — it is larger than 90.00 MB')).toBeVisible();
   await expect(sheet.getByRole('button', { name: 'Upload', exact: true })).toBeDisabled();
 });

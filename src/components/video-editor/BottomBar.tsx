@@ -192,7 +192,7 @@ function TimeStepper({
             type="button"
             onClick={inc}
             className={styles.stepperArrow}
-            aria-label="Increase"
+            aria-label={`Increase ${label.toLowerCase()}`}
           >
             ▲
           </button>
@@ -200,7 +200,7 @@ function TimeStepper({
             type="button"
             onClick={dec}
             className={styles.stepperArrow}
-            aria-label="Decrease"
+            aria-label={`Decrease ${label.toLowerCase()}`}
           >
             ▼
           </button>

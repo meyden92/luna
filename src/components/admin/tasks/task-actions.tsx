@@ -75,7 +75,7 @@ export default function TaskActions({ task, onEdit, onDelete }: TaskActionsProps
 
       {/* More actions dropdown */}
       <DropdownMenu>
-        <DropdownMenuTrigger>
+        <DropdownMenuTrigger aria-label="More actions">
           <MoreHorizontal />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">

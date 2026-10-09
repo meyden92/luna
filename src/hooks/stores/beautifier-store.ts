@@ -4,7 +4,6 @@ import {
   type BeautifierConfigUpdate,
   type BeautifierSourceFile,
   beautifierConfigSchema,
-  beautifierConfigUpdateSchema,
   DEFAULT_BEAUTIFIER_CONFIG,
 } from '@/schemas/beautifier-schema';
 
@@ -44,11 +43,9 @@ export const useBeautifierStore = create<BeautifierStore>((set) => ({
 
   updateConfig: (updates) =>
     set((state) => {
-      const updateResult = beautifierConfigUpdateSchema.safeParse(updates);
-      if (!updateResult.success) return state;
-
-      const nextConfig = { ...state.config, ...updateResult.data };
-      const nextResult = beautifierConfigSchema.safeParse(nextConfig);
+      // Validate the merged config, not `updates` alone: parsing a partial schema fills in every field's default,
+      // which would reset the settings the update does not mention.
+      const nextResult = beautifierConfigSchema.safeParse({ ...state.config, ...updates });
       if (!nextResult.success) return state;
 
       return { config: nextResult.data };

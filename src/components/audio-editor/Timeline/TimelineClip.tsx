@@ -132,6 +132,8 @@ export function TimelineClip({ clip, isOverlay = false }: TimelineClipProps) {
   return (
     <div
       ref={setNodeRef}
+      role="group"
+      aria-label={`Clip ${clip.name}`}
       data-clip
       className={styles.clip}
       data-selected={isSelected}

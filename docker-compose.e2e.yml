@@ -33,10 +33,10 @@ services:
       RUSTFS_ACCESS_KEY: ${E2E_S3_ACCESS_KEY_ID:?}
       RUSTFS_SECRET_KEY: ${E2E_S3_SECRET_ACCESS_KEY:?}
     ports:
-      # Not bound to 127.0.0.1: the app reaches this port through
-      # host.docker.internal, which on Linux is the bridge gateway rather than
-      # the host's loopback. Credentials are generated per run.
-      - "${E2E_S3_PORT:?}:9000"
+      # Loopback only: the bucket allows anonymous reads. The app reaches this
+      # port through host.docker.internal, which Docker Desktop forwards to the
+      # host's loopback; on Linux it is the bridge gateway and would not reach it.
+      - "127.0.0.1:${E2E_S3_PORT:?}:9000"
     volumes:
       - s3data:/data
     healthcheck:

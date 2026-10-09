@@ -57,6 +57,9 @@ The `setup` projects run before every spec, in order (`playwright.config.ts`):
 `fixtures/users.ts` has the credentials (`fixtureUser(role)`; passwords are derived from
 the run's random admin password, so a spec that signs in through the form can compute them).
 
+A spec that must break a user (change its password, sign it out everywhere) makes its own with
+`createUserThroughAdmin(adminPage, user)` from `utils/admin-users.ts`, the same dialog flow the setup uses.
+
 ## The gallery dataset
 
 `fixtures/gallery.ts` describes exactly what the gallery user holds, so specs assert against

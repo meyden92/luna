@@ -1,6 +1,6 @@
-import { expect, type Page, test as setup } from '@playwright/test';
-import { clientIpHeader, type FixtureUser, fixtureUser, fixtureUsers, QUOTA_USER_QUOTA_MIB, storageStatePath } from '../fixtures/users';
-import { clickUntil } from '../utils/hydration';
+import { expect, test as setup } from '@playwright/test';
+import { clientIpHeader, fixtureUser, fixtureUsers, QUOTA_USER_QUOTA_MIB, storageStatePath } from '../fixtures/users';
+import { createUserThroughAdmin as createUser } from '../utils/admin-users';
 import { signInThroughForm } from '../utils/sign-in';
 
 setup('admin creates the fixture users, which then sign in through the login form', async ({ browser }, testInfo) => {
@@ -33,22 +33,3 @@ setup('admin creates the fixture users, which then sign in through the login for
     }),
   );
 });
-
-/** Fills the admin users screen's "Create user" dialog and waits for the confirmation toast. */
-async function createUser(page: Page, user: FixtureUser): Promise<void> {
-  const dialog = page.getByRole('dialog', { name: 'Create user' });
-  await clickUntil(page.getByRole('button', { name: 'Create user' }), dialog);
-
-  // The form drops a submit fired while the Username availability check is in
-  // flight, so let that check answer first.
-  const availability = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/auth/is-username-available');
-  await dialog.getByLabel('Username').fill(user.username);
-  await availability;
-  await dialog.getByLabel('Display name').fill(user.name);
-  await dialog.getByLabel('Email').fill(user.email);
-  await dialog.getByLabel('Initial password').fill(user.password);
-  await dialog.getByRole('button', { name: 'Create user' }).click();
-
-  await expect(page.getByText(`${user.name} can now sign in as "${user.username}"`)).toBeVisible();
-  await expect(dialog).toBeHidden();
-}

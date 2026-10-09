@@ -196,8 +196,9 @@ function ProfilePanelContent({
 
   const settleAvatar = (next: string | null) => {
     setImage(next);
-    // The nav avatar renders from the session, which still needs it.
-    void authClient.getSession({ query: { disableCookieCache: true } });
+    // The nav avatar renders from the session store. Refresh the cached session cookie first, then
+    // signal the store: the server function above changed the user without Better-Auth knowing.
+    void authClient.getSession({ query: { disableCookieCache: true } }).then(() => authClient.$store.notify('$sessionSignal'));
     void queryClient.invalidateQueries();
   };
 

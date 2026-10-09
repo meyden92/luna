@@ -277,7 +277,8 @@ function ProfilePanelContent({
       setCommittedReceiveEmail(nextReceiveEmail);
       setCommittedBio(nextBio);
       setCommittedDescription(nextDescription);
-      void authClient.getSession({ query: { disableCookieCache: true } });
+      // Refresh the cached session cookie before signalling the store, so a stale cached read cannot win.
+      void authClient.getSession({ query: { disableCookieCache: true } }).then(() => authClient.$store.notify('$sessionSignal'));
       void queryClient.invalidateQueries();
     },
     onError: (error: Error) => toast.error(error.message || 'Could not save your profile'),

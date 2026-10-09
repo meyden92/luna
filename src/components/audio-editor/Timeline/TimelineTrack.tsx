@@ -43,6 +43,8 @@ export function TimelineTrack({ track, viewportWidth }: TimelineTrackProps) {
   return (
     <div
       ref={setNodeRef}
+      role="group"
+      aria-label={track.name}
       className={styles.track}
       data-over={isOver}
       data-muted={track.isMuted}

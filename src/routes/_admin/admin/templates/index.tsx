@@ -71,6 +71,8 @@ function AdminTemplatesPage() {
               <Card
                 key={template.id}
                 className={styles.card}
+                role="group"
+                aria-label={template.name}
               >
                 <div className={styles.preview}>
                   {previewImages.length > 0 ? (

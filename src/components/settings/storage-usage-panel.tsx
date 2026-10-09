@@ -36,7 +36,11 @@ export function StorageUsagePanel() {
   return (
     <SettingsPanel>
       <div className={styles.body}>
-        <div className={styles.big}>
+        <div
+          className={styles.big}
+          role="group"
+          aria-label="Storage usage"
+        >
           <span className={styles.bigValue}>{formatSize(usedBytes, { trim: true })}</span>
           <span className={styles.bigLabel}>of {formatSize(quotaBytes, { trim: true })} used</span>
         </div>

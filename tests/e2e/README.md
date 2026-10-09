@@ -95,7 +95,7 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
 | `gallery` | The seeded dataset (`GalleryDataset`) |
 | `corpus` | The fixture files: `files`, and the lookups `file`, `byKind`, `edgeCase`, `uploadable` |
 | `bucket` | `{ client, name }`: an S3 client on the stack's RustFS |
-| `db` | Drizzle on the stack's Postgres. Reads, and backdating `file.created_at` only |
+| `db` | Drizzle on the stack's Postgres. Reads, backdating `file.created_at`, and seeding/backdating form shares (`utils/form-shares.ts`) |
 | `stack` | The `E2E_*` values (base URL, CDN URL, admin credentials, …) |
 
 - Specs that change data use the worker user and only assert on items they created,
@@ -118,6 +118,11 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
   the prefix by search), `cardOf`, `openCardMenu`, `createFolderThroughSidebar` and `folderIdOf`.
 - `utils/preview.ts` helps with the Preview overlay: `previewOf(page, title)` (its dialog is named by the file), `previewCounter` ("N / total") and `galleryFileIds(db)` (title -> id of the gallery user's files, to open `/dashboard?file=<id>`).
 - `utils/served-files.ts` gives the serving specs (`serving/`) a seeded gallery file to read: `servedFile(gallery, db, corpusName, { private })` returns its `id`, `title`, corpus `entry` and the expected `bytes` (the first copy with that visibility; e.g. the public `tone.mp3` is `tone (2).mp3`). Read only, so those specs upload nothing.
+- `utils/form-shares.ts` seeds a form share for a fixture user: `seedFormShare(db, stack, owner, { title, fields, expiresAt?, maxViews? })`
+  returns the share id for `/form/<id>`. No screen creates shares (the builder dialog is not mounted) and server function ids are
+  hashed, so it writes the rows `createFormShare` would, encrypting sensitive values with `E2E_FORM_FIELD_ENCRYPTION_KEY` (the
+  key the app container runs with). The public claim limit is per connection address, which is the same for the whole suite:
+  a spec that exhausts it belongs last in a serial file.
 - `utils/uploads.ts` helps upload specs: `storedFile(db, bucket, title)` (the row plus the object's bytes; the bucket key is
   `<ownerId>/<decoded url>`), `bucketKeysContaining`, `createToken`/`revokeToken`/`withToken` (Settings -> Upload tokens;
   the key is shown once), `sharexPost` (a ShareX POST with the Token in the header or the form), `setTokenOptions`

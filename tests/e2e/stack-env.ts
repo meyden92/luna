@@ -20,6 +20,8 @@ export const STACK_ENV_KEYS = [
   'E2E_ADMIN_EMAIL',
   'E2E_ADMIN_USERNAME',
   'E2E_ADMIN_PASSWORD',
+  /** The app's FORM_FIELD_ENCRYPTION_KEY (base64): form share specs seed sensitive values encrypted with it. */
+  'E2E_FORM_FIELD_ENCRYPTION_KEY',
 ] as const;
 
 export type StackEnvKey = (typeof STACK_ENV_KEYS)[number];

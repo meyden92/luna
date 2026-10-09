@@ -122,6 +122,7 @@ const s3Endpoint = `http://127.0.0.1:${s3Port}`;
 const databaseUrl = `postgresql://lunashare:lunashare@127.0.0.1:${postgresPort}/lunashare`;
 const s3Credentials = { accessKeyId: secret(10), secretAccessKey: secret(20) };
 const adminPassword = secret(16);
+const formFieldEncryptionKey = randomBytes(32).toString('base64');
 
 /** Interpolated into docker-compose.e2e.yml. */
 const composeEnv: Record<string, string> = {
@@ -132,7 +133,7 @@ const composeEnv: Record<string, string> = {
   E2E_S3_ACCESS_KEY_ID: s3Credentials.accessKeyId,
   E2E_S3_SECRET_ACCESS_KEY: s3Credentials.secretAccessKey,
   E2E_BETTER_AUTH_SECRET: secret(32),
-  E2E_FORM_FIELD_ENCRYPTION_KEY: randomBytes(32).toString('base64'),
+  E2E_FORM_FIELD_ENCRYPTION_KEY: formFieldEncryptionKey,
   E2E_RENDITION_SIGNING_SECRET: secret(32),
   E2E_DELIVERY_COOKIE_SECRET: secret(32),
   E2E_BUILD_COMMIT: (await output(['git', 'rev-parse', 'HEAD'])).trim() || 'unknown',
@@ -150,6 +151,7 @@ const playwrightEnv: StackEnv = {
   E2E_ADMIN_EMAIL: ADMIN.email,
   E2E_ADMIN_USERNAME: ADMIN.username,
   E2E_ADMIN_PASSWORD: adminPassword,
+  E2E_FORM_FIELD_ENCRYPTION_KEY: formFieldEncryptionKey,
 };
 
 const compose = (...args: string[]) => ['docker', 'compose', '--env-file', '/dev/null', '-f', COMPOSE_FILE, '-p', project, ...args];

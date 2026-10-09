@@ -11,7 +11,7 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import { createServer } from 'node:net';
 import { resolve } from 'node:path';
-import { CreateBucketCommand, PutBucketPolicyCommand, S3Client } from '@aws-sdk/client-s3';
+import { CreateBucketCommand, PutBucketCorsCommand, PutBucketPolicyCommand, S3Client } from '@aws-sdk/client-s3';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { user } from '../../src/db/schema/auth';
@@ -156,7 +156,10 @@ const playwrightEnv: StackEnv = {
 
 const compose = (...args: string[]) => ['docker', 'compose', '--env-file', '/dev/null', '-f', COMPOSE_FILE, '-p', project, ...args];
 
-/** Creates the bucket with an anonymous-read policy: public files are served straight from CDN_URL. */
+/**
+ * Creates the bucket with an anonymous-read policy (public files are served straight from CDN_URL) and a CORS
+ * rule, as production's CDN has: the beautifier draws bucket images on a canvas, which needs `crossOrigin` loads.
+ */
 async function createBucket(): Promise<void> {
   const s3 = new S3Client({ endpoint: s3Endpoint, region: S3_REGION, forcePathStyle: true, credentials: s3Credentials });
   await s3.send(new CreateBucketCommand({ Bucket: BUCKET }));
@@ -167,6 +170,12 @@ async function createBucket(): Promise<void> {
     Statement: [{ Effect: 'Allow', Principal: { AWS: ['*'] }, Action: ['s3:GetObject'], Resource: [`arn:aws:s3:::${BUCKET}/*`] }],
   };
   await s3.send(new PutBucketPolicyCommand({ Bucket: BUCKET, Policy: JSON.stringify(policy) }));
+  await s3.send(
+    new PutBucketCorsCommand({
+      Bucket: BUCKET,
+      CORSConfiguration: { CORSRules: [{ AllowedOrigins: ['*'], AllowedMethods: ['GET', 'HEAD'], AllowedHeaders: ['*'] }] },
+    }),
+  );
   s3.destroy();
 }
 

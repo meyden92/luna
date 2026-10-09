@@ -117,6 +117,8 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
   `/api/upload/web`, titled `<prefix> <name>`, optionally in a folder or private), `openOwnFiles` (Files screen narrowed to
   the prefix by search), `cardOf`, `openCardMenu`, `createFolderThroughSidebar` and `folderIdOf`.
 - `utils/preview.ts` helps with the Preview overlay: `previewOf(page, title)` (its dialog is named by the file), `previewCounter` ("N / total") and `galleryFileIds(db)` (title -> id of the gallery user's files, to open `/dashboard?file=<id>`).
+- `utils/media.ts` checks media as a user's player would: `decodeMedia(page, bytes, mimeType)` plays bytes in the page and returns `{ duration, width, height }` (rejects if undecodable), and `recordClipWithSound(page, seconds)` records an MP4 with a video and an audio track in Chromium (`clip.mp4` has no audio).
+- `utils/ffmpeg.ts` has `serveFfmpegCore(page)` for specs of tools that run ffmpeg.wasm (video editor, converter, audio editor's MP3). Call it before `goto`: the test contexts' made-up `cf-connecting-ip` header makes the CDN answer 403, so the core is fetched from node instead. Those specs need the internet.
 - `utils/served-files.ts` gives the serving specs (`serving/`) a seeded gallery file to read: `servedFile(gallery, db, corpusName, { private })` returns its `id`, `title`, corpus `entry` and the expected `bytes` (the first copy with that visibility; e.g. the public `tone.mp3` is `tone (2).mp3`). Read only, so those specs upload nothing.
 - `utils/form-shares.ts` seeds a form share for a fixture user: `seedFormShare(db, stack, owner, { title, fields, expiresAt?, maxViews? })`
   returns the share id for `/form/<id>`. No screen creates shares (the builder dialog is not mounted) and server function ids are
@@ -138,6 +140,8 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
   presigned URLs sign the host. Node-side code (`bucket`) uses `127.0.0.1` directly.
 - RustFS ignores per-object ACLs, so every object is readable at its raw bucket URL.
   Assert privacy at the app's surfaces (`/view`, `/cdn`, `/api/d`, `/api/download`), never at the bucket.
+- The bucket allows cross-origin GETs (`createBucket` in `scripts/e2e/run.ts`), as production's CDN does: the beautifier draws
+  bucket images on a canvas ("source image could not be loaded" without it) and the player's `<audio>` is a CORS request.
 - The stack sets `MAX_SHAREX_UPLOAD_BYTES` to 10 MiB (`docker-compose.e2e.yml`, mirrored as `SHAREX_MAX_UPLOAD_BYTES` in
   `stack-env.ts`), so the ShareX oversize refusal is tested with a small buffer instead of 200 MiB.
 

@@ -72,6 +72,7 @@ export function EditorToolbar() {
                   variant="ghost"
                   size="icon"
                   onClick={handlePlayPause}
+                  aria-label={isPlaying ? 'Pause' : 'Play'}
                 >
                   {isPlaying ? <PauseIcon className={styles.icon} /> : <PlayIcon className={styles.icon} />}
                 </Button>
@@ -87,6 +88,7 @@ export function EditorToolbar() {
                   variant="ghost"
                   size="icon"
                   onClick={handleStop}
+                  aria-label="Stop"
                 >
                   <SquareIcon className={styles.icon} />
                 </Button>
@@ -113,6 +115,7 @@ export function EditorToolbar() {
                   variant="ghost"
                   size="icon-sm"
                   onClick={handleZoomOut}
+                  aria-label="Zoom Out"
                 >
                   <ZoomOutIcon className={styles.icon} />
                 </Button>
@@ -137,6 +140,7 @@ export function EditorToolbar() {
                   variant="ghost"
                   size="icon-sm"
                   onClick={handleZoomIn}
+                  aria-label="Zoom In"
                 >
                   <ZoomInIcon className={styles.icon} />
                 </Button>

@@ -24,6 +24,7 @@ function SplitClipButton({ clip }: { clip: AudioClip }) {
             variant="ghost"
             size="icon-sm"
             onClick={() => splitClip(clip.id, currentTime)}
+            aria-label="Split at Playhead"
             disabled={!canSplit}
           >
             <ScissorsIcon className={styles.icon} />
@@ -207,6 +208,7 @@ export function ClipTools() {
                 variant="ghost"
                 size="icon-sm"
                 onClick={() => removeClip(clip.id)}
+                aria-label="Delete Clip"
               >
                 <Trash2Icon className={styles.icon} />
               </Button>

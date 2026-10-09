@@ -18,6 +18,7 @@ export function TrackList() {
           variant="ghost"
           size="icon-xs"
           onClick={() => addTrack()}
+          aria-label="Add track"
         >
           <PlusIcon className={styles.icon} />
         </Button>

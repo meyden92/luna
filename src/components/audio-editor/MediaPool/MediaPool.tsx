@@ -52,6 +52,7 @@ function MediaPoolItem({ media }: { media: MediaFile }) {
         variant="ghost"
         size="icon-sm"
         className={styles.remove}
+        aria-label={`Remove ${media.name} from the pool`}
         onClick={(e) => {
           e.stopPropagation();
           removeFromMediaPool(media.id);
@@ -168,6 +169,7 @@ export function MediaPool() {
           variant="ghost"
           size="icon-sm"
           onClick={handleAddClick}
+          aria-label="Add audio files"
           disabled={isLoading}
         >
           <UploadIcon className={styles.uploadIcon} />

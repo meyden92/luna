@@ -1,13 +1,11 @@
-import { randomUUID } from 'node:crypto';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { eq } from 'drizzle-orm';
-import { user } from '../../src/db/schema/auth';
-import { snippet } from '../../src/db/schema/files';
+import { expect, type Page } from '@playwright/test';
 import { test } from '../e2e/fixtures/test';
-import { clientIpHeader, fixtureUser, storageStatePath, workerRole } from '../e2e/fixtures/users';
+import { clientIpHeader, storageStatePath, workerRole } from '../e2e/fixtures/users';
 import { seedFormShare } from '../e2e/utils/form-shares';
 import { uniquePrefix, uploadOwnFiles } from '../e2e/utils/own-files';
+import { createPaste, snippetId } from '../e2e/utils/pastes';
 
 /** Routes that render the same for everyone. */
 const PUBLIC_ROUTES = ['/', '/login', '/unauthorized', '/this-route-does-not-exist', '/privacy'];
@@ -33,10 +31,32 @@ function fileNameFor(route: string, scheme: string): string {
 }
 
 /**
+ * The page has finished painting: web fonts are loaded and no finite CSS
+ * animation or transition is still running. (`reducedMotion: 'reduce'` already
+ * skips the app's entrance animations; this catches whatever still runs.)
+ */
+async function settled(page: Page): Promise<void> {
+  await page.evaluate(() => document.fonts.ready);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          document
+            .getAnimations()
+            .filter(
+              (animation) =>
+                animation.playState === 'running' && animation.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY,
+            ).length,
+      ),
+    )
+    .toBe(0);
+}
+
+/**
  * Not a test: captures the pages below in both Appearances for before/after styling comparisons.
  * Run it with `bun run screenshots <label>`, which starts the disposable stack (`playwright.screenshots.config.ts`).
  */
-test('capture screenshots', async ({ browser, workerRequest, db, stack, corpus }, testInfo) => {
+test('capture screenshots', async ({ browser, workerPage, workerRequest, db, stack, corpus }, testInfo) => {
   const label = process.env.SCREENSHOT_LABEL;
   if (!label) throw new Error('SCREENSHOT_LABEL is not set: run `bun run screenshots <label>`');
   const outDir = resolve(import.meta.dirname, '../../.scratch/screenshots', label);
@@ -44,21 +64,16 @@ test('capture screenshots', async ({ browser, workerRequest, db, stack, corpus }
 
   // Something real behind each share page: a public file, a public paste and a form share, all the worker user's.
   const [shared] = await uploadOwnFiles(workerRequest, uniquePrefix('shot'), [corpus.file('forest-path.jpg')]);
+  if (!shared) throw new Error('Could not seed the share pages');
   const role = workerRole(testInfo.parallelIndex);
-  const [owner] = await db
-    .select({ id: user.id })
-    .from(user)
-    .where(eq(user.username, fixtureUser(role).username));
-  if (!shared || !owner) throw new Error('Could not seed the share pages');
-  const snippetId = randomUUID();
-  await db.insert(snippet).values({
-    id: snippetId,
-    title: 'Screenshot snippet',
-    content: 'const answer = 42;\nconsole.log(answer);',
-    language: 'javascript',
+  const pasteTitle = `Screenshot snippet ${uniquePrefix('paste')}`;
+  await createPaste(workerPage, {
+    title: pasteTitle,
+    code: 'const answer = 42;\nconsole.log(answer);',
+    language: 'JavaScript',
     isPublic: true,
-    ownerId: owner.id,
   });
+  const pasteId = await snippetId(db, pasteTitle);
   const formId = await seedFormShare(db, stack, role, {
     title: 'Screenshot form',
     fields: [
@@ -66,7 +81,7 @@ test('capture screenshots', async ({ browser, workerRequest, db, stack, corpus }
       { label: 'Password', value: 'not-a-real-secret', type: 'password', isSensitive: true },
     ],
   });
-  const shareRoutes = [`/view/${shared.id}`, `/embed/${shared.id}`, `/bin/${snippetId}`, `/form/${formId}`];
+  const shareRoutes = [`/view/${shared.id}`, `/embed/${shared.id}`, `/bin/${pasteId}`, `/form/${formId}`];
 
   await mkdir(outDir, { recursive: true });
   const skipped: string[] = [];
@@ -79,6 +94,7 @@ test('capture screenshots', async ({ browser, workerRequest, db, stack, corpus }
     for (const job of jobs) {
       const context = await browser.newContext({
         colorScheme,
+        reducedMotion: 'reduce',
         viewport: { width: 1440, height: 900 },
         storageState: job.storageState,
         extraHTTPHeaders: clientIpHeader(),
@@ -87,8 +103,7 @@ test('capture screenshots', async ({ browser, workerRequest, db, stack, corpus }
       for (const route of job.routes) {
         try {
           await page.goto(route, { waitUntil: 'networkidle', timeout: 30_000 });
-          // Let entrance animations settle before the capture.
-          await page.waitForTimeout(1_200);
+          await settled(page);
           await page.screenshot({ path: resolve(outDir, fileNameFor(route, colorScheme)), fullPage: true });
           captured++;
         } catch (error) {

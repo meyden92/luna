@@ -87,7 +87,8 @@
 
   .positioner {
     isolation: isolate;
-    z-index: 50;
+    /* Above Preview's lightbox (z-index: 70, Preview.module.css), whose panel holds a Select. */
+    z-index: 80;
   }
 
   .popup {
@@ -98,7 +99,7 @@
 
     position: relative;
     isolation: isolate;
-    z-index: 50;
+    z-index: 80;
     min-width: var(--popup-min-width);
     width: var(--anchor-width);
     max-height: var(--available-height);

@@ -50,6 +50,22 @@ export const flowNodeSchema = z.discriminatedUnion('type', [
   conditionNodeSchema,
 ]);
 
+// What the automations screen holds while the owner is still typing: the same
+// nodes, but a filter text or folder that is still blank is allowed. It is never
+// stored; `flowGraphSchema` guards the save.
+const conditionDraftNodeSchema = conditionNodeSchema.extend({
+  config: conditionNodeSchema.shape.config.extend({ contains: z.string() }),
+});
+const routeDraftNodeSchema = routeNodeSchema.extend({ config: z.object({ folderId: z.string() }) });
+
+const flowDraftNodeSchema = z.discriminatedUnion('type', [
+  triggerNodeSchema,
+  tagNodeSchema,
+  privacyNodeSchema,
+  routeDraftNodeSchema,
+  conditionDraftNodeSchema,
+]);
+
 export const flowEdgeSchema = z.object({
   id: z.string().min(1),
   from: z.string().min(1),
@@ -73,6 +89,12 @@ export const flowGraphSchema = z
       }
     }
   });
+
+/** `flowGraphSchema` for a graph still being edited: blank filter text and folder choices pass. */
+export const flowDraftGraphSchema = z.object({
+  nodes: z.array(flowDraftNodeSchema).min(1).max(50),
+  edges: z.array(flowEdgeSchema).max(100),
+});
 
 export const createFlowSchema = z.object({
   name: z.string().min(1).max(120),

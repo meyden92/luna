@@ -5,6 +5,7 @@ import sharp from 'sharp';
 import { file } from '../../../src/db/schema/files';
 import type { TestDb } from '../fixtures/db';
 import { test } from '../fixtures/test';
+import { untilHydrated } from '../utils/hydration';
 import { uniquePrefix } from '../utils/own-files';
 
 // The denylist only ever holds hashes of images made inside these tests, so no other spec's upload can match.
@@ -63,19 +64,21 @@ function upload(request: APIRequestContext, title: string, bytes: Buffer) {
   });
 }
 
-/** Adds one hash through the "Add Denylist Hash" card. Retries the fill because the card ignores input before hydration. */
+/**
+ * Adds one hash through the "Add Denylist Hash" card. Waits for hydration first, because the card ignores input
+ * before it, and then submits once: a retried submit can race the first one's response, which clears the form.
+ */
 async function addDenylistEntry(page: Page, type: 'SHA-256' | 'MD5' | 'pHash', hash: string): Promise<void> {
   await page.goto('/admin/moderation');
-  const toast = page.getByText('Denylist entry added');
-  await expect(async () => {
-    if (type !== 'SHA-256') {
-      await page.getByRole('combobox', { name: 'Hash type' }).click();
-      await page.getByRole('option', { name: type }).click();
-    }
-    await page.getByPlaceholder('Hash value').fill(hash);
-    await page.getByRole('button', { name: 'Add entry' }).click();
-    await expect(toast).toBeVisible({ timeout: 2_000 });
-  }).toPass({ timeout: 15_000 });
+  const hashInput = page.getByPlaceholder('Hash value');
+  await untilHydrated(hashInput);
+  if (type !== 'SHA-256') {
+    await page.getByRole('combobox', { name: 'Hash type' }).click();
+    await page.getByRole('option', { name: type }).click();
+  }
+  await hashInput.fill(hash);
+  await page.getByRole('button', { name: 'Add entry' }).click();
+  await expect(page.getByText('Denylist entry added')).toBeVisible();
   await expect(page.getByRole('cell', { name: hash, exact: true })).toBeVisible();
 }
 
@@ -111,12 +114,13 @@ test('an MD5 imported in bulk rejects the upload and confirming the case deletes
   const image = await noisePng();
   const title = `${uniquePrefix('mod-md5')} noise.png`;
   await adminPage.goto('/admin/moderation');
-  const imported = adminPage.getByText('Imported 1 denylist entry');
-  await expect(async () => {
-    await adminPage.getByPlaceholder(/^sha256,hash,notes/).fill(`md5,${digest('md5', image)},bulk test`);
-    await adminPage.getByRole('button', { name: 'Import hashes' }).click();
-    await expect(imported).toBeVisible({ timeout: 2_000 });
-  }).toPass({ timeout: 15_000 });
+  // One submit after hydration: a retried import can race the first one's response, which clears the field
+  // and disables the button under the retry's click.
+  const bulkInput = adminPage.getByPlaceholder(/^sha256,hash,notes/);
+  await untilHydrated(bulkInput);
+  await bulkInput.fill(`md5,${digest('md5', image)},bulk test`);
+  await adminPage.getByRole('button', { name: 'Import hashes' }).click();
+  await expect(adminPage.getByText('Imported 1 denylist entry')).toBeVisible();
 
   expect((await upload(workerRequest, title, image)).status()).toBe(403);
 

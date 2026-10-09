@@ -117,6 +117,7 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
   `/api/upload/web`, titled `<prefix> <name>`, optionally in a folder or private), `openOwnFiles` (Files screen narrowed to
   the prefix by search), `cardOf`, `openCardMenu`, `createFolderThroughSidebar` and `folderIdOf`.
 - `utils/preview.ts` helps with the Preview overlay: `previewOf(page, title)` (its dialog is named by the file), `previewCounter` ("N / total") and `galleryFileIds(db)` (title -> id of the gallery user's files, to open `/dashboard?file=<id>`).
+- `utils/served-files.ts` gives the serving specs (`serving/`) a seeded gallery file to read: `servedFile(gallery, db, corpusName, { private })` returns its `id`, `title`, corpus `entry` and the expected `bytes` (the first copy with that visibility; e.g. the public `tone.mp3` is `tone (2).mp3`). Read only, so those specs upload nothing.
 - `utils/uploads.ts` helps upload specs: `storedFile(db, bucket, title)` (the row plus the object's bytes; the bucket key is
   `<ownerId>/<decoded url>`), `bucketKeysContaining`, `createToken`/`revokeToken`/`withToken` (Settings -> Upload tokens;
   the key is shown once), `sharexPost` (a ShareX POST with the Token in the header or the form), `setTokenOptions`

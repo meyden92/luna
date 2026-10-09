@@ -19,9 +19,10 @@ test('a clip cut to its first second exports as WAV and MP3 audio of that length
   await expect(pooled).toBeVisible();
 
   // A file only joins the pool; dragging it onto the track puts a clip on the timeline.
-  const clip = page.locator('[data-clip]');
+  const clip = page.getByRole('group', { name: /^Clip / });
   const from = (await pooled.boundingBox())!;
-  const to = (await page.locator('[data-track-bg]').first().boundingBox())!;
+  const trackName = await page.getByRole('textbox', { name: 'Track name' }).first().inputValue();
+  const to = (await page.getByRole('group', { name: trackName, exact: true }).boundingBox())!;
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
   await page.mouse.down();
   await page.mouse.move(to.x + 40, to.y + to.height / 2, { steps: 10 });

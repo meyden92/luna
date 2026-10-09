@@ -43,10 +43,7 @@ test('a template using a global variable is created, edited and deleted', async 
 
   await expect(adminPage.getByText('Template created successfully')).toBeVisible();
   await expect(adminPage).toHaveURL(/\/admin\/templates$/);
-  // The nearest block around the Edit link that also holds the description is the template's card.
-  const card = adminPage
-    .getByRole('link', { name: `Edit ${name}` })
-    .locator('xpath=ancestor::div[contains(., "Made by the templates spec")][1]');
+  const card = adminPage.getByRole('group', { name, exact: true });
   await expect(card).toContainText('Created by E2E Admin');
 
   // The global variable now reports its use.
@@ -85,18 +82,18 @@ test('a prompt with an undefined variable or a dropdown without options is rejec
   const name = uniquePrefix('E2E rejected');
   await createEditingModelThroughAdmin(adminPage, model, 'e2e/template-model');
   await createGlobalVariableThroughAdmin(adminPage, { name: dropdown, label: 'E2E pick', type: 'Dropdown' });
-  const toast = adminPage.locator('[data-sonner-toast]');
+  const toast = adminPage.getByRole('region', { name: /^Notifications/ });
 
   await startTemplate(adminPage, { name, model, prompt: 'A portrait of {nothing_here} please' });
   await expect(adminPage.getByText('Undefined variables in prompt: nothing_here').first()).toBeVisible();
   await adminPage.getByRole('button', { name: 'Create Template' }).click();
-  await expect(toast.filter({ hasText: 'Undefined variables in prompt: nothing_here' })).toBeVisible();
+  await expect(toast.getByText('Undefined variables in prompt: nothing_here')).toBeVisible();
 
   await adminPage.getByPlaceholder(/A cinematic shot of/).fill(`A portrait of a {${dropdown}} kind`);
   await adminPage.getByRole('button', { name: 'Link Global', exact: true }).click();
   await adminPage.getByRole('menuitem', { name: `E2E pick (${dropdown})` }).click();
   await adminPage.getByRole('button', { name: 'Create Template' }).click();
-  await expect(toast.filter({ hasText: `Invalid dropdown configuration for: ${dropdown}` })).toBeVisible();
+  await expect(toast.getByText(`Invalid dropdown configuration for: ${dropdown}`)).toBeVisible();
 
   await adminPage.goto('/admin/templates');
   await expect(adminPage.getByRole('link', { name: `Edit ${name}` })).toHaveCount(0);

@@ -158,11 +158,11 @@ test('an Avatar shows in the navigation and on the public profile, is not a file
   const navAvatar = workerPage.getByRole('img', { name: me.name });
   const usedFigure = async () => {
     await workerPage.goto('/settings/storage');
-    const label = workerPage.getByText(/^of .+ used$/);
+    const figure = workerPage.getByRole('group', { name: 'Storage usage' });
     // Until the usage query answers the page shows a placeholder: 0 B used of 0 B.
-    await expect(label).not.toHaveText('of 0 B used');
-    await expect(label).toBeVisible();
-    return label.locator('xpath=preceding-sibling::span').textContent();
+    await expect(figure).not.toContainText('of 0 B used');
+    await expect(figure).toBeVisible();
+    return (await figure.innerText()).trim().match(/^([\s\S]+?)\s*of .+ used$/)![1];
   };
   const filesInAllFiles = async () => {
     await workerPage.goto('/dashboard');

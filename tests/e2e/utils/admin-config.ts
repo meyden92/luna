@@ -1,9 +1,8 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { untilHydrated } from './hydration';
 
-/** The card of a model on /admin/models (the nearest block around its label that holds the Edit button). */
-export const modelCard = (page: Page, label: string): Locator =>
-  page.getByText(label, { exact: true }).locator('xpath=ancestor::div[.//button[normalize-space()="Edit"]][1]');
+/** The card of a model on /admin/models, a group named by the model's label. */
+export const modelCard = (page: Page, label: string): Locator => page.getByRole('group', { name: label, exact: true });
 
 /** Adds an editing model through its form (`/admin/models/editing/new`) and waits for it to be listed. Nothing is generated. */
 export async function createEditingModelThroughAdmin(page: Page, label: string, apiModelName: string): Promise<void> {

@@ -8,11 +8,10 @@ import { QUOTA_USER_QUOTA_MIB } from '../fixtures/users';
 
 /** The "<used>" and "of <quota> used" texts of the big number. */
 async function usageFigures(page: Page): Promise<{ used: string; quota: string }> {
-  const label = page.getByText(/^of .+ used$/);
-  await expect(label).toBeVisible();
-  const quota = (await label.textContent())!.replace(/^of | used$/g, '');
-  const used = (await label.locator('xpath=preceding-sibling::span').textContent())!;
-  return { used, quota };
+  const figure = page.getByRole('group', { name: 'Storage usage' });
+  await expect(figure).toBeVisible();
+  const [, used, quota] = (await figure.innerText()).trim().match(/^([\s\S]+?)\s*of (.+) used$/)!;
+  return { used: used!, quota: quota! };
 }
 
 const KINDS = { Images: 'image', Video: 'video', Audio: 'audio' } as const;
@@ -70,7 +69,7 @@ test('the quota user sees its allowance, and the sidebar meter agrees', async ({
   await quotaPage.goto('/dashboard');
   const meter = quotaPage.getByRole('progressbar', { name: 'Storage used' });
   await expect(meter).toHaveAttribute('aria-valuenow', /^\d+$/);
-  await expect(quotaPage.locator('aside b', { hasText: `of ${QUOTA_USER_QUOTA_MIB} MB` })).toBeVisible();
+  await expect(quotaPage.getByText(`of ${QUOTA_USER_QUOTA_MIB} MB`)).toBeVisible();
 });
 
 test('the empty user has nothing to show', async ({ emptyPage }) => {

@@ -34,7 +34,7 @@ test('Sync Files analyses the bucket and reports its result without changing the
   const run = adminPage.getByRole('button', { name: 'Run Sync Analysis' });
   await clickUntil(run, adminPage.getByText('Synchronization Statistics'));
   await expect(adminPage.getByText('Sync comparison completed successfully')).toBeVisible();
-  const tile = (label: string) => adminPage.getByText(label, { exact: true }).locator('xpath=preceding-sibling::div[1]');
+  const tile = (label: string) => adminPage.getByRole('group', { name: label, exact: true }).getByText(/^\d+$/);
   expect(Number(await tile('Database Files').innerText())).toBeGreaterThanOrEqual(gallery.files.length);
   expect(Number(await tile('S3 Files').innerText())).toBeGreaterThanOrEqual(gallery.files.length);
   expect(Number(await tile('Synced Files').innerText())).toBeGreaterThanOrEqual(gallery.files.length);

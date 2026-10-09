@@ -6,12 +6,7 @@ import { uniquePrefix } from '../utils/own-files';
 // asserted as changes from what the page showed first, and rows are found by a unique note.
 
 /** The big number on a metric card, found by the card's title. */
-const metric = (page: Page, title: string) =>
-  page
-    .locator('div[data-tone]')
-    .filter({ has: page.getByText(title, { exact: true }) })
-    .locator(':scope > div')
-    .nth(1);
+const metric = (page: Page, title: string) => page.getByRole('group', { name: title, exact: true }).getByText(/^\d+$/);
 
 test('logged entries show up with their totals and survive a reload', async ({ workerPage: page }) => {
   const note = uniquePrefix('tracker-note');

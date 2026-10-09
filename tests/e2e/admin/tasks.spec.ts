@@ -33,7 +33,7 @@ test('the schedule preview lists the next five runs in UTC', async ({ adminPage 
   await clickUntil(adminPage.getByRole('button', { name: 'Create Task' }).first(), adminPage.getByText('Create New Task'));
 
   // The visual builder starts on a daily 00:00 schedule.
-  const upcoming = adminPage.locator('p:has-text("Next 5 executions:") + div > *');
+  const upcoming = adminPage.getByRole('list', { name: 'Next 5 executions:' }).getByRole('listitem');
   await expect(upcoming).toHaveCount(5);
   for (const run of await upcoming.all()) await expect(run).toContainText('12:00:00 AM UTC');
 

@@ -375,13 +375,19 @@ function FilesPage() {
   );
 }
 
-/** Pulls the next page in as it scrolls into view, so there is no "load more" button. */
+/**
+ * Pulls the next page in as it scrolls into view, so there is no "load more" button.
+ *
+ * An observer only reports when the sentinel's visibility changes, so one that is
+ * still in range after a page lands would never ask for the next. It is therefore
+ * set up again whenever a fetch ends: a new observer reports the current state first.
+ */
 function LoadMore({ onReach, busy }: { onReach: () => void; busy: boolean }) {
   const ref = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     const element = ref.current;
-    if (!element) return;
+    if (!element || busy) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -392,7 +398,7 @@ function LoadMore({ onReach, busy }: { onReach: () => void; busy: boolean }) {
     );
     observer.observe(element);
     return () => observer.disconnect();
-  }, [onReach]);
+  }, [onReach, busy]);
 
   return (
     <div

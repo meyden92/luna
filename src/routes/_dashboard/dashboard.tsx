@@ -114,6 +114,12 @@ function FilesPage() {
   const filters = React.useMemo(() => toGalleryFilters({ scope, query, type, sort }), [scope, query, type, sort]);
   const { filteredFiles, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } = useGallery(filters);
 
+  // A linked file can sit beyond the first page: keep fetching until it has loaded.
+  React.useEffect(() => {
+    if (!previewId || !hasNextPage || isFetchingNextPage) return;
+    if (!filteredFiles.some((file) => file.id === previewId)) void fetchNextPage();
+  }, [previewId, filteredFiles, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
   /*
    * The total, from the server. Counting the loaded pages instead is what made
    * the head read "30+" beside a sidebar total of 4256.

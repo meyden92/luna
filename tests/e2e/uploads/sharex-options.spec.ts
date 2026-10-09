@@ -99,7 +99,7 @@ test('"Remove photo location" strips the stored photo, and leaving it off keeps 
 
   await withToken(workerPage, 'sx-strip-token', async (key) => {
     await workerPage.goto('/settings');
-    const toggle = workerPage.getByRole('switch');
+    const toggle = workerPage.getByRole('switch', { name: 'Remove photo location' });
     await expect(toggle).not.toBeChecked();
     expect((await sharexPost(playwright, stack.E2E_BASE_URL, upload(kept), { bearer: key })).status).toBe(200);
 

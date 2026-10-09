@@ -23,6 +23,7 @@
     "generate:routes": "tsr generate",
     "test": "bun test",
     "test:e2e": "bun --no-env-file scripts/e2e/run.ts",
+    "screenshots": "bun --no-env-file scripts/screenshots/capture.ts",
     "test:e2e:install": "playwright install --with-deps chromium",
     "test:e2e:report": "playwright show-report"
   },

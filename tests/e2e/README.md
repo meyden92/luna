@@ -157,6 +157,20 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
 - The stack sets `MAX_SHAREX_UPLOAD_BYTES` to 10 MiB (`docker-compose.e2e.yml`, mirrored as `SHAREX_MAX_UPLOAD_BYTES` in
   `stack-env.ts`), so the ShareX oversize refusal is tested with a small buffer instead of 200 MiB.
 
+## Screenshots
+
+```sh
+bun run screenshots <label>   # e.g. before / after a styling change
+```
+
+Captures full-page screenshots of the public, share and admin routes in light and dark
+into `.scratch/screenshots/<label>/` (gitignored), for before/after comparisons. It runs
+`tests/screenshots/capture.spec.ts` on the same disposable stack through
+`playwright.screenshots.config.ts` (admin and user setup, then the capture; no gallery
+seeding), and tears the stack down afterwards. The spec lives outside `tests/e2e/`, so
+`bun run test:e2e` never runs it. It seeds a public file, snippet and form share as the worker
+user for the `/view`, `/embed`, `/bin/<id>` and `/form/<id>` pages.
+
 ## Fixture corpus
 
 `fixtures/files/` holds the committed files specs upload (about 5 MB); `fixtures/corpus.ts`

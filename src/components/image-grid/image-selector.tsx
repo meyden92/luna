@@ -143,6 +143,7 @@ export function ImageSelector({ selectedImages, onAddLocalImages, onRemoveImage,
                   type="button"
                   variant="destructive"
                   size="sm"
+                  aria-label={`Remove ${image.name}`}
                   className={styles.remove}
                   onClick={(e) => {
                     e.stopPropagation();

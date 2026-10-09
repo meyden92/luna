@@ -10,7 +10,8 @@ import type { GalleryFile } from '@/types/project';
  * be accepted is rejected before it is sent.
  */
 
-const MAX_WEB_UPLOAD_BYTES = 200 * 1024 * 1024;
+/** Under Bun's 128 MiB default body cap, so the route's own JSON 413 is reachable in production. */
+export const MAX_WEB_UPLOAD_BYTES = 90 * 1024 * 1024;
 
 /*
  * The `accept` list for a file input, covering what `isAllowedUploadContentType`

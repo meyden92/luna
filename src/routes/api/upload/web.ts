@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { createFileRoute } from '@tanstack/react-router';
+import { MAX_WEB_UPLOAD_BYTES } from '@/components/uploader/upload-transport';
 import { getOwnedFolder } from '@/db/queries/folders';
 import { createUploadedFile, releaseUploadedFile } from '@/db/queries/uploads';
 import type { JsonValue } from '@/db/schema/json';
@@ -15,7 +16,6 @@ import { s3Client } from '@/libs/S3Helper';
 import { StorageQuotaExceededError, storageQuotaExceededPayload } from '@/libs/storage-quota';
 import { resolveUploadContentType } from '@/libs/upload-content-type';
 
-const MAX_WEB_UPLOAD_BYTES = 200 * 1024 * 1024;
 const MULTIPART_OVERHEAD_BYTES = 1024 * 1024;
 
 function json(data: unknown, status = 200): Response {

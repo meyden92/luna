@@ -28,7 +28,7 @@ const envSchema = z.object({
     .number()
     .int()
     .positive()
-    .default(200 * 1024 * 1024),
+    .default(90 * 1024 * 1024),
   SHAREX_UPLOAD_CONCURRENCY: z.coerce.number().int().positive().default(2),
   BUILD_COMMIT: z.string().optional(),
   BUILD_TIME: z.string().optional(),

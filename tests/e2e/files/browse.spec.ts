@@ -1,11 +1,10 @@
 import { expect, type Page } from '@playwright/test';
 import { asc, desc, eq, type SQL } from 'drizzle-orm';
-import { user } from '../../../src/db/schema/auth';
 import { file } from '../../../src/db/schema/files';
 import type { TestDb } from '../fixtures/db';
 import { GALLERY_FOLDERS, type GalleryDataset, type GalleryFile, matchesSearch } from '../fixtures/gallery';
 import { test } from '../fixtures/test';
-import { fixtureUser } from '../fixtures/users';
+import { fixtureUserId } from '../fixtures/users';
 import { asListed, cardTitles, countLine, fileCards, fileCount, loadAll, scopeRow } from '../utils/files-screen';
 import { clickUntil } from '../utils/hydration';
 
@@ -142,14 +141,11 @@ async function expectListed(page: Page, expected: readonly GalleryFile[]): Promi
 
 /** The gallery user's files in the order Postgres sorts them by `column`, via their dataset entries. */
 async function datasetOrderedBy(db: TestDb, gallery: GalleryDataset, order: SQL[]): Promise<GalleryFile[]> {
-  const [owner] = await db
-    .select({ id: user.id })
-    .from(user)
-    .where(eq(user.username, fixtureUser('gallery').username));
+  const ownerId = await fixtureUserId(db, 'gallery');
   const rows = await db
     .select({ title: file.title })
     .from(file)
-    .where(eq(file.ownerId, owner!.id))
+    .where(eq(file.ownerId, ownerId))
     .orderBy(...order);
   const byTitle = new Map(gallery.files.map((f) => [f.title, f]));
   const ordered = rows.map((row) => byTitle.get(row.title!)!);

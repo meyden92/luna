@@ -1,9 +1,7 @@
 import { createCipheriv, randomBytes, randomUUID } from 'node:crypto';
-import { eq } from 'drizzle-orm';
-import { user } from '../../../src/db/schema/auth';
 import { formShare, formShareField } from '../../../src/db/schema/features';
 import type { TestDb } from '../fixtures/db';
-import { type FixtureRole, fixtureUser } from '../fixtures/users';
+import { type FixtureRole, fixtureUserId } from '../fixtures/users';
 import type { StackEnv } from '../stack-env';
 
 /** A field of a seeded form share. `isSensitive` values are stored encrypted, like `createFormShare` does. */
@@ -36,16 +34,12 @@ export async function seedFormShare(
   owner: FixtureRole,
   share: { title: string; fields: SeedField[]; expiresAt?: Date; maxViews?: number },
 ): Promise<string> {
-  const [row] = await db
-    .select({ id: user.id })
-    .from(user)
-    .where(eq(user.username, fixtureUser(owner).username));
-  if (!row) throw new Error(`No user for ${owner}`);
+  const ownerId = await fixtureUserId(db, owner);
 
   const id = randomUUID();
   await db
     .insert(formShare)
-    .values({ id, title: share.title, ownerId: row.id, expiresAt: share.expiresAt ?? null, maxViews: share.maxViews ?? null });
+    .values({ id, title: share.title, ownerId, expiresAt: share.expiresAt ?? null, maxViews: share.maxViews ?? null });
   await db.insert(formShareField).values(
     share.fields.map((field, index) => ({
       id: randomUUID(),

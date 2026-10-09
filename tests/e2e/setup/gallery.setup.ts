@@ -1,11 +1,17 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { type APIRequestContext, expect, type Page, test as setup } from '@playwright/test';
 import { and, eq } from 'drizzle-orm';
-import { user } from '../../../src/db/schema/auth';
 import { file } from '../../../src/db/schema/files';
 import { createTestDb } from '../fixtures/db';
-import { GALLERY_FOLDERS, GALLERY_SEED_PATH, GALLERY_UPLOADS, type GalleryFolder, type GalleryUpload, galleryDataset } from '../fixtures/gallery';
-import { clientIpHeader, fixtureUser, storageStatePath } from '../fixtures/users';
+import {
+  GALLERY_FOLDERS,
+  GALLERY_SEED_PATH,
+  GALLERY_UPLOADS,
+  type GalleryFolder,
+  type GalleryUpload,
+  galleryDataset,
+} from '../fixtures/gallery';
+import { clientIpHeader, fixtureUserId, storageStatePath } from '../fixtures/users';
 import { stackEnv } from '../stack-env';
 import { clickUntil } from '../utils/hydration';
 
@@ -49,11 +55,8 @@ setup('gallery user is seeded through the app', async ({ browser, playwright }) 
 
   // Backdate, then record the moment the dates were computed from.
   const { db, close } = createTestDb(E2E_DATABASE_URL);
-  const [owner] = await db
-    .select({ id: user.id })
-    .from(user)
-    .where(eq(user.username, fixtureUser('gallery').username));
-  const stored = await db.select({ title: file.title }).from(file).where(eq(file.ownerId, owner!.id));
+  const ownerId = await fixtureUserId(db, 'gallery');
+  const stored = await db.select({ title: file.title }).from(file).where(eq(file.ownerId, ownerId));
   expect(stored.map((row) => row.title).sort()).toEqual(GALLERY_UPLOADS.map((upload) => upload.title).sort());
 
   const seededAt = new Date();
@@ -62,7 +65,7 @@ setup('gallery user is seeded through the app', async ({ browser, playwright }) 
       await tx
         .update(file)
         .set({ createdAt: seeded.createdAt })
-        .where(and(eq(file.ownerId, owner!.id), eq(file.title, seeded.title)));
+        .where(and(eq(file.ownerId, ownerId), eq(file.title, seeded.title)));
     }
   });
   await close();

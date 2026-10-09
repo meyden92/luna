@@ -1,14 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { expect, type Page } from '@playwright/test';
 import { eq } from 'drizzle-orm';
-import { user } from '../../../src/db/schema/auth';
 import { file } from '../../../src/db/schema/files';
 import { test } from '../fixtures/test';
-import { fixtureUser, QUOTA_USER_QUOTA_MIB } from '../fixtures/users';
+import { fixtureUserId, QUOTA_USER_QUOTA_MIB } from '../fixtures/users';
 import { fileCards } from '../utils/files-screen';
 import { clickUntil } from '../utils/hydration';
 import { openCardMenu, openOwnFiles, uniquePrefix, uploadOwnFiles } from '../utils/own-files';
-import { bucketKeysContaining } from '../utils/uploads';
+import { bucketKeysContaining, uploadFileInput } from '../utils/uploads';
 
 // The quota user has QUOTA_USER_QUOTA_MIB (4 MiB). Uploads that fit succeed; the one that would
 // go over is refused with the STORAGE_QUOTA_EXCEEDED payload and the quota message, and nothing
@@ -40,10 +39,7 @@ test('uploads that fit succeed, the one over the quota is refused and nothing of
   const landscape = corpus.file('landscape-photo.jpg');
   const tooBig = corpus.file('square-food.png');
   const tooBigTitle = `${prefix} refused ${tooBig.name}`;
-  const [owner] = await db
-    .select({ id: user.id })
-    .from(user)
-    .where(eq(user.username, fixtureUser('quota').username));
+  const ownerId = await fixtureUserId(db, 'quota');
 
   const uploaded: string[] = [];
   try {
@@ -54,9 +50,7 @@ test('uploads that fit succeed, the one over the quota is refused and nothing of
       quotaPage.getByRole('button', { name: 'Upload', exact: true }).first(),
       quotaPage.getByRole('heading', { name: 'Upload files' }),
     );
-    await quotaPage
-      .locator('input[type="file"]')
-      .setInputFiles({ name: uiTitle, mimeType: robot.mimeType, buffer: readFileSync(robot.path) });
+    await uploadFileInput(quotaPage).setInputFiles({ name: uiTitle, mimeType: robot.mimeType, buffer: readFileSync(robot.path) });
     await quotaPage.getByRole('button', { name: 'Upload 1 file' }).click();
     await expect(quotaPage.getByText(/^Uploaded/)).toBeVisible();
     uploaded.push(uiTitle);
@@ -94,9 +88,7 @@ test('uploads that fit succeed, the one over the quota is refused and nothing of
       quotaPage.getByRole('button', { name: 'Upload', exact: true }).first(),
       quotaPage.getByRole('heading', { name: 'Upload files' }),
     );
-    await quotaPage
-      .locator('input[type="file"]')
-      .setInputFiles({ name: tooBigTitle, mimeType: tooBig.mimeType, buffer: readFileSync(tooBig.path) });
+    await uploadFileInput(quotaPage).setInputFiles({ name: tooBigTitle, mimeType: tooBig.mimeType, buffer: readFileSync(tooBig.path) });
     await quotaPage.getByRole('button', { name: 'Upload 1 file' }).click();
     await expect(
       quotaPage.getByText(
@@ -107,8 +99,8 @@ test('uploads that fit succeed, the one over the quota is refused and nothing of
 
     // Nothing was stored for it: no row, no object, no usage.
     expect(await db.select().from(file).where(eq(file.title, tooBigTitle))).toHaveLength(0);
-    expect(await bucketKeysContaining(bucket, owner!.id, tooBigTitle)).toEqual([]);
-    const rows = await db.select({ size: file.size }).from(file).where(eq(file.ownerId, owner!.id));
+    expect(await bucketKeysContaining(bucket, ownerId, tooBigTitle)).toEqual([]);
+    const rows = await db.select({ size: file.size }).from(file).where(eq(file.ownerId, ownerId));
     expect(rows.reduce((sum, row) => sum + row.size, 0)).toBe(used);
   } finally {
     await deleteOwnFiles(quotaPage, prefix, uploaded);

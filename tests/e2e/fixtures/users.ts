@@ -1,6 +1,9 @@
 import { createHash, randomInt } from 'node:crypto';
 import { resolve } from 'node:path';
+import { eq } from 'drizzle-orm';
+import { user } from '../../../src/db/schema/auth';
 import { stackEnv } from '../stack-env';
+import type { TestDb } from './db';
 
 /**
  * The fixed users of the suite. The admin is bootstrapped by the wrapper; the
@@ -64,4 +67,14 @@ export function fixtureUsers(workers: number): FixtureUser[] {
  */
 export function clientIpHeader(): { 'cf-connecting-ip': string } {
   return { 'cf-connecting-ip': `10.${randomInt(256)}.${randomInt(256)}.${randomInt(1, 255)}` };
+}
+
+/** The database id of a fixture user, for `owner_id` lookups and `/profile/<id>`. */
+export async function fixtureUserId(db: TestDb, role: FixtureRole): Promise<string> {
+  const [row] = await db
+    .select({ id: user.id })
+    .from(user)
+    .where(eq(user.username, fixtureUser(role).username));
+  if (!row) throw new Error(`No user for ${role}`);
+  return row.id;
 }

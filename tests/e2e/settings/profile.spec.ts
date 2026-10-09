@@ -1,22 +1,12 @@
 import { HeadObjectCommand } from '@aws-sdk/client-s3';
 import { expect, type Page } from '@playwright/test';
-import { eq } from 'drizzle-orm';
-import { user } from '../../../src/db/schema/auth';
-import type { TestDb } from '../fixtures/db';
 import { test } from '../fixtures/test';
-import { fixtureUser, workerRole } from '../fixtures/users';
+import { fixtureUser, fixtureUserId, workerRole } from '../fixtures/users';
 import { scopeRow } from '../utils/files-screen';
 import { uniquePrefix, uploadOwnFiles } from '../utils/own-files';
 
 // Settings → Profile and the public profile page it feeds. Specs run as the worker user and put
 // the profile back as they found it, so the next test on the worker starts from the same state.
-
-/** The worker user's id, for `/profile/<id>`. */
-async function userIdOf(db: TestDb, username: string): Promise<string> {
-  const [row] = await db.select({ id: user.id }).from(user).where(eq(user.username, username));
-  if (!row) throw new Error(`No user ${username}`);
-  return row.id;
-}
 
 /** Saves the profile form's pending changes and waits for the confirmation. */
 async function saveProfile(page: Page): Promise<void> {
@@ -40,7 +30,7 @@ test('a new display name, bio and description show in the navigation and on the 
   db,
 }, testInfo) => {
   const me = fixtureUser(workerRole(testInfo.parallelIndex));
-  const id = await userIdOf(db, me.username);
+  const id = await fixtureUserId(db, me.role);
   const tag = uniquePrefix('profile');
   const name = `Renamed ${tag}`;
   const bio = `Bio ${tag}`;
@@ -101,7 +91,7 @@ test('a blank display name cannot be saved', async ({ workerPage }) => {
 
 test('switching the public profile off hides it from others but not from its owner', async ({ workerPage, emptyPage, db }, testInfo) => {
   const me = fixtureUser(workerRole(testInfo.parallelIndex));
-  const id = await userIdOf(db, me.username);
+  const id = await fixtureUserId(db, me.role);
   const publicSwitch = () => workerPage.getByRole('switch', { name: 'Public profile' });
 
   await openProfileSettings(workerPage);
@@ -135,7 +125,7 @@ test('the public profile counts public files only, and its page never mentions a
   db,
 }, testInfo) => {
   const me = fixtureUser(workerRole(testInfo.parallelIndex));
-  const id = await userIdOf(db, me.username);
+  const id = await fixtureUserId(db, me.role);
   const prefix = uniquePrefix('profile-count');
   const uploads = emptyPage.getByText(/^[\d,]+ Uploads$/);
   const countOf = async () => Number((await uploads.textContent())!.replace(/\D/g, ''));
@@ -163,7 +153,7 @@ test('an Avatar shows in the navigation and on the public profile, is not a file
   db,
 }, testInfo) => {
   const me = fixtureUser(workerRole(testInfo.parallelIndex));
-  const id = await userIdOf(db, me.username);
+  const id = await fixtureUserId(db, me.role);
   const picture = corpus.file('square-food.png');
   const navAvatar = workerPage.getByRole('img', { name: me.name });
   const usedFigure = async () => {

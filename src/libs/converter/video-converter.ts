@@ -60,7 +60,8 @@ export async function convertVideoToAudio({ inputFile, outputFormat, preset, onP
 
       console.error('FFmpeg logs:', logMessages);
 
-      if (relevantLogs.includes('Audio') || relevantLogs.includes('audio')) {
+      // With `-vn` and no audio stream there is nothing left to write, which FFmpeg reports like this.
+      if (logMessages.some((msg) => msg.includes('does not contain any stream'))) {
         throw new Error('This video has no audio track.');
       }
 

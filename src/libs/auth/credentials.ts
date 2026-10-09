@@ -1,6 +1,7 @@
 import { createLocalAccountIssuer } from '@better-auth/core/db';
 import { UserFacingError } from '../user-facing-error';
 import { auth } from './auth';
+import { creationActor } from './creation-actor';
 
 /**
  * Writing credential Accounts. Callers must be authorised before they get here:
@@ -77,18 +78,20 @@ export async function setUserCredentials({
 /**
  * Creates a User with a Username and password. Goes through the internal
  * adapter so the `user.create` hooks fire, which is what assigns the default
- * RBAC group and audits the creation.
+ * RBAC group and audits the creation, attributed to `actorId` (the admin).
  */
 export async function createUserWithCredentials({
   username,
   name,
   email,
   password,
+  actorId,
 }: {
   username: string;
   name: string;
   email: string;
   password: string;
+  actorId?: string | null;
 }) {
   const { findUserIdByEmail } = await import('@/db/queries/auth');
 
@@ -101,17 +104,19 @@ export async function createUserWithCredentials({
   }
 
   const ctx = await auth.$context;
-  const created = await ctx.internalAdapter.createUser(
-    {
-      email: normalizedEmail,
-      name,
-      username: normalizedUsername,
-      displayUsername: username,
-      emailVerified: false,
-    },
-    // Same provisioning source Better-Auth's own sign-up route passes for
-    // credential users; it feeds the `user.validateUserInfo` gate.
-    { method: 'email-password' },
+  const created = await creationActor.run(actorId, () =>
+    ctx.internalAdapter.createUser(
+      {
+        email: normalizedEmail,
+        name,
+        username: normalizedUsername,
+        displayUsername: username,
+        emailVerified: false,
+      },
+      // Same provisioning source Better-Auth's own sign-up route passes for
+      // credential users; it feeds the `user.validateUserInfo` gate.
+      { method: 'email-password' },
+    ),
   );
 
   await ctx.internalAdapter.linkAccount({

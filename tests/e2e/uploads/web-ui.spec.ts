@@ -6,7 +6,7 @@ import { fileCards, scopeRow } from '../utils/files-screen';
 import { clickUntil } from '../utils/hydration';
 import { cardOf, createFolderThroughSidebar, folderIdOf, uniquePrefix } from '../utils/own-files';
 import { previewOf } from '../utils/preview';
-import { sizeLabel, storedFile } from '../utils/uploads';
+import { sizeLabel, storedFile, uploadFileInput } from '../utils/uploads';
 
 // Uploading through the Upload sheet as the worker user: one file and several, into the
 // no-folder Scope and a folder, public and private. Each file is checked where a user sees
@@ -55,7 +55,7 @@ test('one file uploaded from the sheet appears in Files with its size and dimens
   await workerPage.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   const sheet = await openSheet(workerPage);
 
-  await workerPage.locator('input[type="file"]').setInputFiles(asPicked(prefix, entry));
+  await uploadFileInput(workerPage).setInputFiles(asPicked(prefix, entry));
   await expect(sheet.getByText(title, { exact: true })).toBeVisible();
   await expect(sheet.getByRole('button', { name: 'Upload 1 file' })).toBeEnabled();
   await sheet.getByRole('button', { name: 'Upload 1 file' }).click();
@@ -91,7 +91,7 @@ test('several files at once land in the open folder, each of its kind', async ({
   await workerPage.getByRole('button', { name: 'Upload', exact: true }).first().click();
   const sheet = workerPage.getByRole('dialog', { name: 'Upload files' });
   await expect(sheet.getByRole('combobox', { name: 'Folder' })).toHaveText(new RegExp(folder));
-  await workerPage.locator('input[type="file"]').setInputFiles(entries.map((entry) => asPicked(prefix, entry)));
+  await uploadFileInput(workerPage).setInputFiles(entries.map((entry) => asPicked(prefix, entry)));
   await sheet.getByRole('button', { name: 'Upload 4 files' }).click();
 
   await expect(workerPage.getByText('Uploaded 4 files')).toBeVisible();
@@ -138,9 +138,7 @@ test('files uploaded to Not in a folder stay out of folders', async ({ workerPag
   const sheet = workerPage.getByRole('dialog', { name: 'Upload files' });
   const select = sheet.getByRole('combobox', { name: 'Folder' });
   await expect(select).toHaveText(/Not in a folder/);
-  await workerPage
-    .locator('input[type="file"]')
-    .setInputFiles([asPicked(prefix, corpus.file('notes.txt')), asPicked(prefix, corpus.file('readme.md'))]);
+  await uploadFileInput(workerPage).setInputFiles([asPicked(prefix, corpus.file('notes.txt')), asPicked(prefix, corpus.file('readme.md'))]);
   await sheet.getByRole('button', { name: 'Upload 2 files' }).click();
 
   await expect(workerPage.getByText('Uploaded 2 files')).toBeVisible();
@@ -161,7 +159,7 @@ test('Only me uploads private, Anyone with the link uploads public', async ({ wo
   await expect(sheet.getByRole('button', { name: 'Anyone with the link' })).toHaveAttribute('aria-pressed', 'true');
   await sheet.getByRole('button', { name: 'Only me' }).click();
   await expect(sheet.getByRole('button', { name: 'Only me' })).toHaveAttribute('aria-pressed', 'true');
-  await workerPage.locator('input[type="file"]').setInputFiles({ ...asPicked('', entry), name: privateTitle });
+  await uploadFileInput(workerPage).setInputFiles({ ...asPicked('', entry), name: privateTitle });
   await sheet.getByRole('button', { name: 'Upload 1 file' }).click();
   await expect(workerPage.getByText(/^Uploaded/)).toBeVisible();
   await expect(sheet).toBeHidden();
@@ -170,7 +168,7 @@ test('Only me uploads private, Anyone with the link uploads public', async ({ wo
   await workerPage.getByRole('button', { name: 'Upload', exact: true }).first().click();
   sheet = workerPage.getByRole('dialog', { name: 'Upload files' });
   await sheet.getByRole('button', { name: 'Anyone with the link' }).click();
-  await workerPage.locator('input[type="file"]').setInputFiles({ ...asPicked('', entry), name: publicTitle });
+  await uploadFileInput(workerPage).setInputFiles({ ...asPicked('', entry), name: publicTitle });
   await sheet.getByRole('button', { name: 'Upload 1 file' }).click();
   await expect(sheet).toBeHidden();
 

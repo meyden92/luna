@@ -1,13 +1,16 @@
 import { randomBytes } from 'node:crypto';
 import { request as httpRequest } from 'node:http';
 import { GetObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
-import { type APIRequestContext, expect, type Page } from '@playwright/test';
+import { type APIRequestContext, expect, type Locator, type Page } from '@playwright/test';
 import { and, eq } from 'drizzle-orm';
 import { file } from '../../../src/db/schema/files';
 import type { CorpusEntry } from '../fixtures/corpus';
 import type { TestDb } from '../fixtures/db';
 import { clientIpHeader } from '../fixtures/users';
 import { clickUntil } from './hydration';
+
+/** The Upload sheet's file picker. It is a hidden `<input>` with no accessible name, so specs feed it with `setInputFiles`. */
+export const uploadFileInput = (page: Page): Locator => page.locator('input[type="file"]');
 
 /** The S3 client and bucket name of the `bucket` fixture. */
 type Bucket = { client: import('@aws-sdk/client-s3').S3Client; name: string };

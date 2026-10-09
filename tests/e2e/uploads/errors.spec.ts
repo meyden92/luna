@@ -7,7 +7,7 @@ import { test } from '../fixtures/test';
 import { scopeRow } from '../utils/files-screen';
 import { clickUntil } from '../utils/hydration';
 import { createFolderThroughSidebar, uniquePrefix } from '../utils/own-files';
-import { declaredLengthPost } from '../utils/uploads';
+import { declaredLengthPost, uploadFileInput } from '../utils/uploads';
 
 // Upload refusals. Each is asserted twice: the status and `code` the API answers a client
 // with, and what the Upload sheet tells the user. The sheet checks type, emptiness and size
@@ -52,9 +52,7 @@ test('a type outside the allowlist is refused with 415, and the sheet will not t
   expect(body.error).toBe('Unsupported file type: application/wasm');
 
   const sheet = await openSheet(workerPage);
-  await workerPage
-    .locator('input[type="file"]')
-    .setInputFiles({ name: entry.name, mimeType: entry.mimeType, buffer: readFileSync(entry.path) });
+  await uploadFileInput(workerPage).setInputFiles({ name: entry.name, mimeType: entry.mimeType, buffer: readFileSync(entry.path) });
   await expect(workerPage.getByText(`Can’t upload ${entry.name} — this kind of file can’t be uploaded`)).toBeVisible();
   await expect(sheet.getByRole('button', { name: 'Upload', exact: true })).toBeDisabled();
 });
@@ -67,7 +65,7 @@ test('a zero-byte file is refused with 400, and the sheet will not take the file
   expect(body).toEqual({ error: 'File is empty', code: 'VALIDATION_FAILED' });
 
   const sheet = await openSheet(workerPage);
-  await workerPage.locator('input[type="file"]').setInputFiles({ name: entry.name, mimeType: entry.mimeType, buffer: Buffer.alloc(0) });
+  await uploadFileInput(workerPage).setInputFiles({ name: entry.name, mimeType: entry.mimeType, buffer: Buffer.alloc(0) });
   await expect(workerPage.getByText(`Can’t upload ${entry.name} — it is empty`)).toBeVisible();
   await expect(sheet.getByRole('button', { name: 'Upload', exact: true })).toBeDisabled();
 });
@@ -97,9 +95,11 @@ test('a folder deleted while the sheet is open is refused, and the sheet says so
   await workerPage.getByRole('button', { name: 'Upload', exact: true }).first().click();
   const sheet = workerPage.getByRole('dialog', { name: 'Upload files' });
   await expect(sheet.getByRole('combobox', { name: 'Folder' })).toHaveText(new RegExp(folder));
-  await workerPage
-    .locator('input[type="file"]')
-    .setInputFiles({ name: `${prefix} ${entry.name}`, mimeType: entry.mimeType, buffer: readFileSync(entry.path) });
+  await uploadFileInput(workerPage).setInputFiles({
+    name: `${prefix} ${entry.name}`,
+    mimeType: entry.mimeType,
+    buffer: readFileSync(entry.path),
+  });
 
   // The folder goes away in another tab of the same session.
   const otherTab = await workerPage.context().newPage();
@@ -142,7 +142,7 @@ test('a request declaring more than 200 MB is refused with 413 before any bytes 
 
 test('a file over 200 MB is turned away by the sheet before it is sent', async ({ workerPage }) => {
   const sheet = await openSheet(workerPage);
-  const input = workerPage.locator('input[type="file"]');
+  const input = uploadFileInput(workerPage);
 
   // 201 MiB of zeros built inside the page; pushing that many bytes through the test runner would only be slow.
   await input.evaluate((element: HTMLInputElement) => {

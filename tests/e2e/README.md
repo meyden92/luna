@@ -59,6 +59,9 @@ the run's random admin password, so a spec that signs in through the form can co
 
 A spec that must break a user (change its password, sign it out everywhere) makes its own with
 `createUserThroughAdmin(adminPage, user)` from `utils/admin-users.ts`, the same dialog flow the setup uses.
+Around it: `throwawayUser(label)` makes credentials only that test knows (email `zz-...`, sorting after the
+fixtures), `signedInDevice(browser, account)` returns a page for it in its own context and address, and
+`userIdOf(db, email)` finds its id.
 
 ## The gallery dataset
 

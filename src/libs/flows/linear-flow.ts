@@ -83,9 +83,9 @@ export function orderSteps(steps: StepNode[]): StepNode[] {
 /**
  * Flatten a stored graph into the chain. Steps still blank (a filter with no text,
  * a folder step with no folder) are kept: they are drafts the owner is filling in.
- * A graph that fails validation (an older
- * free-positioned one with an unfinished node, say) yields just its trigger, so
- * the screen still opens and the owner can rebuild it.
+ * A graph that fails validation (an older free-positioned one with an unfinished
+ * node, say) yields just its trigger, so the screen still opens and the owner can
+ * rebuild it.
  */
 export function toLinearFlow(graph: unknown, triggerType: string): LinearFlow {
   const trigger = asTriggerType(triggerType);

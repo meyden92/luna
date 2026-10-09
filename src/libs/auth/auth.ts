@@ -5,6 +5,7 @@ import { auditUserCreated, authDatabaseAdapter } from '@/db/queries/auth';
 import { isValidUsername, PASSWORD_MIN_LENGTH, USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH } from '@/schemas/credentials-schema';
 import { env } from '../env';
 import { ensureUserHasDefaultGroup } from '../rbac/default-group';
+import { creationActor } from './creation-actor';
 
 /**
  * Better-Auth on Drizzle (issue #36). The adapter is built inside `src/db/` so
@@ -49,7 +50,7 @@ export const auth = betterAuth({
           // Better-Auth's adapter writes through Drizzle directly, so this is
           // the only place a registration can be audited (#36). writeAuditLog
           // already swallows its own failures, so it cannot break signup.
-          await auditUserCreated(user);
+          await auditUserCreated(user, creationActor.getStore());
         },
       },
     },
@@ -79,8 +80,9 @@ export const auth = betterAuth({
   // wraps TanStack server functions, and sign-in runs through Better-Auth's own
   // request handler. This store is in-memory, so the window resets on deploy.
   rateLimit: {
-    // The window is keyed on IP and path, and every request in the end-to-end
-    // suite shares one address, so an enabled limiter would throttle the suite.
+    // The window is keyed on IP and path. The end-to-end suite runs the
+    // production image with this on; each of its Playwright contexts sends its
+    // own `cf-connecting-ip`, so no context throttles another.
     enabled: env.NODE_ENV === 'production',
     customRules: {
       '/sign-in/username': { window: 60 * 15, max: 5 },

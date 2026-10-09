@@ -116,6 +116,7 @@ export default function ModelManager({ models }: ModelManagerProps) {
                   variant="destructive"
                   size="sm"
                   onClick={() => handleDelete(model)}
+                  aria-label={`Delete ${model.label}`}
                 >
                   <Trash2 />
                 </Button>

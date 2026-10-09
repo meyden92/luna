@@ -1,4 +1,4 @@
-import { type FlowGraph, type FlowNode, flowGraphSchema } from '@/schemas/flow-schema';
+import { type FlowGraph, type FlowNode, flowDraftGraphSchema } from '@/schemas/flow-schema';
 
 /**
  * The automations builder's view of a flow: one trigger and an ordered chain of
@@ -81,13 +81,15 @@ export function orderSteps(steps: StepNode[]): StepNode[] {
 }
 
 /**
- * Flatten a stored graph into the chain. A graph that fails validation (an older
+ * Flatten a stored graph into the chain. Steps still blank (a filter with no text,
+ * a folder step with no folder) are kept: they are drafts the owner is filling in.
+ * A graph that fails validation (an older
  * free-positioned one with an unfinished node, say) yields just its trigger, so
  * the screen still opens and the owner can rebuild it.
  */
 export function toLinearFlow(graph: unknown, triggerType: string): LinearFlow {
   const trigger = asTriggerType(triggerType);
-  const parsed = flowGraphSchema.safeParse(graph);
+  const parsed = flowDraftGraphSchema.safeParse(graph);
   if (!parsed.success) return { trigger, steps: [] };
 
   const steps = parsed.data.nodes.filter((node): node is StepNode => node.type !== 'trigger');

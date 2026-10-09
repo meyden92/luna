@@ -112,6 +112,7 @@ export function UploadDefaultsPanel({ tokens, folders }: UploadDefaultsPanelProp
         hint="Strips GPS and camera details before saving."
       >
         <Switch
+          aria-label="Remove photo location"
           checked={primary?.stripMetadata ?? false}
           disabled={!primary || isSaving}
           onCheckedChange={(checked) => void applyToAllTokens({ stripMetadata: Boolean(checked) })}

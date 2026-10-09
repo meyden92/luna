@@ -177,7 +177,7 @@ function ModerationPage() {
                 value={hashType}
                 onValueChange={(value) => setHashType(value as typeof hashType)}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Hash type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

@@ -95,6 +95,7 @@ function GlobalVariablesPage() {
                           <Button
                             size="icon"
                             variant="ghost"
+                            aria-label={`Edit ${variable.name}`}
                           >
                             <Edit className={styles.iconOnly} />
                           </Button>

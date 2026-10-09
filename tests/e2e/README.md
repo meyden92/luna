@@ -116,6 +116,7 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
 - `utils/own-files.ts` gives a data-changing spec its own files: `uniquePrefix`, `uploadOwnFiles` (corpus files through
   `/api/upload/web`, titled `<prefix> <name>`, optionally in a folder or private), `openOwnFiles` (Files screen narrowed to
   the prefix by search), `cardOf`, `openCardMenu`, `createFolderThroughSidebar` and `folderIdOf`.
+- `utils/preview.ts` helps with the Preview overlay: `previewOf(page, title)` (its dialog is named by the file), `previewCounter` ("N / total") and `galleryFileIds(db)` (title -> id of the gallery user's files, to open `/dashboard?file=<id>`).
 
 ## Things that differ from dev
 

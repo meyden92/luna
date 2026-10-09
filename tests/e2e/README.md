@@ -110,6 +110,10 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
 - For a control that is inert until hydration, use `clickUntil` from `utils/hydration.ts`
   rather than a timeout.
 
+- `utils/files-screen.ts` reads the Files screen: `cardTitles` and `dateGroups` (what is listed, in page
+  order), `loadAll(page, n)` (scrolls until n cards are loaded), `scopeRow`, `countLine`, and `asListed`
+  (the page order of a sorted list: files stay together under their date heading, headings ordered by first file).
+
 ## Things that differ from dev
 
 - Production mode: `Secure` cookies (Chromium accepts them on `http://localhost`),

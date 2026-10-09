@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useAppMutation } from '@/hooks/use-app-mutation';
+import { queryKeys } from '@/libs/query-keys';
 import type { EditingModelFieldInput } from '@/schemas/admin/editing-model-schema';
 import { createEditingModel, type getEditingModel, updateEditingModel } from '@/server/fns/admin/models';
 import styles from './EditingModelForm.module.css';
@@ -47,6 +48,7 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
     ({ data }: { data: Parameters<typeof createEditingModel>[0]['data'] }) => createEditingModel({ data }),
     {
       successMessage: 'Model created successfully',
+      invalidates: [queryKeys.adminModels.editing],
       errorMessage: 'Failed to create model',
       onSuccess: () => {
         if (onSuccess) {
@@ -62,6 +64,7 @@ export default function EditingModelForm({ model, onSuccess }: EditingModelFormP
     ({ data }: { data: Parameters<typeof updateEditingModel>[0]['data'] }) => updateEditingModel({ data }),
     {
       successMessage: 'Model updated successfully',
+      invalidates: [queryKeys.adminModels.editing],
       errorMessage: 'Failed to update model',
       onSuccess: () => {
         if (onSuccess) {

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useAppMutation } from '@/hooks/use-app-mutation';
+import { queryKeys } from '@/libs/query-keys';
 import type { ModelFieldInput } from '@/schemas/admin/model-schema';
 import { createGenerationModel, type getGenerationModel, updateGenerationModel } from '@/server/fns/admin/models';
 import styles from './ModelForm.module.css';
@@ -47,6 +48,7 @@ export default function ModelForm({ model, onSuccess }: ModelFormProps) {
     ({ data }: { data: Parameters<typeof createGenerationModel>[0]['data'] }) => createGenerationModel({ data }),
     {
       successMessage: 'Model created successfully',
+      invalidates: [queryKeys.adminModels.generation],
       errorMessage: 'Failed to create model',
       onSuccess: () => {
         if (onSuccess) {
@@ -62,6 +64,7 @@ export default function ModelForm({ model, onSuccess }: ModelFormProps) {
     ({ data }: { data: Parameters<typeof updateGenerationModel>[0]['data'] }) => updateGenerationModel({ data }),
     {
       successMessage: 'Model updated successfully',
+      invalidates: [queryKeys.adminModels.generation],
       errorMessage: 'Failed to update model',
       onSuccess: () => {
         if (onSuccess) {

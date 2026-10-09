@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { useAppMutation } from '@/hooks/use-app-mutation';
+import { queryKeys } from '@/libs/query-keys';
 import { deleteAdminTemplate } from '@/server/fns/admin/templates';
 import styles from './delete-template-button.module.css';
 
@@ -27,6 +28,7 @@ export function DeleteTemplateButton({ templateId, templateName }: DeleteTemplat
   const { mutate, isPending } = useAppMutation(deleteAdminTemplate, {
     successMessage: 'Template deleted successfully',
     errorMessage: 'Failed to delete template',
+    invalidates: [queryKeys.adminTemplates.all],
     onSuccess: () => setOpen(false),
   });
 

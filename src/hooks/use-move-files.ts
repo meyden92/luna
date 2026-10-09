@@ -52,7 +52,7 @@ export function useMoveFiles() {
     return [...cachedFiles.values()];
   };
 
-  const { mutate: executeMoveFiles, isPending } = useMutation({
+  const { mutateAsync: executeMoveFiles, isPending } = useMutation({
     mutationFn: async (input: { fileIds: string[]; folderId: string | null }) => {
       return moveFiles({ data: input }) as Promise<{ updated: number; folderId: string | null }>;
     },
@@ -152,7 +152,13 @@ export function useMoveFiles() {
       if (allInTarget) finalFolderId = null;
     }
 
-    executeMoveFiles({ fileIds, folderId: finalFolderId }, { onSuccess: () => options?.onSuccess?.() });
+    // Not mutate()'s per-call onSuccess: that is dropped once the calling component unmounts, and the
+    // menus that call this close (and unmount) on click, so a slow response would never clear the selection.
+    // Failure is already reported by the mutation's onError.
+    executeMoveFiles({ fileIds, folderId: finalFolderId }).then(
+      () => options?.onSuccess?.(),
+      () => {},
+    );
   };
 
   return { moveFilesTo, isPending };

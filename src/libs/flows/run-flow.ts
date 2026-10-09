@@ -22,8 +22,9 @@ type FlowLog = {
 export async function dispatchFlowTrigger(triggerType: string, ownerId: string, items: FlowItem[], tokenFlowId?: string | null) {
   const flows = await listTriggerableFlows({ ownerId, triggerType, flowId: tokenFlowId });
 
+  // One after another: the runs share `items`, and a step's read-merge-write of a file's tags must not interleave with another flow's.
   for (const flow of flows) {
-    void runFlow(flow.id, items, triggerType).catch(() => undefined);
+    await runFlow(flow.id, items, triggerType).catch(() => undefined);
   }
 }
 

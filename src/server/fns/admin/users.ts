@@ -251,9 +251,9 @@ export const updateUserGroups = createServerFn({ method: 'POST' })
 export const createAdminUser = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(createUserSchema)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { createUserWithCredentials } = await import('@/libs/auth/credentials');
-    return createUserWithCredentials(data);
+    return createUserWithCredentials({ ...data, actorId: adminIdFromCtx(context) });
   });
 
 /**

@@ -168,6 +168,8 @@ export async function setTokenOptions(page: Page, options: TokenOptions): Promis
   const captured = page.waitForRequest((request) => request.url().includes('/_serverFn/') && request.method() === 'POST');
   await toggle.click();
   const request = await captured;
+  // The click's own save must land before the replay, or it can finish last and put the page's defaults back.
+  await request.response();
 
   const body = JSON.parse(request.postData() ?? '') as { t: { p: { v: { p: { k: string[]; v: unknown[] } }[] } } };
   const { k, v } = body.t.p.v[0]!.p;

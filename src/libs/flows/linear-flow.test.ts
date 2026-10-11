@@ -41,6 +41,12 @@ describe('chain storage', () => {
     expect(reread.steps.map((step) => [step.id, step.config])).toEqual(flow.steps.map((step) => [step.id, step.config]));
   });
 
+  test('reads back a step the owner has added but not filled in yet', () => {
+    const draft: LinearFlow = { trigger: 'upload', steps: [createStep('condition'), createStep('route-folder')] };
+
+    expect(toLinearFlow(toFlowGraph(draft), 'upload').steps.map((step) => step.type)).toEqual(['condition', 'route-folder']);
+  });
+
   test('keeps a condition ahead of the actions already in the chain', () => {
     const actionsOnly: LinearFlow = { trigger: 'upload', steps: flow.steps.slice(1) };
     const added = orderSteps([...actionsOnly.steps, createStep('condition')]);

@@ -298,11 +298,11 @@ export async function validateTokenKey(key: string, handle: AuditHandle = db): P
  * what #13 says to record. Called from the `user.create.after` database hook so
  * the trail does not depend on remembering it at a call site.
  *
- * `userId` is the new user themselves: registration is self-service, and there
- * is no acting admin to attribute it to.
+ * `actorId` is the admin creating the account, when there is one. Without it
+ * the new user is their own actor: there is no one else to attribute it to.
  */
-export async function auditUserCreated(created: { id: string } & Record<string, unknown>): Promise<void> {
-  await writeAuditLog(db, { model: 'User', action: 'create', after: created, userId: created.id });
+export async function auditUserCreated(created: { id: string } & Record<string, unknown>, actorId?: string | null): Promise<void> {
+  await writeAuditLog(db, { model: 'User', action: 'create', after: created, userId: actorId ?? created.id });
 }
 
 /** Resolves the argument `scripts/auth/set-credentials.ts` was given. */

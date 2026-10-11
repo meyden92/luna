@@ -13,6 +13,7 @@ import { checkModerationGate, createModerationCase } from '@/libs/moderation/has
 import { requireAuthenticatedUser } from '@/libs/rbac/guards';
 import { s3Client } from '@/libs/S3Helper';
 import { StorageQuotaExceededError, storageQuotaExceededPayload } from '@/libs/storage-quota';
+import { resolveUploadContentType } from '@/libs/upload-content-type';
 
 const MAX_WEB_UPLOAD_BYTES = 200 * 1024 * 1024;
 const MULTIPART_OVERHEAD_BYTES = 1024 * 1024;
@@ -103,18 +104,19 @@ async function handle(request: Request): Promise<Response> {
   }
 
   const fileName = sanitizeUploadFilename(formData.get('filename')?.toString() || file.name);
-  const contentType = normalizeUploadContentType(file.type);
+  const declaredContentType = normalizeUploadContentType(file.type);
   if (file.size <= 0) {
     return json({ error: 'File is empty', code: 'VALIDATION_FAILED' }, 400);
   }
   if (file.size > MAX_WEB_UPLOAD_BYTES) {
     return json({ error: 'File too large', code: 'PAYLOAD_TOO_LARGE' }, 413);
   }
-  if (!isAllowedUploadContentType(contentType)) {
-    return json({ error: `Unsupported file type: ${contentType}`, code: 'UNSUPPORTED_FILE_TYPE' }, 415);
+  if (!isAllowedUploadContentType(declaredContentType)) {
+    return json({ error: `Unsupported file type: ${declaredContentType}`, code: 'UNSUPPORTED_FILE_TYPE' }, 415);
   }
 
   const rawBuffer = Buffer.from(await file.arrayBuffer());
+  const contentType = resolveUploadContentType(declaredContentType, fileName, rawBuffer);
   const shouldStripMetadata = formData.get('stripMetadata')?.toString() === 'true';
   const scrubbed = await scrubMetadataIfNeeded(rawBuffer, contentType, shouldStripMetadata);
   const uploadBuffer = scrubbed.buffer;

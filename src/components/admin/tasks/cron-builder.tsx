@@ -1,5 +1,5 @@
 import { Clock, Info } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +35,7 @@ function formatExecutionDate(date: Date, timeZone: string): string {
 }
 
 export default function CronBuilder({ value, onChange, className }: CronBuilderProps) {
+  const executionsLabelId = useId();
   const [useVisualBuilder, setUseVisualBuilder] = useState(true);
   const [config, setConfig] = useState<CronConfig>({
     type: 'daily',
@@ -416,13 +417,23 @@ export default function CronBuilder({ value, onChange, className }: CronBuilderP
 
               {validation.isValid && nextExecutions.length > 0 && (
                 <div>
-                  <p className={styles.executionsLabel}>Next 5 executions:</p>
-                  <div className={styles.executions}>
+                  <p
+                    id={executionsLabelId}
+                    className={styles.executionsLabel}
+                  >
+                    Next 5 executions:
+                  </p>
+                  <div
+                    className={styles.executions}
+                    role="list"
+                    aria-labelledby={executionsLabelId}
+                  >
                     {nextExecutions.map((date) => (
                       <Badge
                         key={date.getTime().toString()}
                         variant="outline"
                         className={styles.executionBadge}
+                        role="listitem"
                       >
                         {formatExecutionDate(date, preview.timeZone)}
                       </Badge>

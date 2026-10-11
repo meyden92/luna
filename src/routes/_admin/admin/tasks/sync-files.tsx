@@ -207,6 +207,8 @@ function SyncFilesPage() {
                   <div className={cn(styles.statGrid, 'margin-bottom-6')}>
                     <div
                       className={styles.statTile}
+                      role="group"
+                      aria-label="Synced Files"
                       data-tone="success"
                     >
                       <div className={cn(styles.statValue, 'type-2xl weight-bold')}>{syncResult.stats.syncedFiles}</div>
@@ -214,6 +216,8 @@ function SyncFilesPage() {
                     </div>
                     <div
                       className={styles.statTile}
+                      role="group"
+                      aria-label="Database Files"
                       data-tone="info"
                     >
                       <div className={cn(styles.statValue, 'type-2xl weight-bold')}>{syncResult.stats.totalDbFiles}</div>
@@ -221,6 +225,8 @@ function SyncFilesPage() {
                     </div>
                     <div
                       className={styles.statTile}
+                      role="group"
+                      aria-label="S3 Files"
                       data-tone="accent"
                     >
                       <div className={cn(styles.statValue, 'type-2xl weight-bold')}>{syncResult.stats.totalS3Files}</div>
@@ -228,6 +234,8 @@ function SyncFilesPage() {
                     </div>
                     <div
                       className={styles.statTile}
+                      role="group"
+                      aria-label="Total Size"
                       data-tone="warning"
                     >
                       <div className={cn(styles.statValue, 'type-2xl weight-bold')}>

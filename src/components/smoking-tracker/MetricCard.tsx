@@ -20,6 +20,8 @@ export function MetricCard({
   return (
     <div
       className={styles.root}
+      role="group"
+      aria-label={title}
       data-tone={tone}
     >
       <div className={styles.header}>

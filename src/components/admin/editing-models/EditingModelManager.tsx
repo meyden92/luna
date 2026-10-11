@@ -74,7 +74,11 @@ export default function EditingModelManager({ models }: EditingModelManagerProps
     <>
       <div className={styles.grid}>
         {models.map((model) => (
-          <Card key={model.id}>
+          <Card
+            key={model.id}
+            role="group"
+            aria-label={model.label}
+          >
             <CardHeader>
               <div className={styles.cardHead}>
                 <div className={styles.titleWrap}>

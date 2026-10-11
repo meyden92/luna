@@ -48,6 +48,7 @@ export function DeleteGlobalVariableButton({ id, name }: DeleteGlobalVariableBut
             size="icon"
             variant="ghost"
             className={styles.trigger}
+            aria-label={`Delete ${name}`}
           />
         }
       >

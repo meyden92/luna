@@ -13,3 +13,13 @@ export async function clickUntil(trigger: Locator, expected: Locator): Promise<v
     await expect(expected).toBeVisible({ timeout: 1_000 });
   }).toPass({ timeout: 15_000 });
 }
+
+/**
+ * Waits until React has hydrated the element (it then carries its props). Typing into a controlled
+ * input before that is lost, so call this on a field of a freshly loaded form before filling it.
+ */
+export async function untilHydrated(element: Locator): Promise<void> {
+  await expect
+    .poll(() => element.evaluate((node) => Object.keys(node).some((key) => key.startsWith('__reactProps'))), { timeout: 15_000 })
+    .toBe(true);
+}

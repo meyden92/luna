@@ -86,6 +86,11 @@ temp/
 
 # Test files
 __tests__
+# The e2e suite and its output change on every `bun run test:e2e`; keeping them
+# out of the context keeps the image's build cache warm between runs.
+tests/
+playwright-report/
+test-results/
 **/*.test.ts
 **/*.test.tsx
 **/*.spec.ts

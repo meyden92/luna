@@ -53,7 +53,7 @@ or malformed variable fails loudly with the offending key named.
 | `bun run db:push` | Push the schema straight to the database (dev only) |
 | `bun run db:audit-coverage` | Static audit-coverage report — see [`docs/db-verification.md`](docs/db-verification.md) |
 | `bun test` | Unit tests (scoped to `src/` — see `bunfig.toml`) |
-| `bun run test:e2e` | Playwright end-to-end suite |
+| `bun run test:e2e` | Playwright end-to-end suite in a disposable stack |
 
 `bun test` and Playwright are deliberately separated: Bun's default test glob
 also matches `*.spec.ts`, which would otherwise pick up the Playwright suite and
@@ -62,13 +62,14 @@ run it under the wrong runner. `bunfig.toml` scopes `bun test` to `src/`.
 ## Testing
 
 End-to-end tests live in `tests/e2e` and are documented in
-[`tests/e2e/README.md`](tests/e2e/README.md). They need a running database and a
-`BETTER_AUTH_SECRET` matching the app under test.
+[`tests/e2e/README.md`](tests/e2e/README.md). Each run builds the production
+image and tests it in a disposable Docker Compose stack, so it needs Docker but no
+`.env`, dev database or dev server.
 
 ```bash
 bun run test:e2e:install   # one-time: download Chromium
-bun run test:e2e           # auto-starts the dev server
-bun run test:e2e:ui        # interactive runner
+bun run test:e2e           # build, start, test, tear down
+bun run test:e2e -- --ui   # extra arguments go to Playwright
 ```
 
 ## Self-hosting

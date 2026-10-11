@@ -256,6 +256,7 @@ export default function ModelForm({ model, onSuccess }: ModelFormProps) {
                     variant="destructive"
                     size="sm"
                     onClick={() => removeField(index)}
+                    aria-label={`Remove field ${index + 1}`}
                   >
                     <Trash2 />
                   </Button>

@@ -129,7 +129,7 @@ export async function updateUserProfile(userId: string, values: ProfileUpdate, a
 }
 
 /**
- * A public profile with its live file count.
+ * A public profile with its live public file count (private files are not counted).
  *
  * A relation count is one of the shapes the relational query API cannot express,
  * so it is a core select with an explicit join and GROUP BY (issue #21).
@@ -149,7 +149,7 @@ export async function getPublicProfile(id: string, handle: AuditHandle = db) {
       fileCount: count(file.id),
     })
     .from(user)
-    .leftJoin(file, and(eq(file.ownerId, user.id), eq(file.isDeleted, false)))
+    .leftJoin(file, and(eq(file.ownerId, user.id), eq(file.isDeleted, false), eq(file.private, false)))
     .where(eq(user.id, id))
     .groupBy(user.id);
   return row;

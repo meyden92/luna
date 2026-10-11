@@ -148,6 +148,7 @@ function AdminTemplatesPage() {
                           size="sm"
                           variant="outline"
                           className={styles.editButton}
+                          aria-label={`Edit ${template.name}`}
                         >
                           <Edit className={styles.editIcon} />
                         </Button>

@@ -8,6 +8,7 @@ import {
 } from '@/db/queries/features';
 import { RATE_LIMITS } from '@/libs/api/rate-limit';
 import { getCDNImage } from '@/libs/utils';
+import { buildViewUrl } from '@/libs/view-link';
 import { appMiddleware } from '@/server/server-fn';
 
 export type ViewableFile = {
@@ -96,7 +97,7 @@ export const getViewableFile = createServerFn({ method: 'GET' })
         ownerId: info.ownerId,
         owner: { id: info.owner.id, name: info.owner.name, image: info.owner.image },
         cdnUrl,
-        shareUrl: `${getPublicOrigin()}/view/${info.id}`,
+        shareUrl: buildViewUrl(getPublicOrigin(), info),
         metadata: info.metadata
           ? {
               artist: info.metadata.artist,

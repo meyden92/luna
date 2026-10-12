@@ -48,7 +48,7 @@ test.describe('a public file', () => {
     expect(await metaContent(page, 'property', 'og:title')).toBe(image.title);
     expect(await metaContent(page, 'property', 'og:type')).toBe('article');
     expect(await metaContent(page, 'name', 'twitter:card')).toBe('summary_large_image');
-    expect(await metaContent(page, 'property', 'og:url')).toBe(page.url());
+    expect(await metaContent(page, 'property', 'og:url')).toBe(`${page.url()}.jpg`);
     const ogImage = (await metaContent(page, 'property', 'og:image'))!;
     expect(await metaContent(page, 'name', 'twitter:image')).toBe(ogImage);
     const served = await fetchPublicObject(page, ogImage);
@@ -126,7 +126,7 @@ test.describe('a public file', () => {
 
     const copy = page.getByRole('button', { name: 'Copy link' }).first();
     await clickUntil(copy, page.getByRole('button', { name: 'Copied!' }).first());
-    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(page.url());
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(`${page.url()}.jpg`);
   });
 
   test('the QR code dialog shows a code for the share URL', async ({ page, gallery, db }) => {
@@ -138,7 +138,7 @@ test.describe('a public file', () => {
     const code = dialog.getByRole('img', { name: 'QR code for shared file' });
     await expect(code).toHaveAttribute('src', /^data:image\/png;base64,/);
     await expect(code).toHaveJSProperty('naturalWidth', 256);
-    await expect(dialog.getByText(page.url(), { exact: true })).toBeVisible();
+    await expect(dialog.getByText(`${page.url()}.jpg`, { exact: true })).toBeVisible();
   });
 
   test('the embed dialog gives a snippet that embeds the file', async ({ page, gallery, db }) => {
@@ -245,4 +245,51 @@ test('the sign-in link on a private file comes back to it', async ({ page, galle
   await submitLoginForm(page, owner.username, owner.password);
   await expect(page).toHaveURL(`/view/${secret.id}`);
   await expect(page.getByRole('heading', { level: 1, name: secret.title })).toBeVisible();
+});
+
+// Discord renders a bare inline image only for a link ending in an image extension whose response is the image,
+// so image share links carry the extension and Discord's crawler is redirected to the raw file.
+test.describe('a link pasted into Discord', () => {
+  const DISCORDBOT = 'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)';
+
+  test('a browser opening the extensioned link gets the share page', async ({ page, gallery, db }) => {
+    const image = await servedFile(gallery, db, 'forest-path.jpg', { private: false });
+    const response = await page.goto(`/view/${image.id}.jpg`);
+
+    expect(response?.status()).toBe(200);
+    await expect(page.getByRole('heading', { level: 1, name: image.title })).toBeVisible();
+  });
+
+  test("Discord's crawler is redirected to the public image's bytes", async ({ request, gallery, db }) => {
+    const image = await servedFile(gallery, db, 'forest-path.jpg', { private: false });
+    const response = await request.get(`/view/${image.id}.jpg`, { headers: { 'user-agent': DISCORDBOT }, maxRedirects: 0 });
+
+    expect(response.status()).toBe(302);
+    expect(response.headers().location).toBe(`/api/d/${image.id}`);
+    expect(response.headers().vary).toBe('User-Agent');
+    const served = await request.get(response.headers().location!, { headers: { 'user-agent': DISCORDBOT } });
+    expect(served.headers()['content-type']).toBe('image/jpeg');
+    expect((await served.body()).equals(image.bytes)).toBe(true);
+  });
+
+  for (const [what, name, isPrivate] of [
+    ['a private image', 'portrait-tall.webp', true],
+    ['a public video', 'clip.mp4', false],
+  ] as const) {
+    test(`Discord's crawler gets the page for ${what}`, async ({ request, gallery, db }) => {
+      const file = await servedFile(gallery, db, name, { private: isPrivate });
+      const response = await request.get(`/view/${file.id}`, { headers: { 'user-agent': DISCORDBOT }, maxRedirects: 0 });
+
+      expect(response.status()).toBe(200);
+      expect(response.headers()['content-type']).toContain('text/html');
+    });
+  }
+
+  test('oEmbed resolves the extensioned link', async ({ request, stack, gallery, db }) => {
+    const image = await servedFile(gallery, db, 'forest-path.jpg', { private: false });
+    const response = await request.get('/api/oembed', { params: { url: `${stack.E2E_BASE_URL}/view/${image.id}.jpg` } });
+
+    expect(response.status()).toBe(200);
+    expect(await response.json()).toMatchObject({ title: image.title });
+  });
 });

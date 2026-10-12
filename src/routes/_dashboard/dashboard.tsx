@@ -29,6 +29,7 @@ import { copyImageToClipboard } from '@/libs/image-clipboard';
 import { morphIntoPreview, morphOutOfPreview } from '@/libs/preview-morph';
 import { queryKeys } from '@/libs/query-keys';
 import { getCDNImage } from '@/libs/utils';
+import { buildViewUrl } from '@/libs/view-link';
 import { startViewTransition } from '@/libs/view-transition';
 import { deleteFiles, getGalleryCount, setFilePrivacy } from '@/server/fns/files';
 import type { GalleryFile } from '@/types/project';
@@ -57,15 +58,15 @@ function scopeTitle(scope: string | null, folders: readonly { id: string; name: 
 }
 
 /** The file's page in the app, which is what "Copy link" copies. */
-const linkFor = (fileId: string) => `${window.location.origin}/view/${fileId}`;
+const linkFor = (file: { id: string; contentType: string }) => buildViewUrl(window.location.origin, file);
 
 /*
  * Copies the file's link. `navigator.clipboard` directly rather than
  * `useClipboard`, whose `copy` is new every render and would break the cards' memo.
  */
-async function copyLink(fileId: string) {
+async function copyLink(file: GalleryFile) {
   try {
-    await navigator.clipboard.writeText(linkFor(fileId));
+    await navigator.clipboard.writeText(linkFor(file));
     toast.success('Link copied');
   } catch {
     toast.error('Could not copy the link');
@@ -76,7 +77,7 @@ async function copyLink(fileId: string) {
 async function copyImage(file: GalleryFile) {
   // A non-image has no image to put on the clipboard, so the link stands in.
   if (!file.contentType.startsWith('image/')) {
-    await copyLink(file.id);
+    await copyLink(file);
     return;
   }
   try {
@@ -227,6 +228,11 @@ function FilesPage() {
   const withGalleryTransition = (update: () => void) => startViewTransition(update, 'gallery');
 
   const selectedIds = React.useMemo(() => [...selectedFiles], [selectedFiles]);
+  // A selected file the current filter hides has no content type here, so its link goes out without an extension.
+  const selectedLinks = React.useMemo(() => {
+    const contentTypes = new Map(filteredFiles.map((file) => [file.id, file.contentType]));
+    return selectedIds.map((id) => linkFor({ id, contentType: contentTypes.get(id) ?? '' }));
+  }, [selectedIds, filteredFiles]);
   const selecting = selectedFiles.size > 0;
   const { rowHeight, gridCellMinWidth } = sizeMetrics(size);
   const title = scopeTitle(scope, folders);
@@ -341,6 +347,7 @@ function FilesPage() {
       {selecting && (
         <SelectionBar
           fileIds={selectedIds}
+          links={selectedLinks}
           onClear={clearSelection}
           onDelete={() => setConfirmDeleteIds(selectedIds)}
         />

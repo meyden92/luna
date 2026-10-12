@@ -11,6 +11,7 @@ import { useCallbackRef } from '@/hooks/use-callback-ref';
 import { useEventListener } from '@/hooks/use-event-listener';
 import { insertGalleryFile } from '@/libs/gallery-cache';
 import { queryKeys } from '@/libs/query-keys';
+import { buildViewUrl } from '@/libs/view-link';
 import { startViewTransition } from '@/libs/view-transition';
 import type { GalleryFile } from '@/types/project';
 import styles from './UploadSheetProvider.module.css';
@@ -173,7 +174,7 @@ export function UploadSheetProvider({ children }: { children: React.ReactNode })
   /** True only when the link really reached the clipboard, so the toast can't lie. */
   const copyFileLink = async (file: GalleryFile): Promise<boolean> => {
     try {
-      await navigator.clipboard.writeText(`${window.location.origin}/view/${file.id}`);
+      await navigator.clipboard.writeText(buildViewUrl(window.location.origin, file));
       return true;
     } catch {
       return false;

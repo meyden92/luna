@@ -1,3 +1,5 @@
+import { parseViewId } from '@/libs/view-link';
+
 const DEFAULT_EMBED_WIDTH = 640;
 const DEFAULT_EMBED_HEIGHT = 360;
 
@@ -54,7 +56,7 @@ export function parsePublicViewUrl(value: string): string | null {
   if (!match?.[1]) return null;
 
   try {
-    return decodeURIComponent(match[1]);
+    return parseViewId(decodeURIComponent(match[1]));
   } catch {
     return null;
   }

@@ -32,7 +32,7 @@ export type FileCardProps = {
   onOpen: (fileId: string) => void;
   onToggleSelect: (fileId: string) => void;
   onCopyImage: (file: GalleryFile) => void;
-  onCopyLink: (fileId: string) => void;
+  onCopyLink: (file: GalleryFile) => void;
   /**
    * The whole selection, passed only while this card is part of it; its drag
    * then carries every selected file. Without it the drag carries just this one.
@@ -100,7 +100,7 @@ const FileCard = React.memo(function FileCard({
     if (event.key.toLowerCase() === 'c' && (event.metaKey || event.ctrlKey)) {
       event.preventDefault();
       // ⇧⌘C is always the link; ⌘C is the image, or the link when there is no image.
-      if (event.shiftKey || !isImage) onCopyLink(file.id);
+      if (event.shiftKey || !isImage) onCopyLink(file);
       else onCopyImage(file);
     }
   };
@@ -213,7 +213,7 @@ const FileCard = React.memo(function FileCard({
           data-icon-only={iconOnlyActions || undefined}
           onClick={(event) => {
             event.stopPropagation();
-            onCopyLink(file.id);
+            onCopyLink(file);
           }}
         >
           <Link2 size={13} />

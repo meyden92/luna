@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, File, Loader2 } from 'lucide-react';
 import type React from 'react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { getFileIcon } from '@/libs/utils';
 import styles from './Preview.module.css';
@@ -21,6 +21,10 @@ export type PreviewProps = {
   onDelete: (fileId: string) => void;
   onMoveToFolder: (fileId: string, folderId: string | null) => void;
   onVisibilityChange: (fileId: string, isPrivate: boolean) => void;
+  onRename: (fileId: string, title: string) => void;
+  onTagsChange: (fileId: string, tags: string[]) => void;
+  /** The file whose name field should take focus when it opens, set by the card menu's "Rename". */
+  renameFileId: string | null;
   /** Fetches the gallery's next page; absent when everything has loaded. */
   onLoadMore?: () => void;
   loadingMore: boolean;
@@ -96,6 +100,9 @@ export function Preview({
   onDelete,
   onMoveToFolder,
   onVisibilityChange,
+  onRename,
+  onTagsChange,
+  renameFileId,
   onLoadMore,
   loadingMore,
 }: PreviewProps) {
@@ -186,7 +193,9 @@ export function Preview({
 
   // Focus moves into the Preview and stays there while it is open, then returns
   // to whatever opened it — the card, so ← → and Esc keep working afterwards.
-  useEffect(() => {
+  // A layout effect, so it runs before the panel's own effects and the name
+  // field a "Rename" asked for keeps the focus.
+  useLayoutEffect(() => {
     if (!isOpen) return;
     const restoreFocusTo = document.activeElement as HTMLElement | null;
     const container = containerRef.current;
@@ -351,6 +360,9 @@ export function Preview({
         onDelete={onDelete}
         onMoveToFolder={onMoveToFolder}
         onVisibilityChange={onVisibilityChange}
+        onRename={onRename}
+        onTagsChange={onTagsChange}
+        autoFocusName={renameFileId === file.id}
       />
     </div>,
     document.body,

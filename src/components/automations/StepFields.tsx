@@ -1,17 +1,18 @@
 import { Input } from '@/components/ui/input';
 import { Segmented } from '@/components/ui/segmented';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { TagChipInput } from '@/components/ui/TagChipInput';
 import {
   CONDITION_FIELD_LABELS,
   CONDITION_FIELDS,
   type ConditionField,
+  MAX_TAGS_PER_STEP,
   type StepNode,
   TRIGGER_LABELS,
   TRIGGER_TYPES,
   type TriggerType,
 } from '@/libs/flows/linear-flow';
 import styles from './StepFields.module.css';
-import { TagChipInput } from './TagChipInput';
 
 type FolderOption = { id: string; name: string };
 
@@ -130,6 +131,7 @@ function StepFields({ step, folders, onChange }: { step: StepNode; folders: Fold
     return (
       <TagChipInput
         tags={step.config.tags}
+        max={MAX_TAGS_PER_STEP}
         onChange={(tags) => onChange({ ...step, config: { tags } })}
       />
     );

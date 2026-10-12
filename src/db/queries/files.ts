@@ -255,8 +255,7 @@ export async function storageUsage(ownerId: string, handle: AuditHandle = db) {
 }
 
 /**
- * Updates a file the owner owns, auditing the change. Returns the updated row
- * with its metadata, matching the shape the gallery expects.
+ * Updates a file the owner owns, auditing the change. Returns the updated row.
  *
  * `updatedAt` is set here because Prisma applied `@updatedAt` at query level
  * rather than in the database, so the data-access layer owns it now (issue #23).
@@ -266,12 +265,10 @@ export async function updateOwnedFile(
     id,
     ownerId,
     values,
-    metadata,
   }: {
     id: string;
     ownerId: string;
     values: Partial<typeof file.$inferInsert>;
-    metadata?: { artist?: string; lyrics?: string };
   },
   userId: string | null,
   handle: AuditHandle = db,
@@ -285,24 +282,8 @@ export async function updateOwnedFile(
     .where(and(eq(file.id, id), eq(file.ownerId, ownerId)))
     .returning();
 
-  if (metadata) {
-    await handle
-      .insert(fileMetadata)
-      .values({ id: crypto.randomUUID(), fileId: id, artist: metadata.artist ?? '', lyrics: metadata.lyrics ?? '' })
-      .onConflictDoUpdate({
-        target: fileMetadata.fileId,
-        set: { artist: metadata.artist ?? '', lyrics: metadata.lyrics ?? '', updatedAt: new Date() },
-      });
-  }
-
   if (after) await writeAuditLog(handle, { model: 'File', action: 'update', before, after, userId });
   return after;
-}
-
-/** The file's metadata row, or undefined. */
-export async function getFileMetadata(fileId: string, handle: AuditHandle = db) {
-  const [row] = await handle.select().from(fileMetadata).where(eq(fileMetadata.fileId, fileId));
-  return row;
 }
 
 /**

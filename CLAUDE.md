@@ -109,7 +109,7 @@ When working on something, no matter what, we need to always reference a github 
 ### Working on issues
 
 When working on a implementation for an issue - Read the full epic on github, change the label to "Doing" and work on it on a separate branch.
-When done: Create a Pull Request and change the label to "testing" and instruct the user on how to test out the changes.
+When done: run the `playwright-tests` skill (e2e suite, plus a new spec where the change earns one), then create a Pull Request and change the label to "testing" and instruct the user on how to test out the changes.
 
 ### Bug reports
 

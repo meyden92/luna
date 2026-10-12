@@ -1,5 +1,6 @@
 import { format, isToday, isYesterday } from 'date-fns';
 import { getCDNImage } from '@/libs/utils';
+import { buildViewUrl } from '@/libs/view-link';
 
 /**
  * The file on the Preview stage.
@@ -37,8 +38,8 @@ export function previewFileUrl(file: PreviewFile): string {
 }
 
 /** The public share page a "Copy link" hands out. */
-export function previewShareUrl(fileId: string): string {
-  return `${window.location.origin}/view/${fileId}`;
+export function previewShareUrl(file: PreviewFile): string {
+  return buildViewUrl(window.location.origin, { id: file.id, contentType: file.mimeType ?? '' });
 }
 
 /** Only an image can go on the stage, or onto the clipboard as an image. */

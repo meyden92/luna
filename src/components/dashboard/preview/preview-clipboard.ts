@@ -21,7 +21,7 @@ export async function copyPreviewImage(file: PreviewFile): Promise<void> {
 /** Put the share page's address on the clipboard. */
 export async function copyPreviewLink(file: PreviewFile): Promise<void> {
   try {
-    await navigator.clipboard.writeText(previewShareUrl(file.id));
+    await navigator.clipboard.writeText(previewShareUrl(file));
     toast('Link copied');
   } catch {
     toast.error('Could not copy the link');

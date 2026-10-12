@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { buildOEmbedDiscoveryUrl, buildPublicFileMeta } from '@/libs/oembed';
 import { queryKeys } from '@/libs/query-keys';
 import { formatSize } from '@/libs/utils';
+import { isDiscordCrawler, parseViewId, viewExtension } from '@/libs/view-link';
 import { getViewableFile, type ViewableFile } from '@/server/fns/platform';
 import styles from './view.module.css';
 
@@ -19,14 +20,41 @@ const PRIVATE_SIGNED_URL_TTL_MS = 900_000;
 const PRIVATE_SIGNED_URL_REFRESH_MARGIN_MS = 120_000;
 const PRIVATE_PREVIEW_RETRY_COOLDOWN_MS = 60_000;
 
+// `id` is the raw path segment; image links carry an extension (see view-link.ts).
 const fileQueryOptions = (id: string) => ({
-  queryKey: queryKeys.platform.file(id),
-  queryFn: () => getViewableFile({ data: id }),
+  queryKey: queryKeys.platform.file(parseViewId(id)),
+  queryFn: () => getViewableFile({ data: parseViewId(id) }),
   staleTime: PRIVATE_SIGNED_URL_TTL_MS - PRIVATE_SIGNED_URL_REFRESH_MARGIN_MS,
   refetchOnWindowFocus: true,
 });
 
+/*
+ * Discord's crawler gets a redirect to the raw image instead of the page, so a
+ * public image link embeds as a bare inline image. Everyone else gets the page.
+ */
+async function redirectDiscordToImage(request: Request, segment: string): Promise<Response | null> {
+  if (!isDiscordCrawler(request.headers.get('user-agent'))) return null;
+
+  const { getDeliverableFile } = await import('@/db/queries/delivery');
+  const file = await getDeliverableFile(parseViewId(segment));
+  if (!file || file.private || file.moderationStatus === 'quarantined' || !viewExtension(file.contentType)) return null;
+
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: `/api/d/${encodeURIComponent(file.id)}`,
+      'Cache-Control': 'private, no-cache',
+      Vary: 'User-Agent',
+    },
+  });
+}
+
 export const Route = createFileRoute('/view/$id')({
+  server: {
+    handlers: {
+      GET: async ({ request, params, next }) => (await redirectDiscordToImage(request, params.id)) ?? next(),
+    },
+  },
   loader: async ({ context, params }) => {
     const result = await context.queryClient.ensureQueryData(fileQueryOptions(params.id));
     if (result.status === 'not-found') throw notFound();

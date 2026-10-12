@@ -1,4 +1,5 @@
 import type { PublicEmbedFile } from '@/libs/oembed';
+import { buildViewUrl } from '@/libs/view-link';
 
 // Server-only: reaches the database and egress. Never import this
 // from a client route directly — go through getPublicEmbedFile (server fn).
@@ -21,7 +22,7 @@ export async function findPublicEmbedFile(id: string): Promise<PublicEmbedFile |
     contentType: file.contentType,
     size: file.size ?? null,
     cdnUrl: getCDNImage(`/${file.ownerId}/${file.url}`),
-    viewUrl: `${origin}/view/${file.id}`,
+    viewUrl: buildViewUrl(origin, file),
     embedUrl: `${origin}/embed/${file.id}`,
     ownerName: file.ownerName,
     metadata: file.metadata

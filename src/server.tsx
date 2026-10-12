@@ -8,6 +8,9 @@ const handler = createStartHandler(defaultStreamHandler);
 // which answers 200 with the HTML document. We detect that case by the response being
 // `text/html` for an asset-extension path, so real assets are never affected.
 const ASSET_PATH = /\.(js|mjs|css|map|woff2?|ttf|otf|eot|wasm|svg|png|jpe?g|gif|webp|avif|ico)$/i;
+// Image share links (`/view/<id>.jpg`, see libs/view-link.ts) end in an image
+// extension but are pages: their HTML is the real answer, not a missing asset.
+const SHARE_PATH = /^\/view\//;
 
 export default {
   fetch: async (request: Request) => {
@@ -22,7 +25,8 @@ export default {
     // expects a module, every dynamic import fails, and soft navigation stays broken
     // until a hard reload. A real `no-store` 404 lets the client recover (Vite reloads
     // onto the new build) and keeps the miss out of every cache.
-    if (response.status === 200 && isHtml && ASSET_PATH.test(new URL(request.url).pathname)) {
+    const { pathname } = new URL(request.url);
+    if (response.status === 200 && isHtml && ASSET_PATH.test(pathname) && !SHARE_PATH.test(pathname)) {
       return new Response(null, { status: 404, headers: { 'cache-control': 'no-store' } });
     }
 

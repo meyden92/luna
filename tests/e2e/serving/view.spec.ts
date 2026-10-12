@@ -138,7 +138,7 @@ test.describe('a public file', () => {
     const code = dialog.getByRole('img', { name: 'QR code for shared file' });
     await expect(code).toHaveAttribute('src', /^data:image\/png;base64,/);
     await expect(code).toHaveJSProperty('naturalWidth', 256);
-    await expect(dialog.getByText(page.url(), { exact: true })).toBeVisible();
+    await expect(dialog.getByText(`${page.url()}.jpg`, { exact: true })).toBeVisible();
   });
 
   test('the embed dialog gives a snippet that embeds the file', async ({ page, gallery, db }) => {

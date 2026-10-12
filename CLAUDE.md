@@ -99,6 +99,8 @@ The test: Every changed line should trace directly to the user's request.
 ## Toolchain
 
 - Assume the dev server is already running, no need to start it yourself.
+- E2E runs only through `bun run test:e2e [-- <playwright args>]`: it builds the production image and runs Playwright on a disposable Docker stack (takes minutes, so use `run_in_background`), never against the dev server or dev database.
+- Read `tests/e2e/README.md` before writing or changing a spec. Specs import `test` from `fixtures/test.ts` and use its users and helpers. If a spec signs in or seeds data some other way, it collides with parallel specs.
 
 ## Workflow
 

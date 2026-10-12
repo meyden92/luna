@@ -11,9 +11,9 @@ type TagChipInputProps = {
 
 /**
  * A tag field: committed tags as removable chips, then a bare input. Used by an
- * automation's "Add tags" step and the Preview's tag row. Enter or a comma commits, Backspace on an empty input takes the
- * last chip back, and blurring commits whatever is half-typed so a tag is never
- * lost by clicking away.
+ * automation's "Add tags" step and the Preview's tag row. Enter or a comma
+ * commits, Backspace on an empty input takes the last chip back, and blurring
+ * commits whatever is half-typed so a tag is never lost by clicking away.
  *
  * Tags are lowercased and de-duplicated here because that is how the runner
  * stores them (`mergeTags` in src/libs/flows/run-flow.ts).

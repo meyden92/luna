@@ -176,12 +176,22 @@ function FilesPage() {
     onError: (error) => toast.error(error.message),
   });
 
+  /*
+   * Optimistic, because the Preview's Name and Tags fields read from the cache:
+   * two tags added in quick succession must each build on the last. A failure
+   * refetches, which also puts a rejected name back in its field.
+   */
   const { mutate: editFile } = useMutation({
     mutationFn: (input: { id: string; title?: string; tags?: string[] }) => updateFile({ data: input }),
-    onSuccess: (result) => {
-      patchGalleryFiles(queryClient, (file) => (file.id === result.id ? { ...file, title: result.title, tags: result.tags } : file));
+    onMutate: ({ id, title, tags }) => {
+      patchGalleryFiles(queryClient, (file) =>
+        file.id === id ? { ...file, title: title ?? file.title, tags: tags ? tags.join(',') : file.tags } : file,
+      );
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) => {
+      toast.error(error.message);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gallery.all });
+    },
   });
 
   const directUrlFor = React.useCallback((file: GalleryFile) => getCDNImage(`/${ownerId}/${file.url}`), [ownerId]);

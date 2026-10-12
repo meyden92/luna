@@ -33,8 +33,8 @@ type PreviewPanelProps = {
 /**
  * The Preview's right-hand column: what the file is, the two copy actions the
  * whole app is built around, then the things that change it — name, tags,
- * folder, privacy —
- * and finally the one destructive action, kept at the bottom out of reach.
+ * folder, privacy — and finally the one destructive action, kept at the bottom
+ * out of reach.
  */
 export function PreviewPanel({
   file,

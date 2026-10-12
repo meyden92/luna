@@ -99,6 +99,8 @@ The test: Every changed line should trace directly to the user's request.
 ## Toolchain
 
 - Assume the dev server is already running, no need to start it yourself.
+- E2E runs only through `bun run test:e2e [-- <playwright args>]`: it builds the production image and runs Playwright on a disposable Docker stack (takes minutes, so use `run_in_background`), never against the dev server or dev database.
+- Read `tests/e2e/README.md` before writing or changing a spec. Specs import `test` from `fixtures/test.ts` and use its users and helpers. If a spec signs in or seeds data some other way, it collides with parallel specs.
 
 ## Workflow
 
@@ -109,7 +111,7 @@ When working on something, no matter what, we need to always reference a github 
 ### Working on issues
 
 When working on a implementation for an issue - Read the full epic on github, change the label to "Doing" and work on it on a separate branch.
-When done: Create a Pull Request and change the label to "testing" and instruct the user on how to test out the changes.
+When done: run the `playwright-tests` skill (e2e suite, plus a new spec where the change earns one), then create a Pull Request and change the label to "testing" and instruct the user on how to test out the changes.
 
 ### Bug reports
 

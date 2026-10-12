@@ -20,13 +20,16 @@ const PRIVATE_SIGNED_URL_TTL_MS = 900_000;
 const PRIVATE_SIGNED_URL_REFRESH_MARGIN_MS = 120_000;
 const PRIVATE_PREVIEW_RETRY_COOLDOWN_MS = 60_000;
 
-// `id` is the raw path segment; image links carry an extension (see view-link.ts).
-const fileQueryOptions = (id: string) => ({
-  queryKey: queryKeys.platform.file(parseViewId(id)),
-  queryFn: () => getViewableFile({ data: parseViewId(id) }),
-  staleTime: PRIVATE_SIGNED_URL_TTL_MS - PRIVATE_SIGNED_URL_REFRESH_MARGIN_MS,
-  refetchOnWindowFocus: true,
-});
+// `segment` is the raw path segment; image links carry an extension (see view-link.ts).
+const fileQueryOptions = (segment: string) => {
+  const id = parseViewId(segment);
+  return {
+    queryKey: queryKeys.platform.file(id),
+    queryFn: () => getViewableFile({ data: id }),
+    staleTime: PRIVATE_SIGNED_URL_TTL_MS - PRIVATE_SIGNED_URL_REFRESH_MARGIN_MS,
+    refetchOnWindowFocus: true,
+  };
+};
 
 /*
  * Discord's crawler gets a redirect to the raw image instead of the page, so a

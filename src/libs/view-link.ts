@@ -15,7 +15,8 @@ const VIEW_EXTENSIONS: Record<string, string> = {
   'image/webp': '.webp',
 };
 
-const VIEW_EXTENSION_SUFFIX = /\.(jpe?g|png|gif|webp)$/i;
+// `.jpeg` too, for a hand-typed link.
+const VIEW_EXTENSION_SUFFIX = new RegExp(`(${[...Object.values(VIEW_EXTENSIONS), '.jpeg'].join('|').replaceAll('.', '\\.')})$`, 'i');
 
 // Discord's metadata crawler. Its media proxy fetches the redirect target with
 // a browser user-agent, which is why the target must serve anyone.

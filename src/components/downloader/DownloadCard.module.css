@@ -1,4 +1,22 @@
 @layer components {
+  .card {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    transition: outline-color 300ms ease;
+  }
+
+  /* A repeated link led to this Download. */
+  .highlighted {
+    outline-color: var(--ring);
+  }
+
+  .status {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-1);
+  }
+
   .postLink {
     color: inherit;
     text-decoration: none;

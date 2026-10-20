@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import type { Download, DownloadStatus, Video, VideoStatus } from '@/libs/downloads/types';
 import { queryKeys } from '@/libs/query-keys';
-import { formatSize } from '@/libs/utils';
+import { cn, formatSize } from '@/libs/utils';
 import { removeDownload } from '@/server/fns/downloads';
 import styles from './DownloadCard.module.css';
 
@@ -17,8 +18,11 @@ const STATUS_BADGE: Record<DownloadStatus, { label: string; variant: 'default' |
   expired: { label: 'Expired', variant: 'outline' },
 };
 
-/** One Download: its post, its status, progress while preparing, and each of its videos. */
-export function DownloadCard({ download }: { download: Download }) {
+/**
+ * One Download: its post, its status, progress while preparing, and each of its
+ * videos. `highlighted` rings the card, for when a repeated link led here.
+ */
+export function DownloadCard({ download, highlighted = false }: { download: Download; highlighted?: boolean }) {
   const { mutate: remove, isPending: isRemoving } = useAppMutation(removeDownload, {
     invalidates: [queryKeys.downloads.list],
   });
@@ -27,7 +31,10 @@ export function DownloadCard({ download }: { download: Download }) {
   const current = download.videos.find((video) => video.index === download.currentIndex);
 
   return (
-    <Card size="sm">
+    <Card
+      size="sm"
+      className={cn(styles.card, highlighted && styles.highlighted)}
+    >
       <CardHeader>
         <CardTitle>
           <a
@@ -40,8 +47,9 @@ export function DownloadCard({ download }: { download: Download }) {
           </a>
         </CardTitle>
         {download.caption && <CardDescription className={styles.caption}>{download.caption}</CardDescription>}
-        <CardAction>
+        <CardAction className={styles.status}>
           <Badge variant={badge.variant}>{badge.label}</Badge>
+          {download.status === 'ready' && download.expiresAt && <ExpiresIn expiresAt={download.expiresAt} />}
         </CardAction>
       </CardHeader>
 
@@ -92,6 +100,17 @@ export function DownloadCard({ download }: { download: Download }) {
       </CardContent>
     </Card>
   );
+}
+
+// "Expires in NN min", counting down once a minute between list refetches.
+function ExpiresIn({ expiresAt }: { expiresAt: Date }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(interval);
+  }, []);
+  const minutes = Math.max(Math.ceil((expiresAt.getTime() - now) / 60_000), 0);
+  return <span className={styles.meta}>Expires in {minutes} min</span>;
 }
 
 const VIDEO_STATUS_LABEL: Record<Exclude<VideoStatus, 'ready' | 'failed'>, string> = {

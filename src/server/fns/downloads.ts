@@ -15,8 +15,8 @@ export const createDownload = createServerFn({ method: 'POST' })
   .handler(async ({ data, context }) => {
     const post = parsePostUrl(data.url);
     if (!post) throw new UserFacingError('Not a supported Instagram post link');
-    const download = registry.start(userIdFromCtx(context), post);
-    return { id: download.id };
+    const { download, existing } = registry.start(userIdFromCtx(context), post);
+    return { id: download.id, existing };
   });
 
 export const listDownloads = createServerFn({ method: 'GET' })

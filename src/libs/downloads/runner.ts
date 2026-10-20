@@ -1,3 +1,4 @@
+import { rmSync } from 'node:fs';
 import { mkdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -40,7 +41,7 @@ interface Job {
   done?: Promise<void>;
 }
 
-/** The running preparation of each Download, so `cancel` can kill it. */
+/** The running preparation of each Download, so `cancel` and `discard` can kill it. */
 const jobs = new Map<string, Job>();
 
 /** Where the prepared video `index` of a Download sits on disk. */
@@ -275,15 +276,19 @@ async function prepareVideo(downloadId: string, item: Planned, base: string[], u
 
 // Once every video is terminal: ready when any video is, otherwise failed, with
 // the videos' shared cause on the Download when they all failed the same way.
-function settle(download: Download): void {
+export function settle(download: Download): void {
   if (download.videos.some((video) => video.status === 'ready')) {
     download.status = 'ready';
-    download.readyAt = new Date();
     return;
   }
   download.status = 'failed';
   const [first, ...rest] = download.videos.map((video) => video.error);
   if (first && rest.every((error) => error?.category === first.category)) download.error = first;
+}
+
+/** Kills a Download's running yt-dlp, if any, so its `prepare` resolves early. Leaves its files in place. */
+export function cancel(downloadId: string): void {
+  jobs.get(downloadId)?.controller.abort();
 }
 
 /** Kills a Download's running yt-dlp, if any, and deletes its directory. */
@@ -294,4 +299,9 @@ export async function discard(downloadId: string): Promise<void> {
     await job.done;
   }
   await rm(join(TEMP_ROOT, downloadId), { recursive: true, force: true });
+}
+
+/** Deletes every Download's directory. Called once at boot, before any Download can exist. */
+export function sweepDownloadTemp(): void {
+  rmSync(TEMP_ROOT, { recursive: true, force: true });
 }

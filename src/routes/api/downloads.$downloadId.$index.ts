@@ -43,7 +43,7 @@ async function handle(request: Request, downloadId: string, index: string): Prom
 
   const download = get(userId, downloadId);
   const video = download?.videos.find((candidate) => String(candidate.index) === index);
-  if (!download || !video || video.status !== 'ready') return new Response('Not found', { status: 404 });
+  if (!download || download.status === 'expired' || !video || video.status !== 'ready') return new Response('Not found', { status: 404 });
 
   const file = Bun.file(videoPath(download.id, video.index));
   const size = file.size;

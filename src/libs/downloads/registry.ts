@@ -107,7 +107,7 @@ function begin(download: Download): void {
 function failUnfinished(download: Download): void {
   const timedOut = (previous?: DownloadError): DownloadError => ({
     category: 'unrecognised',
-    message: 'Timed out after 10 minutes',
+    message: `Timed out after ${PREPARATION_TIMEOUT_MS / 60_000} minutes`,
     detail: previous?.detail ?? '',
   });
   const killed = download.currentIndex;

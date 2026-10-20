@@ -1,23 +1,7 @@
 import { throwIfAborted } from '@/libs/ai-generation-utils';
+import { stderrTail } from '@/libs/downloads/errors';
+import { runYtDlp, ytDlpVersion } from '@/libs/downloads/yt-dlp';
 import type { TaskFunction } from '@/types/tasks';
-
-const OUTPUT_TAIL_LINES = 20;
-
-function tail(text: string): string {
-  return text.trim().split('\n').slice(-OUTPUT_TAIL_LINES).join('\n');
-}
-
-// Runs `yt-dlp <args>` and returns its stdout. A non-zero exit throws with the
-// stderr tail. The abort signal kills the process when the task times out.
-async function runYtDlp(args: string[], signal: AbortSignal): Promise<string> {
-  const proc = Bun.spawn(['yt-dlp', ...args], { stdout: 'pipe', stderr: 'pipe', signal });
-  const [stdout, stderr, exitCode] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text(), proc.exited]);
-  throwIfAborted(signal);
-  if (exitCode !== 0) {
-    throw new Error(`yt-dlp ${args.join(' ')} exited with ${exitCode}: ${tail(stderr) || tail(stdout)}`);
-  }
-  return stdout;
-}
 
 /**
  * Updates the yt-dlp binary in place with `yt-dlp -U` (ADR 0007).
@@ -30,12 +14,12 @@ export const updateYtDlpExecutor: TaskFunction = async (...args) => {
   const { signal } = args[args.length - 1];
   throwIfAborted(signal);
 
-  const before = (await runYtDlp(['--version'], signal)).trim();
+  const before = await ytDlpVersion(signal);
   const output = await runYtDlp(['-U'], signal);
-  const after = (await runYtDlp(['--version'], signal)).trim();
+  const after = await ytDlpVersion(signal);
 
   return {
     summary: before === after ? `yt-dlp ${after} already current` : `yt-dlp ${before} → ${after}`,
-    details: tail(output),
+    details: stderrTail(output),
   };
 };

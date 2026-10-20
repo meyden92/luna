@@ -13,8 +13,9 @@ import type { Download, DownloadError, Video } from './types';
 /** One directory per Download lives under here. */
 const TEMP_ROOT = join(tmpdir(), 'lunashare-downloads');
 const CAPTION_SNIPPET_LENGTH = 200;
-// Best video plus best audio, preferring H.264/AAC so the merged MP4 plays everywhere.
-const FORMAT_ARGS = ['-f', 'bv*+ba/b', '-S', 'vcodec:h264,res,acodec:m4a'];
+// Best video plus best audio. The highest resolution wins; H.264/AAC only breaks
+// ties, so a 1080p VP9 stream beats a 720p H.264 one (MP4 carries either).
+const FORMAT_ARGS = ['-f', 'bv*+ba/b', '-S', 'res,vcodec:h264,acodec:aac'];
 /** The per-video cap: estimated before preparing, and enforced mid-transfer by `--max-filesize`. */
 const MAX_VIDEO_BYTES = 500 * 1024 * 1024;
 
@@ -67,9 +68,10 @@ function captionSnippet(description: unknown): string | undefined {
   return text.length > CAPTION_SNIPPET_LENGTH ? `${text.slice(0, CAPTION_SNIPPET_LENGTH - 1)}…` : text;
 }
 
-// Runs yt-dlp for a Download, feeding each stdout line to `onLine`. A non-zero
-// exit throws a YtDlpError carrying stderr; aborting the job kills the process.
-async function runYtDlp(job: Job, args: string[], onLine?: (line: string) => void): Promise<string> {
+// Runs yt-dlp for a Download, feeding each stdout line to `onLine`, and returns
+// its output. A non-zero exit throws a YtDlpError carrying stderr; aborting the
+// job kills the process.
+async function runYtDlp(job: Job, args: string[], onLine?: (line: string) => void): Promise<{ stdout: string; stderr: string }> {
   const proc = Bun.spawn(['yt-dlp', ...args], { stdin: 'ignore', stdout: 'pipe', stderr: 'pipe', signal: job.controller.signal });
   job.process = proc;
 
@@ -89,7 +91,7 @@ async function runYtDlp(job: Job, args: string[], onLine?: (line: string) => voi
   const exitCode = await proc.exited;
   job.process = undefined;
   if (exitCode !== 0) throw new YtDlpError(await stderr);
-  return stdout;
+  return { stdout, stderr: await stderr };
 }
 
 /**
@@ -170,19 +172,11 @@ async function run(download: Download, job: Job): Promise<void> {
     download.sessionUsed = cookieArgs.length > 0;
     if (signal.aborted) return;
 
-    // Resolve with the same format selection as the download, so width, height
-    // and the size estimate describe the formats that will actually be merged.
-    const info: YtDlpInfo = JSON.parse(
-      await runYtDlp(job, [
-        '-J',
-        '--ignore-no-formats-error',
-        '--use-extractors',
-        source.extractor,
-        ...cookieArgs,
-        ...FORMAT_ARGS,
-        download.canonicalUrl,
-      ]),
-    );
+    // Resolve with the same arguments as the download, so width, height and the
+    // size estimate describe the formats that will actually be merged.
+    const baseArgs = ['--use-extractors', source.extractor, ...cookieArgs, ...FORMAT_ARGS];
+    const resolved = await runYtDlp(job, ['-J', '--ignore-no-formats-error', ...baseArgs, download.canonicalUrl]);
+    const info: YtDlpInfo = JSON.parse(resolved.stdout);
     if (signal.aborted) return;
 
     const account = typeof info.channel === 'string' ? info.channel.replace(/[^A-Za-z0-9._-]/g, '') : '';
@@ -192,7 +186,8 @@ async function run(download: Download, job: Job): Promise<void> {
     const entries = videoEntries(info);
     if (entries.length === 0) {
       download.status = 'failed';
-      download.error = downloadError('no_videos', '');
+      // yt-dlp prints "No video formats found!" for each photo.
+      download.error = downloadError('no_videos', stderrTail(resolved.stderr));
       return;
     }
 
@@ -219,7 +214,7 @@ async function run(download: Download, job: Job): Promise<void> {
     for (const item of planned) {
       if (item.video.status !== 'pending') continue;
       download.currentIndex = item.video.index;
-      await prepareVideo(download.id, item, source, download.canonicalUrl, cookieArgs, job);
+      await prepareVideo(download, item, source, baseArgs, job);
       if (signal.aborted) return;
     }
     download.currentIndex = undefined;
@@ -234,10 +229,11 @@ async function run(download: Download, job: Job): Promise<void> {
   }
 }
 
-// Downloads and merges one video into `<dir>/<n>.mp4`, moving it from
-// `preparing` to `ready` or `failed`. `--max-filesize` aborts a stream that turns
-// out to be over the cap: yt-dlp then exits 0 without a file and only says so on stdout.
-async function prepareVideo(downloadId: string, item: Planned, source: Source, url: string, cookieArgs: string[], job: Job): Promise<void> {
+// Downloads and merges one video of `download` into `<dir>/<n>.mp4`, moving it
+// from `preparing` to `ready` or `failed`. `baseArgs` are the resolve step's
+// extractor, cookie and format arguments. `--max-filesize` aborts a stream that
+// turns out to be over the cap: yt-dlp then exits 0 without a file and only says so on stdout.
+async function prepareVideo(download: Download, item: Planned, source: Source, baseArgs: string[], job: Job): Promise<void> {
   const { video, playlistItem, streams } = item;
   video.status = 'preparing';
   let stream = 0;
@@ -246,10 +242,7 @@ async function prepareVideo(downloadId: string, item: Planned, source: Source, u
     await runYtDlp(
       job,
       [
-        '--use-extractors',
-        source.extractor,
-        ...cookieArgs,
-        ...FORMAT_ARGS,
+        ...baseArgs,
         ...(playlistItem === undefined ? [] : ['--playlist-items', String(playlistItem)]),
         '--max-filesize',
         String(MAX_VIDEO_BYTES),
@@ -259,8 +252,8 @@ async function prepareVideo(downloadId: string, item: Planned, source: Source, u
         '--progress-template',
         'download:%(progress._percent_str)s',
         '-o',
-        join(TEMP_ROOT, downloadId, `${video.index}.%(ext)s`),
-        url,
+        join(TEMP_ROOT, download.id, `${video.index}.%(ext)s`),
+        download.canonicalUrl,
       ],
       (line) => {
         // yt-dlp reports 0–100 per downloaded file, so each stream gets an equal
@@ -277,7 +270,7 @@ async function prepareVideo(downloadId: string, item: Planned, source: Source, u
   } catch (error) {
     if (!(error instanceof YtDlpError)) throw error;
     video.status = 'failed';
-    video.error = categorise(error.stderr, source.errorPatterns, cookieArgs.length > 0);
+    video.error = categorise(error.stderr, source.errorPatterns, download.sessionUsed ?? false);
     return;
   }
 
@@ -286,7 +279,7 @@ async function prepareVideo(downloadId: string, item: Planned, source: Source, u
     video.error = tooLarge(oversized.bytes, oversized.line);
     return;
   }
-  const file = Bun.file(videoPath(downloadId, video.index));
+  const file = Bun.file(videoPath(download.id, video.index));
   if (!(await file.exists())) {
     video.status = 'failed';
     video.error = downloadError('unrecognised', `yt-dlp did not produce ${file.name}`);

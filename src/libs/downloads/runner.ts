@@ -1,8 +1,10 @@
 import { rmSync } from 'node:fs';
-import { mkdir, rm } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Subprocess } from 'bun';
+import { getSourceSession } from '@/db/queries/source-sessions';
+import { decryptFieldValue } from '@/libs/encryption/field-encryption';
 import { formatSize } from '@/libs/utils';
 import { categorise, downloadError, stderrTail } from './errors';
 import { type Source, sources } from './sources';
@@ -95,7 +97,8 @@ async function runYtDlp(job: Job, args: string[], onLine?: (line: string) => voi
  * resolve the post with `yt-dlp -J`, then download and merge each video, one at
  * a time, into `<tmp>/lunashare-downloads/<id>/<n>.mp4`. Never rejects; failures
  * land on the Download or the video. yt-dlp only ever sees the Source's
- * extractor and the canonical URL.
+ * extractor and the canonical URL, plus the Source session's cookies when one is
+ * set, written beside the videos so they go with the Download's directory.
  */
 export async function prepare(download: Download): Promise<void> {
   const job: Job = { controller: new AbortController() };
@@ -142,6 +145,18 @@ function tooLarge(sizeBytes: number, detail: string): DownloadError {
   return { category: 'too_large', message: `Too large (${format(sizeBytes)}, limit ${format(MAX_VIDEO_BYTES)})`, detail };
 }
 
+// Writes the Source's Source session, if one is set, to `<dir>/cookies.txt`,
+// readable only by this process's user. Loaded per Download, so a replaced
+// session applies to the next Download without a restart. Returns the
+// `--cookies` arguments for yt-dlp, empty without a session.
+async function writeCookies(dir: string, sourceKey: string): Promise<string[]> {
+  const session = await getSourceSession(sourceKey);
+  if (!session) return [];
+  const path = join(dir, 'cookies.txt');
+  await writeFile(path, decryptFieldValue(session.encryptedValue), { mode: 0o600 });
+  return ['--cookies', path];
+}
+
 async function run(download: Download, job: Job): Promise<void> {
   const { signal } = job.controller;
   const source = sources.get(download.sourceKey);
@@ -149,10 +164,24 @@ async function run(download: Download, job: Job): Promise<void> {
   try {
     if (!source) throw new Error(`Unknown Source ${download.sourceKey}`);
 
+    const dir = join(TEMP_ROOT, download.id);
+    await mkdir(dir, { recursive: true });
+    const cookieArgs = await writeCookies(dir, source.key);
+    download.sessionUsed = cookieArgs.length > 0;
+    if (signal.aborted) return;
+
     // Resolve with the same format selection as the download, so width, height
     // and the size estimate describe the formats that will actually be merged.
     const info: YtDlpInfo = JSON.parse(
-      await runYtDlp(job, ['-J', '--ignore-no-formats-error', '--use-extractors', source.extractor, ...FORMAT_ARGS, download.canonicalUrl]),
+      await runYtDlp(job, [
+        '-J',
+        '--ignore-no-formats-error',
+        '--use-extractors',
+        source.extractor,
+        ...cookieArgs,
+        ...FORMAT_ARGS,
+        download.canonicalUrl,
+      ]),
     );
     if (signal.aborted) return;
 
@@ -187,12 +216,10 @@ async function run(download: Download, job: Job): Promise<void> {
     });
     download.videos = planned.map(({ video }) => video);
 
-    const dir = join(TEMP_ROOT, download.id);
-    await mkdir(dir, { recursive: true });
     for (const item of planned) {
       if (item.video.status !== 'pending') continue;
       download.currentIndex = item.video.index;
-      await prepareVideo(download.id, item, source, download.canonicalUrl, job);
+      await prepareVideo(download.id, item, source, download.canonicalUrl, cookieArgs, job);
       if (signal.aborted) return;
     }
     download.currentIndex = undefined;
@@ -202,7 +229,7 @@ async function run(download: Download, job: Job): Promise<void> {
     download.currentIndex = undefined;
     download.error =
       error instanceof YtDlpError && source
-        ? categorise(error.stderr, source.errorPatterns)
+        ? categorise(error.stderr, source.errorPatterns, download.sessionUsed ?? false)
         : downloadError('unrecognised', stderrTail(String(error)));
   }
 }
@@ -210,7 +237,7 @@ async function run(download: Download, job: Job): Promise<void> {
 // Downloads and merges one video into `<dir>/<n>.mp4`, moving it from
 // `preparing` to `ready` or `failed`. `--max-filesize` aborts a stream that turns
 // out to be over the cap: yt-dlp then exits 0 without a file and only says so on stdout.
-async function prepareVideo(downloadId: string, item: Planned, source: Source, url: string, job: Job): Promise<void> {
+async function prepareVideo(downloadId: string, item: Planned, source: Source, url: string, cookieArgs: string[], job: Job): Promise<void> {
   const { video, playlistItem, streams } = item;
   video.status = 'preparing';
   let stream = 0;
@@ -221,6 +248,7 @@ async function prepareVideo(downloadId: string, item: Planned, source: Source, u
       [
         '--use-extractors',
         source.extractor,
+        ...cookieArgs,
         ...FORMAT_ARGS,
         ...(playlistItem === undefined ? [] : ['--playlist-items', String(playlistItem)]),
         '--max-filesize',
@@ -249,7 +277,7 @@ async function prepareVideo(downloadId: string, item: Planned, source: Source, u
   } catch (error) {
     if (!(error instanceof YtDlpError)) throw error;
     video.status = 'failed';
-    video.error = categorise(error.stderr, source.errorPatterns);
+    video.error = categorise(error.stderr, source.errorPatterns, cookieArgs.length > 0);
     return;
   }
 

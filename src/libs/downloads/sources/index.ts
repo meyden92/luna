@@ -11,6 +11,8 @@ export interface ErrorPattern {
 export interface Source {
   key: string;
   label: string;
+  /** The domain a Source session's cookies must be set on, such as `instagram.com`. */
+  cookieDomain: string;
   /** Passed to yt-dlp as `--use-extractors`, so only this Source's extractor ever runs. */
   extractor: string;
   /** The canonical post URL and shortcode for a supported link, or null. */

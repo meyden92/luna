@@ -1,0 +1,27 @@
+@layer components {
+  .body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .facts {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: var(--space-1) var(--space-4);
+    margin: 0;
+
+    & dt {
+      color: var(--muted-foreground);
+    }
+
+    & dd {
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .link {
+    font-size: var(--text-sm);
+  }
+}

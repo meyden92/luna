@@ -20,7 +20,7 @@ import type { JsonValue } from './schema/json';
  */
 
 /**
- * The 24 models that record deliberate user or admin action (#13). Session
+ * The 25 models that record deliberate user or admin action (#13). Session
  * churn, derived artifacts, analytics and execution records are deliberately
  * absent; the implicit extension covered everything, so an over-eager port is
  * as wrong as a missing one.
@@ -61,6 +61,7 @@ export const AUDITED_MODELS = [
   'UserGroupAssignment',
   'DenylistEntry',
   'ModerationCase',
+  'SourceSession',
 ] as const;
 
 export type AuditedModel = (typeof AUDITED_MODELS)[number];
@@ -95,6 +96,8 @@ export const UNAUDITED_MODELS: Record<string, string> = {
  */
 const REDACTED_FIELDS: Partial<Record<AuditedModel, string[]>> = {
   Token: ['key'],
+  // A Source session's cookies: setting or clearing one is recorded, its value never is.
+  SourceSession: ['encryptedValue'],
 };
 
 export type AuditAction = 'create' | 'update' | 'delete';

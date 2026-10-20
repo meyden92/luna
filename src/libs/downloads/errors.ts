@@ -25,13 +25,18 @@ export function downloadError(category: Exclude<ErrorCategory, 'too_large'>, det
 /**
  * Maps a failed yt-dlp run to the first of the Source's `patterns` that matches
  * one of its `ERROR:` lines (warnings never decide the category), or to
- * `unrecognised` when none does.
+ * `unrecognised` when none does. `sessionUsed` says whether the run had a Source
+ * session, which a `needs_login` message then names.
  */
-export function categorise(stderr: string, patterns: readonly ErrorPattern[]): DownloadError {
+export function categorise(stderr: string, patterns: readonly ErrorPattern[], sessionUsed: boolean): DownloadError {
   const errors = stderr
     .split('\n')
     .filter((line) => line.startsWith('ERROR:'))
     .join('\n');
   const match = patterns.find(({ pattern }) => pattern.test(errors));
-  return downloadError(match?.category ?? 'unrecognised', stderrTail(stderr));
+  const error = downloadError(match?.category ?? 'unrecognised', stderrTail(stderr));
+  if (error.category === 'needs_login') {
+    error.message += sessionUsed ? ' A Source session is set; it may have expired.' : ' No Source session is set.';
+  }
+  return error;
 }

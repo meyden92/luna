@@ -39,6 +39,8 @@ export interface Download {
   videos: Video[];
   /** The `index` of the video being prepared, for the "video n of m" label. */
   currentIndex?: number;
+  /** Whether preparation ran with the Source's Source session, as loaded when it started. */
+  sessionUsed?: boolean;
   /** Set when the post could not be resolved as a whole, or when every video failed for the same reason. */
   error?: DownloadError;
   createdAt: Date;

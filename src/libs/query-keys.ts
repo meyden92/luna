@@ -123,6 +123,9 @@ export const queryKeys = {
     detail: (id: string) => ['admin', 'global-variables', id] as const,
     withUsage: ['admin', 'global-variables', 'with-usage'] as const,
   },
+  adminSources: {
+    status: ['admin', 'sources', 'status'] as const,
+  },
   adminRbac: {
     userGroups: (userId: string) => ['admin', 'rbac', 'users', userId, 'groups'] as const,
     currentUserIsAdmin: ['admin', 'rbac', 'current-user-is-admin'] as const,

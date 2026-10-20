@@ -7,6 +7,7 @@ const SHORTCODE = /^[A-Za-z0-9_-]+$/;
 export const instagram: Source = {
   key: 'instagram',
   label: 'Instagram',
+  cookieDomain: 'instagram.com',
   // `--use-extractors` takes regexes that must fullmatch an extractor name,
   // case-insensitively. `instagram` therefore loads exactly one extractor, the
   // post extractor ("Instagram"): not instagram:story/tag/user, not InstagramIOS,

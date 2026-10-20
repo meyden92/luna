@@ -163,13 +163,15 @@ function VideoItem({ downloadId, video, numbered, saveable }: { downloadId: stri
 }
 
 // A failed Download or video: its category's message, a link to the Tasks screen
-// when yt-dlp may need updating, and yt-dlp's last output lines behind Details.
+// when yt-dlp may need updating or to Sources when the Source session may help,
+// and yt-dlp's last output lines behind Details.
 function ErrorAlert({ error }: { error: DownloadError }) {
   return (
     <Alert variant="destructive">
       <AlertDescription>
         <p>{error.message}</p>
         {error.category === 'unrecognised' && <Link to="/admin/tasks">Open Tasks</Link>}
+        {(error.category === 'needs_login' || error.category === 'rate_limited') && <Link to="/admin/sources">Open Sources</Link>}
       </AlertDescription>
       {error.detail && (
         <Collapsible>

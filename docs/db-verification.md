@@ -43,7 +43,7 @@ audit layer is loud about it on purpose.
 
 ## Coverage: `src/db/queries/audit-coverage.test.ts`
 
-Every one of the 24 models in `AUDITED_MODELS` is driven through its real query
+Every one of the 25 models in `AUDITED_MODELS` is driven through its real query
 function — never by calling `writeAuditLog` directly — and the resulting row is
 read back and checked for the expected `model`, `action` and `recordId`.
 

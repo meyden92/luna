@@ -1,5 +1,5 @@
 import { rmSync } from 'node:fs';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Subprocess } from 'bun';
@@ -14,7 +14,8 @@ import type { Download, DownloadError, Video } from './types';
 const TEMP_ROOT = join(tmpdir(), 'lunashare-downloads');
 const CAPTION_SNIPPET_LENGTH = 200;
 // Best video plus best audio. The highest resolution wins; H.264/AAC only breaks
-// ties, so a 1080p VP9 stream beats a 720p H.264 one (MP4 carries either).
+// ties, so a 1080p VP9 stream beats a 720p H.264 one. QuickTime and iOS can't
+// play VP9 in MP4, so `transcode` re-encodes any video that isn't H.264 afterwards.
 const FORMAT_ARGS = ['-f', 'bv*+ba/b', '-S', 'res,vcodec:h264,acodec:aac'];
 /** The per-video cap: estimated before preparing, and enforced mid-transfer by `--max-filesize`. */
 const MAX_VIDEO_BYTES = 500 * 1024 * 1024;
@@ -52,11 +53,12 @@ export function videoPath(downloadId: string, index: number): string {
   return join(TEMP_ROOT, downloadId, `${index}.mp4`);
 }
 
-class YtDlpError extends Error {
+/** A yt-dlp, ffprobe or ffmpeg run that exited non-zero, including one the job's abort killed. */
+class ProcessError extends Error {
   readonly stderr: string;
 
   constructor(stderr: string) {
-    super('yt-dlp failed');
+    super('Process exited non-zero');
     this.stderr = stderr;
   }
 }
@@ -68,11 +70,11 @@ function captionSnippet(description: unknown): string | undefined {
   return text.length > CAPTION_SNIPPET_LENGTH ? `${text.slice(0, CAPTION_SNIPPET_LENGTH - 1)}…` : text;
 }
 
-// Runs yt-dlp for a Download, feeding each stdout line to `onLine`, and returns
-// its output. A non-zero exit throws a YtDlpError carrying stderr; aborting the
-// job kills the process.
-async function runYtDlp(job: Job, args: string[], onLine?: (line: string) => void): Promise<{ stdout: string; stderr: string }> {
-  const proc = Bun.spawn(['yt-dlp', ...args], { stdin: 'ignore', stdout: 'pipe', stderr: 'pipe', signal: job.controller.signal });
+// Runs `command` (yt-dlp, ffprobe or ffmpeg) for a Download, feeding each stdout
+// line to `onLine`, and returns its output. A non-zero exit throws a ProcessError
+// carrying stderr; aborting the job kills the process.
+async function runProcess(job: Job, command: string[], onLine?: (line: string) => void): Promise<{ stdout: string; stderr: string }> {
+  const proc = Bun.spawn(command, { stdin: 'ignore', stdout: 'pipe', stderr: 'pipe', signal: job.controller.signal });
   job.process = proc;
 
   const stderr = new Response(proc.stderr).text();
@@ -90,7 +92,7 @@ async function runYtDlp(job: Job, args: string[], onLine?: (line: string) => voi
 
   const exitCode = await proc.exited;
   job.process = undefined;
-  if (exitCode !== 0) throw new YtDlpError(await stderr);
+  if (exitCode !== 0) throw new ProcessError(await stderr);
   return { stdout, stderr: await stderr };
 }
 
@@ -116,6 +118,8 @@ interface Planned {
   playlistItem?: number;
   /** How many files yt-dlp downloads before merging (video and audio streams are separate). */
   streams: number;
+  /** Whether the resolved video codec isn't H.264, so the transcode gets a share of the progress bar. */
+  transcode: boolean;
 }
 
 // A carousel resolves to a playlist whose photos have no formats (that needs
@@ -175,7 +179,7 @@ async function run(download: Download, job: Job): Promise<void> {
     // Resolve with the same arguments as the download, so width, height and the
     // size estimate describe the formats that will actually be merged.
     const baseArgs = ['--use-extractors', source.extractor, ...cookieArgs, ...FORMAT_ARGS];
-    const resolved = await runYtDlp(job, ['-J', '--ignore-no-formats-error', ...baseArgs, download.canonicalUrl]);
+    const resolved = await runProcess(job, ['yt-dlp', '-J', '--ignore-no-formats-error', ...baseArgs, download.canonicalUrl]);
     const info: YtDlpInfo = JSON.parse(resolved.stdout);
     if (signal.aborted) return;
 
@@ -207,7 +211,7 @@ async function run(download: Download, job: Job): Promise<void> {
         video.status = 'failed';
         video.error = tooLarge(estimate, '');
       }
-      return { video, playlistItem, streams: entry.requested_formats?.length || 1 };
+      return { video, playlistItem, streams: entry.requested_formats?.length || 1, transcode: !isH264(entry.vcodec) };
     });
     download.videos = planned.map(({ video }) => video);
 
@@ -223,25 +227,30 @@ async function run(download: Download, job: Job): Promise<void> {
     download.status = 'failed';
     download.currentIndex = undefined;
     download.error =
-      error instanceof YtDlpError && source
+      error instanceof ProcessError && source
         ? categorise(error.stderr, source.errorPatterns, download.sessionUsed ?? false)
         : downloadError('unrecognised', stderrTail(String(error)));
   }
 }
 
-// Downloads and merges one video of `download` into `<dir>/<n>.mp4`, moving it
-// from `preparing` to `ready` or `failed`. `baseArgs` are the resolve step's
-// extractor, cookie and format arguments. `--max-filesize` aborts a stream that
-// turns out to be over the cap: yt-dlp then exits 0 without a file and only says so on stdout.
+// Downloads and merges one video of `download` into `<dir>/<n>.mp4`, transcoding
+// it to H.264 when it isn't already, and moves it from `preparing` to `ready` or
+// `failed`. `baseArgs` are the resolve step's extractor, cookie and format
+// arguments. `--max-filesize` aborts a stream that turns out to be over the cap:
+// yt-dlp then exits 0 without a file and only says so on stdout.
 async function prepareVideo(download: Download, item: Planned, source: Source, baseArgs: string[], job: Job): Promise<void> {
   const { video, playlistItem, streams } = item;
   video.status = 'preparing';
+  // Each downloaded stream and the transcode, when one is expected, get an equal
+  // share of the bar, so progress never jumps back when the next one starts.
+  const shares = streams + (item.transcode ? 1 : 0);
   let stream = 0;
   let oversized: { bytes: number; line: string } | undefined;
   try {
-    await runYtDlp(
+    await runProcess(
       job,
       [
+        'yt-dlp',
         ...baseArgs,
         ...(playlistItem === undefined ? [] : ['--playlist-items', String(playlistItem)]),
         '--max-filesize',
@@ -256,19 +265,18 @@ async function prepareVideo(download: Download, item: Planned, source: Source, b
         download.canonicalUrl,
       ],
       (line) => {
-        // yt-dlp reports 0–100 per downloaded file, so each stream gets an equal
-        // share of the bar and progress never jumps back when the next one starts.
+        // yt-dlp reports 0–100 per downloaded file.
         if (line.startsWith('[download] Destination:')) stream++;
         const tooBig = line.match(/File is larger than max-filesize \((\d+) bytes/);
         if (tooBig) oversized = { bytes: Number(tooBig[1]), line };
         const percent = Number.parseFloat(line);
         if (line.trim().endsWith('%') && Number.isFinite(percent)) {
-          video.progress = Math.min((Math.max(stream - 1, 0) * 100 + percent) / streams, 100);
+          video.progress = Math.min((Math.max(stream - 1, 0) * 100 + percent) / shares, (streams * 100) / shares);
         }
       },
     );
   } catch (error) {
-    if (!(error instanceof YtDlpError)) throw error;
+    if (!(error instanceof ProcessError)) throw error;
     video.status = 'failed';
     video.error = categorise(error.stderr, source.errorPatterns, download.sessionUsed ?? false);
     return;
@@ -279,15 +287,88 @@ async function prepareVideo(download: Download, item: Planned, source: Source, b
     video.error = tooLarge(oversized.bytes, oversized.line);
     return;
   }
-  const file = Bun.file(videoPath(download.id, video.index));
-  if (!(await file.exists())) {
+  const path = videoPath(download.id, video.index);
+  if (!(await Bun.file(path).exists())) {
     video.status = 'failed';
-    video.error = downloadError('unrecognised', `yt-dlp did not produce ${file.name}`);
+    video.error = downloadError('unrecognised', `yt-dlp did not produce ${path}`);
     return;
   }
+  try {
+    await transcode(job, path, (fraction) => {
+      video.progress = Math.min(((streams + fraction) * 100) / shares, 100);
+    });
+  } catch (error) {
+    if (!(error instanceof ProcessError)) throw error;
+    video.status = 'failed';
+    video.error = { ...downloadError('unrecognised', stderrTail(error.stderr)), message: 'Converting the video to H.264 failed.' };
+    return;
+  }
+  const file = Bun.file(path);
   video.status = 'ready';
   video.progress = 100;
   video.sizeBytes = file.size;
+}
+
+/** Whether a yt-dlp `vcodec` (`avc1.640028`) or ffprobe `codec_name` (`h264`) is H.264. */
+function isH264(codec: string | null | undefined): boolean {
+  return !!codec && /^(avc|h264)/.test(codec);
+}
+
+// Re-encodes the video track of the prepared file at `path` to H.264 when it is
+// anything else (Instagram's best resolution is often VP9 only), copying the
+// audio, so the file plays in QuickTime and iOS. Already-H.264 files are left
+// alone. `onProgress` gets 0–1 from ffmpeg's position against the duration.
+// Both ffprobe and ffmpeg run on the job, so removal and the timeout kill them.
+async function transcode(job: Job, path: string, onProgress: (fraction: number) => void): Promise<void> {
+  const probe = await runProcess(job, [
+    'ffprobe',
+    '-v',
+    'error',
+    '-select_streams',
+    'v:0',
+    '-show_entries',
+    'stream=codec_name:format=duration',
+    '-of',
+    'json',
+    path,
+  ]);
+  const info: { streams?: { codec_name?: string }[]; format?: { duration?: string } } = JSON.parse(probe.stdout);
+  if (isH264(info.streams?.[0]?.codec_name)) return;
+
+  const durationUs = Number(info.format?.duration) * 1_000_000;
+  const output = `${path.slice(0, -'.mp4'.length)}.h264.mp4`;
+  // ffmpeg writes `out_time_us=<microseconds>` lines to stdout via `-progress`.
+  await runProcess(
+    job,
+    [
+      'ffmpeg',
+      '-nostdin',
+      '-y',
+      '-i',
+      path,
+      '-c:v',
+      'libx264',
+      '-preset',
+      'veryfast',
+      '-crf',
+      '20',
+      '-pix_fmt',
+      'yuv420p',
+      '-c:a',
+      'copy',
+      '-movflags',
+      '+faststart',
+      '-progress',
+      'pipe:1',
+      '-nostats',
+      output,
+    ],
+    (line) => {
+      const outTimeUs = Number(line.match(/^out_time_us=(\d+)/)?.[1]);
+      if (durationUs > 0 && Number.isFinite(outTimeUs)) onProgress(Math.min(outTimeUs / durationUs, 1));
+    },
+  );
+  await rename(output, path);
 }
 
 // Once every video is terminal: ready when any video is, otherwise failed, with
@@ -302,12 +383,12 @@ export function settle(download: Download): void {
   if (first && rest.every((error) => error?.category === first.category)) download.error = first;
 }
 
-/** Kills a Download's running yt-dlp, if any, so its `prepare` resolves early. Leaves its files in place. */
+/** Kills a Download's running yt-dlp or ffmpeg, if any, so its `prepare` resolves early. Leaves its files in place. */
 export function cancel(downloadId: string): void {
   jobs.get(downloadId)?.controller.abort();
 }
 
-/** Kills a Download's running yt-dlp, if any, and deletes its directory. */
+/** Kills a Download's running yt-dlp or ffmpeg, if any, and deletes its directory. */
 export async function discard(downloadId: string): Promise<void> {
   const job = jobs.get(downloadId);
   if (job) {

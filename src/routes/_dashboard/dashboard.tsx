@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { Download, ExternalLink, FolderOpen, Lock, SearchX, Trash2, Unlock, Upload } from 'lucide-react';
+import { Download, ExternalLink, FolderOpen, Lock, Pencil, SearchX, Trash2, Unlock, Upload } from 'lucide-react';
 import * as React from 'react';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -30,7 +30,7 @@ import { morphIntoPreview, morphOutOfPreview } from '@/libs/preview-morph';
 import { queryKeys } from '@/libs/query-keys';
 import { getCDNImage } from '@/libs/utils';
 import { startViewTransition } from '@/libs/view-transition';
-import { deleteFiles, getGalleryCount, setFilePrivacy } from '@/server/fns/files';
+import { deleteFiles, getGalleryCount, setFilePrivacy, updateFile } from '@/server/fns/files';
 import type { GalleryFile } from '@/types/project';
 import styles from './dashboard.module.css';
 
@@ -102,6 +102,8 @@ function FilesPage() {
   const { selectedFiles, toggleFile, selectFiles, deselectFiles, clearSelection } = useBulkSelection();
 
   const [previewId, setPreviewId] = React.useState<string | null>(linkedFileId ?? null);
+  // The file the card menu's "Rename" opened, whose name field takes focus.
+  const [renameId, setRenameId] = React.useState<string | null>(null);
   const [confirmDeleteIds, setConfirmDeleteIds] = React.useState<string[] | null>(null);
   const [formSharesOpen, setFormSharesOpen] = React.useState(false);
 
@@ -174,6 +176,24 @@ function FilesPage() {
     onError: (error) => toast.error(error.message),
   });
 
+  /*
+   * Optimistic, because the Preview's Name and Tags fields read from the cache:
+   * two tags added in quick succession must each build on the last. A failure
+   * refetches, which also puts a rejected name back in its field.
+   */
+  const { mutate: editFile } = useMutation({
+    mutationFn: (input: { id: string; title?: string; tags?: string[] }) => updateFile({ data: input }),
+    onMutate: ({ id, title, tags }) => {
+      patchGalleryFiles(queryClient, (file) =>
+        file.id === id ? { ...file, title: title ?? file.title, tags: tags ? tags.join(',') : file.tags } : file,
+      );
+    },
+    onError: (error) => {
+      toast.error(error.message);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.gallery.all });
+    },
+  });
+
   const directUrlFor = React.useCallback((file: GalleryFile) => getCDNImage(`/${ownerId}/${file.url}`), [ownerId]);
 
   // Stable, like every handler FileCard gets, so its memo holds.
@@ -181,6 +201,7 @@ function FilesPage() {
   const closePreview = () => {
     const closing = previewId;
     if (!closing) return;
+    setRenameId(null);
     morphOutOfPreview(closing, () => setPreviewId(null));
     // A file opened from a link leaves the param behind; closing should clear it.
     if (linkedFileId) navigate({ search: {}, replace: true });
@@ -205,6 +226,15 @@ function FilesPage() {
             </a>
           }
         />
+        <DropdownMenuItem
+          onClick={() => {
+            setRenameId(file.id);
+            openPreview(file.id);
+          }}
+        >
+          <Pencil size={14} />
+          Rename
+        </DropdownMenuItem>
         <MoveToFolderMenu
           asDropdown
           fileIds={[file.id]}
@@ -220,7 +250,7 @@ function FilesPage() {
         </DropdownMenuItem>
       </>
     ),
-    [directUrlFor, setVisibility],
+    [directUrlFor, setVisibility, openPreview],
   );
 
   /* Filters and sorts glide rather than cut, so cards keep their identity. */
@@ -243,6 +273,7 @@ function FilesPage() {
         createdAt: file.createdAt,
         isPrivate: file.private,
         folderId: file.folderId,
+        tags: file.tags ? file.tags.split(',').filter(Boolean) : [],
         url: file.url,
         ownerId: file.ownerId,
       })),
@@ -350,10 +381,16 @@ function FilesPage() {
         fileId={previewId}
         files={previewFiles}
         onClose={closePreview}
-        onNavigate={setPreviewId}
+        onNavigate={(fileId) => {
+          setRenameId(null);
+          setPreviewId(fileId);
+        }}
         onDelete={(fileId) => setConfirmDeleteIds([fileId])}
         onMoveToFolder={(fileId, folderId) => moveFilesTo([fileId], folderId)}
         onVisibilityChange={(fileId, isPrivate) => setVisibility({ fileId, isPrivate })}
+        onRename={(fileId, title) => editFile({ id: fileId, title })}
+        onTagsChange={(fileId, tags) => editFile({ id: fileId, tags })}
+        renameFileId={renameId}
         onLoadMore={hasNextPage ? fetchNextPage : undefined}
         loadingMore={isFetchingNextPage}
       />

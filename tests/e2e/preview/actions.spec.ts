@@ -1,8 +1,10 @@
 import { expect } from '@playwright/test';
+import { eq } from 'drizzle-orm';
+import { file } from '../../../src/db/schema/files';
 import { test } from '../fixtures/test';
 import { fileCards, scopeRow } from '../utils/files-screen';
 import { clickUntil } from '../utils/hydration';
-import { cardOf, createFolderThroughSidebar, openOwnFiles, uniquePrefix, uploadOwnFiles } from '../utils/own-files';
+import { cardOf, createFolderThroughSidebar, openCardMenu, openOwnFiles, uniquePrefix, uploadOwnFiles } from '../utils/own-files';
 import { previewOf } from '../utils/preview';
 
 // Acting on a file from inside the Preview, as a worker user on files the spec uploaded itself.
@@ -93,4 +95,58 @@ test('the Delete key opens the same confirmation, and Cancel keeps the file', as
   await expect(previewOf(workerPage, uploaded!.title)).toBeVisible();
   await workerPage.keyboard.press('Escape');
   await expect(cardOf(workerPage, uploaded!.title)).toBeVisible();
+});
+
+test('Name and Tags save from the Preview and survive a reload', async ({ workerPage, workerRequest, corpus, db }) => {
+  const prefix = uniquePrefix('pv-rename');
+  const renamed = `${prefix} renamed.txt`;
+  const [uploaded] = await uploadOwnFiles(workerRequest, prefix, [corpus.file('notes.txt')]);
+  await openOwnFiles(workerPage, prefix, 1);
+  await clickUntil(cardOf(workerPage, uploaded!.title), previewOf(workerPage, uploaded!.title));
+
+  const nameField = previewOf(workerPage, uploaded!.title).getByRole('textbox', { name: 'Name' });
+  await nameField.fill(renamed);
+  await nameField.press('Enter');
+  const preview = previewOf(workerPage, renamed);
+  await expect(preview).toBeVisible();
+
+  const tagField = preview.getByRole('textbox', { name: 'Add a tag' });
+  await tagField.fill('Holiday');
+  await tagField.press('Enter');
+  await expect(preview.getByRole('button', { name: 'Remove holiday' })).toBeVisible();
+  await expect
+    .poll(async () => (await db.select({ tags: file.tags }).from(file).where(eq(file.title, renamed)))[0]?.tags ?? '')
+    .toContain('holiday');
+
+  // openOwnFiles loads the page afresh, so the tag below comes from the server.
+  await openOwnFiles(workerPage, prefix, 1);
+  await clickUntil(cardOf(workerPage, renamed), previewOf(workerPage, renamed));
+  await expect(previewOf(workerPage, renamed).getByRole('button', { name: 'Remove holiday' })).toBeVisible();
+});
+
+test('an empty name is put back rather than saved', async ({ workerPage, workerRequest, corpus }) => {
+  const prefix = uniquePrefix('pv-noname');
+  const [uploaded] = await uploadOwnFiles(workerRequest, prefix, [corpus.file('notes.txt')]);
+  await openOwnFiles(workerPage, prefix, 1);
+  await clickUntil(cardOf(workerPage, uploaded!.title), previewOf(workerPage, uploaded!.title));
+
+  const nameField = previewOf(workerPage, uploaded!.title).getByRole('textbox', { name: 'Name' });
+  await nameField.fill('   ');
+  await nameField.press('Enter');
+  await expect(nameField).toHaveValue(uploaded!.title);
+});
+
+test('the card menu’s Rename opens the Preview with the name selected', async ({ workerPage, workerRequest, corpus }) => {
+  const prefix = uniquePrefix('pv-menurename');
+  const [uploaded] = await uploadOwnFiles(workerRequest, prefix, [corpus.file('notes.txt')]);
+  await openOwnFiles(workerPage, prefix, 1);
+  await openCardMenu(workerPage, uploaded!.title);
+  await workerPage.getByRole('menuitem', { name: 'Rename' }).click();
+
+  const nameField = previewOf(workerPage, uploaded!.title).getByRole('textbox', { name: 'Name' });
+  await expect(nameField).toBeFocused();
+  // Typing replaces the whole selected name.
+  await workerPage.keyboard.type(`${prefix} typed.txt`);
+  await workerPage.keyboard.press('Enter');
+  await expect(previewOf(workerPage, `${prefix} typed.txt`)).toBeVisible();
 });

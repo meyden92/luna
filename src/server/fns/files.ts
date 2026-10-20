@@ -3,7 +3,6 @@ import { z } from 'zod';
 import {
   countGallery,
   type GalleryFilters,
-  getFileMetadata,
   getOwnedFile,
   listGallery,
   moveFilesToFolder,
@@ -15,7 +14,6 @@ import { getCdnUrl } from '@/libs/runtime-config';
 import { deleteFilesSchema, editFileSchema, moveFilesToFolderSchema } from '@/schemas/file-schema';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
-import type { GalleryFile } from '@/types/project';
 
 export const deleteFiles = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'user' }))
@@ -49,11 +47,6 @@ const setFilePrivacySchema = z.object({ fileId: z.string(), isPrivate: z.boolean
 /**
  * Change only whether a link works for anyone, from the card menu, the Preview
  * switch, or an upload that asked for "Only me".
- *
- * Separate from `updateFile`, which needs the title and tags too: sending those
- * back just to flip a boolean would overwrite whatever another tab had changed
- * in the meantime. Note `editFileSchema`'s `visible` field is really the private
- * flag; this one says what it means.
  */
 export const setFilePrivacy = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'user' }))
@@ -75,57 +68,25 @@ export const setFilePrivacy = createServerFn({ method: 'POST' })
     return { id: result.id, isPrivate: result.private };
   });
 
+/**
+ * Rename or retag a file from the Preview. Each field is sent on its own, so a
+ * rename cannot put back tags another tab has just changed, and the reverse.
+ */
 export const updateFile = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'user' }))
   .validator(editFileSchema)
-  .handler(async ({ data, context }): Promise<GalleryFile> => {
+  .handler(async ({ data, context }): Promise<{ id: string; title: string; tags: string }> => {
     const userId = userIdFromCtx(context);
-    const fileInfo = await getOwnedFile(data.id, userId);
-    if (!fileInfo) {
-      throw new Error('Not authorized to update this file info');
-    }
-
-    // Sync S3 first so a storage failure can't leave the DB claiming a
-    // privacy state the object doesn't actually have.
-    if (fileInfo.private !== data.visible) {
-      const { fileS3Key, setObjectPrivacy } = await import('@/libs/S3Helper');
-      await setObjectPrivacy(fileS3Key(fileInfo.ownerId, fileInfo.url), data.visible);
-    }
-
     const result = await updateOwnedFile(
       {
         id: data.id,
         ownerId: userId,
-        values: { tags: data.tags.join(','), title: data.title, private: data.visible },
-        metadata: data.lyrics !== undefined || data.artist !== undefined ? { artist: data.artist, lyrics: data.lyrics } : undefined,
+        values: { title: data.title, tags: data.tags?.join(',') },
       },
       userId,
     );
-    if (!result) throw new Error('Not authorized to update this file info');
-    const metadata = await getFileMetadata(result.id);
-
-    return {
-      id: result.id,
-      title: result.title || '',
-      createdAt: result.createdAt,
-      ownerId: result.ownerId,
-      folderId: result.folderId,
-      tags: result.tags || '',
-      url: result.url,
-      private: result.private,
-      size: result.size,
-      contentType: result.contentType,
-      isDeleted: result.isDeleted,
-      metadata: {
-        artist: metadata?.artist || '',
-        lyrics: metadata?.lyrics || '',
-        description: metadata?.description || '',
-        genre: metadata?.genre || '',
-        duration: metadata?.duration || 0,
-        width: metadata?.width ?? null,
-        height: metadata?.height ?? null,
-      },
-    };
+    if (!result) throw new Error('Not authorized to update this file');
+    return { id: result.id, title: result.title ?? '', tags: result.tags ?? '' };
   });
 
 // Accepts the client-side GalleryFilters shape directly (plus paging) so the

@@ -50,7 +50,29 @@ ENV BUILD_TIME=$BUILD_TIME
 # `sharp` loads native code at runtime. There is no code-generation step any
 # more: the Drizzle schema is ordinary TypeScript, so the build no longer needs
 # a database URL to produce a client (issue #46).
-RUN apk add --no-cache libc6-compat openssl vips
+# ffmpeg merges the separate video and audio streams yt-dlp downloads.
+RUN apk add --no-cache libc6-compat openssl vips ffmpeg
+
+# yt-dlp resolves a Source's post. This pins only the known-good baseline a
+# recreated container starts from; the "Update yt-dlp" task replaces the binary
+# in place, so /opt/yt-dlp belongs to `bun` (ADR 0007).
+ARG YT_DLP_VERSION=2026.08.19
+ARG TARGETARCH
+RUN set -eu; \
+    case "$TARGETARCH" in \
+      amd64) asset=yt-dlp_musllinux ;; \
+      arm64) asset=yt-dlp_musllinux_aarch64 ;; \
+      *) echo "unsupported TARGETARCH: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    base="https://github.com/yt-dlp/yt-dlp/releases/download/$YT_DLP_VERSION"; \
+    mkdir -p /tmp/yt-dlp /opt/yt-dlp; \
+    cd /tmp/yt-dlp; \
+    wget -q "$base/$asset" "$base/SHA2-256SUMS"; \
+    grep " $asset\$" SHA2-256SUMS | sha256sum -c -; \
+    install -m 755 "$asset" /opt/yt-dlp/yt-dlp; \
+    chown -R bun:bun /opt/yt-dlp; \
+    rm -rf /tmp/yt-dlp
+ENV PATH="/opt/yt-dlp:$PATH"
 
 # The oven/bun image ships a non-root `bun` user (uid 1000); reuse it rather
 # than creating another one.

@@ -1,10 +1,14 @@
+import { Link } from '@tanstack/react-router';
+import { ChevronRightIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Progress } from '@/components/ui/progress';
 import { useAppMutation } from '@/hooks/use-app-mutation';
-import type { Download, DownloadStatus, Video, VideoStatus } from '@/libs/downloads/types';
+import type { Download, DownloadError, DownloadStatus, Video, VideoStatus } from '@/libs/downloads/types';
 import { queryKeys } from '@/libs/query-keys';
 import { cn, formatSize } from '@/libs/utils';
 import { removeDownload } from '@/server/fns/downloads';
@@ -85,7 +89,7 @@ export function DownloadCard({ download, highlighted = false }: { download: Down
         )}
 
         {/* Without videos, the Download's own error is the only explanation. */}
-        {download.error && download.videos.length === 0 && <p className={styles.error}>{download.error.message}</p>}
+        {download.error && download.videos.length === 0 && <ErrorAlert error={download.error} />}
 
         <div className={styles.actions}>
           <Button
@@ -151,9 +155,41 @@ function VideoItem({ downloadId, video, numbered, saveable }: { downloadId: stri
         </>
       )}
 
-      {video.status === 'failed' && video.error && <p className={styles.error}>{video.error.message}</p>}
+      {video.status === 'failed' && video.error && <ErrorAlert error={video.error} />}
 
       {(video.status === 'pending' || video.status === 'preparing') && <p className={styles.meta}>{VIDEO_STATUS_LABEL[video.status]}</p>}
     </>
+  );
+}
+
+// A failed Download or video: its category's message, a link to the Tasks screen
+// when yt-dlp may need updating, and yt-dlp's last output lines behind Details.
+function ErrorAlert({ error }: { error: DownloadError }) {
+  return (
+    <Alert variant="destructive">
+      <AlertDescription>
+        <p>{error.message}</p>
+        {error.category === 'unrecognised' && <Link to="/admin/tasks">Open Tasks</Link>}
+      </AlertDescription>
+      {error.detail && (
+        <Collapsible>
+          <CollapsibleTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="sm"
+                className={styles.disclosure}
+              />
+            }
+          >
+            <ChevronRightIcon />
+            Details
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <pre className={styles.detail}>{error.detail}</pre>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+    </Alert>
   );
 }

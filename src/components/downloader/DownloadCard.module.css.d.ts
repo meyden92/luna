@@ -3,7 +3,8 @@ declare const styles: {
   readonly "body": string;
   readonly "caption": string;
   readonly "card": string;
-  readonly "error": string;
+  readonly "detail": string;
+  readonly "disclosure": string;
   readonly "highlighted": string;
   readonly "meta": string;
   readonly "postLink": string;

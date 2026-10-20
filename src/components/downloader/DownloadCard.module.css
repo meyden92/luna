@@ -76,8 +76,25 @@
     line-height: var(--leading-xs);
   }
 
-  .error {
-    color: var(--destructive);
+  /* Flush trigger so Details reads as a link under the error message. */
+  .disclosure {
+    height: auto;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* yt-dlp's last output lines: long URLs scroll instead of stretching the card. */
+  .detail {
+    max-height: 16rem;
+    overflow: auto;
+    margin-top: var(--space-2);
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background-color: color-mix(in oklab, var(--muted) 50%, transparent);
+    color: var(--foreground);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: var(--leading-xs);
   }
 
   .actions {

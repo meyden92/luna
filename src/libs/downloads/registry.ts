@@ -100,20 +100,27 @@ function begin(download: Download): void {
   });
 }
 
-// After a timeout: every video that isn't ready fails, and the Download settles
-// by the usual rules, or fails outright when the post was never resolved.
+// After a timeout: the killed video and every video still pending fail, and the
+// Download settles by the usual rules, or fails outright when the post was never
+// resolved. Videos that failed earlier keep their own error. The timeout replaces
+// whatever the killed run was categorised as, but keeps its output as the detail.
 function failUnfinished(download: Download): void {
-  const error: DownloadError = { category: 'unrecognised', message: 'Timed out after 10 minutes', detail: '' };
+  const timedOut = (previous?: DownloadError): DownloadError => ({
+    category: 'unrecognised',
+    message: 'Timed out after 10 minutes',
+    detail: previous?.detail ?? '',
+  });
+  const killed = download.currentIndex;
   download.currentIndex = undefined;
   if (download.videos.length === 0) {
     download.status = 'failed';
-    download.error = error;
+    download.error = timedOut(download.error);
     return;
   }
   for (const video of download.videos) {
-    if (video.status === 'ready') continue;
+    if (video.status === 'ready' || (video.status === 'failed' && video.index !== killed)) continue;
     video.status = 'failed';
-    video.error = error;
+    video.error = timedOut(video.error);
   }
   download.error = undefined;
   settle(download);

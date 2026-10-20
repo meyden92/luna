@@ -18,7 +18,7 @@ export interface Video {
   status: VideoStatus;
   /** 0–100. */
   progress: number;
-  /** `<account>_<shortcode>.mp4`, the name Save hands the browser. */
+  /** `<account>_<shortcode>.mp4`, or `<account>_<shortcode>_<n>.mp4` when the post has several videos: the name Save hands the browser. */
   filename: string;
   width?: number;
   height?: number;
@@ -37,7 +37,9 @@ export interface Download {
   caption?: string;
   status: DownloadStatus;
   videos: Video[];
-  /** Set when the post could not be resolved as a whole. */
+  /** The `index` of the video being prepared, for the "video n of m" label. */
+  currentIndex?: number;
+  /** Set when the post could not be resolved as a whole, or when every video failed for the same reason. */
   error?: DownloadError;
   createdAt: Date;
   readyAt?: Date;

@@ -6,6 +6,10 @@ declare const styles: {
   readonly "meta": string;
   readonly "postLink": string;
   readonly "preview": string;
+  readonly "progress": string;
+  readonly "video": string;
+  readonly "videoTitle": string;
+  readonly "videos": string;
 };
 export = styles;
 

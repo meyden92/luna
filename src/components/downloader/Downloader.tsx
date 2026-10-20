@@ -32,7 +32,7 @@ export function Downloader() {
     <div className={styles.root}>
       <header className={styles.header}>
         <h1 className="type-2xl weight-bold">Downloader</h1>
-        <p className={styles.lede}>Paste a link to an Instagram reel or video post to save its video.</p>
+        <p className={styles.lede}>Paste a link to an Instagram reel, video post or carousel to save its videos.</p>
       </header>
 
       <Card>

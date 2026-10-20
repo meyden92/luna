@@ -12,6 +12,9 @@ type DefaultTask = {
   args?: JsonValue;
 };
 
+// Also run once at boot by the `init-tasks` Nitro plugin.
+export const UPDATE_YT_DLP_TASK_NAME = 'Update yt-dlp';
+
 const DEFAULT_TASKS: DefaultTask[] = [
   {
     name: 'delete-expired-sessions',
@@ -42,6 +45,15 @@ const DEFAULT_TASKS: DefaultTask[] = [
     // it to S3.
     timeout: 300000,
     maxRetries: 3,
+  },
+  {
+    name: UPDATE_YT_DLP_TASK_NAME,
+    description: 'Updates the yt-dlp binary in place so Downloads survive Source changes without a redeploy (ADR 0007)',
+    cronExpression: '0 4 * * *',
+    taskFunction: 'updateYtDlp',
+    timeout: 300000,
+    // The next daily run, or "Run now" from Tasks, is the retry.
+    maxRetries: 0,
   },
 ];
 

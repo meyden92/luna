@@ -47,6 +47,9 @@ export const queryKeys = {
   formShares: {
     all: ['form-shares'] as const,
   },
+  downloads: {
+    list: ['downloads', 'list'] as const,
+  },
   bins: {
     all: ['dashboard', 'bins'] as const,
     mine: ['dashboard', 'bins', 'mine'] as const,
@@ -119,6 +122,9 @@ export const queryKeys = {
     all: ['admin', 'global-variables'] as const,
     detail: (id: string) => ['admin', 'global-variables', id] as const,
     withUsage: ['admin', 'global-variables', 'with-usage'] as const,
+  },
+  adminSources: {
+    status: ['admin', 'sources', 'status'] as const,
   },
   adminRbac: {
     userGroups: (userId: string) => ['admin', 'rbac', 'users', userId, 'groups'] as const,

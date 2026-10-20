@@ -30,6 +30,7 @@ const TOOLS_LINKS = [
   { to: '/tools/audio', label: 'Audio' },
   { to: '/tools/converter', label: 'Converter' },
   { to: '/tools/video', label: 'Video editor' },
+  { to: '/tools/download', label: 'Downloader' },
 ] as const satisfies readonly { label: string; to: LinkTo }[];
 
 const NAV_LINKS: readonly NavEntry[] = [
@@ -57,7 +58,7 @@ function boxOf(element: HTMLElement | null): Box | null {
  * transition so the pill appears under the active link on first paint instead
  * of flying in from the left.
  */
-function NavLinks() {
+function NavLinks({ showAdmin }: { showAdmin: boolean }) {
   const { pathname } = useLocation();
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [active, setActive] = React.useState<Box | null>(null);
@@ -122,16 +123,19 @@ function NavLinks() {
                 <ChevronDown className={styles.chevron} />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
-                {link.children.map((child) => (
-                  <DropdownMenuItem key={child.to}>
-                    <Link
-                      to={child.to}
-                      className={styles.menuLink}
-                    >
-                      {child.label}
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
+                {link.children
+                  // The Downloader is admin-only; everyone else never sees its entry.
+                  .filter((child) => showAdmin || child.to !== '/tools/download')
+                  .map((child) => (
+                    <DropdownMenuItem key={child.to}>
+                      <Link
+                        to={child.to}
+                        className={styles.menuLink}
+                      >
+                        {child.label}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
               </DropdownMenuContent>
             </DropdownMenu>
           );
@@ -211,7 +215,7 @@ function AppNav({ canAccessAdmin = false }: { canAccessAdmin?: boolean }) {
         />
       </Link>
 
-      <NavLinks />
+      <NavLinks showAdmin={showAdmin} />
 
       <div className={styles.actions}>
         <Button

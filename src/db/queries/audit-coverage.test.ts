@@ -42,21 +42,23 @@ async function loadModules() {
       import('../schema/automation'),
       import('../schema/analytics'),
     ]);
-  const [admin, auth, rbac, ai, files, folders, features, flows, moderation, tasks, uploads, delivery, analytics] = await Promise.all([
-    import('./admin'),
-    import('./auth'),
-    import('./rbac'),
-    import('./ai'),
-    import('./files'),
-    import('./folders'),
-    import('./features'),
-    import('./flows'),
-    import('./moderation'),
-    import('./tasks'),
-    import('./uploads'),
-    import('./delivery'),
-    import('./analytics'),
-  ]);
+  const [admin, auth, rbac, ai, files, folders, features, flows, moderation, tasks, uploads, delivery, analytics, sourceSessions] =
+    await Promise.all([
+      import('./admin'),
+      import('./auth'),
+      import('./rbac'),
+      import('./ai'),
+      import('./files'),
+      import('./folders'),
+      import('./features'),
+      import('./flows'),
+      import('./moderation'),
+      import('./tasks'),
+      import('./uploads'),
+      import('./delivery'),
+      import('./analytics'),
+      import('./source-sessions'),
+    ]);
   return {
     db: client.db,
     AUDITED_MODELS: audit.AUDITED_MODELS,
@@ -81,6 +83,7 @@ async function loadModules() {
     uploads,
     delivery,
     analytics,
+    sourceSessions,
   };
 }
 
@@ -602,6 +605,23 @@ describe.skipIf(!hasDatabase)('audited models: account, credentials and administ
 
     await M.auth.deleteOwnedToken({ id: created.id, userId: ownerId }, ownerId);
     await expectAudited('Token', 'delete', created.id);
+  });
+
+  test('SourceSession is audited on create, update and delete, without its value', async () => {
+    const sourceKey = `audit-test-${runId}`;
+    const values = ['first-secret', 'second-secret'].map((value) => `${value}-${runId}`);
+
+    const created = await M.sourceSessions.upsertSourceSession({ sourceKey, encryptedValue: values[0] as string }, ownerId);
+    await expectAudited('SourceSession', 'create', created.id);
+
+    await M.sourceSessions.upsertSourceSession({ sourceKey, encryptedValue: values[1] as string }, ownerId);
+    await expectAudited('SourceSession', 'update', created.id);
+
+    await M.sourceSessions.deleteSourceSession(sourceKey, ownerId);
+    await expectAudited('SourceSession', 'delete', created.id);
+
+    const rows = JSON.stringify(await db.select().from(auditLog).where(eq(auditLog.recordId, created.id)));
+    for (const value of values) expect(rows).not.toContain(value);
   });
 
   test('RbacGroup is audited on create and update, and UserGroupAssignment on create and delete', async () => {

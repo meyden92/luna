@@ -5,6 +5,7 @@ import { rescanImageDimensionsExecutor } from './rescan-image-dimensions';
 import { pruneFileRenditionsExecutor } from './selected-feature-maintenance';
 import { deleteExpiredSessionsExecutor } from './session-cleanup';
 import { testLoggerTask } from './test-logger';
+import { updateYtDlpExecutor } from './update-yt-dlp';
 
 const taskFunctionRegistry: TaskFunctionRegistry = {
   // deleteExpiredCache: deleteExpiredCacheExecutor, // Disabled as per new manual purge policy
@@ -13,6 +14,7 @@ const taskFunctionRegistry: TaskFunctionRegistry = {
   deleteExpiredSessions: deleteExpiredSessionsExecutor,
   pruneFileRenditions: pruneFileRenditionsExecutor,
   rescanImageDimensions: rescanImageDimensionsExecutor,
+  updateYtDlp: updateYtDlpExecutor,
 };
 
 export function getTaskFunction(name: string): TaskFunction | undefined {

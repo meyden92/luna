@@ -1,4 +1,4 @@
-import { Activity, FileImage, Gauge, MapIcon, ShieldAlert, Sparkles, User2, Variable, Zap } from 'lucide-react';
+import { Activity, FileImage, Gauge, Globe, MapIcon, ShieldAlert, Sparkles, User2, Variable, Zap } from 'lucide-react';
 
 export const adminDestinations = [
   {
@@ -30,6 +30,12 @@ export const adminDestinations = [
     to: '/admin/models',
     Icon: Sparkles,
     description: 'Configure AI generation models',
+  },
+  {
+    name: 'Sources',
+    to: '/admin/sources',
+    Icon: Globe,
+    description: 'Source sessions and the yt-dlp version behind the Downloader',
   },
   {
     name: 'Audits',

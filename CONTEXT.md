@@ -75,3 +75,23 @@ _Avoid_: Bin, paste, gist
 A rule that runs on a User's files by itself — sorting, tagging or hiding them
 when something happens. Read as a sentence, stored as a chain of steps.
 _Avoid_: Flow, workflow, rule engine
+
+## Downloads
+
+**Download**:
+A short-lived job, belonging to one User, that turns a link to a post on a Source
+into the one or more videos in that post, which the User saves to their device.
+A Download never includes a post's photos. It is never stored as one of
+their files and expires an hour after it is ready. Saving one of a User's own files
+is "downloading a file", a verb, never "a Download".
+_Avoid_: Grab, fetch, import, rip
+
+**Source**:
+A third-party website LunaShare can make a Download from, such as Instagram.
+_Avoid_: Provider, platform, host, site
+
+**Source session**:
+The signed-in session with one Source that LunaShare uses for every Download from
+it, set by an admin. Optional: without one, Downloads from that Source run
+logged out and some posts fail.
+_Avoid_: Cookies, login, credentials

@@ -9,6 +9,7 @@ File sharing and media platform built on TanStack Start.
 - [Bun](https://bun.sh) ≥ 1.2 — runtime, package manager and script runner
 - PostgreSQL 18 (or via `docker-compose.dev.yml`)
 - An S3-compatible object store
+- `yt-dlp` and `ffmpeg` on `PATH` for Downloads (`brew install yt-dlp ffmpeg`). The "Update yt-dlp" task fails on a package-managed install, which is harmless in dev
 
 ```bash
 curl -fsSL https://bun.sh/install | bash

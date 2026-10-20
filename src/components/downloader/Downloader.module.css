@@ -1,0 +1,43 @@
+@layer components {
+  .root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    max-width: 42rem;
+    margin-inline: auto;
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .lede {
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+  }
+
+  /* The link field takes the row; the button sits level with the input, not the label. */
+  .form {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-3);
+  }
+
+  .field {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+}

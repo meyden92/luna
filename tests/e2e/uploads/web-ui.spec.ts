@@ -74,9 +74,9 @@ test('one file uploaded from the sheet appears in Files with its size and dimens
   expect(stored.contentType).toBe('image/jpeg');
   expect(stored.folderId).toBeNull();
   expect(stored.private).toBe(false);
-  // The copied link is the file's view page.
+  // The copied link is the file's view page, with the extension Discord needs to inline an image.
   const origin = new URL(workerPage.url()).origin;
-  expect(await workerPage.evaluate(() => navigator.clipboard.readText())).toBe(`${origin}/view/${stored.id}`);
+  expect(await workerPage.evaluate(() => navigator.clipboard.readText())).toBe(`${origin}/view/${stored.id}.jpg`);
 });
 
 test('several files at once land in the open folder, each of its kind', async ({ workerPage, corpus, db, bucket }) => {

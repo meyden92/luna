@@ -11,6 +11,8 @@ import styles from './SelectionBar.module.css';
 
 type SelectionBarProps = {
   fileIds: string[];
+  /** The share links "Copy links" puts on the clipboard, one per selected file. */
+  links: string[];
   onClear: () => void;
   onDelete: () => void;
 };
@@ -22,12 +24,12 @@ type SelectionBarProps = {
  * sidebar does not push it visually off-centre, and its colours are inverted —
  * it is a temporary mode, and it should not read as part of the page.
  */
-function SelectionBar({ fileIds, onClear, onDelete }: SelectionBarProps) {
+function SelectionBar({ fileIds, links, onClear, onDelete }: SelectionBarProps) {
   const clipboard = useClipboard();
   const [preparing, setPreparing] = React.useState(false);
 
   const copyLinks = () => {
-    clipboard.copy(fileIds.map((id) => `${window.location.origin}/view/${id}`).join('\n'));
+    clipboard.copy(links.join('\n'));
     toast.success(fileIds.length === 1 ? 'Link copied' : `${fileIds.length} links copied`);
   };
 

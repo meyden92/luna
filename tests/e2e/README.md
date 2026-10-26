@@ -23,14 +23,15 @@ Chromium (`bun run test:e2e:install`). No `.env`, no dev database, no dev server
 
 `scripts/e2e/run.ts`, step by step (each step is logged with an `[e2e]` prefix):
 
-1. Removes anything a crashed run left behind (Compose projects named `lunashare-e2e-<runner pid>-*` whose runner process is gone). Stacks of runs still in progress are left alone.
-2. Picks free ports and generates every secret fresh.
-3. Builds the production `Dockerfile` from the working tree as `lunashare:e2e`.
-4. Starts Postgres and RustFS (`docker-compose.e2e.yml`), creates the bucket with an anonymous-read policy.
-5. Starts the app. Its entrypoint applies the migrations, as in a deployment.
-6. Bootstraps the admin the operator's way: a User row, then `auth:set-credentials` inside the app container.
-7. Runs Playwright with the stack described in `E2E_*` env vars (`stack-env.ts`).
-8. Removes the stack and its volumes, also after a failure, Ctrl-C or SIGTERM. The image and build cache stay.
+1. Refuses to start while another run in the same checkout is alive (`tests/e2e/.run.lock`): runs share `tests/e2e/.auth` and `test-results/`. Run concurrent suites from separate worktrees.
+2. Removes anything a crashed run left behind (Compose projects named `lunashare-e2e-<runner pid>-*` whose runner process is gone). Stacks of runs still in progress are left alone.
+3. Picks free ports and generates every secret fresh.
+4. Builds the production `Dockerfile` from the working tree as `lunashare:e2e`.
+5. Starts Postgres and RustFS (`docker-compose.e2e.yml`), creates the bucket with an anonymous-read policy.
+6. Starts the app. Its entrypoint applies the migrations, as in a deployment.
+7. Bootstraps the admin the operator's way: a User row, then `auth:set-credentials` inside the app container.
+8. Runs Playwright with the stack described in `E2E_*` env vars (`stack-env.ts`).
+9. Removes the stack and its volumes, also after a failure, Ctrl-C or SIGTERM. The image and build cache stay.
 
 The run exits with Playwright's exit code. Reports, traces, screenshots and
 videos stay in `playwright-report/` and `test-results/` after the stack is gone.

@@ -43,11 +43,11 @@ test('a public file without a viewer says so', async ({ page, gallery, db }) => 
   await expect(page.locator('video, audio, iframe, object, embed, img[alt="Shared image"]')).toHaveCount(0);
 });
 
-test('the embed snippet from the view page works inside an iframe', async ({ page, gallery, db }) => {
+test('the embed works inside an iframe on another page', async ({ page, baseURL, gallery, db }) => {
   const image = await servedFile(gallery, db, 'forest-path.jpg', { private: false });
-  await page.goto(`/view/${image.id}`);
-  const embedUrl = new URL(`/embed/${image.id}`, page.url()).toString();
+  const embedUrl = new URL(`/embed/${image.id}`, baseURL).toString();
 
+  // A blank host page: writing over an app page that is still hydrating races React (#192).
   await page.setContent(`<iframe src="${embedUrl}" width="640" height="360"></iframe>`);
   await expect(page.frameLocator('iframe').getByRole('img', { name: 'Shared image', exact: true })).toBeVisible();
 });

@@ -23,7 +23,7 @@ Chromium (`bun run test:e2e:install`). No `.env`, no dev database, no dev server
 
 `scripts/e2e/run.ts`, step by step (each step is logged with an `[e2e]` prefix):
 
-1. Removes anything a crashed run left behind (Compose projects named `lunashare-e2e-*`).
+1. Removes anything a crashed run left behind (Compose projects named `lunashare-e2e-<runner pid>-*` whose runner process is gone). Stacks of runs still in progress are left alone.
 2. Picks free ports and generates every secret fresh.
 3. Builds the production `Dockerfile` from the working tree as `lunashare:e2e`.
 4. Starts Postgres and RustFS (`docker-compose.e2e.yml`), creates the bucket with an anonymous-read policy.

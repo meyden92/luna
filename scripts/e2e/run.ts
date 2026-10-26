@@ -24,7 +24,8 @@ const BUCKET = 'lunashare-e2e';
 const ADMIN = { email: 'admin@lunashare.test', username: 'e2eadmin', name: 'E2E Admin' };
 const HEALTH_TIMEOUT_MS = 120_000;
 
-const project = `${PROJECT_PREFIX}${randomBytes(4).toString('hex')}`;
+/** Carries this runner's PID, so a later sweep can tell a live stack from a leftover. */
+const project = `${PROJECT_PREFIX}${process.pid}-${randomBytes(4).toString('hex')}`;
 
 /** The child in the foreground, so a signal can be forwarded to it. */
 let current: ReturnType<typeof Bun.spawn> | undefined;
@@ -61,10 +62,24 @@ async function output(cmd: string[]): Promise<string> {
   return text;
 }
 
+/** True while the runner that owns `name` is alive; another run's stack is not a leftover. */
+function ownerAlive(name: string): boolean {
+  const pid = Number(name.slice(PROJECT_PREFIX.length).split('-')[0]);
+  if (!Number.isInteger(pid) || pid <= 0) return true;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    // EPERM: the process exists but belongs to someone else.
+    return (error as NodeJS.ErrnoException).code !== 'ESRCH';
+  }
+}
+
 /**
  * Removes every resource left by an earlier run that never reached its own
- * teardown (`kill -9`, a sleeping laptop). Goes by the Compose project label
- * rather than `docker compose down`, which would need that run's env.
+ * teardown (`kill -9`, a sleeping laptop), skipping stacks whose runner is still
+ * alive. Goes by the Compose project label rather than `docker compose down`,
+ * which would need that run's env.
  */
 async function sweepLeftovers(): Promise<void> {
   const kinds = [
@@ -83,7 +98,7 @@ async function sweepLeftovers(): Promise<void> {
     const ids = lines
       .split('\n')
       .map((line) => line.trim().split(' '))
-      .filter(([id, name]) => id && name?.startsWith(PROJECT_PREFIX))
+      .filter(([id, name]) => id && name?.startsWith(PROJECT_PREFIX) && !ownerAlive(name))
       .map(([id]) => id!);
     if (ids.length > 0) {
       log(`sweeping ${ids.length} leftover ${list[1] === 'ps' ? 'container' : list[1]}(s)`);

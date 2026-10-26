@@ -9,6 +9,7 @@
  * Compose gets `--env-file /dev/null`. Exits with Playwright's exit code.
  */
 import { randomBytes, randomUUID } from 'node:crypto';
+import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { resolve } from 'node:path';
 import { CreateBucketCommand, PutBucketCorsCommand, PutBucketPolicyCommand, S3Client } from '@aws-sdk/client-s3';
@@ -23,8 +24,11 @@ const PROJECT_PREFIX = 'lunashare-e2e-';
 const BUCKET = 'lunashare-e2e';
 const ADMIN = { email: 'admin@lunashare.test', username: 'e2eadmin', name: 'E2E Admin' };
 const HEALTH_TIMEOUT_MS = 120_000;
+/** One run per checkout: runs share tests/e2e/.auth and test-results/, so a second one would clobber the first. */
+const LOCK_FILE = resolve(ROOT, 'tests/e2e/.run.lock');
 
-const project = `${PROJECT_PREFIX}${randomBytes(4).toString('hex')}`;
+/** Carries this runner's PID, so a later sweep can tell a live stack from a leftover. */
+const project = `${PROJECT_PREFIX}${process.pid}-${randomBytes(4).toString('hex')}`;
 
 /** The child in the foreground, so a signal can be forwarded to it. */
 let current: ReturnType<typeof Bun.spawn> | undefined;
@@ -61,10 +65,44 @@ async function output(cmd: string[]): Promise<string> {
   return text;
 }
 
+function pidAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    // EPERM: the process exists but belongs to someone else.
+    return (error as NodeJS.ErrnoException).code !== 'ESRCH';
+  }
+}
+
+/** True while the runner that owns `name` is alive; another run's stack is not a leftover. */
+function ownerAlive(name: string): boolean {
+  const pid = Number(name.slice(PROJECT_PREFIX.length).split('-')[0]);
+  return !Number.isInteger(pid) || pid <= 0 || pidAlive(pid);
+}
+
+/** Exits if another run in this checkout is still alive; otherwise takes the lock until this process exits. */
+function lockCheckout(): void {
+  try {
+    writeFileSync(LOCK_FILE, String(process.pid), { flag: 'wx' });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+    const holder = Number(readFileSync(LOCK_FILE, 'utf8'));
+    if (Number.isInteger(holder) && holder > 0 && pidAlive(holder)) {
+      console.error(`Another e2e run (pid ${holder}) is using this checkout. Wait for it, or run from a separate worktree.`);
+      process.exit(1);
+    }
+    // Left by a run that died without its exit handler.
+    writeFileSync(LOCK_FILE, String(process.pid));
+  }
+  process.on('exit', () => rmSync(LOCK_FILE, { force: true }));
+}
+
 /**
  * Removes every resource left by an earlier run that never reached its own
- * teardown (`kill -9`, a sleeping laptop). Goes by the Compose project label
- * rather than `docker compose down`, which would need that run's env.
+ * teardown (`kill -9`, a sleeping laptop), skipping stacks whose runner is still
+ * alive. Goes by the Compose project label rather than `docker compose down`,
+ * which would need that run's env.
  */
 async function sweepLeftovers(): Promise<void> {
   const kinds = [
@@ -83,7 +121,7 @@ async function sweepLeftovers(): Promise<void> {
     const ids = lines
       .split('\n')
       .map((line) => line.trim().split(' '))
-      .filter(([id, name]) => id && name?.startsWith(PROJECT_PREFIX))
+      .filter(([id, name]) => id && name?.startsWith(PROJECT_PREFIX) && !ownerAlive(name))
       .map(([id]) => id!);
     if (ids.length > 0) {
       log(`sweeping ${ids.length} leftover ${list[1] === 'ps' ? 'container' : list[1]}(s)`);
@@ -231,6 +269,8 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     process.exit(signal === 'SIGINT' ? 130 : 143);
   });
 }
+
+lockCheckout();
 
 let exitCode = 1;
 try {

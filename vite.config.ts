@@ -42,7 +42,7 @@ export default defineConfig({
     // deploy target needs something else (e.g. `node-server` for Node hosts).
     nitro({
       preset: process.env.NITRO_PRESET ?? 'bun',
-      plugins: ['./src/server/nitro/init-tasks.ts'],
+      plugins: ['./src/server/nitro/init-tasks.ts', './src/server/nitro/keep-alive.ts'],
     }),
     viteReact(),
   ],

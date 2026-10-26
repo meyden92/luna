@@ -337,7 +337,8 @@ describe.skipIf(!hasDatabase)('LIKE metacharacters in user input are escaped, no
 type Emitted = { sql: string; params: unknown[] };
 type QueryBuilder = Record<string, unknown> & { toSQL: () => Emitted };
 type SelectHandle = { select: (fields: unknown) => { from: (source: unknown) => QueryBuilder } };
-type PoolClient = { $client: { query: (text: string, values: unknown[]) => Promise<{ rows: Record<string, string>[] }> } };
+type Connection = { query: (text: string, values?: unknown[]) => Promise<{ rows: Record<string, string>[] }>; release: () => void };
+type PoolClient = { $client: { connect: () => Promise<Connection> } };
 type GalleryFilters = Parameters<typeof M.files.listGallery>[1];
 type GalleryHandle = Parameters<typeof M.files.listGallery>[2];
 
@@ -372,12 +373,26 @@ describe.skipIf(!hasDatabase)('the gallery listing stays on its composite index'
     await M.files.listGallery(ownerId, filters, capturing as unknown as GalleryHandle);
     if (!captured) throw new Error('listGallery emitted no query');
 
-    const { $client } = db as unknown as PoolClient;
-    const explained = await $client.query(`EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF) ${captured.sql}`, captured.params);
-    return explained.rows.map((row) => row['QUERY PLAN']).join('\n');
+    // On a small dev database a scan plus sort is genuinely cheapest, so the plan
+    // would measure the row count rather than the access path. Penalising those
+    // nodes leaves the question this block asks: can the query use the composite
+    // index, ordering and cursor included? A disabled node is only penalised, not
+    // forbidden, so a query the index cannot serve still plans a Sort.
+    const connection = await (db as unknown as PoolClient).$client.connect();
+    try {
+      await connection.query('BEGIN');
+      await connection.query('SET LOCAL enable_seqscan = off');
+      await connection.query('SET LOCAL enable_bitmapscan = off');
+      await connection.query('SET LOCAL enable_sort = off');
+      const explained = await connection.query(`EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF, SUMMARY OFF) ${captured.sql}`, captured.params);
+      return explained.rows.map((row) => row['QUERY PLAN']).join('\n');
+    } finally {
+      await connection.query('ROLLBACK');
+      connection.release();
+    }
   }
 
-  /** The owner holding the migrated production files — 4,184 of the 4,230. */
+  /** The owner holding the most files, so the plan has rows to choose between. */
   async function busiestOwner() {
     const [row] = await db
       .select({ ownerId: M.file.ownerId, files: count() })

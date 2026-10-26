@@ -132,7 +132,11 @@ class SharexPacer {
   /** Resolves when a request may go out; call the returned function once its response is back. */
   async acquire(): Promise<() => void> {
     for (;;) {
-      await this.opening;
+      // Re-checked after waking: the lanes must not both see a window as expired and both open it.
+      if (this.opening) {
+        await this.opening;
+        continue;
+      }
       const now = Date.now();
       if (now >= this.windowStart + SharexPacer.WINDOW_MS) {
         this.count = 1;

@@ -1,25 +1,26 @@
 import { X } from 'lucide-react';
 import { useState } from 'react';
-import { MAX_TAGS_PER_STEP } from '@/libs/flows/linear-flow';
 import styles from './TagChipInput.module.css';
 
 type TagChipInputProps = {
   tags: string[];
   onChange: (tags: string[]) => void;
+  /** No more tags can be added past this many; unlimited when absent. */
+  max?: number;
 };
 
 /**
- * The tag field of an "Add tags" step: committed tags as removable chips, then a
- * bare input. Enter or a comma commits, Backspace on an empty input takes the
- * last chip back, and blurring commits whatever is half-typed so a tag is never
- * lost by clicking away.
+ * A tag field: committed tags as removable chips, then a bare input. Used by an
+ * automation's "Add tags" step and the Preview's tag row. Enter or a comma
+ * commits, Backspace on an empty input takes the last chip back, and blurring
+ * commits whatever is half-typed so a tag is never lost by clicking away.
  *
  * Tags are lowercased and de-duplicated here because that is how the runner
  * stores them (`mergeTags` in src/libs/flows/run-flow.ts).
  */
-function TagChipInput({ tags, onChange }: TagChipInputProps) {
+function TagChipInput({ tags, onChange, max }: TagChipInputProps) {
   const [draft, setDraft] = useState('');
-  const full = tags.length >= MAX_TAGS_PER_STEP;
+  const full = max !== undefined && tags.length >= max;
 
   const commit = () => {
     const tag = draft.trim().toLowerCase();

@@ -19,6 +19,7 @@ export type PreviewFile = {
   createdAt: Date | string;
   isPrivate: boolean;
   folderId: string | null;
+  tags: string[];
   /** The storage key, which with the owner id gives the CDN address. */
   url: string;
   ownerId: string;

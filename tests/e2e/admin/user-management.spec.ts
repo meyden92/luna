@@ -127,8 +127,11 @@ test('adding a user to the Admin group opens /admin for it, removing it closes /
   await expect(device.getByRole('heading', { name: 'Admin Panel' })).toBeVisible();
 
   await adminGroup.uncheck();
+  // The first save's toast can still be on screen, so it proves nothing here.
+  // Wait for the revoke itself to commit before the device asks for /admin.
+  const revoked = adminPage.waitForResponse((response) => response.request().method() === 'POST' && response.url().includes('/_serverFn/'));
   await save.click();
-  await expect(adminPage.getByText('User groups updated').last()).toBeVisible();
+  expect((await revoked).ok()).toBe(true);
   await expect(adminGroup).not.toBeChecked();
 
   await device.goto('/admin');

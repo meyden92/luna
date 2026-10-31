@@ -116,25 +116,43 @@ async function setUploadFolder(page: Page, folder: GalleryFolder | null): Promis
 /**
  * Keeps ShareX uploads inside `uploadSharex`'s limit: a fixed window of 60
  * requests per user, starting at the first request after the previous window
- * ran out. The client cannot see the server's window start, which is a little
- * later than its own, so it waits a margin past the end.
+ * ran out. The server stamps that start only after parsing the form and the
+ * token, which under load lags the send by seconds, so the client dates its
+ * window from the first request's response instead: always at or after the
+ * server's stamp. The margin covers the clock gap between host and container.
  */
 class SharexPacer {
   private static readonly MAX = 60;
   private static readonly WINDOW_MS = 60_000 + 2_000;
   private windowStart = 0;
   private count = 0;
+  /** Set while the request that opens a window is in flight, so its start is not yet known. */
+  private opening: Promise<void> | undefined;
 
-  async acquire(): Promise<void> {
+  /** Resolves when a request may go out; call the returned function once its response is back. */
+  async acquire(): Promise<() => void> {
     for (;;) {
+      // Re-checked after waking: the lanes must not both see a window as expired and both open it.
+      if (this.opening) {
+        await this.opening;
+        continue;
+      }
       const now = Date.now();
       if (now >= this.windowStart + SharexPacer.WINDOW_MS) {
-        this.windowStart = now;
-        this.count = 0;
+        this.count = 1;
+        let opened!: () => void;
+        this.opening = new Promise((resolve) => {
+          opened = resolve;
+        });
+        return () => {
+          this.windowStart = Date.now();
+          this.opening = undefined;
+          opened();
+        };
       }
       if (this.count < SharexPacer.MAX) {
         this.count += 1;
-        return;
+        return () => {};
       }
       await new Promise((resolve) => setTimeout(resolve, this.windowStart + SharexPacer.WINDOW_MS - now));
     }
@@ -146,10 +164,11 @@ async function uploadTwoAtATime(request: APIRequestContext, pacer: SharexPacer, 
   const queue = [...uploads];
   const lane = async () => {
     for (let upload = queue.shift(); upload; upload = queue.shift()) {
-      await pacer.acquire();
+      const answered = await pacer.acquire();
       const response = await request.post('/api/upload/sharex', {
         multipart: { file: { name: upload.title, mimeType: upload.source.mimeType, buffer: readFileSync(upload.source.path) } },
       });
+      answered();
       expect(response.status(), `${upload.title}: ${await response.text()}`).toBe(200);
     }
   };

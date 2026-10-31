@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { expect, type Page } from '@playwright/test';
 import { test } from '../fixtures/test';
 import { fixtureUser } from '../fixtures/users';
-import { clickUntil } from '../utils/hydration';
+import { clickUntil, untilHydrated } from '../utils/hydration';
 import { servedFile } from '../utils/served-files';
 import { submitLoginForm } from '../utils/sign-in';
 
@@ -139,6 +139,17 @@ test.describe('a public file', () => {
     await expect(code).toHaveAttribute('src', /^data:image\/png;base64,/);
     await expect(code).toHaveJSProperty('naturalWidth', 256);
     await expect(dialog.getByText(page.url(), { exact: true })).toBeVisible();
+  });
+
+  test('the page hydrates without a page error', async ({ page, gallery, db }) => {
+    // A hydration mismatch makes React re-render the whole document, which races anything a spec does next (#192).
+    const image = await servedFile(gallery, db, 'forest-path.jpg', { private: false });
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto(`/view/${image.id}`);
+
+    await untilHydrated(page.getByRole('button', { name: 'Embed' }));
+    expect(errors).toEqual([]);
   });
 
   test('the embed dialog gives a snippet that embeds the file', async ({ page, gallery, db }) => {

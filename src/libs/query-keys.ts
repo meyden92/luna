@@ -123,6 +123,9 @@ export const queryKeys = {
     detail: (id: string) => ['admin', 'global-variables', id] as const,
     withUsage: ['admin', 'global-variables', 'with-usage'] as const,
   },
+  adminVersion: {
+    info: ['admin', 'version'] as const,
+  },
   adminSources: {
     status: ['admin', 'sources', 'status'] as const,
   },

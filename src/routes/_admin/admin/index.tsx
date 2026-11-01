@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { adminDestinations } from '@/components/admin/admin-destinations';
+import { VersionCard } from '@/components/admin/version/version-card';
 import styles from './index.module.css';
 
 export const Route = createFileRoute('/_admin/admin/')({
@@ -24,6 +25,7 @@ function AdminIndexPage() {
           </Link>
         ))}
       </div>
+      <VersionCard />
     </div>
   );
 }

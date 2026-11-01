@@ -58,6 +58,8 @@ Insert it in `CHANGELOG.md` above the newest `## v…` entry:
 ```markdown
 ## v4.7.0 (2026-11-02)
 
+**<release title>**
+
 <intro>
 
 ### ✨ New
@@ -71,7 +73,13 @@ Implemented in #…
 
 Leave out sections with nothing in them, except **Upgrade**, which is always there.
 
-The voice is a Discord changelog: a cheeky one- or two-line intro that sums up the release, then bullets with a bold lead-in and a joke where one fits. The humour rides on top of facts: every bullet still says exactly what changed, where it lives in the app (path, menu, button name) and any limit a user will hit. A bullet that is funny but vague has failed. Under the hood is for tests, CI and refactors, kept short.
+The voice is a Discord changelog: written by a friend who is having fun, not by a release manager.
+
+- **Release title:** a bold one-liner that names the release like an episode ("The One Where Discord Stops Framing Our Images"). Puns, pop culture and mild self-roast are all welcome.
+- **Intro:** two or three sentences talking to the reader as "you", with "we" for the team, saying what this release is about and why anyone should care.
+- **Items** are short paragraphs, not dry bullets: an emoji, a bold headline with a joke or a pun in it, then one to three sentences in plain speech. Lead with what the user can now do or no longer suffers from, and leave how it was built to Under the hood.
+- **Every item still carries its facts:** what changed, where it lives (path, menu, button name) and any limit a user will hit. A joke that hides the fact has failed. Specific beats generic: "Esc means never mind" beats "improved keyboard handling".
+- **Under the hood** is the one place for tests, CI, refactors and dependencies, a line each, still allowed a wink.
 
 **Upgrade is deadpan.** Someone deploys from it, so it is plain instructions: each migration by folder name with what it does and `bun run db:migrate`, each env variable to add, rename or remove, or "No migrations and no new environment variables." End it with the standing line: "The vX.Y.Z tag triggers the GHCR image build and publishes the versioned and latest tags. Deployment is still manual."
 
@@ -82,16 +90,23 @@ Example of the voice (one release, trimmed):
 ```markdown
 ## v4.6.0 (2026-10-31)
 
-Discord finally stopped wrapping our images in a link-preview sandwich. Also: you can rename files again, like a civilised person.
+**The One Where Discord Stops Framing Our Images**
+
+You paste a picture into Discord, Discord shows you the picture. Revolutionary, we know. Also, files can be renamed again, so `IMG_4821.png` can finally become something with dignity.
 
 ### ✨ New
 
-- **Images go straight into Discord:** share links for public JPG, PNG, GIF and WebP files now end in their extension (`/view/<id>.jpg`), so Discord shows just the picture, no card. Browsers still get the normal share page and old links keep working. Discord caches per URL, so paste a fresh link to see it.
-- **Rename and retag from the Preview:** Name and Tags fields now sit above Folder. Enter saves, Esc regrets. The card's ⋯ menu has a **Rename** item that jumps straight there.
+🖼️ **Pictures, not postcards.** Share links for public JPG, PNG, GIF and WebP files now end in their extension (`/view/<id>.jpg`), so Discord shows just the image instead of a link-preview card wrapped around it. Browsers still get the normal share page and old links keep working. Discord remembers every URL it has seen, so paste a fresh link to see the difference.
+
+✏️ **Name it, tag it, move on.** The Preview has Name and Tags fields above Folder. Enter saves, Esc means never mind, and tags save the moment you add or remove them. The ⋯ menu on a card got a **Rename** item that drops you right into the name field.
 
 ### 🐛 Fixed
 
-- **Fewer ghosted connections:** the server sends `Keep-Alive: timeout=5`, so clients hang up before we do instead of talking into a closed socket.
+🔌 **No more talking to a hung-up phone.** The server now sends `Keep-Alive: timeout=5`, so clients close idle connections before we do instead of sending requests into the void.
+
+### 🧪 Under the hood
+
+Parallel e2e runs stopped tearing down each other's stacks, and three flaky specs got their nerves fixed.
 
 ### ⬆️ Upgrade
 
@@ -104,7 +119,7 @@ Implemented in #200 (for #58), #196 (for #101) and #213 (for #123, #192).
 
 Run the `unslop` skill over the draft before showing it.
 
-**Done when** every change from step 2 appears in exactly one bullet and the Upgrade section lists every migration and env change you found.
+**Done when** every change from step 2 appears in exactly one item and the Upgrade section lists every migration and env change you found.
 
 ## 5. Get the go-ahead
 

@@ -1,44 +1,50 @@
 # Changelog
 
-Every LunaShare release, newest first. Versions up to v4.7.0 were copied from their GitHub releases, or from the tag message where no release exists.
+Every LunaShare release, newest first. Entries up to v4.7.0 were rewritten from their GitHub releases, or from the tag message where no release exists.
 
 ## v4.7.0 (2026-11-01)
 
-The admin panel now shows which version is running and whether a newer release exists.
+**Are We There Yet?**
 
-### Highlights
+LunaShare now knows which version it is, and it will tell you when a newer one is out. No more checking GitHub at 2am to find out whether you're behind.
 
-- **Version card on the admin start page** (`/admin`): shows the running release and commit, plus the latest release on GitHub with a link to its notes. An "Update available" badge appears when a newer release exists.
-- **No token needed:** the check uses GitHub's public API, and the result is cached for 6 hours. If GitHub can't be reached, the card says so instead of claiming you are up to date.
+### ✨ New
 
-### Fixed
+🏷️ **A name tag for your instance.** The admin start page (`/admin`) has a version card showing the running release and commit, next to the latest release on GitHub with a link to its notes. When something newer exists, an "Update available" badge says so, politely but firmly.
 
-- **Build time:** `BUILD_TIME` in the image (and in `/api/health`) now holds when the image was built. It used to hold when the repository was last updated.
+🔓 **No token, no fuss.** The check uses GitHub's public API and caches the answer for 6 hours. If GitHub can't be reached, the card says exactly that instead of pretending you're up to date.
 
-### Upgrade
+### 🐛 Fixed
+
+⏰ **Build time means build time.** `BUILD_TIME` in the image (and in `/api/health`) now holds when the image was built, not when the repository was last touched.
+
+### ⬆️ Upgrade
 
 No migration and no new environment variables. Images from this release onward carry their version. Older images show `dev`.
 
 ## v4.6.0 (2026-10-31)
 
-Images now show inline in Discord, and files can be renamed and retagged from the Preview again.
+**The One Where Discord Stops Framing Our Images**
 
-### Highlights
+You paste a picture into Discord, Discord shows you the picture. Revolutionary, we know. Also, files can be renamed again, so `IMG_4821.png` can finally become something with dignity.
 
-- **Inline images in Discord:** share links of public JPG, PNG, GIF and WebP files now end in their extension (`/view/<id>.jpg`). Pasted into Discord, they show only the image, with no link-preview card. Browsers still get the normal share page, and old links without an extension keep working. Videos and private files keep the card. Discord caches embeds per URL, so paste a fresh link to see the change.
-- **Rename and retag from the Preview:** the Preview panel has Name and Tags fields above Folder. The name saves on Enter or when the field loses focus, Esc cancels, and an empty name is put back. Each tag saves as it is added or removed. The card's ⋯ menu has a new **Rename** item that opens the Preview with the name selected. The old, unreachable edit dialog is gone.
+### ✨ New
 
-### Fixed
+🖼️ **Pictures, not postcards.** Share links for public JPG, PNG, GIF and WebP files now end in their extension (`/view/<id>.jpg`), so Discord shows just the image instead of a link-preview card wrapped around it. Browsers still get the normal share page and old links keep working. Videos and private files keep the card. Discord remembers every URL it has seen, so paste a fresh link to see the difference.
 
-- **Fewer dropped connections:** the server now sends `Keep-Alive: timeout=5`, so clients that reuse connections close them before the server does. Browsers ignore the header, and proxies drop it.
+✏️ **Name it, tag it, move on.** The Preview has Name and Tags fields above Folder. Enter or clicking away saves the name, Esc means never mind, and an empty name quietly puts the old one back. Tags save the moment you add or remove them. The ⋯ menu on a card got a **Rename** item that drops you right into the name field. The old edit dialog that nobody could reach anyway is gone.
 
-### Test suite
+### 🐛 Fixed
 
-- Concurrent e2e runs no longer tear down each other's stacks, and a second run in the same checkout is refused with a hint to use a worktree.
-- Fixed flaky specs: the embed iframe, the Admin-group revoke, and the gallery setup's ShareX rate-limit pacing.
-- The index-plan tests in `collation.test.ts` no longer depend on how many rows the dev database holds.
+🔌 **No more talking to a hung-up phone.** The server now sends `Keep-Alive: timeout=5`, so clients close idle connections before we do instead of sending requests into the void. Browsers ignore the header and proxies drop it, so nobody else notices.
 
-### Upgrade
+### 🧪 Under the hood
+
+- Parallel e2e runs stopped tearing down each other's stacks, and a second run in the same checkout is turned away with a hint to use a worktree.
+- The embed iframe and Admin-group revoke specs got their nerves fixed, and the gallery setup paces its ShareX uploads properly.
+- The index-plan tests in `collation.test.ts` no longer care how many rows your dev database holds.
+
+### ⬆️ Upgrade
 
 No migrations and no new environment variables.
 
@@ -48,13 +54,15 @@ Implemented in #200 (for #58), #196 (for #101) and #213 (for #123, #192, #195, #
 
 ## v4.5.1 (2026-10-20)
 
-Bugfix for the Downloader.
+**Video Killed the Podcast Star**
 
-### Fixed
+A tiny patch for a sneaky Apple problem: some downloaded videos came out as podcasts.
 
-- **Saved videos play everywhere again.** When Instagram's best stream was VP9, the saved MP4 played as audio only in QuickTime Player and other Apple players. LunaShare now re-encodes those videos to H.264 with ffmpeg and keeps the full resolution. Videos that are already H.264 are untouched. The conversion shows in the progress bar, and Remove and the timeout stop it like any other step.
+### 🐛 Fixed
 
-### Upgrade
+🍎 **Videos play on Apple devices again.** When Instagram's best stream was VP9, the saved MP4 played as audio only in QuickTime Player and friends. LunaShare now re-encodes those videos to H.264 with ffmpeg, at full resolution. Videos that are already H.264 are left alone. The conversion shows up in the progress bar, and Remove and the timeout stop it like any other step.
+
+### ⬆️ Upgrade
 
 No migrations and no new environment variables. Downloads prepared before the upgrade stay VP9, so download them again after deploying.
 
@@ -64,18 +72,25 @@ Fixed in #210, for #209.
 
 ## v4.5.0 (2026-10-20)
 
-Adds the **Downloader**, an admin-only tool for saving videos from Instagram posts to your device. Paste a reel, video post or carousel link, and LunaShare prepares every video in it as an MP4. Nothing is stored as one of your files.
+**Reel Talk**
 
-### Highlights
+Meet the **Downloader**: paste an Instagram link and walk away with every video in it as an MP4. Admins only, and nothing ends up in your files.
 
-- **Downloader** (`/tools/download`, in the Tools menu, admins only): reels, single-video posts and carousels, with photos skipped. Each video is saved as `<account>_<shortcode>.mp4` (`_<n>` for carousels) and can be saved as soon as it's ready, with an inline preview.
-- **Best quality:** the highest available resolution wins, and H.264/AAC is preferred at equal resolution.
-- **Lifecycle:** Downloads keep running when you leave the page. Two prepare at a time and the rest queue. Pasting the same post again leads to the existing Download. A Download expires an hour after it's ready, and preparation stops after 10 minutes. Videos over 500 MB are rejected.
-- **Errors** name the cause: needs a login, not found or private, no videos, too large, rate-limited, or unrecognised (yt-dlp may be out of date). The raw yt-dlp output sits behind *Details*.
-- **Sources admin page** (`/admin/sources`): set, replace or clear the Instagram Source session (`cookies.txt`). It is stored encrypted, never shown back and audited without its value. The page also shows the installed yt-dlp version and its last update.
-- **Self-updating yt-dlp:** the image ships ffmpeg and a pinned, checksum-verified yt-dlp (`2026.08.19`). A new "Update yt-dlp" task runs daily at 04:00 and once after every boot, and Tasks → Run now updates it on demand.
+### ✨ New
 
-### Upgrade
+📥 **The Downloader** lives at `/tools/download` in the Tools menu. It handles reels, single-video posts and carousels, and skips photos. Each video is named `<account>_<shortcode>.mp4` (with `_<n>` for carousels), comes with an inline preview, and can be saved the moment it's ready.
+
+💎 **Only the good stuff.** The highest resolution wins, and at equal resolution H.264/AAC beats the rest.
+
+⏳ **It keeps going without you.** Downloads keep running when you leave the page. Two prepare at a time and the rest wait their turn. Paste the same post twice and you land on the existing Download. A Download expires an hour after it's ready, preparation gives up after 10 minutes, and videos over 500 MB are turned away at the door.
+
+🚨 **Errors that actually say something:** needs a login, not found or private, no videos, too large, rate-limited, or unrecognised (yt-dlp may be out of date). The raw yt-dlp output hides behind *Details* for the curious.
+
+🍪 **Sources page** (`/admin/sources`): set, replace or clear the Instagram session (`cookies.txt`). It's stored encrypted, never shown back, and audited without its value. The page also shows the installed yt-dlp version and when it last updated.
+
+🔄 **yt-dlp updates itself.** The image ships ffmpeg and a pinned, checksum-verified yt-dlp (`2026.08.19`). A new "Update yt-dlp" task runs daily at 04:00 and after every boot, and Tasks → Run now does it on demand.
+
+### ⬆️ Upgrade
 
 **This release needs a database migration.** Run `bun run db:migrate` when you deploy:
 
@@ -91,25 +106,35 @@ Implemented in #208, for epic #201 and its sub-issues #202–#207.
 
 ## v4.4.0 (2026-09-24)
 
-The logged-in app is rebuilt around one job: find a file, then copy the image or its link. It uses the new Utility look: neutral greys, no serif font in the app, tighter corners, and mint only as the accent.
+**Marie Kondo Was Here**
 
-### Highlights
+We rebuilt the logged-in app around the one thing you actually do: find a file, then copy the image or its link. Everything else had to justify itself, and a lot of it couldn't. The new Utility look: neutral greys, no serif font in the app, tighter corners, and mint only as the accent.
 
-- **Navigation:** the top bar is 56px, the active page is marked by a sliding pill, and pages change with a view transition. Upload is available from every page, and `/` focuses search.
-- **Files:** a folder sidebar that appears only on Files, with "All files" and "Not in a folder" as separate views. Files are grouped by date, a selection bar handles bulk actions, and the file count now matches the sidebar.
-- **Preview:** an image stage with a 340px side panel, a filmstrip that keeps loading as you scroll, and a morph transition from the gallery.
-- **Upload sheet:** the nav button, dropping files on the window and pasting all use the same upload flow. Files uploaded as "Only me" are never public, not even briefly.
-- **Generate:** Create, Edit an image, Templates and History tabs. Saved presets, reusing reference images you've uploaded before, "Clear history" and a model picker on Edit all carry over.
-- **Snippets and Automations:** a list beside an editor. Snippets save automatically, and Automations use a step-by-step builder with a one-sentence summary.
-- **Settings:** Profile, Uploads & ShareX, and Storage. Storage shows your real quota and usage, and Profile has Bio, Description and the marketing-email preference.
-- Typing in search no longer re-renders the whole gallery.
+### ✨ New
 
-### Removed
+🧭 **A top bar that gets out of the way.** It's 56px tall, a sliding pill marks where you are, and pages change with a view transition. Upload works from every page, and `/` jumps to search.
 
-- The lightbox, the virtualised gallery, Select mode, the density popover, the date scrubber, the floating upload button, the collapsible sidebar rail, the AI workspace sidebar, the node canvas (`@xyflow/react`) and the old settings routes.
-- Per-user usage statistics, and the view and egress event logging that only fed them. Admin egress totals remain.
+📁 **Files, organised.** A folder sidebar shows up only on Files, with "All files" and "Not in a folder" as separate views. Files are grouped by date, a selection bar handles bulk actions, and the file count finally agrees with the sidebar.
 
-### Upgrade
+🔍 **A Preview worth looking at.** An image stage with a 340px side panel, a filmstrip that keeps loading as you scroll, and a morph transition from the gallery.
+
+📤 **One way to upload.** The nav button, dropping files on the window and pasting all use the same upload sheet. Files uploaded as "Only me" are never public, not even for a split second.
+
+🎨 **Generate, tidied up.** Create, Edit an image, Templates and History tabs. Saved presets, reusing earlier reference images, "Clear history" and the model picker on Edit all made the move.
+
+✂️ **Snippets and Automations** are a list beside an editor. Snippets save on their own, and Automations get a step-by-step builder that sums each one up in a sentence.
+
+⚙️ **Settings in three rooms:** Profile, Uploads & ShareX, and Storage. Storage shows your real quota and usage, and Profile has Bio, Description and the marketing-email preference.
+
+### 🔧 Improved
+
+⌨️ Typing in search no longer re-renders the whole gallery with every keystroke.
+
+### 🗑️ Removed
+
+Thank you for your service: the lightbox, the virtualised gallery, Select mode, the density popover, the date scrubber, the floating upload button, the collapsible sidebar rail, the AI workspace sidebar, the node canvas (`@xyflow/react`) and the old settings routes. Per-user usage statistics are gone too, along with the view and egress logging that only existed to feed them. Admin egress totals stay.
+
+### ⬆️ Upgrade
 
 **This release needs database migrations.** Run `bun run db:migrate` when you deploy:
 
@@ -124,132 +149,133 @@ Implemented in #92 and #95, completing epic #80 and its sub-issues, plus #57, #9
 
 ## v4.3.0 (2026-09-04)
 
-LunaShare now uses a single visual system across the app, with more readable dark mode, responsive workspaces and a cleaner admin interface.
+**Fifty Shades of Grey (Tokens)**
 
-### Highlights
+One look across the whole app. Dark mode you can actually read, workspaces that fit your screen, and an admin area that stopped looking like a spreadsheet.
 
-- Replaced Tailwind and its related tooling with co-located, typed CSS Modules, cascade layers and one semantic Design token scale.
-- Kept light, dark and system Appearance, including the navigation toggle and persisted first paint; removed the named colour-theme selector.
-- Improved supporting-text contrast, card surfaces and heading consistency.
-- Restyled admin destinations as neutral cards with aligned content; narrow screens use a scrollable navigation strip above the content.
-- Made AI settings and results respond to available panel width using container queries, with stacked scrolling on smaller screens.
-- Balanced the landing feature grid and refined popup motion, reduced-motion handling and native scrollbar styling.
-- Added CSS declaration-freshness validation so missing or stale generated types fail typechecking.
+### ✨ New
 
-### Validation and known limitations
+🌗 **Light, dark or system, still your call.** The Appearance toggle in the navigation stays, and the first paint still remembers your choice. The named colour themes didn't make the cut.
 
-Quality CI, TypeScript, lint and the production build passed. Eight targeted Playwright navigation, Appearance, landing and AI-page tests passed, with additional desktop/mobile and popup checks in both Appearances. The migration's earlier full Playwright run reported 25 failures also reproduced on the previous main branch; these are documented in #78 and are not claimed fixed in this release.
+### 🔧 Improved
 
-### Upgrade
+👓 **Easier on the eyes.** Supporting text has better contrast, cards have proper surfaces, and headings finally agree with each other.
 
-The named colour themes are removed; light/dark/system Appearance remains. No database migration is required for this styling release.
+🛠️ **Admin, but tidy.** Admin pages are neutral cards with aligned content. On narrow screens the navigation becomes a scrollable strip above the content.
 
-The v4.3.0 tag triggers the GHCR image build and publication of the versioned and latest tags. Deployment remains manual.
+📐 **AI pages that fit.** AI settings and results adapt to the panel width they actually get, and stack and scroll on small screens.
+
+✨ **The little things.** A balanced feature grid on the landing page, smoother popups, better reduced-motion handling and native scrollbars.
+
+### 🧪 Under the hood
+
+- Tailwind is out. Typed, co-located CSS Modules, cascade layers and one semantic design-token scale are in.
+- Missing or stale generated CSS types now fail typechecking.
+- 25 Playwright failures from the full run also happen on the previous main. They're tracked in #78 and not claimed fixed here.
+
+### ⬆️ Upgrade
+
+The named colour themes are removed. Light, dark and system Appearance remain. No database migration is required.
+
+The v4.3.0 tag triggers the GHCR image build and publishes the versioned and latest tags. Deployment is still manual.
 
 Implemented in #78, completing epic #64 and its 11 sub-issues.
 
 ## v4.2.1 (2026-08-25)
 
-Hotfix for a regression in v4.2.0. Upgrade immediately if you are running v4.2.0.
+**Turns Out the Timeout Was Load-Bearing**
 
-### The regression
+Hotfix for v4.2.0. If you're running v4.2.0, upgrade now.
 
-v4.2.0 shipped a `--preload` that raised `Bun.serve`'s request idle timeout from its 10-second default to 120 seconds for every response. Deployed, it made every client-side route switch spin forever, while a full browser refresh still rendered instantly.
+### 🐛 Fixed
 
-### Why
+🌀 **Page switches stop spinning forever.** v4.2.0 raised Bun's request idle timeout from 10 to 120 seconds for every response. Result: every client-side route switch hung, while a full refresh rendered instantly. The cause was older than v4.2.0. A server function returns a stream that never closes, and Bun used to kill that socket after 10 seconds, which let the router carry on. That's where the `Error reading query stream` in the console came from: the timeout was quietly doing its job. Raising it turned a 10-second stall into an endless one. The preload is reverted and Bun's 10-second default is back.
 
-The hang was already present. A server function returns a stream that never closes. Bun used to reap that socket after 10 seconds, the client's reader threw, and the router carried on — which is exactly the
+Everything else from v4.2.0 stays: the SSE keepalive (every 3 seconds, well inside the window), the cancel endpoint, the reconciler, the disconnect policy and the RustFS fix.
 
-```
-Error reading query stream: TypeError: Cannot read properties of undefined (reading 'mutations')
-```
+### ⚠️ Known issue
 
-that had been in the console since well before v4.2.0. That error was the timeout doing its job.
+The stream that never closes is still around, tracked in #62. Until it's fixed, Bun's 10-second idle timeout is load-bearing. Don't raise it again.
 
-Holding the socket for 120 seconds did not repair the stream. It removed what was bounding it, turning a 10-second stall into an unbounded one.
+### ⬆️ Upgrade
 
-Origin SSR responses stayed fast throughout (TTFB 0.13–0.23s, complete under 0.25s), which ruled out database pressure and the newly scheduled reconciler, and isolated the fault to the `_serverFn` path a route switch uses and a refresh does not.
-
-### The fix
-
-The preload is reverted and Bun's 10-second default restored, returning the server to its v4.1.2 behaviour.
-
-Everything else from v4.2.0 is untouched and still in place: the SSE keepalive that keeps template generations alive, the explicit cancel endpoint, the reconciler, the disconnect policy, and the RustFS metadata fix. The keepalive emits every 3 seconds, comfortably inside the restored 10-second window.
-
-### Known issue
-
-The never-closing server-function stream is still there — it is a pre-existing bug that v4.2.0 merely exposed, tracked in #62. Until it is dealt with, Bun's 10-second idle timeout is load-bearing and must not be raised again.
-
-### Deploying
-
-Tagging builds and pushes the GHCR image but does not deploy it — deployment is still manual.
+The tag builds and pushes the GHCR image but does not deploy it. Deployment is still manual.
 
 ## v4.2.0 (2026-08-25)
 
-Template generations no longer die mid-run, and the server no longer destroys the work behind a dropped connection.
+**It Was Bun All Along**
 
-### The bug
+Template generations stop dying at the 10-second mark, and a dropped connection no longer throws away work you already paid for.
 
-A template generation died at ~10 seconds. The response dropped, the server read that as a cancellation, and both Replicate predictions were cancelled mid-run — so the run was paid for and the cards showed "network error".
+### 🐛 Fixed
 
-It looked like a network fault for a long time. It wasn't. **`Bun.serve` was killing its own response.** Production runs Nitro's bun preset, whose bootstrap calls `serve()` with no `idleTimeout`, so Bun's 10-second default applied and dropped any response whose socket went quiet for that long:
+🕵️ **Case closed.** A template generation used to die after about 10 seconds. The response dropped, the server read that as a cancel, and both Replicate predictions were cancelled mid-run: paid for, and rewarded with "network error". It looked like a network fault for ages. It was `Bun.serve` killing its own response: the bun preset starts the server without an `idleTimeout`, so any response that went quiet for 10 seconds got dropped. `bun run dev` runs on Vite's Node server, which is why it never happened locally.
 
-```
-[Bun.serve]: request timed out after 10 seconds. Pass `idleTimeout` to configure.
-```
+💓 **Streams keep a pulse.** The SSE writer sends a keepalive every 3 seconds, so a generation's connection never goes idle. Tested against Bun 1.3.14: a 3s keepalive survived 45 seconds of nothing.
 
-A generation sends nothing between creating the predictions and the first one settling. `bun run dev` is Vite's Node server and has no such timeout, which is why it never reproduced locally.
+⏱️ **More patience for everything else.** The image preloads a wrapper that raises the default idle timeout to 120 seconds for every response.
 
-### What changed
+💸 **A dropped connection keeps your work.** The template route no longer cancels predictions when the connection drops. The reconciler finishes them, and a real Cancel goes through a new endpoint. `image` and `edit-image` keep the old behaviour, since there's no prediction id to finish them with.
 
-**Streams stay alive.** The SSE writer emits a keepalive comment every 3 seconds, so a polling generation's connection never goes idle. Measured against Bun 1.3.14: the default is a true idle timer that writes reset, and a 3s keepalive survived 45 seconds of otherwise doing nothing.
+🧹 **The reconciler finally clocks in.** `checkTemplateGenerations` was registered but never scheduled, so it had never run once. It now runs every 5 minutes and also closes out generations whose stream died before saving a prediction id.
 
-**The idle timeout is raised for everything else.** That 10-second default governed *every* response, not just the streaming ones. The image now preloads a wrapper supplying a 120-second default, since the preset exposes no way to configure it.
+🪣 **Reference-image uploads work on RustFS.** RustFS mangled an `x-amz-meta-*` header with an underscore while checking the signature, so every template and edit-image generation failed instantly with `SignatureDoesNotMatch` in dev. Nobody read that metadata anyway, so it's gone. Real S3 and R2 were never affected.
 
-**A dropped connection no longer destroys the work.** A transport drop and a user pressing Cancel reach the server as the same closed request, so the template route no longer cancels predictions on either — it leaves the rows for the reconciler, and deliberate cancellation goes through a new endpoint instead. `image` and `edit-image` keep the old behaviour, since their rows record no prediction id and nothing could finish them.
+🔧 **And a few more:** the status message no longer freezes mid-generation, a generation can't go back once it's finished, and a dropped stream refreshes template history.
 
-**The reconciler actually runs now.** `checkTemplateGenerations` had an executor registered but was never scheduled, so it had never executed once. It is seeded on a 5-minute cron, and it now also closes out generations whose stream died before recording a prediction id.
+### ⬆️ Upgrade
 
-**Reference-image uploads work on RustFS.** The cache upload was the only S3 write sending object metadata, and RustFS mis-canonicalises an `x-amz-meta-*` header name containing an underscore when verifying SigV4 — so every template and edit-image generation failed instantly with `SignatureDoesNotMatch` in dev. Both values were already recorded elsewhere and nothing read them, so the metadata is gone. Real S3 and R2 were unaffected.
-
-**Smaller fixes.** The status message no longer freezes mid-generation; a generation can no longer move backwards out of a terminal status; a dropped stream refreshes template history, since the work behind it now survives.
-
-### Deploying
-
-Tagging builds and pushes the GHCR image but does not deploy it — deployment is still manual.
+The tag builds and pushes the GHCR image but does not deploy it. Deployment is still manual.
 
 Full detail in #59 and #60.
 
 ## v4.1.2 (2026-08-24)
 
-Slimmer image, faster builds, and better-auth upgraded to 1.7.1. Replaces the unreleased v4.1.1.
+**Lost Some Weight**
 
-- **Image roughly halved**: the runtime image no longer ships dev tooling or stale pre-Drizzle dependencies (~361MB → ~190MB compressed).
-- **Tag builds finish in ~2 minutes** instead of 7+ (GitHub Actions layer-cache export removed), and the deploy-webhook job is gone — a tag only builds and publishes; deploying stays manual.
-- **better-auth 1.6.26 → 1.7.1**: accounts are now keyed by `(issuer, accountId)`. A migration adds the `issuer` column and backfills existing rows automatically on first boot.
+A slimmer image, faster builds and a better-auth upgrade. This replaces the unreleased v4.1.1.
 
-### Deploying
+### 🔧 Improved
 
-Pull the image and start it — the `issuer` migration runs automatically before the server accepts requests. Verified against a database created under v4.1.0: existing username/password accounts keep working, no manual steps.
+🏋️ **The image is about half the size.** No more dev tooling or stale pre-Drizzle dependencies in the runtime image: ~361MB → ~190MB compressed.
 
-### Rollback note
+🏎️ **Tag builds in about 2 minutes** instead of 7+, now that the GitHub Actions layer-cache export is gone. So is the deploy-webhook job: a tag only builds and publishes.
 
-The new migration is backward-compatible in the schema sense (it only adds a column and an index), so rolling back the image to v4.1.0 after this migration ran is fine.
+🔐 **better-auth 1.6.26 → 1.7.1.** Accounts are now keyed by `(issuer, accountId)`. A migration adds the `issuer` column and fills in existing rows on first boot.
+
+### ⬆️ Upgrade
+
+Pull the image and start it. The `issuer` migration runs on its own before the server takes requests. Tested against a database created under v4.1.0: existing username/password accounts keep working, with no manual steps.
+
+Rolling back to v4.1.0 after the migration ran is fine. It only adds a column and an index.
+
+Deployment is still manual.
 
 ## v4.1.1 (2026-08-24)
 
-Patch bump: no behaviour change in the app itself.
+**The Dress Rehearsal**
 
-The image drops the dev tooling and the stale pre-Drizzle lockfile
-leftovers (~361MB -> ~188MB compressed), the tag build no longer
-exports the GHA layer cache, and the deploy-webhook job is gone —
-a tag now only builds and publishes.
+Never released on GitHub, and replaced by v4.1.2. No behaviour change in the app.
+
+### 🔧 Improved
+
+🧳 The image leaves the dev tooling and the stale pre-Drizzle lockfile leftovers at home (~361MB → ~188MB compressed), tag builds no longer export the GHA layer cache, and the deploy-webhook job is gone. A tag now only builds and publishes.
 
 ## v4.1.0 (2026-08-24)
 
-The container applies pending migrations before the server starts. A deploy now carries its own schema change, so the code and the database can no longer drift apart — which is what made v4.0.0 fail with `column "username" does not exist`.
+**Migrations Included, Batteries Too**
 
-### Deploying
+The container now runs pending migrations before the server starts. Every deploy brings its own schema changes, so code and database can't drift apart anymore. That drift is exactly what made v4.0.0 fail with `column "username" does not exist`.
+
+### ✨ New
+
+🚀 **Migrate on boot.** Start the container and the migrations run first. If one fails, the container stops instead of serving queries against a schema that can't answer them, and the error waits for you in `docker compose logs app`.
+
+### 🧪 Under the hood
+
+Tested against the built image and a throwaway Postgres: an empty database gets the full schema, a second boot does nothing, an unreachable database exits non-zero without starting the server, `/login` answers 200, and `auth:set-credentials` still works through `docker exec`, which skips the entrypoint.
+
+### ⬆️ Upgrade
 
 ```bash
 # 1. deploy — migrations run automatically on start, then:
@@ -258,31 +284,29 @@ docker compose exec -it app bun run auth:set-credentials <your-email>
 
 Then sign in at `/login`. Coming from a version before 4.0.0, take a database backup first: the username/password cutover deletes the Discord accounts, clears every avatar and empties the session table, and it is irreversible. No user row is removed and nothing anyone owns is touched.
 
-### If a migration fails
-
-The container stops rather than serving queries against a schema that cannot answer them, and the error is in `docker compose logs app`. To start without migrating, override the entrypoint:
+If a migration fails and you need to start without migrating, override the entrypoint:
 
 ```bash
 docker compose run --entrypoint bun app .output/server/index.mjs
 ```
 
-There is no configuration flag for this — Docker's own override is the escape hatch.
-
-### Verified
-
-Against the built image and a throwaway Postgres: an empty database receives the full schema, a second boot is a no-op, an unreachable database exits non-zero without ever starting the server, the server then answers `/login` with 200, and `auth:set-credentials` still works through `docker exec`, which does not pass through the entrypoint.
+There is no configuration flag for this. Docker's own override is the escape hatch.
 
 ## v4.0.1 (2026-08-24)
 
-Packaging fix for v4.0.0. No behaviour change.
+**Forgot to Pack the Migrations**
 
-The v4.0.0 image could not run its own migrations: `drizzle/` and `drizzle.config.ts` were never copied into the runtime stage. Nothing applies migrations automatically — not the image, not compose, not CI — so a deployed v4.0.0 instance served the new code against the old schema and failed on the first query for a column it expected:
+A packaging fix for v4.0.0. No behaviour change.
+
+### 🐛 Fixed
+
+🧳 **The migrations made it into the suitcase.** The v4.0.0 image left `drizzle/` and `drizzle.config.ts` out of the runtime stage, so it couldn't run its own migrations. Nothing else ran them either, so a deployed v4.0.0 served new code against the old schema and fell over on the first query:
 
 ```
 error: column "username" does not exist
 ```
 
-### Deploying
+### ⬆️ Upgrade
 
 The order matters, and the middle step is the one v4.0.0 made impossible:
 
@@ -294,11 +318,9 @@ docker compose exec -it app bun run auth:set-credentials <your-email>
 
 Then sign in at `/login`.
 
-The migration is **irreversible** — it deletes the Discord accounts, clears every avatar and empties the session table. Take a database backup first. No user row is removed and nothing anyone owns is touched.
+The migration is **irreversible**: it deletes the Discord accounts, clears every avatar and empties the session table. Take a database backup first. No user row is removed and nothing anyone owns is touched.
 
-### If you already deployed v4.0.0
-
-You are not stuck. Either deploy v4.0.1 and follow the steps above, or run the migration from a checkout that can reach the database:
+Already deployed v4.0.0? You're not stuck. Deploy v4.0.1 and follow the steps above, or run the migration from a checkout that can reach the database:
 
 ```bash
 DATABASE_URL='<production url>' bun run db:migrate
@@ -306,90 +328,97 @@ DATABASE_URL='<production url>' bun run db:migrate
 
 ## v4.0.0 (2026-08-24)
 
-LunaShare authenticates its own users. Discord OAuth is gone, replaced by a username and a password held by this instance and dependent on nothing outside it.
+**Breaking Up With Discord (Login Only, We're Still Friends)**
 
-### Breaking
+LunaShare now signs in its own users. Discord OAuth is gone, replaced by a username and password that live on your instance and depend on nobody else.
 
-Deploying this runs a migration that **cannot be undone**. It deletes the Discord accounts, clears every avatar and empties the session table. Everyone is signed out, and **nobody can sign in until credentials are set for them out of band**.
+### ✨ New
+
+🔑 **Username and password sign-in**, with usernames matched case-insensitively.
+
+🙋 **Your profile, your rules:** avatar, username, display name and password, all self-service. Avatars are re-encoded to a square 512px WebP, which keeps them small and strips EXIF, GPS included.
+
+🛡️ **Admins hold the keys.** Administrators create users and reset passwords from the admin panel. There's no public registration: accounts come from an admin or from the script.
+
+🤐 **Poker face.** A failed sign-in never reveals whether the username exists, and the sign-in path is rate-limited in production.
+
+### 🐛 Fixed
+
+- The login form no longer forgets what you typed if you submit before the page has loaded.
+- Signing in from a deep link takes you where you were going, not to the dashboard.
+- New users no longer show as "Pending" in the admin panel forever.
+
+### ⚠️ Known gap
+
+The sign-in rate limiter runs in production only, because it's keyed on IP and path and the whole e2e suite shares one address. It's the one behaviour here with no automated test.
+
+### ⬆️ Upgrade
+
+**Breaking.** Deploying this runs a migration that **cannot be undone**. It deletes the Discord accounts, clears every avatar and empties the session table. Everyone is signed out, and **nobody can sign in until credentials are set for them out of band**.
 
 `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET` are no longer read. Remove them from the deployment's environment.
 
-No user is deleted and nothing anyone owns is touched: files, folders, API tokens, group memberships and quotas all hang off the internal user id, never off the Discord identifier. The database enforces this independently — `file.owner_id` is `ON DELETE RESTRICT`, so Postgres refuses to remove an owner who holds files.
+No user is deleted and nothing anyone owns is touched: files, folders, API tokens, group memberships and quotas all hang off the internal user id, never off the Discord identifier. The database enforces this too: `file.owner_id` is `ON DELETE RESTRICT`, so Postgres refuses to remove an owner who holds files.
 
-### First sign-in after deploying
-
-There is no way into the app until a password exists, so the first one is set from a shell in the container:
+There is no way in until a password exists, so set the first one from a shell in the container:
 
 ```
 docker compose exec -it app bun run auth:set-credentials <your-email>
 ```
 
-It asks for a username and a password, and does not echo the password. Then sign in at `/login`.
+It asks for a username and a password and does not echo the password. Then sign in at `/login`.
 
-This script is not cutover scaffolding — it ships in the image permanently. LunaShare sends no email, so there is no reset link, and this is the only recovery for a locked-out administrator.
-
-### What's new
-
-- Username and password sign-in, matched case-insensitively
-- Self-service profile: avatar, username, display name, password
-- Avatar uploads are re-encoded to square 512 WebP, which bounds their size and strips EXIF, GPS included
-- Administrators can create users and reset passwords from the admin panel
-- No public registration — accounts are created by an administrator or by the script
-- Sign-in failures never reveal whether the username exists
-- Rate limiting on the sign-in path (production only)
-
-### Fixed along the way
-
-- The login form lost what you typed if you submitted before the page hydrated
-- Signing in from a deep link returned you to the dashboard instead of where you were headed
-- Newly created users showed as "Pending" in the admin panel forever
-
-### Known gap
-
-The sign-in rate limiter is enabled in production only: its window is keyed on IP and path, and every request in the end-to-end suite shares one address. It is the one behaviour here with no automated coverage.
+The script ships in the image for good. LunaShare sends no email, so there is no reset link, and this is the only way back in for a locked-out administrator.
 
 ## v3.0.1 (2026-08-22)
 
-Housekeeping release. No behaviour change and no deployment-contract change — upgrading from v3.0.0 needs nothing but the new image.
+**Spring Cleaning in August**
 
-### Retired the MariaDB migration harness (#50, #51)
+Pure housekeeping: no behaviour change, and upgrading from v3.0.0 needs nothing but the new image.
 
-Production has run on PostgreSQL since the cutover, so the migration tooling stopped being a rollback path and became dead weight. The pre-cutover dump it needed to run has been destroyed — it held the old `audit_log` rows, which stored API keys and OAuth tokens in cleartext — so the harness could no longer run at all.
+### 🧪 Under the hood
 
-Removed the transform and its supporting modules, both migration verifiers, the `db:rehearse` / `db:verify` / `db:verify-data` scripts, the `mariadb` devDependency, the scratch MariaDB service in the dev compose file, and the two cutover runbooks. 1,205 lines.
+🪦 **Goodbye, MariaDB migration harness** (#50, #51). Production has run on PostgreSQL since the cutover, so the migration tooling was dead weight. The pre-cutover dump it needed is destroyed, since its old `audit_log` rows held API keys and OAuth tokens in cleartext. Out went the transform and its modules, both verifiers, the `db:rehearse` / `db:verify` / `db:verify-data` scripts, the `mariadb` devDependency, the scratch MariaDB service in the dev compose file and both cutover runbooks: 1,205 lines. `db:audit-coverage` and the database-backed suites stay, because they guard rules that still matter.
 
-Kept `db:audit-coverage` and the database-backed suites: those prove ongoing invariants — every audited model has an explicit `writeAuditLog` call, and the collation-sensitive lookups stay case-folded — not that a migration landed.
+📚 **The docs caught up.** `README.md`, `tests/e2e/README.md` and `.env.sample` still described Prisma + MariaDB, right down to a `mysql://` connection string. They now describe PostgreSQL.
 
-`README.md`, `tests/e2e/README.md` and `.env.sample` still described a Prisma + MariaDB stack, down to a `mysql://` connection string in the self-hosting example. They now describe the PostgreSQL baseline.
+📦 **Dependency diet** (#52, #53). Three packages nothing imported are gone: `h3-v2`, `@tanstack/zod-adapter` and `server-only`. 18 packages moved to their newest in-range versions, including the AWS SDK trio, the TanStack suite, Vite, Biome and `lucide-react`. `better-auth` and `motion` were left alone on purpose: the first wants its own branch and a sign-in smoke test, the second is a major outside its range.
 
-### Dependency cleanup (#52, #53)
+### ⬆️ Upgrade
 
-Dropped three packages nothing imported: `h3-v2` (a duplicate of Nitro's own transitive `h3`, at a different version), `@tanstack/zod-adapter`, and `server-only` (a Next.js idiom TanStack Start does not use).
-
-Updated 18 packages to their newest in-range versions, including the AWS SDK trio, the TanStack suite, Vite, Biome and `lucide-react`. No range in `package.json` moved.
-
-`better-auth` and `motion` were deliberately left alone — the first wants its own branch and a sign-in smoke test, the second is a major outside its range.
+Nothing to do beyond pulling the new image.
 
 ## v3.0.0 (2026-08-20)
 
-Replaces Prisma + MariaDB with Drizzle ORM 1.0 on PostgreSQL 18 across the
-whole application, Better-Auth included. Epic #29 (18 tickets, #30-#47).
+**New Database, Who Dis?**
 
-BREAKING: requires PostgreSQL 18 and a postgresql:// DATABASE_URL.
-MariaDB is no longer supported. Application behaviour is unchanged.
+Prisma + MariaDB are out. Drizzle ORM 1.0 on PostgreSQL 18 is in, across the whole app, Better-Auth included. You won't notice a thing, which was the point. Epic #29 (18 tickets, #30–#47).
 
-- 38 models declared in Drizzle, snake_case columns, camelCase properties
-- Audited writes on savepoints; Token.key redacted from audit rows (#27)
-- Case-insensitive matching made explicit where MariaDB's collation
-  provided it implicitly (#23)
-- Production data migrated via scripts/db/transform.ts, verified against
-  the source by row count, FK integrity, column names and collation
+### 🧪 Under the hood
+
+- 38 models declared in Drizzle: snake_case columns, camelCase properties.
+- Audited writes run on savepoints, and `Token.key` is redacted from audit rows (#27).
+- Case-insensitive matching is now explicit wherever MariaDB's collation used to do it quietly (#23).
+- Production data was migrated with `scripts/db/transform.ts` and checked against the source by row count, FK integrity, column names and collation.
+
+### ⬆️ Upgrade
+
+**Breaking:** requires PostgreSQL 18 and a `postgresql://` `DATABASE_URL`. MariaDB is no longer supported. App behaviour is unchanged.
 
 ## v2.11.1 (2026-08-16)
 
-No release notes were written for this version.
+**The Quiet One**
+
+No release notes were written for this version. It knows what it did.
 
 ## v2.11.0 (2026-08-05)
 
-Bun toolchain and runtime, runtime-resolved deployment URLs, and the
-GitHub Actions pipeline replacing the GitLab one.
+**Moving Day**
+
+A new toolchain, a new runtime and a new pipeline, all in one go.
+
+### 🧪 Under the hood
+
+- 🥟 Bun is now the toolchain and the runtime.
+- 🌐 Deployment URLs are resolved at runtime.
+- 🐙 A GitHub Actions pipeline replaces the GitLab one.

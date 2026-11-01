@@ -30,6 +30,8 @@ const envSchema = z.object({
     .positive()
     .default(90 * 1024 * 1024),
   SHAREX_UPLOAD_CONCURRENCY: z.coerce.number().int().positive().default(2),
+  // The release tag (e.g. v4.6.0) the image was built from; unset or empty in dev.
+  BUILD_VERSION: z.string().optional(),
   BUILD_COMMIT: z.string().optional(),
   BUILD_TIME: z.string().optional(),
   PUBLIC_BASE_URL: z.url().optional(),

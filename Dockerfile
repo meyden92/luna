@@ -29,8 +29,10 @@ COPY . .
 
 # No deployment URLs here on purpose: CDN_URL and PUBLIC_BASE_URL are read from
 # the environment at runtime, so this image is not tied to any one domain.
+ARG BUILD_VERSION
 ARG BUILD_COMMIT=unknown
 ARG BUILD_TIME=unknown
+ENV BUILD_VERSION=$BUILD_VERSION
 ENV BUILD_COMMIT=$BUILD_COMMIT
 ENV BUILD_TIME=$BUILD_TIME
 ENV NITRO_PRESET=bun
@@ -42,8 +44,10 @@ FROM base AS runner
 
 ENV NODE_ENV=production
 
+ARG BUILD_VERSION
 ARG BUILD_COMMIT=unknown
 ARG BUILD_TIME=unknown
+ENV BUILD_VERSION=$BUILD_VERSION
 ENV BUILD_COMMIT=$BUILD_COMMIT
 ENV BUILD_TIME=$BUILD_TIME
 

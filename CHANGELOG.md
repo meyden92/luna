@@ -2,6 +2,30 @@
 
 Every LunaShare release, newest first. Entries up to v4.7.0 were rewritten from their GitHub releases, or from the tag message where no release exists.
 
+## v4.7.1 (2026-11-01)
+
+**Dear Diary**
+
+LunaShare now keeps a diary. Every release, from the very first Bun build to this one, is written up in `CHANGELOG.md`, and from now on each new release adds its own page. Yes, this release is mostly about writing about releases. We're aware.
+
+### ✨ New
+
+📖 **A changelog that lives in the repo.** `CHANGELOG.md` at the root lists every version from v2.11.0 onward, newest first, retold with considerably more jokes than the originals. Upgrade steps, migrations and warnings kept their exact wording, so you can still deploy from it without laughing at the wrong moment.
+
+✍️ **Release notes write themselves (almost).** A new release skill in `.claude/skills/release/` gathers everything merged since the last tag, drafts the entry, waits for a human to approve it, then lands the version bump and publishes the GitHub release with the same text. Changelog and release page can't drift apart anymore.
+
+### 🧪 Under the hood
+
+`package.json` finally says the right version again. It had been stuck on 4.4.0 for three releases.
+
+### ⬆️ Upgrade
+
+No migrations and no new environment variables.
+
+The v4.7.1 tag triggers the GHCR image build and publishes the versioned and latest tags. Deployment is still manual.
+
+Implemented in #217, for #216.
+
 ## v4.7.0 (2026-11-01)
 
 **Are We There Yet?**

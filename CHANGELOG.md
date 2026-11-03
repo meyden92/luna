@@ -2,6 +2,36 @@
 
 Every LunaShare release, newest first. Entries up to v4.7.0 were rewritten from their GitHub releases, or from the tag message where no release exists.
 
+## v4.7.2 (2026-11-03)
+
+**Spring Cleaning in November**
+
+Every dependency is on its latest version again. Nothing new to click this time. This is the release where we vacuum behind the couch, and found one column in there that better-auth stopped using.
+
+### 🔧 Improved
+
+🌊 **Waveforms, measured once.** wavesurfer.js 8 scales the audio editor's waveform against the loudest point of the whole file instead of each drawn section, so bar heights can look a little different than before. Same audio, more honest picture.
+
+### 🧪 Under the hood
+
+better-auth went from 1.7.1 to 1.7.15 and is back to identifying accounts by provider and account ID, like 1.6 did. The `issuer` column on `account` goes away with it. Without that migration, creating a user or setting a password would fail.
+
+Drizzle moved to 1.0.0-rc.5 and its migration snapshots got rewritten to the new format. No existing migration changed.
+
+The rest of the pile: React 19.3, zod 4.6, dotenv 18, motion 14, lucide-react 1.67, Base UI 1.9, Vite 8.3, Nitro 3 RC, Biome 2.6, Playwright 1.64, AWS SDK, TanStack and sharp. Biome 2.6 now formats Markdown and YAML by default, and we told it no.
+
+### ⬆️ Upgrade
+
+**This release needs a database migration.** The image's entrypoint applies it on start. Elsewhere, run `bun run db:migrate` when you deploy:
+
+- `20261103103546_better_auth_drop_issuer` drops the `account.issuer` column and its `account_issuer_accountId_key` index. The column only held the derived value `local:credential`, so no data is lost.
+
+No new environment variables.
+
+The v4.7.2 tag triggers the GHCR image build and publishes the versioned and latest tags. Deployment is still manual.
+
+Implemented in #229, for #228.
+
 ## v4.7.1 (2026-11-01)
 
 **Dear Diary**

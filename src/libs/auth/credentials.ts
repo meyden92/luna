@@ -1,4 +1,3 @@
-import { createLocalAccountIssuer } from '@better-auth/core/db';
 import { UserFacingError } from '../user-facing-error';
 import { auth } from './auth';
 import { creationActor } from './creation-actor';
@@ -61,7 +60,6 @@ export async function setUserCredentials({
       await ctx.internalAdapter.linkAccount({
         userId,
         providerId: CREDENTIAL_PROVIDER,
-        issuer: createLocalAccountIssuer(CREDENTIAL_PROVIDER),
         accountId: userId,
         password: hash,
       });
@@ -122,7 +120,6 @@ export async function createUserWithCredentials({
   await ctx.internalAdapter.linkAccount({
     userId: created.id,
     providerId: CREDENTIAL_PROVIDER,
-    issuer: createLocalAccountIssuer(CREDENTIAL_PROVIDER),
     accountId: created.id,
     password: await ctx.password.hash(password),
   });

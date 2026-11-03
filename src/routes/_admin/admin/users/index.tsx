@@ -80,7 +80,7 @@ function AdminUsersPage() {
     return search.order === 'asc' ? 'ascending' : 'descending';
   };
 
-  const SortIcon = ({ field }: { field: SearchState['sort'] }) => {
+  const sortIcon = (field: SearchState['sort']) => {
     if (search.sort !== field) return <ArrowUpDown className={styles.sortIcon} />;
     return search.order === 'asc' ? <ArrowUp className={styles.sortIcon} /> : <ArrowDown className={styles.sortIcon} />;
   };
@@ -144,7 +144,7 @@ function AdminUsersPage() {
                     onClick={() => handleSort('email')}
                   >
                     Email
-                    <SortIcon field="email" />
+                    {sortIcon('email')}
                   </Button>
                 </TableHead>
                 <TableHead aria-sort={sortDirection('name')}>
@@ -155,7 +155,7 @@ function AdminUsersPage() {
                     onClick={() => handleSort('name')}
                   >
                     Username
-                    <SortIcon field="name" />
+                    {sortIcon('name')}
                   </Button>
                 </TableHead>
                 <TableHead
@@ -169,7 +169,7 @@ function AdminUsersPage() {
                     onClick={() => handleSort('files')}
                   >
                     Uploaded Files
-                    <SortIcon field="files" />
+                    {sortIcon('files')}
                   </Button>
                 </TableHead>
                 <TableHead className={styles.alignEnd}>Filesize</TableHead>
@@ -184,7 +184,7 @@ function AdminUsersPage() {
                     onClick={() => handleSort('role')}
                   >
                     Role
-                    <SortIcon field="role" />
+                    {sortIcon('role')}
                   </Button>
                 </TableHead>
               </TableRow>

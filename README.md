@@ -113,6 +113,9 @@ then takes the address that many entries from the right. Left at `0`, it uses th
 connection's own address and ignores every forwarded header, so only raise it
 when the origin is reachable through those proxies alone: anyone who can reach
 it directly could otherwise choose their own address.
+The admin start page's **Client IP** card shows the forwarded chain with the hop
+number of each entry, the address the app derives from it, and a warning when the
+value looks wrong.
 
 ## Deployment
 

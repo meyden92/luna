@@ -126,6 +126,9 @@ export const queryKeys = {
   adminVersion: {
     info: ['admin', 'version'] as const,
   },
+  adminClientIp: {
+    diagnosis: ['admin', 'client-ip'] as const,
+  },
   adminSources: {
     status: ['admin', 'sources', 'status'] as const,
   },

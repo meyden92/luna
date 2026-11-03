@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { adminDestinations } from '@/components/admin/admin-destinations';
+import { ClientIpCard } from '@/components/admin/client-ip/client-ip-card';
 import { VersionCard } from '@/components/admin/version/version-card';
 import styles from './index.module.css';
 
@@ -26,6 +27,7 @@ function AdminIndexPage() {
         ))}
       </div>
       <VersionCard />
+      <ClientIpCard />
     </div>
   );
 }

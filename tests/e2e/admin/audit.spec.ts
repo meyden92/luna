@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
+import { auditLog } from '../../../src/db/schema/admin';
 import { user } from '../../../src/db/schema/auth';
 import { test } from '../fixtures/test';
 import { stackEnv } from '../stack-env';
@@ -76,6 +77,17 @@ test('creating a user, changing its quota and deleting its file are audited with
   await expect(detail.getByText('User', { exact: true }).first()).toBeVisible();
   await expect(detail.getByText(admin!.name, { exact: true })).toBeVisible();
   await expect(detail.getByText(userId, { exact: true })).toBeVisible();
+
+  // The admin's writes carry the admin's session (#237) and the address the admin's context sent, which is in the
+  // fixtures' 10.x range and not the app container's own network (#234).
+  const updateRows = await db
+    .select({ metadata: auditLog.metadata })
+    .from(auditLog)
+    .where(and(eq(auditLog.recordId, userId), eq(auditLog.action, 'update')));
+  expect(updateRows).toHaveLength(2);
+  for (const { metadata } of updateRows) {
+    expect(metadata).toMatchObject({ sessionId: expect.stringMatching(/^[0-9a-f]{32}$/), ipAddress: expect.stringMatching(/^10\./) });
+  }
 
   // The deleted file: who deleted it, and the creation by its owner.
   await searchAudit(upload!.id);

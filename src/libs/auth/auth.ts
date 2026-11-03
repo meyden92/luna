@@ -6,6 +6,7 @@ import { isValidUsername, PASSWORD_MIN_LENGTH, USERNAME_MAX_LENGTH, USERNAME_MIN
 import { clientIp } from '../client-ip';
 import { env } from '../env';
 import { ensureUserHasDefaultGroup } from '../rbac/default-group';
+import { AUTH_COOKIE_PREFIX } from './cookie-prefix';
 import { creationActor } from './creation-actor';
 
 const CLIENT_IP_HEADER = 'x-lunashare-client-ip';
@@ -69,7 +70,7 @@ export const auth = betterAuth({
     },
   },
   advanced: {
-    cookiePrefix: 'lunashare',
+    cookiePrefix: AUTH_COOKIE_PREFIX,
     defaultCookieAttributes: {
       sameSite: 'lax',
       secure: env.NODE_ENV === 'production',

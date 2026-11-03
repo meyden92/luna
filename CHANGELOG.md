@@ -2,6 +2,24 @@
 
 Every LunaShare release, newest first. Entries up to v4.7.0 were rewritten from their GitHub releases, or from the tag message where no release exists.
 
+## v4.7.3 (2026-11-03)
+
+**The One Where We Couldn't See Our Own Release**
+
+We published v4.7.2 and our admin panel told us we were up to date with v4.7.1. It had stored GitHub's answer for six hours and wasn't going to ask again. Now you can make it ask.
+
+### ✨ New
+
+🔄 **Ask GitHub again.** The Version card on the admin start page has a **Check now** button. It skips the server's six-hour cache and fetches the latest release from GitHub right away, so a release you published a minute ago shows up straight away. GitHub allows 60 unauthenticated checks an hour per IP, so don't click it like it owes you money.
+
+### ⬆️ Upgrade
+
+No migrations and no new environment variables.
+
+The v4.7.3 tag triggers the GHCR image build and publishes the versioned and latest tags. Deployment is still manual.
+
+Implemented in #232 (for #231).
+
 ## v4.7.2 (2026-11-03)
 
 **Spring Cleaning in November**

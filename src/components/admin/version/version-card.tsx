@@ -1,6 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { queryKeys } from '@/libs/query-keys';
 import { getVersionInfo } from '@/server/fns/admin/version';
 import styles from './version-card.module.css';
@@ -9,12 +11,28 @@ import styles from './version-card.module.css';
 export function VersionCard() {
   // Not suspended: the GitHub check may take a few seconds and must not hold up the page.
   const { data } = useQuery({ queryKey: queryKeys.adminVersion.info, queryFn: () => getVersionInfo() });
+  const queryClient = useQueryClient();
+  const recheck = useMutation({
+    mutationFn: () => getVersionInfo({ data: { force: true } }),
+    onSuccess: (info) => queryClient.setQueryData(queryKeys.adminVersion.info, info),
+  });
 
   return (
     <Card className={styles.card}>
       <CardHeader>
         <CardTitle>Version</CardTitle>
         <CardDescription>The release this instance runs and the latest one published on GitHub.</CardDescription>
+        <CardAction>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={recheck.isPending}
+            onClick={() => recheck.mutate()}
+          >
+            <RefreshCw />
+            {recheck.isPending ? 'Checking…' : 'Check now'}
+          </Button>
+        </CardAction>
       </CardHeader>
       <CardContent>
         <dl className={styles.facts}>

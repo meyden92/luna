@@ -27,9 +27,12 @@ export function isNewerVersion(latest: string, current: string): boolean {
   return false;
 }
 
-/** The latest published GitHub release, cached for CACHE_MS. Throws when GitHub can't be reached or answers with an error. */
-export async function fetchLatestRelease(): Promise<Release> {
-  if (cached && Date.now() - cached.fetchedAt < CACHE_MS) return cached.release;
+/**
+ * The latest published GitHub release, cached for CACHE_MS. `force` skips the cache, for an admin who just published a release.
+ * Throws when GitHub can't be reached or answers with an error.
+ */
+export async function fetchLatestRelease(force = false): Promise<Release> {
+  if (!force && cached && Date.now() - cached.fetchedAt < CACHE_MS) return cached.release;
 
   const response = await fetch(LATEST_RELEASE_URL, {
     headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'LunaShare' },

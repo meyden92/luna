@@ -551,6 +551,7 @@ const AudioPlayerControls: React.FC<AudioPlayerControlsProps> = ({
             max={1}
             min={0}
             step={0.01}
+            thumbAriaLabel="Volume"
             className={styles.volumeSlider}
           />
         </div>

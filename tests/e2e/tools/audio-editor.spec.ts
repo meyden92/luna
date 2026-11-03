@@ -34,6 +34,10 @@ test('a clip cut to its first second exports as WAV and MP3 audio of that length
   const box = (await clip.boundingBox())!;
   const pixelsPerSecond = box.width / original.duration;
   await clip.click({ position: { x: pixelsPerSecond, y: box.height / 2 } });
+  // The sliders are announced by name, not as unnamed sliders.
+  for (const name of ['Zoom', 'Track volume', 'Clip volume', 'Fade in', 'Fade out']) {
+    await expect(page.getByRole('slider', { name, exact: true })).toBeVisible();
+  }
   await page.getByRole('button', { name: 'Split at Playhead' }).click();
   await expect(clip).toHaveCount(2);
   await clip.last().click({ position: { x: 20, y: box.height / 2 } });

@@ -130,6 +130,7 @@ export function EditorToolbar() {
             min={10}
             max={200}
             step={5}
+            thumbAriaLabel="Zoom"
             className={styles.zoomSlider}
           />
 

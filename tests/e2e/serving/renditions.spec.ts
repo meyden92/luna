@@ -109,7 +109,7 @@ test('a file that is not an image is 404', async ({ request, gallery, db }) => {
 });
 
 test.describe('a private image', () => {
-  const FUTURE = () => String(Date.now() + 10 * 60_000);
+  const futureExpiry = () => String(Date.now() + 10 * 60_000);
 
   test('is refused without a signature, even to its owner', async ({ request, galleryRequest, gallery, db }) => {
     const secret = await servedFile(gallery, db, 'landscape-photo.jpg', { private: true });
@@ -127,15 +127,15 @@ test.describe('a private image', () => {
     const path = `/cdn/${secret.id}/w=100,fmt=png`;
 
     for (const query of [
-      `?exp=${FUTURE()}&sig=not-a-signature`,
-      `?exp=${FUTURE()}&sig=${'A'.repeat(43)}`,
-      `?exp=${FUTURE()}`,
+      `?exp=${futureExpiry()}&sig=not-a-signature`,
+      `?exp=${futureExpiry()}&sig=${'A'.repeat(43)}`,
+      `?exp=${futureExpiry()}`,
       `?sig=${'A'.repeat(43)}`,
       `?exp=${Date.now() - 60_000}&sig=${'A'.repeat(43)}`,
     ]) {
       expect((await request.get(`${path}${query}`)).status(), query).toBe(403);
     }
     // Another file's rendition is not reachable through this one's path either.
-    expect((await request.get(`/cdn/${other.id}/w=100,fmt=png?exp=${FUTURE()}&sig=${'A'.repeat(43)}`)).status()).toBe(403);
+    expect((await request.get(`/cdn/${other.id}/w=100,fmt=png?exp=${futureExpiry()}&sig=${'A'.repeat(43)}`)).status()).toBe(403);
   });
 });

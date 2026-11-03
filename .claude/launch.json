@@ -3,12 +3,12 @@
   "configurations": [
     {
       "name": "dev",
-      "runtimeExecutable": "npm",
+      "runtimeExecutable": "bun",
       "runtimeArgs": [
         "run",
         "dev"
       ],
-      "port": 5173
+      "port": 3000
     }
   ]
 }

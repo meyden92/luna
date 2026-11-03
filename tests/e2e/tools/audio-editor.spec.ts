@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect } from '@playwright/test';
 import { test } from '../fixtures/test';
-import { serveFfmpegCore } from '../utils/ffmpeg';
 import { decodeMedia } from '../utils/media';
 
 // The audio editor (/tools/audio): a clip is cut on the timeline and exported in the page (MP3 is encoded by
@@ -12,7 +11,6 @@ test('a clip cut to its first second exports as WAV and MP3 audio of that length
   const original = await decodeMedia(page, readFileSync(tone.path), 'audio/mpeg');
   expect(original.duration).toBeCloseTo(3, 0);
 
-  await serveFfmpegCore(page);
   await page.goto('/tools/audio');
   await page.getByLabel('Drop audio files here').setInputFiles(tone.path);
   const pooled = page.getByText('tone', { exact: true });

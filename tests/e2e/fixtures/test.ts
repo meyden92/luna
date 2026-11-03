@@ -8,7 +8,7 @@ import { clientIpHeader, type Role, storageStatePath, workerRole } from './users
 
 /**
  * Per-user pages and API contexts, each signed in through the setup project and
- * sending its own `cf-connecting-ip`. Roles are described in `users.ts`.
+ * sending its own `x-forwarded-for`. Roles are described in `users.ts`.
  */
 type TestFixtures = {
   adminPage: Page;
@@ -49,7 +49,7 @@ const corpus = {
 
 /**
  * A page in its own context, loaded with the role's stored session and a
- * distinct `cf-connecting-ip`. Project `use` options (base URL, locale,
+ * distinct `x-forwarded-for`. Project `use` options (base URL, locale,
  * timezone) still apply: the test runner merges them into `newContext`.
  */
 async function withRolePage(browser: Browser, role: Role, use: (page: Page) => Promise<void>): Promise<void> {

@@ -108,8 +108,8 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
 - Specs that change data use the worker user and only assert on items they created,
   found by a title unique to the test. Specs that assert totals use the gallery, quota
   or empty user.
-- Every browser and API context sends its own random `cf-connecting-ip`, because
-  production keys the sign-in rate limiter on it. Sessions come from the real login
+- Every browser and API context sends its own random `x-forwarded-for`, which the stack
+  trusts as one proxy hop (`TRUSTED_PROXY_HOPS: 1`), so each gets its own rate-limit bucket, sign-in included. Sessions come from the real login
   form; never forge one or hard-code a cookie name. `utils/sign-in.ts` signs in a fresh context
   (`signInThroughForm`), or submits a `/login` form the page is already on (`submitLoginForm`, for `?redirect=` flows).
 - Uploads are rate limited per user (60 per minute for each upload route, and ShareX
@@ -131,13 +131,12 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
   the prefix by search), `cardOf`, `openCardMenu`, `createFolderThroughSidebar` and `folderIdOf`.
 - `utils/preview.ts` helps with the Preview overlay: `previewOf(page, title)` (its dialog is named by the file), `previewCounter` ("N / total") and `galleryFileIds(db)` (title -> id of the gallery user's files, to open `/dashboard?file=<id>`).
 - `utils/media.ts` checks media as a user's player would: `decodeMedia(page, bytes, mimeType)` plays bytes in the page and returns `{ duration, width, height }` (rejects if undecodable), and `recordClipWithSound(page, seconds)` records an MP4 with a video and an audio track in Chromium (`clip.mp4` has no audio).
-- `utils/ffmpeg.ts` has `serveFfmpegCore(page)` for specs of tools that run ffmpeg.wasm (video editor, converter, audio editor's MP3). Call it before `goto`: the test contexts' made-up `cf-connecting-ip` header makes the CDN answer 403, so the core is fetched from node instead. Those specs need the internet.
 - `utils/served-files.ts` gives the serving specs (`serving/`) a seeded gallery file to read: `servedFile(gallery, db, corpusName, { private })` returns its `id`, `title`, corpus `entry` and the expected `bytes` (the first copy with that visibility; e.g. the public `tone.mp3` is `tone (2).mp3`). Read only, so those specs upload nothing.
 - `utils/form-shares.ts` seeds a form share for a fixture user: `seedFormShare(db, stack, owner, { title, fields, expiresAt?, maxViews? })`
   returns the share id for `/form/<id>`. No screen creates shares (the builder dialog is not mounted) and server function ids are
   hashed, so it writes the rows `createFormShare` would, encrypting sensitive values with `E2E_FORM_FIELD_ENCRYPTION_KEY` (the
-  key the app container runs with). The public claim limit is per connection address, which is the same for the whole suite:
-  a spec that exhausts it belongs last in a serial file.
+  key the app container runs with). The public claim limit is per client address, which every context of one test shares, so a
+  spec can exhaust it without affecting other tests.
 - `utils/uploads.ts` helps upload specs: `storedFile(db, bucket, title)` (the row plus the object's bytes; the bucket key is
   `<ownerId>/<decoded url>`), `bucketKeysContaining`, `createToken`/`revokeToken`/`withToken` (Settings -> Upload tokens;
   the key is shown once), `sharexPost` (a ShareX POST with the Token in the header or the form), `setTokenOptions`

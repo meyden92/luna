@@ -29,8 +29,8 @@ the same quirks dev does.
 ## Consequences
 
 Three things follow from running production mode. The sign-in rate limiter is on,
-so each browser context presents its own `cf-connecting-ip` and gets its own
-bucket. Signed storage URLs embed `AWS_ENDPOINT`, so the app container and the
+so each browser context presents its own `x-forwarded-for` (the stack trusts
+one proxy hop, #100) and gets its own bucket. Signed storage URLs embed `AWS_ENDPOINT`, so the app container and the
 browser must resolve the same storage host: the app reaches RustFS as
 `host.docker.internal`, and the test browser maps that name to `127.0.0.1`. And
 anything that costs money, such as Replicate, stays unconfigured; it is tested by

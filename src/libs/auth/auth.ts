@@ -3,6 +3,7 @@ import { admin as adminPlugin, username as usernamePlugin } from 'better-auth/pl
 import { tanstackStartCookies } from 'better-auth/tanstack-start';
 import { auditUserCreated, authDatabaseAdapter } from '@/db/queries/auth';
 import { isValidUsername, PASSWORD_MIN_LENGTH, USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH } from '@/schemas/credentials-schema';
+import { clientIp } from '../client-ip';
 import { env } from '../env';
 import { ensureUserHasDefaultGroup } from '../rbac/default-group';
 import { creationActor } from './creation-actor';
@@ -16,6 +17,8 @@ import { creationActor } from './creation-actor';
  * `@better-auth/cli generate` can emit a Drizzle schema but cannot apply it, so
  * `src/db/schema/auth.ts` is hand-owned and Drizzle Kit migrates it.
  */
+const CLIENT_IP_HEADER = 'x-lunashare-client-ip';
+
 export const auth = betterAuth({
   plugins: [
     adminPlugin(),
@@ -73,7 +76,8 @@ export const auth = betterAuth({
       httpOnly: true,
     },
     ipAddress: {
-      ipAddressHeaders: ['cf-connecting-ip'], // or any other custom header
+      // Set only by `handleAuthRequest`, never taken from the client.
+      ipAddressHeaders: [CLIENT_IP_HEADER],
     },
   },
   // The rate-limit middleware in src/server/middleware cannot cover sign-in: it
@@ -81,8 +85,9 @@ export const auth = betterAuth({
   // request handler. This store is in-memory, so the window resets on deploy.
   rateLimit: {
     // The window is keyed on IP and path. The end-to-end suite runs the
-    // production image with this on; each of its Playwright contexts sends its
-    // own `cf-connecting-ip`, so no context throttles another.
+    // production image with this on behind one simulated proxy hop; each of
+    // its Playwright contexts sends its own `x-forwarded-for`, so no context
+    // throttles another.
     enabled: env.NODE_ENV === 'production',
     customRules: {
       '/sign-in/username': { window: 60 * 15, max: 5 },
@@ -90,5 +95,20 @@ export const auth = betterAuth({
     },
   },
 });
+
+/**
+ * Hands a request from the `/api/auth/*` route to Better-Auth. Better-Auth can
+ * only read the client IP from a header, so this replaces CLIENT_IP_HEADER with
+ * the address `clientIp` derives from the socket peer and TRUSTED_PROXY_HOPS
+ * (#100): whatever IP header a client sends never reaches the rate limiter or
+ * the session record.
+ */
+export function handleAuthRequest(request: Request, socketIp: string | undefined): Promise<Response> {
+  const headers = new Headers(request.headers);
+  headers.delete(CLIENT_IP_HEADER);
+  const ip = clientIp(request.headers, env.TRUSTED_PROXY_HOPS, socketIp);
+  if (ip) headers.set(CLIENT_IP_HEADER, ip);
+  return auth.handler(new Request(request, { headers }));
+}
 
 export type Session = typeof auth.$Infer.Session;

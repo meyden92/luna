@@ -11,9 +11,8 @@ import { clickUntil } from '../utils/hydration';
 // No screen creates a share (the builder dialog is not mounted anywhere), so shares are seeded with
 // `seedFormShare`; everything after that is observed in the browser.
 //
-// The public claim limit (30 per minute) is keyed on the connection address the app sees, which is the same for the
-// whole suite, so these tests run in order in one worker and the rate-limit test goes last.
-test.describe.configure({ mode: 'serial' });
+// The public claim limit (30 per minute) is keyed on the client address. Every context a test opens sends the same
+// one (the `extraHTTPHeaders` fixture), so the rate-limit test's visitor is refused too, and no other test is.
 
 const MASKED = '•'.repeat(12);
 const unique = (label: string) => `${label}-${randomBytes(3).toString('hex')}`;
@@ -186,7 +185,6 @@ test('claims beyond the rate limit are refused and the link will not open', asyn
   await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible();
   expect(calls.length).toBeGreaterThan(0);
 
-  // Some of the 30 may already be spent by the tests above.
   let refused = false;
   for (let attempt = 1; attempt <= 70 && !refused; attempt++) {
     for (const call of calls) {

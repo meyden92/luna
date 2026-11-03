@@ -61,12 +61,13 @@ export function fixtureUsers(workers: number): FixtureUser[] {
 }
 
 /**
- * A `cf-connecting-ip` no other context uses. Production keys Better-Auth's
- * sign-in rate limiter on this header (#100), so every browser and request
- * context gets its own address unless a spec reuses one on purpose.
+ * An `x-forwarded-for` no other context uses. The stack trusts one proxy hop,
+ * so the app keys its rate limiters, sign-in included, on this address (#100),
+ * and every browser and request context gets its own unless a spec reuses one
+ * on purpose.
  */
-export function clientIpHeader(): { 'cf-connecting-ip': string } {
-  return { 'cf-connecting-ip': `10.${randomInt(256)}.${randomInt(256)}.${randomInt(1, 255)}` };
+export function clientIpHeader(): { 'x-forwarded-for': string } {
+  return { 'x-forwarded-for': `10.${randomInt(256)}.${randomInt(256)}.${randomInt(1, 255)}` };
 }
 
 /** The database id of a fixture user, for `owner_id` lookups and `/profile/<id>`. */

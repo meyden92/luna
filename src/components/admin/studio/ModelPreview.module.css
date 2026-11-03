@@ -1,0 +1,38 @@
+@layer components {
+  /* Stays in view while the Field cards scroll. */
+  .card {
+    position: sticky;
+    top: var(--space-4);
+  }
+
+  .muted {
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+  }
+
+  .footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-3);
+  }
+
+  .status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: 500;
+  }
+
+  .outputs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+    gap: var(--space-2);
+  }
+
+  .output {
+    width: 100%;
+    border-radius: var(--radius-md);
+  }
+}

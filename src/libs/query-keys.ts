@@ -94,6 +94,16 @@ export const queryKeys = {
     execution: (id: string | null) => ['admin', 'task-execution', id] as const,
     manager: ['tasks'] as const,
   },
+  studio: {
+    status: ['studio', 'status'] as const,
+    generation: (id: string) => ['studio', 'generation', id] as const,
+  },
+  adminStudio: {
+    categories: ['admin', 'studio', 'categories'] as const,
+    models: ['admin', 'studio', 'models'] as const,
+    model: (id: string) => ['admin', 'studio', 'models', id] as const,
+    catalog: (search: Record<string, unknown>) => ['admin', 'studio', 'catalog', search] as const,
+  },
   adminVersion: {
     info: ['admin', 'version'] as const,
   },

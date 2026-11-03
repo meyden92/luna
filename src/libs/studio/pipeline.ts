@@ -12,6 +12,7 @@ import {
   getGeneration,
   getOwnedGeneration,
   getOwnedOutput,
+  getStudioModel,
   listExpiredOutputs,
   listGenerationOutputs,
   listGenerationsToPoll,
@@ -79,7 +80,11 @@ interface PipelineState {
   polling: boolean;
 }
 
-export type SubmitTarget = { modelId: string } | { templateId: string };
+/**
+ * What a Generation runs: an active Model or Template, or, for an admin's
+ * test run from the Model editor, any Model with the editor's unsaved Fields.
+ */
+export type SubmitTarget = { modelId: string } | { templateId: string } | { draft: { modelId: string; fields: FieldConfig[] } };
 
 // ---------------------------------------------------------------------------
 // Submit
@@ -105,8 +110,7 @@ export async function submitGeneration(options: {
 }): Promise<GenerationView> {
   const fal = falClient();
   const { userId, values } = options;
-  const { model, template } = await resolveTarget(options.target);
-  const fields = template?.fields ?? model.fields;
+  const { model, template, fields } = await resolveTarget(options.target);
   const schema = model.schemaSnapshot.input;
 
   const draft = buildRequestInput({ fields, schema, values, variables: template?.variables });
@@ -144,15 +148,22 @@ export async function submitGeneration(options: {
   return publishGeneration(finished, true);
 }
 
-async function resolveTarget(target: SubmitTarget): Promise<{ model: StudioModel; template: StudioTemplate | null }> {
+async function resolveTarget(
+  target: SubmitTarget,
+): Promise<{ model: StudioModel; template: StudioTemplate | null; fields: FieldConfig[] }> {
   if ('templateId' in target) {
     const found = await getActiveStudioTemplate(target.templateId);
     if (!found) throw new UserFacingError('This Template is not available.');
-    return found;
+    return { ...found, fields: found.template.fields };
+  }
+  if ('draft' in target) {
+    const model = await getStudioModel(target.draft.modelId);
+    if (!model) throw new UserFacingError('This Model no longer exists.');
+    return { model, template: null, fields: target.draft.fields };
   }
   const model = await getActiveStudioModel(target.modelId);
   if (!model) throw new UserFacingError('This Model is not available.');
-  return { model, template: null };
+  return { model, template: null, fields: model.fields };
 }
 
 /** One file input of a draft request: where it goes and how to read it. */

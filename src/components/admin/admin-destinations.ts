@@ -1,4 +1,6 @@
-import { Activity, Gauge, Globe, MapIcon, ShieldAlert, User2, Zap } from 'lucide-react';
+import { Activity, Gauge, Globe, MapIcon, Shapes, ShieldAlert, Sparkles, User2, Zap } from 'lucide-react';
+
+/** `studio` entries show only while the Studio is enabled. */
 
 export const adminDestinations = [
   {
@@ -42,5 +44,19 @@ export const adminDestinations = [
     to: '/admin/tasks/logs',
     Icon: Activity,
     description: 'Inspect recent task execution history',
+  },
+  {
+    name: 'Studio categories',
+    to: '/admin/studio/categories',
+    Icon: Shapes,
+    description: 'Define the tasks Users start from in the Studio',
+    studio: true,
+  },
+  {
+    name: 'Studio models',
+    to: '/admin/studio/models',
+    Icon: Sparkles,
+    description: 'Add fal Models and choose which inputs Users see',
+    studio: true,
   },
 ] as const;

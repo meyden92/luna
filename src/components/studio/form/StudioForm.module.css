@@ -1,0 +1,110 @@
+@layer components {
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .help {
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+  }
+
+  /* The switch sits next to its label; help wraps below both. */
+  .switchField {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--space-2);
+
+    & > .help {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .group {
+    border-top: 1px solid var(--border);
+    padding-top: var(--space-3);
+  }
+
+  .chevron {
+    width: var(--space-4);
+    height: var(--space-4);
+    transition: rotate 200ms ease-out;
+  }
+
+  .groupTrigger {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+
+    &[data-panel-open] .chevron {
+      rotate: 180deg;
+    }
+  }
+
+  .groupBody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding-top: var(--space-4);
+  }
+
+  .slider {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .sliderValue {
+    min-width: 3ch;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  .select {
+    width: 100%;
+  }
+
+  .files {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .fileList {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .file {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+  }
+}

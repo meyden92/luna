@@ -56,11 +56,11 @@ export function isFileRef(value: unknown): value is FileRef {
   }
 }
 
-function isEmpty(value: unknown): boolean {
+export function isEmpty(value: unknown): boolean {
   return value === undefined || value === null || value === '';
 }
 
-function sameValue(a: unknown, b: unknown): boolean {
+export function sameValue(a: unknown, b: unknown): boolean {
   return a === b || JSON.stringify(a) === JSON.stringify(b);
 }
 
@@ -158,7 +158,7 @@ function acceptsType(property: JsonSchema, type: string): boolean {
 }
 
 /** Why `value` does not satisfy `property` narrowed by `field`, or null. Phrased to follow the Field's label. */
-function valueProblem(value: unknown, property: JsonSchema, field?: FieldConfig): string | null {
+export function valueProblem(value: unknown, property: JsonSchema, field?: FieldConfig): string | null {
   if (property.anyOf) {
     const problems = property.anyOf.map((branch) => valueProblem(value, branch, field));
     return problems.includes(null) ? null : (problems.find((problem) => problem !== 'must be empty') ?? 'is invalid');

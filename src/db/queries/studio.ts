@@ -63,6 +63,47 @@ export async function updateStudioCategory(id: string, values: Partial<CategoryV
   return after;
 }
 
+export async function getStudioCategory(id: string, handle: AuditHandle = db) {
+  const [row] = await handle.select().from(studioCategory).where(eq(studioCategory.id, id));
+  return row;
+}
+
+/** Every Category in order, with how many Models and Templates it holds. */
+export async function listStudioCategories(handle: AuditHandle = db) {
+  const models = handle
+    .select({ categoryId: studioModel.categoryId, count: count().as('model_count') })
+    .from(studioModel)
+    .groupBy(studioModel.categoryId)
+    .as('models');
+  const templates = handle
+    .select({ categoryId: studioTemplate.categoryId, count: count().as('template_count') })
+    .from(studioTemplate)
+    .groupBy(studioTemplate.categoryId)
+    .as('templates');
+  const rows = await handle
+    .select({ category: studioCategory, modelCount: models.count, templateCount: templates.count })
+    .from(studioCategory)
+    .leftJoin(models, eq(models.categoryId, studioCategory.id))
+    .leftJoin(templates, eq(templates.categoryId, studioCategory.id))
+    .orderBy(asc(studioCategory.sortOrder), asc(studioCategory.createdAt));
+  return rows.map(({ category, modelCount, templateCount }) => ({
+    ...category,
+    modelCount: modelCount ?? 0,
+    templateCount: templateCount ?? 0,
+  }));
+}
+
+/** Gives the Categories `ids` the sort orders 0, 1, 2…, auditing each one that moved. */
+export async function reorderStudioCategories(ids: string[], userId: string | null, handle: AuditHandle = db) {
+  return handle.transaction(async (tx: Tx) => {
+    const current = await tx.select().from(studioCategory).where(inArray(studioCategory.id, ids));
+    const orders = new Map(current.map((row) => [row.id, row.sortOrder]));
+    for (const [sortOrder, id] of ids.entries()) {
+      if (orders.has(id) && orders.get(id) !== sortOrder) await updateStudioCategory(id, { sortOrder }, userId, tx);
+    }
+  });
+}
+
 /** Fails on the foreign key while the Category still holds Models or Templates. */
 export async function deleteStudioCategory(id: string, userId: string | null, handle: AuditHandle = db) {
   const [before] = await handle.delete(studioCategory).where(eq(studioCategory.id, id)).returning();
@@ -129,6 +170,33 @@ export async function deleteStudioTemplate(id: string, userId: string | null, ha
   const [before] = await handle.delete(studioTemplate).where(eq(studioTemplate.id, id)).returning();
   if (before) await writeAuditLog(handle, { model: 'StudioTemplate', action: 'delete', before, userId });
   return before;
+}
+
+/** Every Model, by Category order then its own, with its Category's name. */
+export async function listStudioModels(handle: AuditHandle = db) {
+  const rows = await handle
+    .select({ model: studioModel, categoryName: studioCategory.name })
+    .from(studioModel)
+    .innerJoin(studioCategory, eq(studioCategory.id, studioModel.categoryId))
+    .orderBy(asc(studioCategory.sortOrder), asc(studioModel.sortOrder), asc(studioModel.createdAt));
+  return rows.map(({ model, categoryName }) => ({ ...model, categoryName }));
+}
+
+export async function getStudioModel(id: string, handle: AuditHandle = db) {
+  const [row] = await handle.select().from(studioModel).where(eq(studioModel.id, id));
+  return row;
+}
+
+/** How many Models a Category holds: a new one is sorted after them. */
+export async function countStudioModels(categoryId: string, handle: AuditHandle = db) {
+  const [row] = await handle.select({ count: count() }).from(studioModel).where(eq(studioModel.categoryId, categoryId));
+  return row?.count ?? 0;
+}
+
+/** How many Templates use a Model: it cannot be deleted while any do. */
+export async function countStudioTemplatesOfModel(modelId: string, handle: AuditHandle = db) {
+  const [row] = await handle.select({ count: count() }).from(studioTemplate).where(eq(studioTemplate.modelId, modelId));
+  return row?.count ?? 0;
 }
 
 /** An active Model, as a submit target. */

@@ -13,6 +13,8 @@ type Breadcrumb = {
 const ADMIN_BREADCRUMB_LINKS = {
   '/admin': '/admin',
   '/admin/audit': '/admin/audit',
+  '/admin/studio/categories': '/admin/studio/categories',
+  '/admin/studio/models': '/admin/studio/models',
   '/admin/tasks': '/admin/tasks',
   '/admin/tasks/deleted-files': '/admin/tasks/deleted-files',
   '/admin/tasks/logs': '/admin/tasks/logs',

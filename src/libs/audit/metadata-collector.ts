@@ -1,22 +1,26 @@
-import { getRequestHeaders } from '@tanstack/react-start/server';
+import { getRequest, getRequestIP } from '@tanstack/react-start/server';
 import { createHash, randomUUID } from 'crypto';
+import { clientIp } from '@/libs/client-ip';
+import { env } from '@/libs/env';
 import type { AuditMetadata } from '@/types/audit';
 
 export class MetadataCollector {
   static async collectFromRequest(): Promise<AuditMetadata> {
-    let headersList: Record<string, string | undefined> | Headers;
+    let headers: Headers;
+    let socketIp: string | undefined;
     try {
-      headersList = getRequestHeaders() as unknown as Record<string, string | undefined> | Headers;
+      headers = getRequest().headers;
+      socketIp = getRequestIP();
     } catch {
       // No request context (cron tasks, server startup) — audit without metadata.
       return {};
     }
 
-    const get = (name: string) =>
-      (headersList instanceof Headers ? headersList.get(name) : (headersList as Record<string, string | undefined>)[name]) ?? null;
+    const get = (name: string) => headers.get(name);
 
     return {
-      ipAddress: get('x-forwarded-for')?.split(',')[0]?.trim() || get('x-real-ip') || undefined,
+      // The same address the rate limiters key on, never one the client chose (#234).
+      ipAddress: clientIp(headers, env.TRUSTED_PROXY_HOPS, socketIp),
       userAgent: get('user-agent') || undefined,
       requestId: get('x-request-id') || undefined,
       endpoint: get('x-invoke-path') || undefined,

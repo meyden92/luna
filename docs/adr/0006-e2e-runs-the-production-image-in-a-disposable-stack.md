@@ -24,7 +24,9 @@ faster but tests something other than what is deployed, and would still need the
 migrations applied by hand. Testcontainers was rejected in favour of a compose
 file beside `docker-compose.dev.yml`, which adds no dependency. MinIO and an S3
 mock were rejected for RustFS, the storage dev already runs, so the suite meets
-the same quirks dev does.
+the same quirks dev does. For paid services, stubbing the client inside the app
+would leave its HTTP calls untested and put test code in the image, and replaying
+recorded provider responses would go stale as the provider changes.
 
 ## Consequences
 
@@ -33,7 +35,12 @@ so each browser context presents its own `cf-connecting-ip` and gets its own
 bucket. Signed storage URLs embed `AWS_ENDPOINT`, so the app container and the
 browser must resolve the same storage host: the app reaches RustFS as
 `host.docker.internal`, and the test browser maps that name to `127.0.0.1`. And
-anything that costs money, such as Replicate, stays unconfigured; it is tested by
-hand.
+no run may cost money, so a paid third-party service is replaced inside the stack
+by a deterministic fake that answers what the app's client calls, with dummy
+keys only the fake accepts. fal, behind the Studio, is the first: its logic is too
+large to leave to hand testing, and the fake lets specs force failures, hold a
+request running and change a Model's schema. What only the real provider can
+show (its actual models, webhooks reaching a public instance, real billing) is
+still checked by hand.
 
 _Decided 2026-09-25 · deme_

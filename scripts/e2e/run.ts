@@ -1,9 +1,10 @@
 /**
  * `bun run test:e2e [-- <playwright args>]`: builds the production image from
  * the working tree, starts it in a disposable Compose stack (Postgres, RustFS,
- * app), bootstraps an admin the way an operator would, runs Playwright against
- * it and removes the stack and its volumes, whether the run passed, failed or
- * was interrupted. The image and the build cache are kept. See ADR 0006.
+ * the fake fal service, app), bootstraps an admin the way an operator would,
+ * runs Playwright against it and removes the stack and its volumes, whether the
+ * run passed, failed or was interrupted. The images and the build cache are
+ * kept. See ADR 0006.
  *
  * Never reads `.env`: package.json runs this with `bun --no-env-file`, and
  * Compose gets `--env-file /dev/null`. Exits with Playwright's exit code.
@@ -154,19 +155,23 @@ async function freePorts(count: number): Promise<number[]> {
 
 const secret = (bytes: number) => randomBytes(bytes).toString('hex');
 
-const [appPort, postgresPort, s3Port] = (await freePorts(3)) as [number, number, number];
+const [appPort, postgresPort, s3Port, falPort] = (await freePorts(4)) as [number, number, number, number];
 const baseUrl = `http://localhost:${appPort}`;
 const s3Endpoint = `http://127.0.0.1:${s3Port}`;
 const databaseUrl = `postgresql://lunashare:lunashare@127.0.0.1:${postgresPort}/lunashare`;
 const s3Credentials = { accessKeyId: secret(10), secretAccessKey: secret(20) };
 const adminPassword = secret(16);
 const formFieldEncryptionKey = randomBytes(32).toString('base64');
+const falKey = `e2e-fake-${secret(16)}`;
 
 /** Interpolated into docker-compose.e2e.yml. */
 const composeEnv: Record<string, string> = {
   E2E_APP_PORT: String(appPort),
   E2E_POSTGRES_PORT: String(postgresPort),
   E2E_S3_PORT: String(s3Port),
+  E2E_FAL_PORT: String(falPort),
+  E2E_FAL_KEY: falKey,
+  E2E_FAL_BILLING_KEY: `e2e-fake-billing-${secret(16)}`,
   E2E_S3_BUCKET: BUCKET,
   E2E_S3_ACCESS_KEY_ID: s3Credentials.accessKeyId,
   E2E_S3_SECRET_ACCESS_KEY: s3Credentials.secretAccessKey,
@@ -190,6 +195,8 @@ const playwrightEnv: StackEnv = {
   E2E_ADMIN_USERNAME: ADMIN.username,
   E2E_ADMIN_PASSWORD: adminPassword,
   E2E_FORM_FIELD_ENCRYPTION_KEY: formFieldEncryptionKey,
+  E2E_FAL_URL: `http://127.0.0.1:${falPort}`,
+  E2E_FAL_KEY: falKey,
 };
 
 const compose = (...args: string[]) => ['docker', 'compose', '--env-file', '/dev/null', '-f', COMPOSE_FILE, '-p', project, ...args];
@@ -277,11 +284,11 @@ try {
   log('sweeping leftover stacks');
   await sweepLeftovers();
 
-  log(`build: lunashare:e2e from the working tree (project ${project})`);
-  await runOrThrow(compose('build', 'app'), { env: composeEnv });
+  log(`build: lunashare:e2e and the fal fake from the working tree (project ${project})`);
+  await runOrThrow(compose('build', 'app', 'fal-fake'), { env: composeEnv });
 
-  log('start: postgres and rustfs');
-  await runOrThrow(compose('up', '-d', '--wait', 'postgres', 'rustfs'), { env: composeEnv });
+  log('start: postgres, rustfs and fal-fake');
+  await runOrThrow(compose('up', '-d', '--wait', 'postgres', 'rustfs', 'fal-fake'), { env: composeEnv });
   await createBucket();
 
   log('migrate: starting the app, whose entrypoint applies the migrations');
@@ -291,7 +298,9 @@ try {
   log('seed: bootstrapping the admin through auth:set-credentials');
   await bootstrapAdmin();
 
-  log(`stack up\n  app       ${baseUrl}\n  postgres  ${databaseUrl}\n  rustfs    ${s3Endpoint} (bucket ${BUCKET})`);
+  log(
+    `stack up\n  app       ${baseUrl}\n  postgres  ${databaseUrl}\n  rustfs    ${s3Endpoint} (bucket ${BUCKET})\n  fal-fake  http://127.0.0.1:${falPort}`,
+  );
   log(`test: playwright test ${process.argv.slice(2).join(' ')}`);
   exitCode = await run(['bunx', 'playwright', 'test', ...process.argv.slice(2)], { env: playwrightEnv });
 } catch (error) {

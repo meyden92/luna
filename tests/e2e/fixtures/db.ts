@@ -3,8 +3,9 @@ import { Pool } from 'pg';
 
 /**
  * Drizzle on the stack's Postgres, for the `db` fixture: reads, plus
- * backdating `file.created_at`, and seeding form shares (`utils/form-shares.ts`,
- * which no screen can create); nothing else.
+ * backdating `file.created_at`, seeding form shares (`utils/form-shares.ts`,
+ * which no screen can create) and seeding submitted Generations
+ * (`studio/smoke.spec.ts`, as no screen submits one yet); nothing else.
  *
  * Deliberately its own pool rather than `src/db/client`: the app handle is
  * validated by `@/libs/env`, which would drag the whole app environment into

@@ -10,8 +10,9 @@ const browser = {
   timezoneId: 'UTC',
   locale: 'en-US',
   // The app signs storage URLs for host.docker.internal; the browser has to
-  // reach RustFS under that same name.
-  launchOptions: { args: ['--host-resolver-rules=MAP host.docker.internal 127.0.0.1'] },
+  // reach RustFS under that same name. fal-fake hands out URLs (thumbnails,
+  // uploaded inputs) under its service name.
+  launchOptions: { args: ['--host-resolver-rules=MAP host.docker.internal 127.0.0.1,MAP fal-fake 127.0.0.1'] },
 };
 
 export default defineConfig({

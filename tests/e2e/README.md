@@ -26,8 +26,8 @@ Chromium (`bun run test:e2e:install`). No `.env`, no dev database, no dev server
 1. Refuses to start while another run in the same checkout is alive (`tests/e2e/.run.lock`): runs share `tests/e2e/.auth` and `test-results/`. Run concurrent suites from separate worktrees.
 2. Removes anything a crashed run left behind (Compose projects named `lunashare-e2e-<runner pid>-*` whose runner process is gone). Stacks of runs still in progress are left alone.
 3. Picks free ports and generates every secret fresh.
-4. Builds the production `Dockerfile` from the working tree as `lunashare:e2e`.
-5. Starts Postgres and RustFS (`docker-compose.e2e.yml`), creates the bucket with an anonymous-read policy.
+4. Builds the production `Dockerfile` from the working tree as `lunashare:e2e`, and the fake fal service (`stack/fal-fake/`).
+5. Starts Postgres, RustFS and the fake (`docker-compose.e2e.yml`), creates the bucket with an anonymous-read policy.
 6. Starts the app. Its entrypoint applies the migrations, as in a deployment.
 7. Bootstraps the admin the operator's way: a User row, then `auth:set-credentials` inside the app container.
 8. Runs Playwright with the stack described in `E2E_*` env vars (`stack-env.ts`).
@@ -35,7 +35,7 @@ Chromium (`bun run test:e2e:install`). No `.env`, no dev database, no dev server
 
 The run exits with Playwright's exit code. Reports, traces, screenshots and
 videos stay in `playwright-report/` and `test-results/` after the stack is gone.
-Replicate is never configured, so nothing costs money.
+The app talks to the fake fal service only, with a dummy key, so nothing costs money.
 
 ## Users
 
@@ -102,7 +102,7 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
 | `gallery` | The seeded dataset (`GalleryDataset`) |
 | `corpus` | The fixture files: `files`, and the lookups `file`, `byKind`, `edgeCase`, `uploadable` |
 | `bucket` | `{ client, name }`: an S3 client on the stack's RustFS |
-| `db` | Drizzle on the stack's Postgres. Reads, backdating `file.created_at`, and seeding/backdating form shares (`utils/form-shares.ts`) |
+| `db` | Drizzle on the stack's Postgres. Reads, backdating `file.created_at`, seeding/backdating form shares (`utils/form-shares.ts`), and seeding submitted Generations (`studio/smoke.spec.ts`) |
 | `stack` | The `E2E_*` values (base URL, CDN URL, admin credentials, …) |
 
 - Specs that change data use the worker user and only assert on items they created,
@@ -138,6 +138,51 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
   the key is shown once), `sharexPost` (a ShareX POST with the Token in the header or the form), `setTokenOptions`
   (compress, convert to JPEG and quality have no UI: it replays the `updateTokenSettings` call the page makes; options apply to
   all of the user's Tokens) and `declaredLengthPost` (declares a `Content-Length` without sending the body).
+
+## The fake fal service
+
+The Studio runs against `fal-fake` (`stack/fal-fake/server.ts`), a Bun server in the stack that answers exactly the calls
+the app's fal client makes: the Platform API's `/v1/models` (with `q`, `category`, `endpoint_id`, `status`, `limit`/`cursor`
+and `expand=openapi-3.0`), `/v1/models/pricing` and `/v1/models/billing-events`, the queue (submit, status, result, cancel)
+and storage uploads. The app's `FAL_KEY` and `FAL_BILLING_KEY` are per-run dummies that only the fake accepts (billing
+events want the billing key), and the fake makes no outbound connections. Webhooks stay off, because the app's base URL
+is plain http on localhost, so the poller finishes every Generation (it polls every 3 s).
+
+The catalog is fixed (`stack/fal-fake/catalog.ts`; import `FAKE_MODELS` / `fakeModel(id)` instead of copying schemas):
+
+| Endpoint | Category | Input | Price | Result |
+| --- | --- | --- | --- | --- |
+| `fake/image` | `text-to-image` | `prompt`*, `aspect_ratio` (enum via `$ref`, default `1:1`), `num_images` 1–4, `seed` (nullable) | 0.03 / `image` | `num_images` PNGs, 128×128 |
+| `fake/edit` | `image-to-image` | `prompt`*, `image_urls`* (1–4) | 0.04 / `image` | one PNG |
+| `fake/video` | `image-to-video` | `prompt`*, `image_url`*, `duration` 5–10 (default 5) | 0.10 / `second` | `clip.mp4` |
+| `fake/audio` | `text-to-audio` | `prompt`* | 0.02 / `request` | `tone.mp3` |
+| `fake/3d` | `image-to-3d` | `image_url`* | 0.25 / `request` | a one-triangle GLB |
+| `fake/llm` | `llm` | `prompt`* | 0.001 / `request` | text only: the Studio must never offer it |
+| `fake/drift` | `text-to-image` | as `fake/image` | 0.03 / `image` | as `fake/image`; reserved for schema-swap specs |
+
+(* required.) A request stays `IN_PROGRESS` for one second, then completes; the result points at media the fake serves
+itself. Billing events exist for succeeded requests, at the list price times the units (`num_images`, `duration`, else 1).
+
+Control hooks, written anywhere in a request's input (usually the prompt):
+
+- `[fail]`: the request completes with a fal-style model error (422, `detail[0].type` and `error_type` `fake_failure`).
+- `[slow]`: the request stays `IN_PROGRESS` until it is cancelled (cancel answers 202, then it completes as cancelled) or
+  released with `POST /__control/release` `{ request_id }`.
+- `[cost=<usd>]`: billing events report this amount instead of the list price, so a spec can tell a settled cost from the estimate.
+
+And endpoints, wrapped for specs in `utils/fal-fake.ts`:
+
+| Endpoint | Helper | What |
+| --- | --- | --- |
+| `GET /__control/requests` | `falRequests(stack)`, `falRequestContaining(stack, text)` | Every request the fake received, with the exact `input` the app sent. `falRequestContaining` waits for the one whose input contains `text` |
+| `GET /__control/uploads` | `falUploads(stack)` | Every storage upload: `file_url` (what an input names), `file_name`, `content_type`, `size`, lifecycle |
+| `POST /__control/release` | `releaseFalRequest(stack, requestId)` | Lets a `[slow]` request finish |
+| `POST /__control/schema` | `setFalModel(stack, endpointId, { input?, status? })` | Serves another `<Name>Input` schema and/or status (`deprecated`) for an endpoint; each call states the whole override, so `{}` restores it |
+
+`falFakeClient(stack)` is the app's own fal client pointed at the fake (`E2E_FAL_URL`), for specs that talk to the queue
+directly. The fake is shared by every worker: find your requests by a `uniquePrefix` in the prompt, and swap schemas only
+on `fake/drift`. It hands out URLs under its service name, `http://fal-fake:<port>`, which the app container resolves and
+the browser maps to `127.0.0.1` (catalog thumbnails, uploaded inputs).
 
 ## Things that differ from dev
 

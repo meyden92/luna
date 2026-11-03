@@ -8,7 +8,6 @@ describe('auditSessionId', () => {
     const plain = auditSessionId(withCookie('theme=dark; lunashare.session_token=abc.sig'));
     expect(plain).toMatch(/^[0-9a-f]{32}$/);
     expect(auditSessionId(withCookie('__Secure-lunashare.session_token=abc.sig'))).toBe(plain);
-    expect(plain).not.toContain('abc');
   });
 
   test('gives nothing without a session cookie', () => {

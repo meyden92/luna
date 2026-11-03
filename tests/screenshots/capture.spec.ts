@@ -16,13 +16,11 @@ const AUTHED_ROUTES = [
   '/bin',
   '/settings',
   '/settings/account',
-  '/ai/generate',
   '/tools/rauchen',
   '/admin',
   '/admin/users',
   '/admin/tasks',
   '/admin/audit',
-  '/admin/templates',
 ];
 
 function fileNameFor(route: string, scheme: string): string {

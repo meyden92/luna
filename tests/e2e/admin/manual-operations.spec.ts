@@ -1,4 +1,3 @@
-import { HeadObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { expect } from '@playwright/test';
 import { count, eq } from 'drizzle-orm';
 import { file } from '../../../src/db/schema/files';
@@ -6,7 +5,6 @@ import { test } from '../fixtures/test';
 import { fixtureUser } from '../fixtures/users';
 import { userIdOf } from '../utils/admin-users';
 import { clickUntil } from '../utils/hydration';
-import { servedFile } from '../utils/served-files';
 import { bucketKeysContaining } from '../utils/uploads';
 
 // The Manual Operations tiles of /admin/tasks. They act on the whole installation, so each test only reads
@@ -42,35 +40,6 @@ test('Sync Files analyses the bucket and reports its result without changing the
 
   expect(await rowsOf()).toBe(rowsBefore);
   expect(await datasetKeys()).toEqual(objectsBefore);
-});
-
-test('Delete Cache purges the generative cache and leaves renditions serving', async ({ adminPage, bucket, db, gallery, request }) => {
-  const key = `cache/e2e-${Date.now()}.bin`;
-  await bucket.client.send(
-    new PutObjectCommand({ Bucket: bucket.name, Key: key, Body: 'cached', ContentType: 'application/octet-stream' }),
-  );
-  const image = await servedFile(gallery, db, 'landscape-photo.jpg', { private: false });
-  const rendition = () => request.get(`/cdn/${image.id}/w=200,fmt=png`);
-  expect((await rendition()).status()).toBe(200);
-
-  await adminPage.goto('/admin/tasks');
-  await adminPage.getByRole('link', { name: /Delete Cache/ }).click();
-  await expect(adminPage).toHaveTitle('Delete Cache | LunaShare');
-  const purge = adminPage.getByRole('button', { name: 'Purge All Cache & History' });
-  await clickUntil(purge, adminPage.getByRole('dialog', { name: 'Purge Cache & History?' }));
-  const dialog = adminPage.getByRole('dialog', { name: 'Purge Cache & History?' });
-  await expect(dialog).toContainText('This will delete ALL cached images and ALL template generation history.');
-
-  // Cancel keeps the object.
-  await dialog.getByRole('button', { name: 'Cancel' }).click();
-  await expect(dialog).toBeHidden();
-  await bucket.client.send(new HeadObjectCommand({ Bucket: bucket.name, Key: key }));
-
-  await purge.click();
-  await dialog.getByRole('button', { name: 'Confirm' }).click();
-  await expect(adminPage.getByText(/Purge complete! Deleted [1-9]\d* files, \d+ cache records, and \d+ history records\./)).toBeVisible();
-  await expect(bucket.client.send(new HeadObjectCommand({ Bucket: bucket.name, Key: key }))).rejects.toMatchObject({ name: 'NotFound' });
-  expect((await rendition()).status()).toBe(200);
 });
 
 test('Test Upload is a placeholder page', async ({ adminPage }) => {

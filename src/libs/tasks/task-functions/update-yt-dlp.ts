@@ -1,4 +1,4 @@
-import { throwIfAborted } from '@/libs/ai-generation-utils';
+import { throwIfAborted } from '@/libs/abort';
 import { stderrTail } from '@/libs/downloads/errors';
 import { runYtDlp, ytDlpVersion } from '@/libs/downloads/yt-dlp';
 import type { TaskFunction } from '@/types/tasks';

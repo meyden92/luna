@@ -35,7 +35,6 @@ const TOOLS_LINKS = [
 
 const NAV_LINKS: readonly NavEntry[] = [
   { to: '/dashboard', label: 'Files' },
-  { to: '/ai/generate', label: 'Generate' },
   { to: '/bin', label: 'Snippets' },
   { to: '/automations', label: 'Automations' },
   { label: 'Tools', match: '/tools', children: TOOLS_LINKS },

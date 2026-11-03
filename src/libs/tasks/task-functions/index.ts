@@ -1,20 +1,18 @@
 import type { TaskFunction, TaskFunctionRegistry } from '@/types/tasks';
-// import { deleteExpiredCacheExecutor } from './cache-cleanup';
-import { checkTemplateGenerationsExecutor } from './check-template-generations';
 import { rescanImageDimensionsExecutor } from './rescan-image-dimensions';
 import { pruneFileRenditionsExecutor } from './selected-feature-maintenance';
 import { deleteExpiredSessionsExecutor } from './session-cleanup';
+import { expireStudioOutputsExecutor } from './studio-output-expiry';
 import { testLoggerTask } from './test-logger';
 import { updateYtDlpExecutor } from './update-yt-dlp';
 
 const taskFunctionRegistry: TaskFunctionRegistry = {
-  // deleteExpiredCache: deleteExpiredCacheExecutor, // Disabled as per new manual purge policy
   testLogger: testLoggerTask,
-  checkTemplateGenerations: checkTemplateGenerationsExecutor,
   deleteExpiredSessions: deleteExpiredSessionsExecutor,
   pruneFileRenditions: pruneFileRenditionsExecutor,
   rescanImageDimensions: rescanImageDimensionsExecutor,
   updateYtDlp: updateYtDlpExecutor,
+  expireStudioOutputs: expireStudioOutputsExecutor,
 };
 
 export function getTaskFunction(name: string): TaskFunction | undefined {

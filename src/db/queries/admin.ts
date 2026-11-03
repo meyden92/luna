@@ -2,8 +2,7 @@ import type { Column, SQL } from 'drizzle-orm';
 import { and, asc, count, desc, eq, getTableColumns, gt, gte, ilike, inArray, lt, lte, or, sql, sum } from 'drizzle-orm';
 import { type AuditHandle, writeAuditLog, writeAuditLogs } from '../audit';
 import { db } from '../client';
-import { auditLog, cachedImage, rbacGroup, userGroupAssignment } from '../schema/admin';
-import { templateGeneration } from '../schema/ai';
+import { auditLog, rbacGroup, userGroupAssignment } from '../schema/admin';
 import { session, user } from '../schema/auth';
 import { file } from '../schema/files';
 import { containsInsensitive, equalsInsensitive, escapeLike } from './like';
@@ -11,11 +10,7 @@ import { ensureGroupAssignment } from './rbac';
 
 /**
  * Query module for the remaining administrative surfaces (issue #43): the audit
- * browser, cache purging, the deleted-file recycle bin, and user administration.
- *
- * The template, global-variable and model *editing* surfaces are not here —
- * `queries/ai.ts` owns those and this module deliberately does not re-implement
- * them.
+ * browser, the deleted-file recycle bin, and user administration.
  *
  * Every function takes the handle last and defaults it to the module's own `db`,
  * so a caller composes a write into its transaction by passing `tx` and
@@ -148,74 +143,6 @@ export function listRelatedAuditLogs(
     .where(and(eq(auditLog.model, model), eq(auditLog.recordId, recordId)))
     .orderBy(desc(auditLog.timestamp), desc(auditLog.id))
     .limit(limit);
-}
-
-// ---------------------------------------------------------------------------
-// Cache administration
-// ---------------------------------------------------------------------------
-
-/**
- * One page of a user's cached proxy images.
- *
- * `purpose` is a fixed literal chosen by the producing code (`image-edit`,
- * `template-edit`), so it is compared exactly — the same reasoning that keeps
- * `cached_image.hash` un-normalised in `queries/ai.ts`.
- */
-export async function listOwnerCachedImages(
-  { ownerId, purpose, limit, offset }: { ownerId: string; purpose: string; limit: number; offset: number },
-  handle: AuditHandle = db,
-) {
-  const where = and(eq(cachedImage.ownerId, ownerId), eq(cachedImage.purpose, purpose));
-
-  const [images, [totals]] = await Promise.all([
-    handle
-      .select({
-        id: cachedImage.id,
-        url: cachedImage.url,
-        filename: cachedImage.filename,
-        contentType: cachedImage.contentType,
-        size: cachedImage.size,
-        hash: cachedImage.hash,
-        createdAt: cachedImage.createdAt,
-      })
-      .from(cachedImage)
-      .where(where)
-      .orderBy(desc(cachedImage.createdAt))
-      .limit(limit)
-      .offset(offset),
-    handle.select({ total: count() }).from(cachedImage).where(where),
-  ]);
-
-  return { images, totalCount: totals?.total ?? 0 };
-}
-
-/**
- * Drops every cached proxy image. `CachedImage` is a derived artifact and sits
- * in `UNAUDITED_MODELS`, so this deliberately writes no audit rows (issue #13).
- */
-export async function purgeCachedImages(handle: AuditHandle = db): Promise<number> {
-  const deleted = await handle.delete(cachedImage).returning({ id: cachedImage.id });
-  return deleted.length;
-}
-
-/**
- * Drops every template generation record. `TemplateGeneration` IS audited, so
- * each removed row records a delete — the Prisma extension audited the
- * equivalent `deleteMany` and dropping that would be a silent regression.
- */
-export async function purgeTemplateGenerations(userId: string | null, handle: AuditHandle = db): Promise<number> {
-  const before = await handle.select().from(templateGeneration);
-  if (before.length === 0) return 0;
-
-  await handle.delete(templateGeneration);
-  await writeAuditLogs(
-    handle,
-    'TemplateGeneration',
-    'delete',
-    before.map((row) => ({ before: row })),
-    userId,
-  );
-  return before.length;
 }
 
 // ---------------------------------------------------------------------------

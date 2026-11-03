@@ -13,19 +13,11 @@ type Breadcrumb = {
 const ADMIN_BREADCRUMB_LINKS = {
   '/admin': '/admin',
   '/admin/audit': '/admin/audit',
-  '/admin/global-variables': '/admin/global-variables',
-  '/admin/global-variables/new': '/admin/global-variables/new',
-  '/admin/models': '/admin/models',
-  '/admin/models/editing/new': '/admin/models/editing/new',
-  '/admin/models/generation/new': '/admin/models/generation/new',
   '/admin/tasks': '/admin/tasks',
-  '/admin/tasks/delete-cache': '/admin/tasks/delete-cache',
   '/admin/tasks/deleted-files': '/admin/tasks/deleted-files',
   '/admin/tasks/logs': '/admin/tasks/logs',
   '/admin/tasks/sync-files': '/admin/tasks/sync-files',
   '/admin/tasks/test-upload': '/admin/tasks/test-upload',
-  '/admin/templates': '/admin/templates',
-  '/admin/templates/create': '/admin/templates/create',
   '/admin/users': '/admin/users',
 } as const satisfies Partial<Record<AdminRouteTo, AdminRouteTo>>;
 

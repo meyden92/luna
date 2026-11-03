@@ -1,4 +1,4 @@
-import { throwIfAborted } from '@/libs/ai-generation-utils';
+import { throwIfAborted } from '@/libs/abort';
 import { stderrTail } from './errors';
 
 /**

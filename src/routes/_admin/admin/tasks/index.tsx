@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { Activity, BarChart3, Database, RefreshCcw, Trash, Upload } from 'lucide-react';
+import { Activity, BarChart3, Database, RefreshCcw, Upload } from 'lucide-react';
 import EnhancedTaskList from '@/components/admin/tasks/EnhancedTaskList';
 import TaskMonitoringDashboard from '@/components/admin/tasks/TaskMonitoringDashboard';
 import LinkTile from '@/components/ui/link-tile';
@@ -31,12 +31,6 @@ function AdminTasksPage() {
             title="Test Upload"
             description="Test file upload functionality"
             icon={Upload}
-          />
-          <LinkTile
-            href="/admin/tasks/delete-cache"
-            title="Delete Cache"
-            description="Clear cached data"
-            icon={Trash}
           />
           <LinkTile
             href="/admin/tasks/deleted-files"

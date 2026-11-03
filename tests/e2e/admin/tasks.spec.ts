@@ -2,13 +2,13 @@ import { expect, type Page } from '@playwright/test';
 import { test } from '../fixtures/test';
 import { clickUntil } from '../utils/hydration';
 
-// The Task Manager on /admin/tasks. Never runs `check-template-generations` (it calls the AI provider), and
-// never disables or deletes the default tasks, which every other spec's stack shares.
+// The Task Manager on /admin/tasks. Never disables or deletes the default tasks, which every other spec's stack
+// shares.
 
 const DEFAULT_TASKS = [
   { name: 'delete-expired-sessions', fn: 'deleteExpiredSessions', cron: '*/30 * * * *', nextRun: /\d{1,2}:(00|30):00 (AM|PM)/ },
   { name: 'prune-file-renditions', fn: 'pruneFileRenditions', cron: '0 3 * * *', nextRun: /3:00:00 AM$/ },
-  { name: 'check-template-generations', fn: 'checkTemplateGenerations', cron: '*/5 * * * *', nextRun: /\d{1,2}:[0-5][05]:00 (AM|PM)/ },
+  { name: 'expire-studio-outputs', fn: 'expireStudioOutputs', cron: '0 * * * *', nextRun: /\d{1,2}:00:00 (AM|PM)/ },
 ];
 
 const taskRow = (page: Page, name: string) => page.getByRole('row').filter({ hasText: name });

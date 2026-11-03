@@ -70,7 +70,6 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-h5-audio-player": "^3.10.2",
-    "replicate": "^1.4.0",
     "sharp": "^0.35.5",
     "sonner": "2.0.8",
     "wavesurfer.js": "^8.0.5",

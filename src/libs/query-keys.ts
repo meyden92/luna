@@ -84,16 +84,6 @@ export const queryKeys = {
     locale: ['user', 'locale'] as const,
     sharex: ['user', 'sharex-config'] as const,
   },
-  ai: {
-    models: ['ai', 'models'] as const,
-    templates: ['templates'] as const,
-    activeTemplate: ['ai', 'template', 'active'] as const,
-    templateById: (id: string) => ['ai', 'template', id] as const,
-    presets: (modelId: string) => ['ai', 'presets', modelId] as const,
-    imageGenerationHistory: ['ai', 'history', 'generation'] as const,
-    imageEditHistory: ['ai', 'history', 'edit'] as const,
-    templateHistory: ['ai', 'history', 'template'] as const,
-  },
   adminTasks: {
     all: ['admin', 'tasks'] as const,
     detail: (id: string) => ['admin', 'tasks', id] as const,
@@ -104,25 +94,6 @@ export const queryKeys = {
     execution: (id: string | null) => ['admin', 'task-execution', id] as const,
     manager: ['tasks'] as const,
   },
-  adminTemplates: {
-    all: ['admin', 'templates'] as const,
-    detail: (id: string) => ['admin', 'templates', id] as const,
-    list: ['admin', 'templates', 'list'] as const,
-    edit: (id: string) => ['admin', 'templates', 'edit', id] as const,
-    formData: ['admin', 'templates', 'form-data'] as const,
-  },
-  adminModels: {
-    editing: ['admin', 'models', 'editing'] as const,
-    editingById: (id: string) => ['admin', 'models', 'editing', id] as const,
-    editingFields: (id: string) => ['admin', 'models', 'editing', id, 'fields'] as const,
-    generation: ['admin', 'models', 'generation'] as const,
-    generationById: (id: string) => ['admin', 'models', 'generation', id] as const,
-  },
-  adminGlobalVars: {
-    all: ['admin', 'global-variables'] as const,
-    detail: (id: string) => ['admin', 'global-variables', id] as const,
-    withUsage: ['admin', 'global-variables', 'with-usage'] as const,
-  },
   adminVersion: {
     info: ['admin', 'version'] as const,
   },
@@ -132,14 +103,6 @@ export const queryKeys = {
   adminRbac: {
     userGroups: (userId: string) => ['admin', 'rbac', 'users', userId, 'groups'] as const,
     currentUserIsAdmin: ['admin', 'rbac', 'current-user-is-admin'] as const,
-  },
-  aiModels: {
-    generation: ['generationModels'] as const,
-    editing: ['editingModels'] as const,
-  },
-  cachedImages: {
-    all: ['cached-images'] as const,
-    byPurpose: (purpose: string) => ['cached-images', purpose] as const,
   },
   platform: {
     file: (id: string) => ['platform', 'file', id] as const,

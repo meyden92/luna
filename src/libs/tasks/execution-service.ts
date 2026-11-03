@@ -7,7 +7,7 @@ import {
   updateTaskExecution,
 } from '@/db/queries/tasks';
 import type { JsonValue } from '@/db/schema/json';
-import { isAbortError } from '@/libs/ai-generation-utils';
+import { isAbortError } from '@/libs/abort';
 import type { DatabaseTask, TaskExecutionContext, TaskExecutionLog, TaskExecutionResult, TaskStatus } from '@/types/tasks';
 import { DatabaseTaskLoader } from './db-loader';
 import { getTaskFunction } from './task-functions';

@@ -52,50 +52,6 @@ export const relations = defineRelations(schema, (r) => ({
     executedByUser: r.one.user({ from: r.taskExecution.executedBy, to: r.user.id, optional: true }),
   },
 
-  // Templates and generation. `template -> globalVariables -> globalVariable`
-  // is the deepest nested include in the codebase.
-  template: {
-    globalVariables: r.many.templateGlobalVariable(),
-    // `optional: false` on both NOT NULL foreign keys below, for the same reason
-    // as `snippet.author`: the row always resolves, so the admin list and the
-    // template editor need no null branch the database already rules out.
-    createdByUser: r.one.user({ from: r.template.createdBy, to: r.user.id, optional: false }),
-    editingModel: r.one.editingModel({ from: r.template.editingModelId, to: r.editingModel.id, optional: true }),
-  },
-  templateGlobalVariable: {
-    template: r.one.template({ from: r.templateGlobalVariable.templateId, to: r.template.id }),
-    globalVariable: r.one.globalVariable({
-      from: r.templateGlobalVariable.globalVariableId,
-      to: r.globalVariable.id,
-      optional: false,
-    }),
-  },
-  globalVariable: {
-    templates: r.many.templateGlobalVariable(),
-  },
-  templateGeneration: {
-    // `optional: false` because `template_generation.template_id` is NOT NULL
-    // behind a foreign key: the template always resolves, and the history and
-    // status-poll call sites need not carry a null branch the database rules out.
-    template: r.one.template({ from: r.templateGeneration.templateId, to: r.template.id, optional: false }),
-    resultFile: r.one.file({ from: r.templateGeneration.resultFileId, to: r.file.id, optional: true }),
-  },
-
-  // Model configuration — both model kinds are read with their fields ordered
-  // by sortOrder, by the streaming endpoints and the admin surfaces.
-  generationModel: {
-    fields: r.many.modelField(),
-  },
-  modelField: {
-    model: r.one.generationModel({ from: r.modelField.modelId, to: r.generationModel.id }),
-  },
-  editingModel: {
-    fields: r.many.editingModelField(),
-  },
-  editingModelField: {
-    model: r.one.editingModel({ from: r.editingModelField.modelId, to: r.editingModel.id }),
-  },
-
   // Form shares — the public share view reads a form with its fields; the field
   // decryption path reads a field back to its form to check expiry.
   formShare: {

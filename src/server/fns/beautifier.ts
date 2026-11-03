@@ -1,7 +1,7 @@
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { createServerFn } from '@tanstack/react-start';
-import { createGeneratedFile, getOwnedImageFile } from '@/db/queries/ai';
+import { createGeneratedFile, getOwnedImageFile } from '@/db/queries/files';
 import { env } from '@/libs/env';
 import { fileS3Key, getPrivateSignedUrl, publicUploadAcl, s3Client } from '@/libs/S3Helper';
 import { getCDNImage } from '@/libs/utils';

@@ -1,9 +1,11 @@
 import type { SQL } from 'drizzle-orm';
-import { and, asc, count, desc, eq, gte, ilike, inArray, lte, not, or, sql, sum } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gte, ilike, inArray, isNull, lte, not, or, sql, sum } from 'drizzle-orm';
 import { type AuditHandle, writeAuditLog } from '../audit';
-import { db } from '../client';
+import { db, type Tx } from '../client';
 import { file, fileMetadata, folder } from '../schema/files';
+import { generation, generationOutput } from '../schema/studio';
 import { containsInsensitive } from './like';
+import { ensureStorageQuotaAvailable } from './storage';
 
 /**
  * Query module for files (issue #15). Call sites import these functions and
@@ -246,12 +248,21 @@ export async function storageByKind(ownerId: string, handle: AuditHandle = db) {
   return totals;
 }
 
+/**
+ * Bytes an owner holds against the quota: their live files plus their Studio
+ * Outputs that are neither expired nor saved (a saved one is counted as its file).
+ */
 export async function storageUsage(ownerId: string, handle: AuditHandle = db) {
   const [row] = await handle
     .select({ totalBytes: sum(file.size), fileCount: count() })
     .from(file)
     .where(and(eq(file.ownerId, ownerId), eq(file.isDeleted, false)));
-  return { totalBytes: Number(row?.totalBytes ?? 0), fileCount: Number(row?.fileCount ?? 0) };
+  const [outputs] = await handle
+    .select({ totalBytes: sum(generationOutput.sizeBytes) })
+    .from(generationOutput)
+    .innerJoin(generation, eq(generation.id, generationOutput.generationId))
+    .where(and(eq(generation.userId, ownerId), isNull(generationOutput.expiredAt), isNull(generationOutput.savedFileId)));
+  return { totalBytes: Number(row?.totalBytes ?? 0) + Number(outputs?.totalBytes ?? 0), fileCount: Number(row?.fileCount ?? 0) };
 }
 
 /**
@@ -370,4 +381,70 @@ export async function detachFilesFromFolder(folderId: string, ownerId: string, u
     if (updated) await writeAuditLog(handle, { model: 'File', action: 'update', before: row, after: updated, userId });
   }
   return after.length;
+}
+
+/**
+ * One image file the owner owns, with its pixel dimensions — the beautifier's
+ * source read.
+ */
+export function getOwnedImageFile(id: string, ownerId: string) {
+  return db.query.file.findFirst({
+    where: { id, ownerId, isDeleted: false },
+    with: { metadata: { columns: { width: true, height: true } } },
+  });
+}
+
+/**
+ * Inserts a file the server produced (e.g. a beautifier save), taking the
+ * storage quota in the same transaction.
+ *
+ * Admission control and the insert it guards MUST share one transaction: the
+ * quota read takes a row lock, and a lock released before the insert would let
+ * two concurrent saves both see the same free space and both fit.
+ *
+ * Short-lived by construction — the S3 upload happens before it opens, so no
+ * transaction is ever held across a network round trip or across an SSE stream.
+ *
+ * `quota: 'already-counted'` skips admission for bytes the quota already holds:
+ * a Studio Output saved to Files moves its bytes from the Output to the file.
+ */
+export async function createGeneratedFile(
+  values: {
+    ownerId: string;
+    size: number;
+    url: string;
+    private: boolean;
+    tags: string;
+    title: string;
+    contentType: string;
+    folderId?: string | null;
+    dimensions?: { width: number; height: number; description: string };
+  },
+  userId: string | null,
+  handle: AuditHandle = db,
+  quota: 'check' | 'already-counted' = 'check',
+) {
+  const { dimensions, ...fileValues } = values;
+  return handle.transaction(async (tx: Tx) => {
+    if (quota === 'check') await ensureStorageQuotaAvailable(values.ownerId, values.size, tx);
+
+    const [row] = await tx
+      .insert(file)
+      .values({ id: crypto.randomUUID(), ...fileValues, folderId: fileValues.folderId ?? null })
+      .returning();
+    if (!row) throw new Error('Failed to create file');
+
+    if (dimensions) {
+      await tx.insert(fileMetadata).values({
+        id: crypto.randomUUID(),
+        fileId: row.id,
+        width: dimensions.width,
+        height: dimensions.height,
+        description: dimensions.description,
+      });
+    }
+
+    await writeAuditLog(tx, { model: 'File', action: 'create', after: row, userId });
+    return row;
+  });
 }

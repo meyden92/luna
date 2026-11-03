@@ -17,7 +17,14 @@ const envSchema = z.object({
   AWS_ACCESS_KEY_ID: z.string().min(1),
   AWS_SECRET_ACCESS_KEY: z.string().min(1),
   AWS_BUCKET_NAME: z.string().min(1),
-  REPLICATE_API_TOKEN: z.string().min(1).optional(),
+  // fal.ai. Without FAL_KEY (unset or empty) the Studio is off. FAL_BILLING_KEY
+  // (a BILLING or FULL scope key) lets cost settlement read fal's billed amounts.
+  FAL_KEY: z.string().optional(),
+  FAL_BILLING_KEY: z.string().optional(),
+  // fal hosts, overridden only by the E2E stack to reach its fake fal service.
+  FAL_QUEUE_BASE_URL: z.url().default('https://queue.fal.run'),
+  FAL_REST_BASE_URL: z.url().default('https://rest.fal.ai'),
+  FAL_API_BASE_URL: z.url().default('https://api.fal.ai/v1'),
   FORM_FIELD_ENCRYPTION_KEY: z.string().refine(isBase64Encoded32ByteKey, {
     message: 'must be a 32-byte base64-encoded key',
   }),
@@ -36,7 +43,7 @@ const envSchema = z.object({
   BUILD_TIME: z.string().optional(),
   PUBLIC_BASE_URL: z.url().optional(),
   // Extra hosts the image proxy may fetch from, comma-separated. The CDN_URL
-  // host and Replicate's delivery hosts are always allowed.
+  // host is always allowed.
   PROXY_ALLOWED_DOMAINS: z.string().optional(),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });

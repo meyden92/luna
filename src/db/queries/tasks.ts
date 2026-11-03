@@ -1,9 +1,7 @@
 import type { SQL } from 'drizzle-orm';
-import { and, avg, count, desc, eq, gt, gte, ilike, inArray, isNotNull, isNull, lt, ne, notInArray, or, sql } from 'drizzle-orm';
+import { and, avg, count, desc, eq, gt, gte, ilike, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
 import { type AuditHandle, writeAuditLog } from '../audit';
 import { db } from '../client';
-import { cachedImage } from '../schema/admin';
-import { template, templateGeneration } from '../schema/ai';
 import { session, user } from '../schema/auth';
 import { task, taskExecution } from '../schema/automation';
 import { file, fileMetadata, fileRendition } from '../schema/files';
@@ -27,17 +25,16 @@ import { ensureStorageQuotaAvailable } from './storage';
  *     scheduler on every boot and every run, and it is a record of a machine
  *     running — exactly the reason `TaskExecution` is in `UNAUDITED_MODELS`.
  *     The Prisma extension audited it because it could not tell the two apart.
- *   - `TaskExecution`, `Session`, `CachedImage`, `FileRendition` and
- *     `FileMetadata` are all unaudited, per `UNAUDITED_MODELS`.
- *   - `File` and `TemplateGeneration` are audited, and the two writes this
- *     module makes against them carry the audit call.
+ *   - `TaskExecution`, `Session`, `FileRendition` and `FileMetadata` are all
+ *     unaudited, per `UNAUDITED_MODELS`.
+ *   - `File` is audited, and the writes this module makes against it carry the
+ *     audit call.
  *
- * Several task functions reach into other domains (cached images, renditions,
- * template generations, file metadata). Those queries live here rather than in
- * the owning domain's module because the scheduled task that needs them lives
- * here, and each is a maintenance read or bulk prune with no other caller —
- * moving them would split one task's implementation across four
- * modules to satisfy a filing rule. If a second caller ever appears, that is the
+ * Several task functions reach into other domains (sessions, renditions, file
+ * metadata). Those queries live here rather than in the owning domain's module
+ * because the scheduled task that needs them lives here, and each is a
+ * maintenance read or bulk prune with no other caller — moving them would split
+ * one task's implementation across modules to satisfy a filing rule. If a second caller ever appears, that is the
  * signal to move the query to the owning module, not before.
  */
 
@@ -450,36 +447,6 @@ export async function deleteExpiredSessions(now: Date): Promise<number> {
   return deleted.rowCount ?? 0;
 }
 
-/** Cache rows untouched since `cutoff`, oldest-first is irrelevant — a batch. */
-export function listExpiredCachedImages(cutoff: Date, limit: number) {
-  return db
-    .select({ id: cachedImage.id, url: cachedImage.url, lastAccessedAt: cachedImage.lastAccessedAt, createdAt: cachedImage.createdAt })
-    .from(cachedImage)
-    .where(lt(cachedImage.lastAccessedAt, cutoff))
-    .limit(limit);
-}
-
-/**
- * The subset of `urls` still referenced by a cache row outside `excludeIds`.
- * One S3 object can back several owner-scoped rows, so only the unreferenced
- * ones may be deleted from the bucket.
- */
-export async function listRetainedCachedImageUrls(urls: string[], excludeIds: string[]): Promise<Set<string>> {
-  if (urls.length === 0) return new Set();
-  const rows = await db
-    .select({ url: cachedImage.url })
-    .from(cachedImage)
-    .where(and(inArray(cachedImage.url, urls), excludeIds.length > 0 ? notInArray(cachedImage.id, excludeIds) : undefined));
-  return new Set(rows.map((row) => row.url));
-}
-
-/** `CachedImage` is a derived artifact — unaudited. */
-export async function deleteCachedImages(ids: string[]): Promise<number> {
-  if (ids.length === 0) return 0;
-  const deleted = await db.delete(cachedImage).where(inArray(cachedImage.id, ids));
-  return deleted.rowCount ?? 0;
-}
-
 /** Renditions untouched since `cutoff`, capped at `limit`. */
 export function listStaleFileRenditions(cutoff: Date, limit: number) {
   return db
@@ -494,68 +461,6 @@ export async function deleteFileRenditions(ids: string[]): Promise<number> {
   if (ids.length === 0) return 0;
   const deleted = await db.delete(fileRendition).where(inArray(fileRendition.id, ids));
   return deleted.rowCount ?? 0;
-}
-
-/**
- * Generations still marked `processing` that the reconciler should chase: either
- * Replicate never reported a streaming status, or the stream has been open long
- * enough to be considered stale.
- */
-export function listStuckTemplateGenerations(staleStreamingCutoff: Date, limit: number) {
-  // An inner join rather than the relational `with:`, because `templateId` is
-  // NOT NULL and the join makes that visible in the type — the relational
-  // relation is declared optional, which would force a null check the foreign
-  // key already rules out.
-  return db
-    .select({
-      id: templateGeneration.id,
-      templateId: templateGeneration.templateId,
-      userId: templateGeneration.userId,
-      replicateId: templateGeneration.replicateId,
-      template: { name: template.name },
-    })
-    .from(templateGeneration)
-    .innerJoin(template, eq(template.id, templateGeneration.templateId))
-    .where(
-      and(
-        eq(templateGeneration.status, 'processing'),
-        or(
-          and(
-            isNotNull(templateGeneration.replicateId),
-            or(
-              isNull(templateGeneration.replicateStatus),
-              ne(templateGeneration.replicateStatus, 'streaming'),
-              lt(templateGeneration.createdAt, staleStreamingCutoff),
-            ),
-          ),
-          // A row whose stream died before it recorded a prediction id. Nothing
-          // can finish it, but leaving it `processing` strands it forever now
-          // that a disconnect no longer fails the batch itself (issue #59).
-          and(isNull(templateGeneration.replicateId), lt(templateGeneration.createdAt, staleStreamingCutoff)),
-        ),
-      ),
-    )
-    .limit(limit);
-}
-
-/** `TemplateGeneration` is audited, so the failure the reconciler records is too. */
-export async function markTemplateGenerationFailed(
-  generationId: string,
-  { errorMessage, replicateStatus }: { errorMessage: string; replicateStatus?: string },
-  userId?: string | null,
-  handle: AuditHandle = db,
-): Promise<void> {
-  const [before] = await handle.select().from(templateGeneration).where(eq(templateGeneration.id, generationId));
-  if (!before) return;
-
-  const [after] = await handle
-    .update(templateGeneration)
-    .set({ status: 'failed', errorMessage, ...(replicateStatus ? { replicateStatus } : {}) })
-    .where(eq(templateGeneration.id, generationId))
-    .returning();
-  if (!after) return;
-
-  await writeAuditLog(handle, { model: 'TemplateGeneration', action: 'update', before, after, userId });
 }
 
 /**

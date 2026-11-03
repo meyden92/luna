@@ -8,7 +8,6 @@ const COLUMNS = [
     heading: 'Product',
     items: [
       { label: 'Dashboard', to: '/dashboard' },
-      { label: 'Generate', to: '/ai/generate' },
       { label: 'Snippets', to: '/bin' },
       { label: 'Tools', to: '/tools/audio' },
     ],

@@ -128,7 +128,7 @@ const downloadSchema = z.object({ url: z.string().min(1) });
 const MAX_DOWNLOAD_BYTES = 200 * 1024 * 1024;
 
 function getAllowedDownloadHosts(): Set<string> {
-  const hosts = new Set<string>(['replicate.delivery', 'pbxt.replicate.delivery']);
+  const hosts = new Set<string>();
   const cdn = getCdnUrl();
   if (cdn) {
     try {

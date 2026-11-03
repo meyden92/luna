@@ -30,24 +30,23 @@ const hasDatabase = Boolean(process.env.DATABASE_URL);
 
 /** Lazy, because `../client` opens a connection pool at module load. */
 async function loadModules() {
-  const [client, audit, adminSchema, authSchema, aiSchema, filesSchema, featuresSchema, automationSchema, analyticsSchema] =
+  const [client, audit, adminSchema, authSchema, filesSchema, featuresSchema, automationSchema, analyticsSchema, studioSchema] =
     await Promise.all([
       import('../client'),
       import('../audit'),
       import('../schema/admin'),
       import('../schema/auth'),
-      import('../schema/ai'),
       import('../schema/files'),
       import('../schema/features'),
       import('../schema/automation'),
       import('../schema/analytics'),
+      import('../schema/studio'),
     ]);
-  const [admin, auth, rbac, ai, files, folders, features, flows, moderation, tasks, uploads, delivery, analytics, sourceSessions] =
+  const [admin, auth, rbac, files, folders, features, flows, moderation, tasks, uploads, delivery, analytics, sourceSessions, studio] =
     await Promise.all([
       import('./admin'),
       import('./auth'),
       import('./rbac'),
-      import('./ai'),
       import('./files'),
       import('./folders'),
       import('./features'),
@@ -58,6 +57,7 @@ async function loadModules() {
       import('./delivery'),
       import('./analytics'),
       import('./source-sessions'),
+      import('./studio'),
     ]);
   return {
     db: client.db,
@@ -65,15 +65,14 @@ async function loadModules() {
     UNAUDITED_MODELS: audit.UNAUDITED_MODELS,
     ...adminSchema,
     ...authSchema,
-    ...aiSchema,
     ...filesSchema,
     ...featuresSchema,
     ...automationSchema,
     ...analyticsSchema,
+    ...studioSchema,
     admin,
     auth,
     rbac,
-    ai,
     files,
     folders,
     features,
@@ -84,6 +83,7 @@ async function loadModules() {
     delivery,
     analytics,
     sourceSessions,
+    studio,
   };
 }
 
@@ -112,10 +112,6 @@ const DELIBERATE_GAPS: Partial<Record<AuditedModel, Partial<Record<AuditAction, 
     create: 'created by Better-Auth through its own adapter; audited from the user.create.after hook, not from a query module',
     delete: 'no hard delete exists; softDeleteUserAccount is an UPDATE and is audited as one',
   },
-  TemplateGlobalVariable: { update: 'a link is replaced, never edited — updateTemplate deletes every link and recreates it' },
-  ModelField: { update: 'a field is replaced, never edited — updateGenerationModel deletes every field and recreates it' },
-  EditingModelField: { update: 'a field is replaced, never edited — updateEditingModel deletes every field and recreates it' },
-  ImagePreset: { update: 'presets are delete-and-recreate; no update path exists' },
   FormShare: { delete: 'no hard delete exists; softDeleteOwnedFormShare is an UPDATE and is audited as one' },
   FormShareField: {
     update: 'fields are immutable once the share is created',
@@ -129,6 +125,7 @@ const DELIBERATE_GAPS: Partial<Record<AuditedModel, Partial<Record<AuditAction, 
     delete: 'entries are append-only; the admin UI has no removal',
   },
   ModerationCase: { delete: 'cases are resolved, never removed — resolveModerationCase is an UPDATE' },
+  StudioSettings: { delete: 'a single row that is created on first write and only ever updated' },
 };
 
 /** Unaudited models with no writer in any query module, so there is nothing to drive. */
@@ -147,18 +144,18 @@ const drivenUnaudited = new Set<string>();
 
 /** Rows this run created outside the query modules, torn down in `afterAll`. */
 const fixture = {
-  editingModelId: crypto.randomUUID(),
-  globalVariableId: crypto.randomUUID(),
-  templateId: crypto.randomUUID(),
   fileId: `audit-test-file-${runId}`,
   taskId: crypto.randomUUID(),
   flowId: crypto.randomUUID(),
   sessionId: `audit-test-session-${runId}`,
+  studioCategoryId: `audit-test-studio-category-${runId}`,
+  studioModelId: `audit-test-studio-model-${runId}`,
 };
 const createdRbacGroupIds: string[] = [];
 const createdDenylistIds: string[] = [];
-const createdGlobalVariableIds: string[] = [];
 const createdTaskIds: string[] = [];
+/** The instance's Studio settings row, set aside while the settings test writes its own. */
+let savedStudioSettings: Record<string, unknown> | undefined;
 
 let startingAuditCount = 0;
 let startedAt = new Date();
@@ -174,22 +171,6 @@ if (hasDatabase) {
   // Prerequisites, inserted directly rather than through a query module: they
   // are the foreign keys the writes under test need, and creating them through
   // an audited function would add rows this file then has to reason around.
-  await db.insert(M.editingModel).values({
-    id: fixture.editingModelId,
-    label: `audit fixture ${runId}`,
-    apiModelName: 'fixture/model',
-    createdBy: ownerId,
-  });
-  await db
-    .insert(M.globalVariable)
-    .values({ id: fixture.globalVariableId, name: `audit_fixture_${runId}`, label: 'fixture', type: 'text' });
-  await db.insert(M.template).values({
-    id: fixture.templateId,
-    name: `audit fixture ${runId}`,
-    prompt: 'fixture',
-    createdBy: ownerId,
-    editingModelId: fixture.editingModelId,
-  });
   await db.insert(M.file).values({
     id: fixture.fileId,
     url: `${runId}/fixture.png`,
@@ -212,6 +193,14 @@ if (hasDatabase) {
     token: `audit-test-token-${runId}`,
     userId: victimId,
     expiresAt: new Date(Date.now() + 86_400_000),
+  });
+  await db.insert(M.studioCategory).values({ id: fixture.studioCategoryId, name: 'audit fixture', icon: 'Image' });
+  await db.insert(M.studioModel).values({
+    id: fixture.studioModelId,
+    categoryId: fixture.studioCategoryId,
+    endpointId: 'fal-ai/audit-fixture',
+    name: 'audit fixture',
+    schemaSnapshot: { input: { type: 'object' }, output: { type: 'object' } },
   });
 }
 
@@ -244,16 +233,16 @@ afterAll(async () => {
   // `audit_log` starts empty on the development database.
   await db.delete(auditLog).where(gte(auditLog.timestamp, startedAt));
 
+  await db.delete(M.generation).where(eq(M.generation.userId, ownerId));
+  await db.delete(M.studioModel).where(eq(M.studioModel.id, fixture.studioModelId));
+  await db.delete(M.studioCategory).where(eq(M.studioCategory.id, fixture.studioCategoryId));
+  await db.delete(M.studioBudgetOverride).where(eq(M.studioBudgetOverride.userId, ownerId));
+  if (savedStudioSettings) {
+    await db.delete(M.studioSettings).where(eq(M.studioSettings.id, 'default'));
+    await db.insert(M.studioSettings).values(savedStudioSettings as typeof M.studioSettings.$inferInsert);
+  }
   await db.delete(M.moderationCase).where(eq(M.moderationCase.fileId, fixture.fileId));
   if (createdDenylistIds.length > 0) await db.delete(M.denylistEntry).where(inArray(M.denylistEntry.id, createdDenylistIds));
-  await db.delete(M.imagePreset).where(eq(M.imagePreset.userId, ownerId));
-  await db.delete(M.aiGeneration).where(eq(M.aiGeneration.userId, ownerId));
-  await db.delete(M.templateGeneration).where(eq(M.templateGeneration.userId, ownerId));
-  await db.delete(M.template).where(eq(M.template.createdBy, ownerId));
-  if (createdGlobalVariableIds.length > 0) await db.delete(M.globalVariable).where(inArray(M.globalVariable.id, createdGlobalVariableIds));
-  await db.delete(M.globalVariable).where(eq(M.globalVariable.id, fixture.globalVariableId));
-  await db.delete(M.editingModel).where(eq(M.editingModel.createdBy, ownerId));
-  await db.delete(M.generationModel).where(eq(M.generationModel.createdBy, ownerId));
   await db.delete(M.formShare).where(eq(M.formShare.ownerId, ownerId));
   await db.delete(M.snippet).where(eq(M.snippet.ownerId, ownerId));
   await db.delete(M.nicotineEntry).where(eq(M.nicotineEntry.ownerId, ownerId));
@@ -263,7 +252,6 @@ afterAll(async () => {
   if (createdTaskIds.length > 0) await db.delete(M.task).where(inArray(M.task.id, createdTaskIds));
   await db.delete(M.task).where(eq(M.task.id, fixture.taskId));
   await db.delete(M.egressRollup).where(eq(M.egressRollup.ownerId, ownerId));
-  await db.delete(M.cachedImage).where(eq(M.cachedImage.ownerId, ownerId));
   await db.delete(M.fileRendition).where(eq(M.fileRendition.sourceFileId, fixture.fileId));
   await db.delete(M.file).where(eq(M.file.ownerId, ownerId));
   await db.delete(M.folder).where(eq(M.folder.ownerId, ownerId));
@@ -327,177 +315,6 @@ describe.skipIf(!hasDatabase)('audited models: content', () => {
 
     await M.features.deleteOwnedSnippet({ id: created.id, ownerId }, ownerId);
     await expectAudited('Snippet', 'delete', created.id);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Audited models — templates and variables
-// ---------------------------------------------------------------------------
-
-describe.skipIf(!hasDatabase)('audited models: templates and variables', () => {
-  test('GlobalVariable is audited on create, update and delete', async () => {
-    const values = { name: `audit_var_${runId}`, label: 'audit', type: 'text', required: false };
-    const created = await M.ai.createGlobalVariable(values, ownerId);
-    createdGlobalVariableIds.push(created.id);
-    await expectAudited('GlobalVariable', 'create', created.id);
-
-    await M.ai.updateGlobalVariable({ id: created.id, ...values, label: 'audit 2' }, ownerId);
-    await expectAudited('GlobalVariable', 'update', created.id);
-
-    await M.ai.deleteGlobalVariable(created.id, ownerId);
-    await expectAudited('GlobalVariable', 'delete', created.id);
-  });
-
-  test('Template is audited on create, update and delete, and its variable links with it', async () => {
-    // TemplateGlobalVariable has no lifecycle of its own: it is created and
-    // deleted only as part of its parent template's write, so it is exercised
-    // through createTemplate/updateTemplate rather than a function of its own.
-    const values = {
-      name: `audit template ${runId}`,
-      description: null,
-      prompt: 'audit',
-      editingModelId: fixture.editingModelId,
-      isActive: true,
-      minImageCount: 1,
-      maxImageCount: 1,
-      inputImageCount: 1,
-      variables: {},
-      previewImages: null,
-      editingModelFieldValues: {},
-    };
-    const created = await M.ai.createTemplate(
-      { ...values, createdBy: ownerId, links: [{ globalVariableId: fixture.globalVariableId, required: false }] },
-      ownerId,
-    );
-    await expectAudited('Template', 'create', created.id);
-
-    const [link] = await db
-      .select({ id: M.templateGlobalVariable.id })
-      .from(M.templateGlobalVariable)
-      .where(eq(M.templateGlobalVariable.templateId, created.id));
-    if (!link) throw new Error('template link row missing');
-    await expectAudited('TemplateGlobalVariable', 'create', link.id);
-
-    // Replacing the link set is what produces the link's delete row.
-    await M.ai.updateTemplate({ ...values, id: created.id, name: 'audit template renamed', links: [] }, ownerId);
-    await expectAudited('Template', 'update', created.id);
-    await expectAudited('TemplateGlobalVariable', 'delete', link.id);
-
-    await M.ai.deleteTemplate(created.id, ownerId);
-    await expectAudited('Template', 'delete', created.id);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Audited models — AI tooling
-// ---------------------------------------------------------------------------
-
-describe.skipIf(!hasDatabase)('audited models: AI tooling', () => {
-  const field = {
-    name: 'prompt',
-    label: 'Prompt',
-    type: 'text',
-    isRequired: true,
-    isReadonly: false,
-    sortOrder: 0,
-  };
-
-  test('GenerationModel is audited on create, update and delete, and its fields with it', async () => {
-    // ModelField has no standalone write path — a field is only ever created or
-    // deleted as part of its parent model's write, so it is exercised through
-    // createGenerationModel/updateGenerationModel.
-    const values = { label: `audit gen ${runId}`, description: null, apiModelName: 'fixture/gen', isActive: true, sortOrder: 0 };
-    const created = await M.ai.createGenerationModel({ ...values, createdBy: ownerId, fields: [field] }, ownerId);
-    await expectAudited('GenerationModel', 'create', created.id);
-    const originalField = created.fields[0];
-    if (!originalField) throw new Error('model field missing');
-    await expectAudited('ModelField', 'create', originalField.id);
-
-    const updated = await M.ai.updateGenerationModel({ ...values, id: created.id, label: 'audit gen 2', fields: [field] }, ownerId);
-    await expectAudited('GenerationModel', 'update', created.id);
-    await expectAudited('ModelField', 'delete', originalField.id);
-    expect(updated.fields[0]?.id).not.toBe(originalField.id);
-
-    await M.ai.deleteGenerationModel(created.id, ownerId);
-    await expectAudited('GenerationModel', 'delete', created.id);
-  });
-
-  test('EditingModel is audited on create, update and delete, and its fields with it', async () => {
-    // EditingModelField, like ModelField, only exists under its parent.
-    const values = {
-      label: `audit edit ${runId}`,
-      description: null,
-      apiModelName: 'fixture/edit',
-      isActive: true,
-      sortOrder: 0,
-      imageInputField: 'image_input',
-    };
-    const created = await M.ai.createEditingModel({ ...values, createdBy: ownerId, fields: [field] }, ownerId);
-    await expectAudited('EditingModel', 'create', created.id);
-    const originalField = created.fields[0];
-    if (!originalField) throw new Error('editing model field missing');
-    await expectAudited('EditingModelField', 'create', originalField.id);
-
-    await M.ai.updateEditingModel({ ...values, id: created.id, label: 'audit edit 2', fields: [field] }, ownerId);
-    await expectAudited('EditingModel', 'update', created.id);
-    await expectAudited('EditingModelField', 'delete', originalField.id);
-
-    await M.ai.deleteEditingModel(created.id, ownerId);
-    await expectAudited('EditingModel', 'delete', created.id);
-  });
-
-  test('AiGeneration is audited on create, update and delete', async () => {
-    const id = crypto.randomUUID();
-    const values = {
-      id,
-      kind: 'image',
-      userId: ownerId,
-      modelId: fixture.editingModelId,
-      modelLabel: 'audit',
-      status: 'processing',
-      result: {},
-    };
-    await M.ai.upsertAiGeneration(values, ownerId);
-    await expectAudited('AiGeneration', 'create', id);
-
-    // The same upsert takes its update branch once the row exists.
-    await M.ai.upsertAiGeneration({ ...values, status: 'succeeded' }, ownerId);
-    await expectAudited('AiGeneration', 'update', id);
-
-    await M.ai.deleteAiGeneration(id, ownerId, ownerId);
-    await expectAudited('AiGeneration', 'delete', id);
-  });
-
-  test('TemplateGeneration is audited on create, update and delete', async () => {
-    const id = crypto.randomUUID();
-    const values = {
-      id,
-      templateId: fixture.templateId,
-      userId: ownerId,
-      variableValues: {},
-      originalImageUrls: [],
-      finalPrompt: 'audit',
-      status: 'processing',
-    };
-    await M.ai.upsertTemplateGeneration(values, ownerId);
-    await expectAudited('TemplateGeneration', 'create', id);
-
-    await M.ai.upsertTemplateGeneration({ ...values, status: 'success' }, ownerId);
-    await expectAudited('TemplateGeneration', 'update', id);
-
-    await M.ai.deleteTemplateGenerationRow(id, ownerId, ownerId);
-    await expectAudited('TemplateGeneration', 'delete', id);
-  });
-
-  test('ImagePreset is audited on create and delete', async () => {
-    const created = await M.ai.createImagePreset(
-      { ownerId, modelId: fixture.editingModelId, name: `audit preset ${runId}`, fieldValues: {} },
-      ownerId,
-    );
-    await expectAudited('ImagePreset', 'create', created.id);
-
-    await M.ai.deleteImagePreset(created.id, ownerId, ownerId);
-    await expectAudited('ImagePreset', 'delete', created.id);
   });
 });
 
@@ -678,6 +495,71 @@ describe.skipIf(!hasDatabase)('audited models: account, credentials and administ
 });
 
 // ---------------------------------------------------------------------------
+// Audited models — Studio configuration
+// ---------------------------------------------------------------------------
+
+describe.skipIf(!hasDatabase)('audited models: Studio configuration', () => {
+  test('StudioCategory, StudioModel and StudioTemplate are audited on create, update and delete', async () => {
+    const category = await M.studio.createStudioCategory({ name: `audit ${runId}`, icon: 'Image' }, ownerId);
+    await expectAudited('StudioCategory', 'create', category.id);
+    await M.studio.updateStudioCategory(category.id, { name: 'audit renamed' }, ownerId);
+    await expectAudited('StudioCategory', 'update', category.id);
+
+    const model = await M.studio.createStudioModel(
+      {
+        categoryId: category.id,
+        endpointId: 'fal-ai/audit',
+        name: 'audit model',
+        schemaSnapshot: { input: { type: 'object' }, output: { type: 'object' } },
+      },
+      ownerId,
+    );
+    await expectAudited('StudioModel', 'create', model.id);
+    await M.studio.updateStudioModel(model.id, { isActive: false }, ownerId);
+    await expectAudited('StudioModel', 'update', model.id);
+
+    const template = await M.studio.createStudioTemplate(
+      { categoryId: category.id, modelId: model.id, name: 'audit template', createdBy: ownerId },
+      ownerId,
+    );
+    await expectAudited('StudioTemplate', 'create', template.id);
+    await M.studio.updateStudioTemplate(template.id, { name: 'audit template 2' }, ownerId);
+    await expectAudited('StudioTemplate', 'update', template.id);
+
+    await M.studio.deleteStudioTemplate(template.id, ownerId);
+    await expectAudited('StudioTemplate', 'delete', template.id);
+    await M.studio.deleteStudioModel(model.id, ownerId);
+    await expectAudited('StudioModel', 'delete', model.id);
+    await M.studio.deleteStudioCategory(category.id, ownerId);
+    await expectAudited('StudioCategory', 'delete', category.id);
+  });
+
+  test('StudioSettings is audited on its first write as a create, then as updates', async () => {
+    const [existing] = await db.select().from(M.studioSettings).where(eq(M.studioSettings.id, 'default'));
+    if (existing) {
+      savedStudioSettings = existing;
+      await db.delete(M.studioSettings).where(eq(M.studioSettings.id, 'default'));
+    }
+
+    await M.studio.updateStudioSettings({ defaultMonthlyBudgetUsd: 20 }, ownerId);
+    await expectAudited('StudioSettings', 'create', 'default');
+    await M.studio.updateStudioSettings({ maxActiveGenerationsPerUser: 5 }, ownerId);
+    await expectAudited('StudioSettings', 'update', 'default');
+
+    if (!savedStudioSettings) await db.delete(M.studioSettings).where(eq(M.studioSettings.id, 'default'));
+  });
+
+  test('StudioBudgetOverride is audited on create, update and delete, keyed by the User', async () => {
+    await M.studio.setStudioBudgetOverride(ownerId, 10, ownerId);
+    await expectAudited('StudioBudgetOverride', 'create', ownerId);
+    await M.studio.setStudioBudgetOverride(ownerId, null, ownerId);
+    await expectAudited('StudioBudgetOverride', 'update', ownerId);
+    await M.studio.deleteStudioBudgetOverride(ownerId, ownerId);
+    await expectAudited('StudioBudgetOverride', 'delete', ownerId);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // The other direction: models that must produce nothing
 // ---------------------------------------------------------------------------
 
@@ -692,28 +574,6 @@ describe.skipIf(!hasDatabase)('unaudited models produce no audit rows', () => {
     const run = await M.flows.createFlowRun({ flowId: fixture.flowId, ownerId, triggeredBy: 'audit-coverage-test', items: [] });
     await M.flows.completeFlowRun({ id: run.id, status: 'success', duration: 1, logs: [] });
     await expectUnaudited('FlowRun', run.id);
-  });
-
-  test('CachedImage writes are not audited', async () => {
-    const hash = hex(runId, 40);
-    await M.ai.upsertCachedImage({
-      ownerId,
-      hash,
-      url: `${runId}/cached.png`,
-      filename: 'cached.png',
-      contentType: 'image/png',
-      size: 1,
-      purpose: 'image-edit',
-    });
-    await M.ai.touchCachedImage(ownerId, hash);
-    const [cached] = await db.select({ id: M.cachedImage.id }).from(M.cachedImage).where(eq(M.cachedImage.ownerId, ownerId));
-    if (!cached) throw new Error('cached image row missing');
-    await expectUnaudited('CachedImage', cached.id);
-
-    // The purge path is unaudited too. `purgeCachedImages` is not used here: it
-    // truncates the whole table, including the migrated production rows.
-    expect(await M.tasks.deleteCachedImages([cached.id])).toBe(1);
-    await expectUnaudited('CachedImage', cached.id);
   });
 
   test('FileRendition writes are not audited', async () => {
@@ -747,6 +607,53 @@ describe.skipIf(!hasDatabase)('unaudited models produce no audit rows', () => {
     const [egressRollup] = await db.select({ id: M.egressRollup.id }).from(M.egressRollup).where(eq(M.egressRollup.ownerId, ownerId));
     if (!egressRollup) throw new Error('egress rollup row missing');
     await expectUnaudited('EgressRollup', egressRollup.id);
+  });
+
+  test('Generation and GenerationOutput writes are not audited', async () => {
+    const created = await M.studio.admitGeneration({
+      userId: ownerId,
+      modelId: fixture.studioModelId,
+      templateId: null,
+      name: 'audit fixture',
+      endpointId: 'fal-ai/audit-fixture',
+      formValues: { prompt: `private prompt ${runId}` },
+      estimatedCostUsd: 0.01,
+    });
+    await M.studio.setGenerationSubmitted(created.id, {
+      falRequestId: `audit-request-${runId}`,
+      statusUrl: 'https://queue.example.invalid/status',
+      responseUrl: 'https://queue.example.invalid/response',
+      cancelUrl: 'https://queue.example.invalid/cancel',
+      requestInput: { prompt: `private prompt ${runId}` },
+      formValues: { prompt: `private prompt ${runId}` },
+      progress: null,
+    });
+    const finished = await M.studio.completeGeneration(created.id, {
+      status: 'succeeded',
+      outputs: [
+        {
+          index: 0,
+          mediaKind: 'image',
+          contentType: 'image/png',
+          s3Key: `studio/${ownerId}/${created.id}/0.png`,
+          sizeBytes: 10,
+          width: 1,
+          height: 1,
+          durationSeconds: null,
+          expiresAt: new Date(Date.now() + 60_000),
+        },
+      ],
+    });
+    expect(finished?.status).toBe('succeeded');
+    // Finishing is idempotent: a second delivery changes nothing.
+    expect(await M.studio.completeGeneration(created.id, { status: 'failed', error: { message: 'late' } })).toBeUndefined();
+    await M.studio.markGenerationsSeen(ownerId, [created.id]);
+
+    const [output] = await M.studio.listGenerationOutputs(created.id);
+    if (!output) throw new Error('generation output row missing');
+    await M.studio.markOutputsExpired([output.id], new Date());
+    await expectUnaudited('Generation', created.id);
+    await expectUnaudited('GenerationOutput', output.id);
   });
 
   test('no audit row this run wrote names an unaudited model', async () => {

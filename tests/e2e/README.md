@@ -118,11 +118,6 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
   rather than a timeout.
   For a form field on a page, `untilHydrated(locator)` waits until React has attached to the element, so `fill` is not
   lost to hydration.
-- `utils/admin-config.ts` manages admin configuration objects through their screens: `modelCard` (the card of a model on
-  `/admin/models`), `createEditingModelThroughAdmin` / `deleteEditingModelThroughAdmin`, and
-  `createGlobalVariableThroughAdmin` / `deleteGlobalVariableThroughAdmin`. Specs that need a model or variable create
-  their own with a unique name and delete it again, since these lists are shared by every parallel spec.
-
 - `utils/files-screen.ts` reads the Files screen: `cardTitles` and `dateGroups` (what is listed, in page
   order), `loadAll(page, n)` (scrolls until n cards are loaded), `scopeRow`, `countLine`, and `asListed`
   (the page order of a sorted list: files stay together under their date heading, headings ordered by first file).

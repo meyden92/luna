@@ -29,26 +29,26 @@ export interface SettingsOverview {
     createdAt: Date;
   }[];
   fileExtensions: { id: string; label: string; value: number; color: string }[];
-  generatorStats: { totalGenerations: number; successfulGenerations: number; failedGenerations: number };
 }
 
 export const getSettingsOverview = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'user' }))
   .handler(async ({ context }): Promise<SettingsOverview> => {
-    const [{ countTemplateGenerationsByStatus, getSettingsProfile, listOwnedUploadsInRange, listUserTokens }, { storageUsage }] =
-      await Promise.all([import('@/db/queries/auth'), import('@/db/queries/files')]);
+    const [{ getSettingsProfile, listOwnedUploadsInRange, listUserTokens }, { storageUsage }] = await Promise.all([
+      import('@/db/queries/auth'),
+      import('@/db/queries/files'),
+    ]);
     const userId = userIdFromCtx(context);
 
     const today = new Date();
     const thirtyDaysAgo = startOfDay(subDays(today, 30));
     const thirtyDaysEnd = endOfDay(today);
 
-    const [user, tokens, fileAggregate, recentFiles, generatorGroups] = await Promise.all([
+    const [user, tokens, fileAggregate, recentFiles] = await Promise.all([
       getSettingsProfile(userId),
       listUserTokens(userId),
       storageUsage(userId),
       listOwnedUploadsInRange({ ownerId: userId, from: thirtyDaysAgo, to: thirtyDaysEnd }),
-      countTemplateGenerationsByStatus(userId),
     ]);
 
     if (!user) throw new Error('User not found');
@@ -80,15 +80,6 @@ export const getSettingsOverview = createServerFn({ method: 'GET' })
       }))
       .sort((a, b) => b.value - a.value);
 
-    let totalGenerations = 0;
-    let successfulGenerations = 0;
-    let failedGenerations = 0;
-    for (const group of generatorGroups) {
-      totalGenerations += group.total;
-      if (group.status === 'success') successfulGenerations = group.total;
-      else if (group.status === 'failed') failedGenerations = group.total;
-    }
-
     return {
       id: user.id,
       username: user.name,
@@ -117,6 +108,5 @@ export const getSettingsOverview = createServerFn({ method: 'GET' })
         createdAt: token.createdAt,
       })),
       fileExtensions,
-      generatorStats: { totalGenerations, successfulGenerations, failedGenerations },
     };
   });

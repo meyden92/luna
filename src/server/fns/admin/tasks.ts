@@ -295,8 +295,7 @@ export const listTaskFunctions = createServerFn({ method: 'GET' })
     const meta = available.map((name) => {
       let description = '';
       const parameters: string[] = [];
-      if (name === 'deleteExpiredCache') description = 'Removes cached images not accessed in the last 30 minutes from database and S3';
-      else if (name === 'deleteExpiredSessions') description = 'Deletes expired Better Auth sessions from the database';
+      if (name === 'deleteExpiredSessions') description = 'Deletes expired Better Auth sessions from the database';
       else description = `Task function: ${name}`;
       return { name, description, parameters };
     });

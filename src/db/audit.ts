@@ -20,7 +20,7 @@ import type { JsonValue } from './schema/json';
  */
 
 /**
- * The 25 models that record deliberate user or admin action (#13). Session
+ * The 20 models that record deliberate user or admin action (#13). Session
  * churn, derived artifacts, analytics and execution records are deliberately
  * absent; the implicit extension covered everything, so an over-eager port is
  * as wrong as a missing one.
@@ -33,18 +33,6 @@ export const AUDITED_MODELS = [
   'File',
   'Folder',
   'Snippet',
-  // Templates and variables
-  'Template',
-  'TemplateGlobalVariable',
-  'GlobalVariable',
-  // AI tooling
-  'AiGeneration',
-  'TemplateGeneration',
-  'GenerationModel',
-  'ModelField',
-  'EditingModel',
-  'EditingModelField',
-  'ImagePreset',
   // Sharing
   'FormShare',
   'FormShareField',
@@ -62,12 +50,18 @@ export const AUDITED_MODELS = [
   'DenylistEntry',
   'ModerationCase',
   'SourceSession',
+  // Studio configuration
+  'StudioCategory',
+  'StudioModel',
+  'StudioTemplate',
+  'StudioSettings',
+  'StudioBudgetOverride',
 ] as const;
 
 export type AuditedModel = (typeof AUDITED_MODELS)[number];
 
 /**
- * The 14 models that are deliberately not audited, with the reason. Kept
+ * The 12 models that are deliberately not audited, with the reason. Kept
  * alongside the audited set so #45 can assert both directions: that every
  * audited model produces rows, and that these produce none.
  */
@@ -78,11 +72,12 @@ export const UNAUDITED_MODELS: Record<string, string> = {
   FileRendition: 'derived artifact',
   FileMetadata: 'derived artifact',
   OCRResult: 'derived artifact',
-  CachedImage: 'derived artifact',
   EgressRollup: 'analytics',
   FlowRun: 'execution record, not intent',
   TaskExecution: 'execution record, not intent',
   AuditLog: 'self',
+  Generation: 'private to the User; admins must not read prompts through the audit log',
+  GenerationOutput: 'private to the User; admins must not read Outputs through the audit log',
 };
 
 /**

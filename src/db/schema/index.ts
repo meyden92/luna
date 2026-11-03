@@ -8,10 +8,10 @@
  * not convenience.
  */
 export * from './admin';
-export * from './ai';
 export * from './analytics';
 export * from './auth';
 export * from './automation';
 export * from './downloads';
 export * from './features';
 export * from './files';
+export * from './studio';

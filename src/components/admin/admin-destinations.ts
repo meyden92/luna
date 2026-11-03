@@ -1,4 +1,4 @@
-import { Activity, FileImage, Gauge, Globe, MapIcon, ShieldAlert, Sparkles, User2, Variable, Zap } from 'lucide-react';
+import { Activity, Gauge, Globe, MapIcon, ShieldAlert, User2, Zap } from 'lucide-react';
 
 export const adminDestinations = [
   {
@@ -12,24 +12,6 @@ export const adminDestinations = [
     to: '/admin/tasks',
     Icon: Zap,
     description: 'Track, assign, and complete tasks',
-  },
-  {
-    name: 'Templates',
-    to: '/admin/templates',
-    Icon: FileImage,
-    description: 'Manage image generation templates',
-  },
-  {
-    name: 'Global Variables',
-    to: '/admin/global-variables',
-    Icon: Variable,
-    description: 'Shared variables used across templates',
-  },
-  {
-    name: 'Models',
-    to: '/admin/models',
-    Icon: Sparkles,
-    description: 'Configure AI generation models',
   },
   {
     name: 'Sources',

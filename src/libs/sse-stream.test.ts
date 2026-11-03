@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { createPredictionAbortRegistry, createSseWriter, eventStreamResponse, SSE_HEARTBEAT_MS } from './sse-stream';
+import { createSseWriter, eventStreamResponse, SSE_HEARTBEAT_MS } from './sse-stream';
 
 /**
  * Issue #59: a template generation emits no bytes between "Creating AI
@@ -33,7 +33,7 @@ describe('createSseWriter heartbeat', () => {
     await sleep(HEARTBEAT_MS * 3.5);
     close();
 
-    // Comment frames, so `streamSSE` skips them and no client has to change.
+    // Comment frames, so an SSE client skips them and no client has to change.
     expect(chunks.every((chunk) => chunk.startsWith(':'))).toBe(true);
     expect(chunks.length).toBeGreaterThanOrEqual(2);
   });
@@ -72,55 +72,6 @@ describe('createSseWriter heartbeat', () => {
     close();
 
     expect(chunks).toEqual(['data: {"status":"processing"}\n\n']);
-  });
-});
-
-/**
- * Issue #59: a dropped transport and a user pressing Cancel reach the server as
- * the same disconnect, and cancelling the Replicate predictions on it destroyed
- * work the reconciler could have finished. Which of the two a route wants is
- * now a flag, and nothing else would catch it being read the wrong way round.
- */
-describe('createPredictionAbortRegistry disconnect policy', () => {
-  test('cancels registered predictions on disconnect by default', () => {
-    const canceled: string[] = [];
-    const request = new AbortController();
-    const registry = createPredictionAbortRegistry(request.signal, async (id) => void canceled.push(id), '[test]');
-    registry.registerPrediction('pred-1');
-    registry.registerPrediction('pred-2');
-
-    request.abort();
-
-    expect(registry.signal.aborted).toBe(true);
-    expect(canceled).toEqual(['pred-1', 'pred-2']);
-  });
-
-  test('leaves predictions running on disconnect when asked to, but still stops server-side work', () => {
-    const canceled: string[] = [];
-    const request = new AbortController();
-    const registry = createPredictionAbortRegistry(request.signal, async (id) => void canceled.push(id), '[test]', {
-      cancelPredictionsOnDisconnect: false,
-    });
-    registry.registerPrediction('pred-1');
-
-    request.abort();
-
-    // Polling and uploads still have to stop — there is nobody left to send to.
-    expect(registry.signal.aborted).toBe(true);
-    expect(canceled).toEqual([]);
-  });
-
-  test('leaves a prediction registered after the disconnect running too', () => {
-    const canceled: string[] = [];
-    const request = new AbortController();
-    const registry = createPredictionAbortRegistry(request.signal, async (id) => void canceled.push(id), '[test]', {
-      cancelPredictionsOnDisconnect: false,
-    });
-
-    request.abort();
-    registry.registerPrediction('pred-late');
-
-    expect(canceled).toEqual([]);
   });
 });
 

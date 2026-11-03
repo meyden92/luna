@@ -22,10 +22,10 @@ test('a correctly trusted proxy shows the forwarded address and no warning', asy
 
 test('too few trusted hops are flagged, with the hop Cloudflare points at', async ({ browser }) => {
   const { card, close } = await clientIpCard(browser, {
-    'x-forwarded-for': '198.51.100.7, 10.0.0.5',
+    'x-forwarded-for': '198.51.100.7, 192.168.77.5',
     'cf-connecting-ip': '198.51.100.7',
   });
-  await expect(card.getByText('10.0.0.5', { exact: true })).toBeVisible();
+  await expect(card.getByText('192.168.77.5', { exact: true })).toBeVisible();
   await expect(card.getByRole('alert').filter({ hasText: 'probably too low' })).toBeVisible();
   await expect(card.getByRole('alert').filter({ hasText: 'Set TRUSTED_PROXY_HOPS=2.' })).toBeVisible();
   await close();

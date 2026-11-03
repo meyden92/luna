@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import type { ProxyWarning } from '@/libs/client-ip';
 import { queryKeys } from '@/libs/query-keys';
 import { getClientIpDiagnosis } from '@/server/fns/admin/client-ip';
-import styles from '../version/version-card.module.css';
+import styles from './client-ip-card.module.css';
 
 type Diagnosis = Awaited<ReturnType<typeof getClientIpDiagnosis>>;
 
@@ -53,7 +53,7 @@ export function ClientIpCard() {
               <Alert
                 key={warning}
                 variant="destructive"
-                className={styles.card}
+                className={styles.warning}
               >
                 <AlertTitle>Check TRUSTED_PROXY_HOPS</AlertTitle>
                 <AlertDescription>{WARNING_TEXT[warning](data)}</AlertDescription>

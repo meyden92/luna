@@ -66,6 +66,7 @@ describe('isPrivateIp', () => {
       'fd00::1',
       'fe80::1',
       '::ffff:10.0.0.1',
+      '100.100.1.1',
     ]) {
       expect(isPrivateIp(ip)).toBe(true);
     }

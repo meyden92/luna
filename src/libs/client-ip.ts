@@ -23,13 +23,20 @@ function forwardedChain(headers: Headers): string[] {
   );
 }
 
-/** Loopback, private-network and link-local addresses (IPv4, IPv6 and IPv4-mapped IPv6). */
+/** Loopback, private-network, shared (CGNAT, e.g. Tailscale) and link-local addresses, IPv4, IPv6 and IPv4-mapped. */
 export function isPrivateIp(ip: string): boolean {
   const address = ip.toLowerCase().replace(/^::ffff:(?=\d+\.)/, '');
   const octets = address.split('.').map(Number);
   if (octets.length === 4) {
     const [a, b] = octets as [number, number];
-    return a === 10 || a === 127 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 169 && b === 254);
+    return (
+      a === 10 ||
+      a === 127 ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      (a === 169 && b === 254) ||
+      (a === 100 && b >= 64 && b <= 127)
+    );
   }
   return address === '::1' || /^f[cd]/.test(address) || /^fe[89ab]/.test(address);
 }

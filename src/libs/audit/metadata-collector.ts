@@ -16,15 +16,13 @@ export class MetadataCollector {
       return {};
     }
 
-    const get = (name: string) => headers.get(name);
-
     return {
       // The same address the rate limiters key on, never one the client chose (#234).
       ipAddress: clientIp(headers, env.TRUSTED_PROXY_HOPS, socketIp),
-      userAgent: get('user-agent') || undefined,
-      requestId: get('x-request-id') || undefined,
-      endpoint: get('x-invoke-path') || undefined,
-      sessionId: MetadataCollector.extractSessionId(get('cookie')),
+      userAgent: headers.get('user-agent') || undefined,
+      requestId: headers.get('x-request-id') || undefined,
+      endpoint: headers.get('x-invoke-path') || undefined,
+      sessionId: MetadataCollector.extractSessionId(headers.get('cookie')),
     };
   }
 

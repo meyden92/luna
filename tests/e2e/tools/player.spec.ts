@@ -11,7 +11,7 @@ test('a track from the gallery plays: its clock advances and the stream has no e
   await page.goto('/player');
   for (const title of tracks) await expect(page.getByRole('button', { name: title, exact: true })).toBeVisible();
 
-  await expect(page.getByRole('slider', { name: 'Volume' })).toBeVisible();
+  await expect(page.getByRole('slider', { name: 'Volume', exact: true })).toBeVisible();
 
   const audio = page.locator('audio');
   // The first listed track is loaded; choosing another switches the stream to that file.

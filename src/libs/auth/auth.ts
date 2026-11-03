@@ -8,6 +8,8 @@ import { env } from '../env';
 import { ensureUserHasDefaultGroup } from '../rbac/default-group';
 import { creationActor } from './creation-actor';
 
+const CLIENT_IP_HEADER = 'x-lunashare-client-ip';
+
 /**
  * Better-Auth on Drizzle (issue #36). The adapter is built inside `src/db/` so
  * the Drizzle handle never leaves it (issue #15); see `authDatabaseAdapter` for
@@ -17,8 +19,6 @@ import { creationActor } from './creation-actor';
  * `@better-auth/cli generate` can emit a Drizzle schema but cannot apply it, so
  * `src/db/schema/auth.ts` is hand-owned and Drizzle Kit migrates it.
  */
-const CLIENT_IP_HEADER = 'x-lunashare-client-ip';
-
 export const auth = betterAuth({
   plugins: [
     adminPlugin(),

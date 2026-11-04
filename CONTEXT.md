@@ -95,3 +95,57 @@ The signed-in session with one Source that LunaShare uses for every Download fro
 it, set by an admin. Optional: without one, Downloads from that Source run
 logged out and some posts fail.
 _Avoid_: Cookies, login, credentials
+
+## Studio
+
+**Studio**:
+The screen where a User makes images, video, audio or 3D models with AI, and
+the admin setup behind it. An instance without a fal key has no Studio at all.
+_Avoid_: AI, Generate, AI generator
+
+**Category**:
+One thing a User can set out to do in the Studio, such as "Create video",
+defined by an admin. It groups Models and Templates, and each of them sits in
+exactly one. Unrelated to the background tasks admins schedule.
+_Avoid_: Task, Tool, tab
+
+**Model**:
+One AI model as an admin offers it to Users: the fal endpoint it calls and how
+its Fields are set up. One endpoint can back several Models with different
+settings, so a Model is a curated configuration, not what fal runs.
+_Avoid_: Endpoint, Engine
+
+**Field**:
+One input a Model accepts, as the admin set it up: shown to the User, fixed to
+a value, or left to fal's default. Distinct from a Variable, which only a
+Template has.
+_Avoid_: Parameter, input, option, setting
+
+**Template**:
+A Model with its Fields fixed and its prompt written by an admin, so the User
+only answers a few Variables. Sits in a Category beside the Models.
+_Avoid_: Recipe, Preset
+
+**Variable**:
+A blank in a Template's fixed text that the User fills in, such as a style
+choice or a photo. Written inline in that text, never managed on its own.
+Unrelated to a Design token.
+_Avoid_: Placeholder, global variable, parameter
+
+**Generation**:
+One run of a Model or Template for one User: what they entered, what it cost
+and how it ended. It keeps running when the browser closes, and its history
+entry outlives its Outputs.
+_Avoid_: Job, Prediction, Run, request
+
+**Output**:
+One file a Generation produced: an image, a video, an audio clip or a 3D model.
+It expires after seven days unless the User saves it to Files, where it becomes
+one of their files.
+_Avoid_: Result, Asset
+
+**Budget**:
+The most a User may spend on Generations in one calendar month, in US dollars.
+An admin sets a default for everyone and exceptions per User, unlimited
+included. Unrelated to the storage quota.
+_Avoid_: Credits, quota, allowance, limit

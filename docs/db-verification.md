@@ -31,8 +31,7 @@ unset, so `bun test` still runs for anyone without a database. They import
 static import would do before `skipIf` had a chance to skip anything.
 
 The suite runs against the **development Postgres holding a copy of the real
-production dataset** (4 users, 4,230 files, 24 templates, 92 cached images, 49
-snippets, an empty `audit_log` and an empty `task_execution`), not against
+production dataset** (4 users, 4,230 files, 49 snippets, an empty `audit_log` and an empty `task_execution`), not against
 fixtures. Fixtures cannot have the awkward historical values real data carries.
 Each run creates its own rows under a per-run id, tears all of them down in
 `afterAll`, and asserts `audit_log` returns to the exact count it started at.
@@ -43,7 +42,7 @@ audit layer is loud about it on purpose.
 
 ## Coverage: `src/db/queries/audit-coverage.test.ts`
 
-Every one of the 25 models in `AUDITED_MODELS` is driven through its real query
+Every one of the 21 models in `AUDITED_MODELS` is driven through its real query
 function — never by calling `writeAuditLog` directly — and the resulting row is
 read back and checked for the expected `model`, `action` and `recordId`.
 
@@ -52,12 +51,9 @@ parent, which the tests say in a comment where it happens:
 
 | Model | Exercised through |
 | --- | --- |
-| `ModelField` | `createGenerationModel` / `updateGenerationModel` (the field set is replaced wholesale) |
-| `EditingModelField` | `createEditingModel` / `updateEditingModel` |
-| `TemplateGlobalVariable` | `createTemplate` / `updateTemplate` |
 | `FormShareField` | `createFormShare` |
 
-The 14 models in `UNAUDITED_MODELS` are driven too, and asserted to produce
+The 12 models in `UNAUDITED_MODELS` are driven too, and asserted to produce
 nothing. A catch-all at the end asserts that no audit row written during the run
 names an unaudited model at all, so an over-eager port shows up even if no
 individual test happened to drive the write that produced it.
@@ -97,24 +93,19 @@ covered without being removed. A stale gap is a comment lying about the code.
 | `FormShare` | delete | Same shape: `softDeleteOwnedFormShare` is an update. |
 | `Flow` | delete | Same shape: `deactivateOwnedFlow` is an update. |
 | `FormShareField` | update, delete | Fields are immutable once the share is created, and are only removed by the database cascade from `form_share` — which has no hard-delete path either. |
-| `TemplateGlobalVariable` | update | A link is replaced, never edited. `updateTemplate` deletes every link and recreates it, so the audit trail is a delete followed by a create. |
-| `ModelField`, `EditingModelField` | update | Same replace-not-edit shape as above. |
-| `ImagePreset` | update | Presets are delete-and-recreate; the UI exposes no edit. |
 | `UserGroupAssignment` | update | An assignment carries no mutable field; membership changes are a create or a delete. |
 | `RbacGroup` | delete | Groups are seeded, never removed — no call site deletes one. |
 | `DenylistEntry` | update, delete | Entries are append-only; the admin UI offers neither an edit nor a removal. |
 | `ModerationCase` | delete | Cases are resolved, never removed. `resolveModerationCase` is an update. |
+| `StudioSettings` | delete | A single row, created on its first write and only ever updated. |
 
 Three unaudited models have **no writer at all** in any query module, so there is
 nothing to drive: `Account`, `Verification` and `OCRResult`. A test asserts that
 this list is exactly those three, so a writer appearing for one of them fails the
 suite rather than slipping past unverified.
 
-Two more things the audit tests deliberately leave alone:
+One more thing the audit tests deliberately leave alone:
 
-- `purgeCachedImages` (`admin.ts`) is never called. It truncates `cached_image`,
-  including the 92 migrated production rows. `deleteCachedImages(ids)` is used
-  for the unaudited-delete assertion instead.
 - Scheduler bookkeeping on `task` (`setTaskNextExecutionAt`,
   `setTaskLastExecutionAt`, `incrementTaskRetryCount`, `resetTaskRetryCount`) is
   intentionally unaudited even though `Task` is an audited model. Auditing is
@@ -165,7 +156,6 @@ Cross-referenced, not duplicated:
 | The quarantined-status comparison used by the rescan | `moderation.test.ts` |
 | Upload hashes normalised on write | `uploads.test.ts` |
 | The CDN `image/` prefix and the audio player's content-type list | `delivery.test.ts` |
-| The global-variable name uniqueness check | `ai.test.ts` |
 
 ### Composite-index usage
 
@@ -220,13 +210,13 @@ fixture rather than the access path.
   scan over paged reads, so it has no collation surface. Only the exact `sha256`
   and `md5` halves do, and those are covered.
 - **Hash-shaped columns nothing compares across a case boundary**:
-  `ocr_result.fileHash`, `cached_image.hash`, `file_rendition.paramHash` and
+  `ocr_result.fileHash`, `file_rendition.paramHash` and
   `view_event.visitorHash`. Each is written and read in one canonical case by
   the code that produces it, so the value never crosses a case boundary.
   `view_event.visitorHash` in particular is only ever produced by
   `createHmac(...).digest('hex')` on both sides, so no case boundary exists.
 - **Fixed vocabularies with no case boundary**: `rbac_group.key`, `user.role`,
-  `cached_image.purpose`, `audit_log.recordId`. Each holds either
+  `audit_log.recordId`. Each holds either
   application-generated ids or literals chosen by the code, never user input, and
   each is compared exactly on purpose.
 - **Better-Auth's own writes** to `user`, `session`, `account` and `verification`.

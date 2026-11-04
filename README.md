@@ -105,6 +105,31 @@ comma-separated host list only if you proxy images from somewhere else:
 PROXY_ALLOWED_DOMAINS=images.example.com,static.example.org
 ```
 
+### Studio
+
+The Studio runs on [fal.ai](https://fal.ai) and stays off until `FAL_KEY` holds
+a fal API key. Without it the Studio, its nav entry and its admin pages are
+hidden, and its routes answer 404.
+
+`FAL_BILLING_KEY` is optional and must be a fal key with `BILLING` (or `FULL`)
+scope. With it, a task every 10 minutes replaces each Generation's estimated
+cost with what fal billed, and the Studio overview shows the fal balance.
+Without it, the estimate is booked as the cost.
+
+fal reports finished Generations by webhook to `/api/studio/fal-webhook`, but
+only when the public base URL (`PUBLIC_BASE_URL`, or `BETTER_AUTH_URL` when that
+is unset) is `https` on a public host. Otherwise the server polls fal every 3
+seconds, which also works behind NAT and in development. With webhooks on, it
+still polls once a minute for Generations whose webhook never came.
+
+```bash
+FAL_KEY=your-fal-key
+FAL_BILLING_KEY=your-billing-scope-key
+```
+
+`FAL_QUEUE_BASE_URL`, `FAL_REST_BASE_URL` and `FAL_API_BASE_URL` point the app
+at the E2E stack's fake fal service. Leave them unset in a deployment.
+
 ## Deployment
 
 The build targets Nitro's `bun` preset, producing a server that boots on

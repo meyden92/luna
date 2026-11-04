@@ -2,12 +2,12 @@ import { describe, expect, test } from 'bun:test';
 import { createSseWriter, eventStreamResponse, SSE_HEARTBEAT_MS } from './sse-stream';
 
 /**
- * Issue #59: a template generation emits no bytes between "Creating AI
- * predictions..." and the first prediction settling, which is minutes of an
- * idle response body, and the stream died at ~10s in production. Nothing else
- * in the suite exercises a stream that is deliberately doing nothing, and a
- * heartbeat that keeps ticking after the client has gone would hold the request
- * open for the whole poll.
+ * Issue #59: the old AI template generation emitted no bytes for minutes while
+ * it waited on the provider, and the stream died at ~10s in production. The
+ * Studio's event stream sits idle the same way between Generation updates.
+ * Nothing else in the suite exercises a stream that is deliberately doing
+ * nothing, and a heartbeat that keeps ticking after the client has gone would
+ * hold the request open for good.
  */
 
 const HEARTBEAT_MS = 20;
@@ -126,9 +126,9 @@ describe('heartbeat over a real response body', () => {
  * Production serves this app through Nitro's bun preset, which calls
  * `Bun.serve` with no `idleTimeout` — so Bun's 10-second default applies and it
  * kills any response whose socket goes quiet for that long, logging "request
- * timed out after 10 seconds". A template generation is silent for the whole
- * time a prediction polls, so the server dropped its own stream, the route read
- * the disconnect as a cancellation, and two running predictions were cancelled.
+ * timed out after 10 seconds". The old template generation was silent while it
+ * polled the provider, so the server dropped its own stream, the route read the
+ * disconnect as a cancellation, and two running provider jobs were cancelled.
  *
  * `bun run dev` is Vite's Node server and has no such timeout, which is exactly
  * why this only ever showed up deployed. A shortened `idleTimeout` stands in for
@@ -140,9 +140,9 @@ describe('heartbeat over a real response body', () => {
  * Production serves this app through Nitro's bun preset, which calls
  * `Bun.serve` with no `idleTimeout`, so Bun's 10-second default kills any
  * response whose socket goes quiet for that long — "request timed out after 10
- * seconds". A template generation is silent for the whole time a prediction
- * polls, so the server dropped its own stream, the route read the disconnect as
- * a cancellation, and two running predictions died with it.
+ * seconds". The old template generation was silent while it polled the
+ * provider, so the server dropped its own stream, the route read the disconnect
+ * as a cancellation, and two running provider jobs died with it.
  *
  * `bun run dev` is Vite's Node server and has no such timeout, which is exactly
  * why this only ever appeared deployed and why no cheaper test would have
@@ -156,10 +156,10 @@ describe('heartbeat over a real response body', () => {
  * Production serves this app through Nitro's bun preset, which calls
  * `Bun.serve` with no `idleTimeout` (`.output/server/index.mjs`), so Bun's
  * 10-second default governs every response: it drops any request whose socket
- * goes quiet for that long, logging "request timed out after 10 seconds". A
- * template generation is silent for the whole time a prediction polls, so the
+ * goes quiet for that long, logging "request timed out after 10 seconds". The
+ * old template generation was silent while it polled the provider, so the
  * server dropped its own stream, the route read the disconnect as a
- * cancellation, and two running predictions died with it — issue #59.
+ * cancellation, and two running provider jobs died with it — issue #59.
  *
  * `bun run dev` is Vite's Node server and has no such timeout, which is why
  * this only ever appeared deployed.
@@ -174,7 +174,7 @@ describe('heartbeat over a real response body', () => {
 describe('heartbeat interval', () => {
   test('stays comfortably inside the Bun default idle timeout', () => {
     // The preset never overrides Bun's 10s default, so this constant is the
-    // only thing keeping a polling generation's connection alive.
+    // only thing keeping an idle event stream's connection alive.
     expect(SSE_HEARTBEAT_MS).toBeLessThan(10_000 / 2);
   });
 });

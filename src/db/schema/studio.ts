@@ -106,6 +106,10 @@ export const generation = pgTable(
       .references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
     modelId: text('model_id').references(() => studioModel.id, { onDelete: 'set null', onUpdate: 'cascade' }),
     templateId: text('template_id').references(() => studioTemplate.id, { onDelete: 'set null', onUpdate: 'cascade' }),
+    // Set when `form_values` fill a Template's form (a Template, or a Template
+    // draft from its editor) rather than the Model's own, so they are never
+    // resubmitted to the bare Model once the Template is gone.
+    fromTemplate: boolean('from_template').default(false).notNull(),
     // Snapshots, so the history still reads right after the Model or Template is gone.
     name: text('name').notNull(),
     endpointId: text('endpoint_id').notNull(),
@@ -129,8 +133,8 @@ export const generation = pgTable(
     startedAt: timestamp('started_at', { withTimezone: true }),
     // Also null for a cancelled Generation whose request fal may still finish.
     completedAt: timestamp('completed_at', { withTimezone: true }),
-    // Set when the User deletes it from the history: its inputs and Outputs go,
-    // the row stays so its cost still counts against the Budget.
+    // Set when the User deletes it from the history: its inputs and its Outputs'
+    // objects go, the rows stay so its cost still counts against the Budget.
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
   },
   (t) => [

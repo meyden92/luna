@@ -3,6 +3,7 @@ CREATE TABLE "generation" (
 	"user_id" text NOT NULL,
 	"model_id" text,
 	"template_id" text,
+	"from_template" boolean DEFAULT false NOT NULL,
 	"name" text NOT NULL,
 	"endpoint_id" text NOT NULL,
 	"form_values" jsonb NOT NULL,
@@ -20,7 +21,8 @@ CREATE TABLE "generation" (
 	"seen_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"started_at" timestamp with time zone,
-	"completed_at" timestamp with time zone
+	"completed_at" timestamp with time zone,
+	"deleted_at" timestamp with time zone
 );
 --> statement-breakpoint
 CREATE TABLE "generation_output" (

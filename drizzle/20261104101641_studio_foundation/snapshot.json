@@ -2,7 +2,7 @@
   "type": "diff",
   "version": "9",
   "dialect": "postgres",
-  "id": "669812cf-3c36-4b4f-a9eb-192b05cad3f9",
+  "id": "4ec564f6-0e21-40e9-ae93-8d748b44e022",
   "prevIds": [
     "3b9a1b7d-1c5b-4862-9523-c9d3a7c17105"
   ],
@@ -1038,6 +1038,22 @@
       "row": {
         "schema": "public",
         "table": "generation",
+        "name": "from_template",
+        "type": "boolean",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "false",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "generation",
         "name": "name",
         "type": "text",
         "typeSchema": null,
@@ -1311,6 +1327,22 @@
         "schema": "public",
         "table": "generation",
         "name": "completed_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "generation",
+        "name": "deleted_at",
         "type": "timestamp with time zone",
         "typeSchema": null,
         "notNull": false,

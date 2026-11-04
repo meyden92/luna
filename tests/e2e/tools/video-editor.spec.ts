@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect } from '@playwright/test';
 import { test } from '../fixtures/test';
-import { serveFfmpegCore } from '../utils/ffmpeg';
 import { decodeMedia } from '../utils/media';
 
 // The video editor (/tools/video): ffmpeg.wasm runs in the page (its core comes from a CDN, so this needs the
@@ -13,7 +12,6 @@ test('a trimmed clip exports as a playable MP4 that is shorter than the original
   const original = await decodeMedia(page, readFileSync(clip.path), 'video/mp4');
   expect(original.duration).toBeCloseTo(3, 0);
 
-  await serveFfmpegCore(page);
   await page.goto('/tools/video');
   await page.getByLabel('Drop a video here or click to browse').setInputFiles(clip.path);
 

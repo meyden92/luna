@@ -112,6 +112,10 @@ services:
       FAL_QUEUE_BASE_URL: http://fal-fake:${E2E_FAL_PORT:?}
       FAL_REST_BASE_URL: http://fal-fake:${E2E_FAL_PORT:?}
       FAL_API_BASE_URL: http://fal-fake:${E2E_FAL_PORT:?}/v1
+      # The suite plays the one reverse proxy in front of the app: each test
+      # context sends its own `x-forwarded-for` (tests/e2e/fixtures/users.ts),
+      # which is how it gets its own rate-limit bucket.
+      TRUSTED_PROXY_HOPS: 1
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:

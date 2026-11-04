@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, type Page } from '@playwright/test';
 import { test } from '../fixtures/test';
-import { serveFfmpegCore } from '../utils/ffmpeg';
 import { decodeMedia, recordClipWithSound } from '../utils/media';
 
 // The video-to-audio converter (/tools/converter): ffmpeg.wasm runs in the page (its core comes from a CDN, so this
@@ -34,7 +33,6 @@ const chooseFormat = async (page: Page, label: string) => {
 
 test('a video with sound converts to every offered audio format, in the right container', async ({ galleryPage: page }) => {
   test.setTimeout(240_000);
-  await serveFfmpegCore(page);
   await page.goto('/tools/converter');
   const seconds = 2;
   const video = await recordClipWithSound(page, seconds);
@@ -67,7 +65,6 @@ test('a video with sound converts to every offered audio format, in the right co
 
 test('a video without an audio track is refused', async ({ galleryPage: page, corpus }) => {
   test.setTimeout(180_000);
-  await serveFfmpegCore(page);
   await page.goto('/tools/converter');
   await page.getByLabel('Drop video files here or click to browse').setInputFiles(corpus.file('clip.mp4').path);
   await page.getByRole('button', { name: 'Convert to Audio' }).click();

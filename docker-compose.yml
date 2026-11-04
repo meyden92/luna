@@ -26,6 +26,8 @@ services:
       - CDN_URL=${CDN_URL}
       - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-}
       - PROXY_ALLOWED_DOMAINS=${PROXY_ALLOWED_DOMAINS:-}
+      # Reverse proxies in front of the app that append to X-Forwarded-For (see README).
+      - TRUSTED_PROXY_HOPS=${TRUSTED_PROXY_HOPS:-0}
 
       - FAL_KEY=${FAL_KEY:-}
       - FAL_BILLING_KEY=${FAL_BILLING_KEY:-}

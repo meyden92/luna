@@ -1,43 +1,42 @@
-import { getRequestHeaders } from '@tanstack/react-start/server';
+import { getRequest, getRequestIP } from '@tanstack/react-start/server';
+import { getSessionCookie } from 'better-auth/cookies';
 import { createHash, randomUUID } from 'crypto';
+import { AUTH_COOKIE_PREFIX } from '@/libs/auth/cookie-prefix';
+import { clientIp } from '@/libs/client-ip';
+import { env } from '@/libs/env';
 import type { AuditMetadata } from '@/types/audit';
+
+/**
+ * A stable correlation id for audit rows: a hash of the session token, never
+ * the token itself (which would grant session takeover to anyone with log or
+ * database access). Undefined when the request carries no session cookie.
+ */
+export function auditSessionId(headers: Headers): string | undefined {
+  const token = getSessionCookie(headers, { cookiePrefix: AUTH_COOKIE_PREFIX });
+  if (!token) return undefined;
+  return createHash('sha256').update(token).digest('hex').slice(0, 32);
+}
 
 export class MetadataCollector {
   static async collectFromRequest(): Promise<AuditMetadata> {
-    let headersList: Record<string, string | undefined> | Headers;
+    let headers: Headers;
+    let socketIp: string | undefined;
     try {
-      headersList = getRequestHeaders() as unknown as Record<string, string | undefined> | Headers;
+      headers = getRequest().headers;
+      socketIp = getRequestIP();
     } catch {
       // No request context (cron tasks, server startup) — audit without metadata.
       return {};
     }
 
-    const get = (name: string) =>
-      (headersList instanceof Headers ? headersList.get(name) : (headersList as Record<string, string | undefined>)[name]) ?? null;
-
     return {
-      ipAddress: get('x-forwarded-for')?.split(',')[0]?.trim() || get('x-real-ip') || undefined,
-      userAgent: get('user-agent') || undefined,
-      requestId: get('x-request-id') || undefined,
-      endpoint: get('x-invoke-path') || undefined,
-      sessionId: MetadataCollector.extractSessionId(get('cookie')),
+      // The same address the rate limiters key on, never one the client chose (#234).
+      ipAddress: clientIp(headers, env.TRUSTED_PROXY_HOPS, socketIp),
+      userAgent: headers.get('user-agent') || undefined,
+      requestId: headers.get('x-request-id') || undefined,
+      endpoint: headers.get('x-invoke-path') || undefined,
+      sessionId: auditSessionId(headers),
     };
-  }
-
-  // Hashes the session token so audit rows get a stable correlation ID
-  // without persisting the raw bearer token (which would grant session takeover
-  // to anyone with log/database access).
-  private static extractSessionId(cookieHeader: string | null): string | undefined {
-    if (!cookieHeader) return undefined;
-
-    const sessionCookie = cookieHeader.split(';').find((cookie) => cookie.trim().startsWith('better-auth.session_token='));
-
-    if (!sessionCookie) return undefined;
-
-    const rawValue = sessionCookie.split('=')[1]?.trim();
-    if (!rawValue) return undefined;
-
-    return createHash('sha256').update(rawValue).digest('hex').slice(0, 32);
   }
 
   static generateChangeSetId(): string {

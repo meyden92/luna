@@ -124,6 +124,7 @@ export function TrackHeader({ track }: TrackHeaderProps) {
           min={0}
           max={100}
           step={1}
+          thumbAriaLabel="Track volume"
           className={styles.volumeSlider}
         />
 

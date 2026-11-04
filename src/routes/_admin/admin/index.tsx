@@ -1,6 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { adminDestinations } from '@/components/admin/admin-destinations';
+import { ClientIpCard } from '@/components/admin/client-ip/client-ip-card';
 import { VersionCard } from '@/components/admin/version/version-card';
 import { studioStatusQueryOptions } from '@/components/studio/studio-status';
 import styles from './index.module.css';
@@ -31,6 +32,7 @@ function AdminIndexPage() {
           ))}
       </div>
       <VersionCard />
+      <ClientIpCard />
     </div>
   );
 }

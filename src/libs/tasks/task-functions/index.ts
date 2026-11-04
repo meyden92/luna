@@ -2,6 +2,7 @@ import type { TaskFunction, TaskFunctionRegistry } from '@/types/tasks';
 import { rescanImageDimensionsExecutor } from './rescan-image-dimensions';
 import { pruneFileRenditionsExecutor } from './selected-feature-maintenance';
 import { deleteExpiredSessionsExecutor } from './session-cleanup';
+import { settleStudioCostsExecutor } from './studio-cost-settlement';
 import { expireStudioOutputsExecutor } from './studio-output-expiry';
 import { testLoggerTask } from './test-logger';
 import { updateYtDlpExecutor } from './update-yt-dlp';
@@ -13,6 +14,7 @@ const taskFunctionRegistry: TaskFunctionRegistry = {
   rescanImageDimensions: rescanImageDimensionsExecutor,
   updateYtDlp: updateYtDlpExecutor,
   expireStudioOutputs: expireStudioOutputsExecutor,
+  settleStudioCosts: settleStudioCostsExecutor,
 };
 
 export function getTaskFunction(name: string): TaskFunction | undefined {

@@ -111,6 +111,9 @@ export const queryKeys = {
     template: (id: string) => ['admin', 'studio', 'templates', id] as const,
     templateDraft: (generationId: string) => ['admin', 'studio', 'template-draft', generationId] as const,
     catalog: (search: Record<string, unknown>) => ['admin', 'studio', 'catalog', search] as const,
+    overview: ['admin', 'studio', 'overview'] as const,
+    settings: ['admin', 'studio', 'settings'] as const,
+    userBudget: (userId: string) => ['admin', 'studio', 'user-budget', userId] as const,
   },
   adminVersion: {
     info: ['admin', 'version'] as const,

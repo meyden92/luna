@@ -50,6 +50,14 @@ const DEFAULT_TASKS: DefaultTask[] = [
     timeout: 300000,
     maxRetries: 3,
   },
+  {
+    name: 'settle-studio-costs',
+    description: "Replaces Studio cost estimates with fal's billed amounts, or books the estimate when fal reports none",
+    cronExpression: '*/10 * * * *',
+    taskFunction: 'settleStudioCosts',
+    timeout: 300000,
+    maxRetries: 3,
+  },
 ];
 
 /**

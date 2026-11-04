@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { buildStudioForm, initialFormValues, studioFormData, visibleFormItems } from './form';
+import { buildStudioForm, formRequestValues, initialFormValues, studioFormData, visibleFormItems } from './form';
 import type { FieldConfig, JsonSchema, VariableConfig } from './types';
 
 const input: JsonSchema = {
@@ -158,6 +158,15 @@ describe('initialFormValues', () => {
       schema: input,
     });
     expect(initialFormValues(form)).toEqual({ aspect_ratio: '1:1', num_images: 2, image_urls: [] });
+  });
+});
+
+describe('formRequestValues', () => {
+  test('holds what the request would carry: fixed values, visible values, and defaults for empty ones', () => {
+    const form = buildStudioForm({ fields, schema: input });
+    const values = { prompt: 'a cat', aspect_ratio: '1:1', num_images: '', style: 'b' };
+    // `style` is hidden while the ratio is 1:1, so its value is not sent.
+    expect(formRequestValues(form, values)).toEqual({ safety: false, prompt: 'a cat', aspect_ratio: '1:1', num_images: 1 });
   });
 });
 

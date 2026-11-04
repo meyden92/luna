@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
-import { inArray, sql } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 
 /**
  * The Studio history's listing: Category and media kind filters and keyset
@@ -127,5 +127,77 @@ describe.skipIf(!hasDatabase)('listOwnGenerations', () => {
     } finally {
       await m.db.delete(m.user).where(inArray(m.user.id, [other]));
     }
+  });
+});
+
+describe.skipIf(!hasDatabase)('Budgets', () => {
+  const spender = `${userId}-budget`;
+  const now = new Date('2026-11-15T12:00:00Z');
+  const spend = (name: string, values: Partial<typeof m.generation.$inferInsert>) => ({
+    id: id(`budget-${name}`),
+    userId: spender,
+    name,
+    endpointId: 'fake/image',
+    formValues: {},
+    status: 'succeeded' as const,
+    ...values,
+  });
+
+  beforeAll(async () => {
+    await m.db.insert(m.user).values({ id: spender, name: 'Budget test', email: `${spender}@lunashare.test`, emailVerified: false });
+    // Written directly, not through setStudioBudgetOverride, so the test leaves no audit rows.
+    await m.db.insert(m.studioBudgetOverride).values({ userId: spender, monthlyBudgetUsd: 1 });
+    await m.db
+      .insert(m.generation)
+      .values([
+        spend('settled', { estimatedCostUsd: 0.03, actualCostUsd: 0.25, createdAt: new Date('2026-11-01T00:00:00Z') }),
+        spend('unsettled', { estimatedCostUsd: 0.1, createdAt: new Date('2026-11-30T23:59:59Z') }),
+        spend('deleted', { estimatedCostUsd: 0.2, deletedAt: now, createdAt: new Date('2026-11-10T00:00:00Z') }),
+        spend('failed', { status: 'failed', estimatedCostUsd: 5, createdAt: new Date('2026-11-10T00:00:00Z') }),
+        spend('cancelled', { status: 'cancelled', estimatedCostUsd: 5, createdAt: new Date('2026-11-10T00:00:00Z') }),
+        spend('last month', { estimatedCostUsd: 5, createdAt: new Date('2026-10-31T23:59:59.999Z') }),
+        spend('next month', { estimatedCostUsd: 5, createdAt: new Date('2026-12-01T00:00:00Z') }),
+      ]);
+  });
+
+  afterAll(async () => {
+    await m.db.delete(m.user).where(inArray(m.user.id, [spender]));
+  });
+
+  test('counts this UTC month’s billed costs and estimates, deleted entries too, but not failed or cancelled ones', async () => {
+    expect(await m.getBudgetState(spender, m.db, now)).toEqual({ limitUsd: 1, spentUsd: 0.55, remainingUsd: 0.45 });
+  });
+
+  test('admission refuses an estimate the remainder does not cover, and an unlimited override lifts it', async () => {
+    // Admission reads the current month, so these rows are created now.
+    const current = `${spender}-now`;
+    await m.db.insert(m.user).values({ id: current, name: 'Budget test', email: `${current}@lunashare.test`, emailVerified: false });
+    try {
+      await m.db.insert(m.studioBudgetOverride).values({ userId: current, monthlyBudgetUsd: 0.05 });
+      await m.db.insert(m.generation).values({ ...spend('spent', { estimatedCostUsd: 0.03 }), id: id('budget-now'), userId: current });
+      const next = { userId: current, modelId: null, templateId: null, name: 'next', endpointId: 'fake/image', formValues: {} };
+      await expect(m.admitGeneration({ ...next, estimatedCostUsd: 0.03 })).rejects.toThrow(
+        'This would cost about 0.03 $, but only 0.02 $ of your monthly Budget is left.',
+      );
+      await m.db.update(m.studioBudgetOverride).set({ monthlyBudgetUsd: null }).where(eq(m.studioBudgetOverride.userId, current));
+      const admitted = await m.admitGeneration({ ...next, estimatedCostUsd: 0.03 });
+      expect(admitted.status).toBe('queued');
+    } finally {
+      await m.db.delete(m.user).where(inArray(m.user.id, [current]));
+    }
+  });
+
+  test('deleting a Generation clears its inputs and hides it, but keeps its cost', async () => {
+    await m.db
+      .insert(m.generation)
+      .values(spend('to delete', { id: id('budget-delete'), estimatedCostUsd: 0.4, formValues: { prompt: 'secret' }, createdAt: now }));
+    expect(await m.deleteOwnedGeneration(id('budget-delete'), spender)).toEqual([]);
+    expect(await m.getOwnedGeneration(id('budget-delete'), spender)).toBeUndefined();
+    const [row] = await m.db
+      .select()
+      .from(m.generation)
+      .where(eq(m.generation.id, id('budget-delete')));
+    expect(row?.formValues).toEqual({});
+    expect((await m.getBudgetState(spender, m.db, now)).spentUsd).toBe(0.95);
   });
 });

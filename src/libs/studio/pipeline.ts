@@ -414,6 +414,12 @@ export async function finishGeneration(generationId: string): Promise<void> {
       return;
     }
 
+    // Deleted while fal could still finish it: fal billed it, but nobody wants its Outputs.
+    if (row.deletedAt) {
+      await completeGeneration(row.id, { status: 'succeeded', outputs: [] });
+      return;
+    }
+
     const extracted = extractOutputs(result);
     if (extracted.length === 0) {
       const failed = await completeGeneration(row.id, { status: 'failed', error: { message: 'fal returned no media.', detail: result } });
@@ -536,7 +542,10 @@ export async function generationSettings(userId: string, generationId: string) {
   };
 }
 
-/** Deletes a finished Generation with its Outputs and their objects; Outputs saved to Files stay as files. */
+/**
+ * Deletes a finished Generation from the history with its Outputs and their
+ * objects; Outputs saved to Files stay as files, and its cost stays booked.
+ */
 export async function deleteGeneration(userId: string, generationId: string): Promise<void> {
   assertStudioEnabled();
   const keys = await deleteOwnedGeneration(generationId, userId);

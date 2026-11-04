@@ -1,4 +1,17 @@
-import { Activity, Gauge, Globe, LayoutTemplate, MapIcon, Shapes, ShieldAlert, Sparkles, User2, Zap } from 'lucide-react';
+import {
+  Activity,
+  BarChart3,
+  Gauge,
+  Globe,
+  LayoutTemplate,
+  MapIcon,
+  Settings2,
+  Shapes,
+  ShieldAlert,
+  Sparkles,
+  User2,
+  Zap,
+} from 'lucide-react';
 
 /** `studio` entries show only while the Studio is enabled. */
 
@@ -64,6 +77,20 @@ export const adminDestinations = [
     to: '/admin/studio/templates',
     Icon: LayoutTemplate,
     description: 'Write prompts with Variables Users fill in',
+    studio: true,
+  },
+  {
+    name: 'Studio overview',
+    to: '/admin/studio/overview',
+    Icon: BarChart3,
+    description: 'Spend, Budgets, failures and running Generations',
+    studio: true,
+  },
+  {
+    name: 'Studio settings',
+    to: '/admin/studio/settings',
+    Icon: Settings2,
+    description: 'The default monthly Budget and the active Generation limit',
     studio: true,
   },
 ] as const;

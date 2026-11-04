@@ -9,6 +9,7 @@ const DEFAULT_TASKS = [
   { name: 'delete-expired-sessions', fn: 'deleteExpiredSessions', cron: '*/30 * * * *', nextRun: /\d{1,2}:(00|30):00 (AM|PM)/ },
   { name: 'prune-file-renditions', fn: 'pruneFileRenditions', cron: '0 3 * * *', nextRun: /3:00:00 AM$/ },
   { name: 'expire-studio-outputs', fn: 'expireStudioOutputs', cron: '0 * * * *', nextRun: /\d{1,2}:00:00 (AM|PM)/ },
+  { name: 'settle-studio-costs', fn: 'settleStudioCosts', cron: '*/10 * * * *', nextRun: /\d{1,2}:\d0:00 (AM|PM)/ },
 ];
 
 const taskRow = (page: Page, name: string) => page.getByRole('row').filter({ hasText: name });

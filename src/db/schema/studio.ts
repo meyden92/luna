@@ -129,6 +129,9 @@ export const generation = pgTable(
     startedAt: timestamp('started_at', { withTimezone: true }),
     // Also null for a cancelled Generation whose request fal may still finish.
     completedAt: timestamp('completed_at', { withTimezone: true }),
+    // Set when the User deletes it from the history: its inputs and Outputs go,
+    // the row stays so its cost still counts against the Budget.
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
   },
   (t) => [
     index('generation_userId_createdAt_idx').on(t.userId, t.createdAt),

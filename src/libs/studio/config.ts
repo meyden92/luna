@@ -26,6 +26,11 @@ export function assertStudioEnabled(): void {
   if (!isStudioEnabled()) throw new StudioDisabledError();
 }
 
+/** Whether a `FAL_BILLING_KEY` lets settlement read billed costs and the overview the balance. */
+export function hasFalBillingKey(): boolean {
+  return Boolean(env.FAL_BILLING_KEY);
+}
+
 let client: FalClient | undefined;
 
 /** The fal client for this instance's key and hosts. Throws while the Studio is off. */

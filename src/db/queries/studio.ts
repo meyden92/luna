@@ -1,5 +1,6 @@
-import { and, asc, count, desc, eq, inArray, isNotNull, isNull, lt, lte, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, gte, inArray, isNotNull, isNull, lt, lte, notInArray, or, sql } from 'drizzle-orm';
 import { evaluateQuota, StorageQuotaExceededError } from '@/libs/storage-quota';
+import { type BudgetState, budgetLimit, budgetRefusal, budgetState, utcMonthStart } from '@/libs/studio/budget';
 import type { GenerationError, GenerationProgress, MediaKind } from '@/libs/studio/types';
 import { UserFacingError } from '@/libs/user-facing-error';
 import { type AuditHandle, writeAuditLog } from '../audit';
@@ -318,16 +319,37 @@ export async function deleteStudioBudgetOverride(targetUserId: string, userId: s
   return before;
 }
 
-export interface BudgetState {
-  /** Null means unlimited. */
-  limitUsd: number | null;
-  spentUsd: number;
-  remainingUsd: number | null;
+export async function getStudioBudgetOverride(targetUserId: string, handle: AuditHandle = db) {
+  const [row] = await handle.select().from(studioBudgetOverride).where(eq(studioBudgetOverride.userId, targetUserId));
+  return row;
 }
 
-/** A User's Budget for the current UTC month. Currently always unlimited. */
-export async function getBudgetState(_userId: string, _handle: AuditHandle = db): Promise<BudgetState> {
-  return { limitUsd: null, spentUsd: 0, remainingUsd: null };
+/**
+ * What a Generation counts against the Budget: its billed cost once settled,
+ * else its estimate. Failed and cancelled ones count nothing; fal bills only
+ * successful output.
+ */
+export const spentUsd = sql<number>`coalesce(sum(coalesce(${generation.actualCostUsd}, ${generation.estimatedCostUsd}, 0)), 0)`.mapWith(
+  Number,
+);
+export const isSpending = notInArray(generation.status, ['failed', 'cancelled']);
+
+/** A User's spend on Generations created in `[from, to)`, deleted ones included. */
+export async function userSpendUsd(userId: string, from: Date, to: Date, handle: AuditHandle = db) {
+  const [row] = await handle
+    .select({ spentUsd })
+    .from(generation)
+    .where(and(eq(generation.userId, userId), isSpending, gte(generation.createdAt, from), lt(generation.createdAt, to)));
+  return row?.spentUsd ?? 0;
+}
+
+/** A User's Budget for the UTC calendar month `now` falls in. */
+export async function getBudgetState(userId: string, handle: AuditHandle = db, now: Date = new Date()): Promise<BudgetState> {
+  // One after another: inside admission, `handle` is a transaction on a single connection.
+  const settings = await getStudioSettings(handle);
+  const override = await getStudioBudgetOverride(userId, handle);
+  const spent = await userSpendUsd(userId, utcMonthStart(now), utcMonthStart(now, 1), handle);
+  return budgetState(budgetLimit(settings.defaultMonthlyBudgetUsd, override), spent);
 }
 
 // ---------------------------------------------------------------------------
@@ -373,13 +395,8 @@ export async function admitGeneration(values: NewGeneration, handle: AuditHandle
       );
     }
 
-    const budget = await getBudgetState(values.userId, tx);
-    if (budget.remainingUsd !== null && (values.estimatedCostUsd ?? 0) > budget.remainingUsd) {
-      throw new UserFacingError(
-        `This would cost about ${values.estimatedCostUsd} $, but only ${budget.remainingUsd} $ of your monthly Budget is left.`,
-        'StudioBudgetError',
-      );
-    }
+    const refusal = budgetRefusal(await getBudgetState(values.userId, tx), values.estimatedCostUsd ?? null);
+    if (refusal) throw new UserFacingError(refusal, 'StudioBudgetError');
 
     const [created] = await tx
       .insert(generation)
@@ -395,11 +412,12 @@ export async function getGeneration(id: string, handle: AuditHandle = db) {
   return row;
 }
 
+/** One of the User's Generations, unless they deleted it. */
 export async function getOwnedGeneration(id: string, userId: string, handle: AuditHandle = db) {
   const [row] = await handle
     .select()
     .from(generation)
-    .where(and(eq(generation.id, id), eq(generation.userId, userId)));
+    .where(and(eq(generation.id, id), eq(generation.userId, userId), isNull(generation.deletedAt)));
   return row;
 }
 
@@ -543,6 +561,49 @@ export async function markGenerationsSeen(userId: string, ids: string[] | undefi
   return rows.length;
 }
 
+/**
+ * Finished Generations whose cost is not settled yet, by id after `afterId`:
+ * successes, failures and cancellations fal can no longer finish.
+ */
+export async function listUnsettledGenerations(afterId: string | null, limit: number, handle: AuditHandle = db) {
+  return handle
+    .select({
+      id: generation.id,
+      falRequestId: generation.falRequestId,
+      status: generation.status,
+      estimatedCostUsd: generation.estimatedCostUsd,
+      completedAt: generation.completedAt,
+    })
+    .from(generation)
+    .where(
+      and(
+        isNull(generation.costSettledAt),
+        inArray(generation.status, ['succeeded', 'failed', 'cancelled']),
+        isNotNull(generation.completedAt),
+        afterId ? gt(generation.id, afterId) : undefined,
+      ),
+    )
+    .orderBy(asc(generation.id))
+    .limit(limit);
+}
+
+/** Books actual costs; a Generation settled meanwhile keeps its cost. Returns how many were settled. */
+export async function settleGenerationCosts(costs: { id: string; actualCostUsd: number }[], now: Date, handle: AuditHandle = db) {
+  if (costs.length === 0) return 0;
+  return handle.transaction(async (tx: Tx) => {
+    let settled = 0;
+    for (const { id, actualCostUsd } of costs) {
+      const rows = await tx
+        .update(generation)
+        .set({ actualCostUsd, costSettledAt: now })
+        .where(and(eq(generation.id, id), isNull(generation.costSettledAt)))
+        .returning({ id: generation.id });
+      settled += rows.length;
+    }
+    return settled;
+  });
+}
+
 export async function listGenerationOutputs(generationId: string, handle: AuditHandle = db) {
   return handle.select().from(generationOutput).where(eq(generationOutput.generationId, generationId)).orderBy(asc(generationOutput.index));
 }
@@ -649,6 +710,7 @@ export async function listOwnGenerations(userId: string, filters: GenerationFilt
     .where(
       and(
         eq(generation.userId, userId),
+        isNull(generation.deletedAt),
         categoryId
           ? or(
               inArray(
@@ -702,26 +764,39 @@ export async function countUnseenGenerations(userId: string, handle: AuditHandle
   const [row] = await handle
     .select({ count: count() })
     .from(generation)
-    .where(and(eq(generation.userId, userId), isNull(generation.seenAt), inArray(generation.status, ['succeeded', 'failed'])));
+    .where(
+      and(
+        eq(generation.userId, userId),
+        isNull(generation.seenAt),
+        isNull(generation.deletedAt),
+        inArray(generation.status, ['succeeded', 'failed']),
+      ),
+    );
   return row?.count ?? 0;
 }
 
 /**
- * Deletes one of the User's finished Generations and its Output rows. Returns
- * the S3 keys of Outputs whose objects are still the Output's own (neither
- * expired nor saved to Files), or undefined when there was no such Generation.
+ * Deletes one of the User's finished Generations from their history: its
+ * Output rows and its inputs go, the row stays deleted so its cost still
+ * counts. Returns the S3 keys of Outputs whose objects are still the Output's
+ * own (neither expired nor saved to Files), or undefined when there was no
+ * such Generation.
  */
 export async function deleteOwnedGeneration(id: string, userId: string, handle: AuditHandle = db) {
   return handle.transaction(async (tx: Tx) => {
     const [row] = await tx
       .select()
       .from(generation)
-      .where(and(eq(generation.id, id), eq(generation.userId, userId)))
+      .where(and(eq(generation.id, id), eq(generation.userId, userId), isNull(generation.deletedAt)))
       .for('update');
     if (!row) return undefined;
     if (row.status === 'queued' || row.status === 'running') throw new UserFacingError('Cancel this Generation before deleting it.');
     const outputs = await tx.select().from(generationOutput).where(eq(generationOutput.generationId, id));
-    await tx.delete(generation).where(eq(generation.id, id));
+    await tx.delete(generationOutput).where(eq(generationOutput.generationId, id));
+    await tx
+      .update(generation)
+      .set({ deletedAt: new Date(), formValues: {}, requestInput: null, error: null, progress: null, seenAt: row.seenAt ?? new Date() })
+      .where(eq(generation.id, id));
     return outputs.filter((output) => !output.expiredAt && !output.savedFileId).map((output) => output.s3Key);
   });
 }

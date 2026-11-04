@@ -105,6 +105,8 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
 | `db` | Drizzle on the stack's Postgres. Reads, backdating `file.created_at`, seeding/backdating form shares (`utils/form-shares.ts`), seeding Generations (`studio/smoke.spec.ts`, `admin/studio/templates.spec.ts`), and seeding Studio Categories and Models (`utils/studio.ts`) |
 | `stack` | The `E2E_*` values (base URL, CDN URL, admin credentials, …) |
 
+- A spec that changes a setting every other spec runs under (the Studio's default Budget) goes into the `instance-wide`
+  project in `playwright.config.ts` (`INSTANCE_WIDE_SPECS`): it runs after the rest of the suite, and puts the setting back.
 - Specs that change data use the worker user and only assert on items they created,
   found by a title unique to the test. Specs that assert totals use the gallery, quota
   or empty user.
@@ -147,7 +149,8 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
 
 The Studio runs against `fal-fake` (`stack/fal-fake/server.ts`), a Bun server in the stack that answers exactly the calls
 the app's fal client makes: the Platform API's `/v1/models` (with `q`, `category`, `endpoint_id`, `status`, `limit`/`cursor`
-and `expand=openapi-3.0`), `/v1/models/pricing` and `/v1/models/billing-events`, the queue (submit, status, result, cancel)
+and `expand=openapi-3.0`), `/v1/models/pricing`, `/v1/models/billing-events` and `/v1/account/billing` (the balance is
+`FAKE_BALANCE_USD` from `stack/fal-fake/catalog.ts`), the queue (submit, status, result, cancel)
 and storage uploads. The app's `FAL_KEY` and `FAL_BILLING_KEY` are per-run dummies that only the fake accepts (billing
 events want the billing key), and the fake makes no outbound connections. Webhooks stay off, because the app's base URL
 is plain http on localhost, so the poller finishes every Generation (it polls every 3 s).

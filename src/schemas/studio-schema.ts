@@ -95,3 +95,19 @@ export const saveStudioTemplateSchema = z.object({
 });
 
 export type SaveStudioTemplateInput = z.infer<typeof saveStudioTemplateSchema>;
+
+/** A monthly Budget in USD, as the numeric(12, 2) columns hold it. */
+const budgetUsdSchema = z.number().min(0).max(1_000_000).multipleOf(0.01);
+
+/** The Studio settings page: an empty default Budget means unlimited. */
+export const studioSettingsSchema = z.object({
+  defaultMonthlyBudgetUsd: budgetUsdSchema.nullable(),
+  maxActiveGenerationsPerUser: z.number().int().min(1).max(50),
+});
+
+/** A User's Budget on their admin page: the default, unlimited, or their own amount. */
+export const userStudioBudgetSchema = z.discriminatedUnion('mode', [
+  z.object({ userId: z.string().min(1), mode: z.literal('default') }),
+  z.object({ userId: z.string().min(1), mode: z.literal('unlimited') }),
+  z.object({ userId: z.string().min(1), mode: z.literal('amount'), amountUsd: budgetUsdSchema }),
+]);

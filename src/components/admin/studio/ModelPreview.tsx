@@ -9,7 +9,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import { queryKeys } from '@/libs/query-keys';
 import { estimateCost } from '@/libs/studio/cost';
-import { buildStudioForm, initialFormValues, type StudioFormValues, studioFormData } from '@/libs/studio/form';
+import { buildStudioForm, formRequestValues, initialFormValues, type StudioFormValues, studioFormData } from '@/libs/studio/form';
 import { sameValue } from '@/libs/studio/request';
 import type { FieldConfig, JsonSchema, StudioPricing, VariableConfig } from '@/libs/studio/types';
 import type { OutputView } from '@/libs/studio/views';
@@ -58,7 +58,7 @@ export function ModelPreview({
     enabled: generationId !== null,
     refetchInterval: (query) => (query.state.data && !['queued', 'running'].includes(query.state.data.status) ? false : POLL_MS),
   });
-  const estimate = estimateCost(pricing, { ...form.context, ...values }, schema);
+  const estimate = estimateCost(pricing, formRequestValues(form, values), schema);
   const result = generation.data;
 
   return (

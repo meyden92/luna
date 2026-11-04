@@ -1,6 +1,7 @@
 import { queryOptions } from '@tanstack/react-query';
 import { queryKeys } from '@/libs/query-keys';
 import { getStudioModel, listStudioCategories, listStudioModels } from '@/server/fns/admin/studio';
+import { getStudioOverview, getStudioSettingsForAdmin, getUserStudioBudget } from '@/server/fns/admin/studio-budgets';
 import { getStudioTemplate, getTemplateDraftFromGeneration, listStudioTemplates } from '@/server/fns/admin/studio-templates';
 
 export const studioCategoriesQueryOptions = queryOptions({
@@ -36,4 +37,20 @@ export const templateDraftQueryOptions = (generationId: string) =>
     queryKey: queryKeys.adminStudio.templateDraft(generationId),
     queryFn: () => getTemplateDraftFromGeneration({ data: { generationId } }),
     retry: false,
+  });
+
+export const studioOverviewQueryOptions = queryOptions({
+  queryKey: queryKeys.adminStudio.overview,
+  queryFn: () => getStudioOverview(),
+});
+
+export const studioSettingsQueryOptions = queryOptions({
+  queryKey: queryKeys.adminStudio.settings,
+  queryFn: () => getStudioSettingsForAdmin(),
+});
+
+export const userStudioBudgetQueryOptions = (userId: string) =>
+  queryOptions({
+    queryKey: queryKeys.adminStudio.userBudget(userId),
+    queryFn: () => getUserStudioBudget({ data: { userId } }),
   });

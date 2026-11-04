@@ -5,6 +5,9 @@ import { stackEnv } from './tests/e2e/stack-env';
 // can never run against the dev server or the dev database.
 const { E2E_BASE_URL } = stackEnv();
 
+// The Studio Budget spec sets a small default Budget, which would refuse other specs' Generations.
+const INSTANCE_WIDE_SPECS = /admin\/studio\/budget\.spec\.ts/;
+
 const browser = {
   ...devices['Desktop Chrome'],
   timezoneId: 'UTC',
@@ -36,6 +39,8 @@ export default defineConfig({
     { name: 'setup', testMatch: /auth\.setup\.ts/, use: browser },
     { name: 'setup-users', testMatch: /users\.setup\.ts/, dependencies: ['setup'], use: browser },
     { name: 'setup-gallery', testMatch: /gallery\.setup\.ts/, dependencies: ['setup-users'], use: browser },
-    { name: 'chromium', dependencies: ['setup-gallery'], use: browser },
+    { name: 'chromium', dependencies: ['setup-gallery'], testIgnore: INSTANCE_WIDE_SPECS, use: browser },
+    // Specs that change instance-wide settings every other spec runs under, once the rest is done.
+    { name: 'instance-wide', dependencies: ['chromium'], testMatch: INSTANCE_WIDE_SPECS, use: browser },
   ],
 });

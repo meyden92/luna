@@ -9,7 +9,7 @@ import { useAppMutation } from '@/hooks/use-app-mutation';
 import { queryKeys } from '@/libs/query-keys';
 import type { StudioEntry } from '@/libs/studio/catalog';
 import { estimateCost } from '@/libs/studio/cost';
-import { buildStudioForm, initialFormValues, type StudioFormValues, studioFormData } from '@/libs/studio/form';
+import { buildStudioForm, formRequestValues, initialFormValues, type StudioFormValues, studioFormData } from '@/libs/studio/form';
 import { budgetLabel, formatUsd } from '@/libs/studio/format';
 import { submitGeneration } from '@/server/fns/studio';
 import styles from './GeneratePanel.module.css';
@@ -42,7 +42,7 @@ export function GeneratePanel({
     onError: (error) => setRefusal(error.message || 'The Generation could not be started.'),
   });
 
-  const estimate = estimateCost(entry.pricing, { ...form.context, ...values }, entry.schema);
+  const estimate = estimateCost(entry.pricing, formRequestValues(form, values), entry.schema);
   const target = entry.kind === 'model' ? { modelId: entry.id } : { templateId: entry.id };
 
   return (

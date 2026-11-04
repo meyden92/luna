@@ -111,6 +111,9 @@ const textToImage = (endpointId: string, displayName: string, schemaName: string
   result: (input, media) => ({ ...imagesResult(imageCount(input), media), seed: typeof input.seed === 'number' ? input.seed : 42 }),
 });
 
+/** The credit balance `/v1/account/billing?expand=credits` reports. */
+export const FAKE_BALANCE_USD = 87.5;
+
 export const FAKE_MODELS: readonly FakeModel[] = [
   textToImage('fake/image', 'Fake Image', 'FakeImage'),
   {

@@ -85,6 +85,11 @@ export interface FalBillingEvent {
   costTotal: number;
 }
 
+export interface FalBalance {
+  currentBalance: number;
+  currency: string;
+}
+
 export interface FalModelsQuery {
   q?: string;
   category?: string;
@@ -267,6 +272,14 @@ export function createFalClient(config: FalConfig) {
         cursor = body.has_more === true && typeof body.next_cursor === 'string' ? body.next_cursor : null;
       } while (cursor);
       return events;
+    },
+
+    /** The account's credit balance. Needs `billingKey`. */
+    async balance(): Promise<FalBalance> {
+      if (!config.billingKey) throw new FalError('No fal billing key is configured', { status: 401 });
+      const body = await callJson(`${api}/account/billing?expand=credits`, { key: config.billingKey });
+      const credits = isRecord(body.credits) ? body.credits : {};
+      return { currentBalance: Number(credits.current_balance ?? 0), currency: String(credits.currency ?? 'USD') };
     },
   };
 

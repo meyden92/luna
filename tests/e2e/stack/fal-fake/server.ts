@@ -9,7 +9,7 @@
  * keys it accepts; `MEDIA_DIR`, where the fixture media of `MEDIA` lie.
  */
 import { join } from 'node:path';
-import { FAKE_MODELS, fakeModel, type Json, type JsonObject, MEDIA, type MediaUrls, openapiDocument } from './catalog';
+import { FAKE_BALANCE_USD, FAKE_MODELS, fakeModel, type Json, type JsonObject, MEDIA, type MediaUrls, openapiDocument } from './catalog';
 
 const PORT = Number(process.env.PORT ?? 8080);
 const PUBLIC_URL = (process.env.PUBLIC_URL ?? `http://localhost:${PORT}`).replace(/\/+$/, '');
@@ -192,7 +192,7 @@ function uploadedFile(id: string): Response {
 }
 
 // ---------------------------------------------------------------------------
-// Platform API: /v1/models, /v1/models/pricing, /v1/models/billing-events
+// Platform API: /v1/models, /v1/models/pricing, /v1/models/billing-events, /v1/account/billing
 // ---------------------------------------------------------------------------
 
 function models(url: URL): Response {
@@ -264,6 +264,12 @@ function platformRoute(request: Request, url: URL, path: string): Response {
   if (request.method !== 'GET') return detail('Method not allowed', 405);
   if (path === '/v1/models/billing-events') {
     return authorized(request, FAL_BILLING_KEY) ? billingEvents(url) : detail('A billing key is required', 401);
+  }
+  if (path === '/v1/account/billing') {
+    if (!authorized(request, FAL_BILLING_KEY)) return detail('A billing key is required', 401);
+    const body: JsonObject = { username: 'e2e' };
+    if (url.searchParams.getAll('expand').includes('credits')) body.credits = { current_balance: FAKE_BALANCE_USD, currency: 'USD' };
+    return json(body);
   }
   if (!authorized(request, FAL_KEY)) return detail('Invalid fal key', 401);
   if (path === '/v1/models') return models(url);

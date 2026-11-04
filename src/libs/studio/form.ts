@@ -215,6 +215,20 @@ export function visibleFormItems(form: StudioFormSpec, values: StudioFormValues)
 }
 
 /**
+ * The Field values a submit would send, as far as the form knows them: the
+ * fixed and fal-default ones, then each visible item's value or, when empty,
+ * its default. The price estimate reads these, as the server's does.
+ */
+export function formRequestValues(form: StudioFormSpec, values: StudioFormValues): Record<string, unknown> {
+  const sent: Record<string, unknown> = { ...form.context };
+  for (const item of visibleFormItems(form, values)) {
+    const value = isEmpty(values[item.name]) ? item.defaultValue : values[item.name];
+    if (value !== undefined) sent[item.name] = value;
+  }
+  return sent;
+}
+
+/**
  * The FormData `submitGeneration` (and the admin test run) takes: `payload`
  * is `{ ...payload, values }` with every picked file replaced by an `upload`
  * ref, and each file is a part named by that ref's key.

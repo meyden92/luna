@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import { FileInput, ImagePlus, Save, Trash2, X } from 'lucide-react';
-import { useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -76,6 +76,9 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
   const [description, setDescription] = useState(draft.description);
   const [isActive, setIsActive] = useState(draft.isActive);
   const [previews, setPreviews] = useState(draft.previews);
+  const previewsRef = useRef(previews);
+  previewsRef.current = previews;
+  useEffect(() => () => revokeUploads(previewsRef.current), []);
   const [config, setConfig] = useState(() => ({
     fields: [...draft.fields].sort((a, b) => a.order - b.order),
     variables: reconcileVariables(textsOf(draft.fields), draft.variables),
@@ -421,6 +424,11 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
   );
 }
 
+/** Frees the object URLs of uploaded previews; the others point at stored files. */
+function revokeUploads(previews: readonly EditorPreview[]) {
+  for (const preview of previews) if (preview.source === 'upload') URL.revokeObjectURL(preview.url);
+}
+
 /** The Template's preview images, as its card in the Studio shows the first: upload one, or take a test run's Output. */
 function PreviewImages({ previews, onChange }: { previews: EditorPreview[]; onChange: (previews: EditorPreview[]) => void }) {
   const input = useRef<HTMLInputElement>(null);
@@ -452,7 +460,10 @@ function PreviewImages({ previews, onChange }: { previews: EditorPreview[]; onCh
                   size="icon-xs"
                   className={previewStyles.removePreview}
                   aria-label={`Remove preview ${index + 1}`}
-                  onClick={() => onChange(previews.filter((candidate) => candidate !== preview))}
+                  onClick={() => {
+                    revokeUploads([preview]);
+                    onChange(previews.filter((candidate) => candidate !== preview));
+                  }}
                 >
                   <X />
                 </Button>

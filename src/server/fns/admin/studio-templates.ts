@@ -1,14 +1,13 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import { getOwnedGeneration, listGenerationOutputs } from '@/db/queries/generations';
 import {
   countStudioTemplates,
   createStudioTemplate,
   deleteStudioTemplate as deleteTemplateRow,
-  getOwnedGeneration,
   getStudioCategory,
   getStudioModel,
   getStudioTemplate as getTemplateRow,
-  listGenerationOutputs,
   listStudioTemplates as listTemplateRows,
   updateStudioTemplate,
 } from '@/db/queries/studio';
@@ -61,6 +60,8 @@ export const getTemplateDraftFromGeneration = createServerFn({ method: 'GET' })
     assertStudioEnabled();
     const row = await getOwnedGeneration(data.generationId, adminIdFromCtx(context));
     if (!row) throw new UserFacingError('Generation not found.');
+    // Its values fill a Template's Variables, not the Model's Fields.
+    if (row.fromTemplate) throw new UserFacingError('This Generation ran a Template, so it cannot become a Template.');
     const model = row.modelId ? await getStudioModel(row.modelId) : undefined;
     if (!model) throw new UserFacingError('The Model of this Generation no longer exists, so it cannot become a Template.');
     const image = (await listGenerationOutputs(row.id)).find((output) => output.mediaKind === 'image' && !output.expiredAt);
@@ -111,14 +112,14 @@ export const saveStudioTemplate = createServerFn({ method: 'POST' })
       previewKeys: keys,
     };
 
+    // A new Template, or one moved to another Category, goes after the Templates already there.
+    const sortOrder =
+      existing?.template.categoryId === data.categoryId ? existing.template.sortOrder : await countStudioTemplates(data.categoryId);
     let saved: Awaited<ReturnType<typeof createStudioTemplate>> | undefined;
     try {
       saved = existing
-        ? await updateStudioTemplate(existing.template.id, values, adminId)
-        : await createStudioTemplate(
-            { ...values, modelId: model.id, createdBy: adminId, sortOrder: await countStudioTemplates(data.categoryId) },
-            adminId,
-          );
+        ? await updateStudioTemplate(existing.template.id, { ...values, sortOrder }, adminId)
+        : await createStudioTemplate({ ...values, modelId: model.id, createdBy: adminId, sortOrder }, adminId);
     } catch (error) {
       await deleteTemplatePreviews(created);
       throw error;

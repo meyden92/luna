@@ -117,8 +117,9 @@ _Avoid_: Endpoint, Engine
 
 **Field**:
 One input a Model accepts, as the admin set it up: shown to the User, fixed to
-a value, or left to fal's default. Distinct from a Variable, which only a
-Template has.
+a value, or left to fal's default. A file input can never be fixed, so no
+Template carries a reference image and *Save as Template* drops the files
+entered. Distinct from a Variable, which only a Template has.
 _Avoid_: Parameter, input, option, setting
 
 **Template**:

@@ -11,7 +11,13 @@ import { queryKeys } from '@/libs/query-keys';
 import { estimateCost } from '@/libs/studio/cost';
 import { buildStudioForm, formRequestValues, initialFormValues, type StudioFormValues, studioFormData } from '@/libs/studio/form';
 import { sameValue } from '@/libs/studio/request';
-import type { FieldConfig, JsonSchema, StudioPricing, VariableConfig } from '@/libs/studio/types';
+import {
+  ACTIVE_GENERATION_STATUSES,
+  type FieldConfig,
+  type JsonSchema,
+  type StudioPricing,
+  type VariableConfig,
+} from '@/libs/studio/types';
 import type { OutputView } from '@/libs/studio/views';
 import { testStudioModel } from '@/server/fns/admin/studio';
 import { getGeneration } from '@/server/fns/studio';
@@ -56,7 +62,7 @@ export function ModelPreview({
     queryKey: queryKeys.studio.generation(generationId ?? ''),
     queryFn: () => getGeneration({ data: { id: generationId as string } }),
     enabled: generationId !== null,
-    refetchInterval: (query) => (query.state.data && !['queued', 'running'].includes(query.state.data.status) ? false : POLL_MS),
+    refetchInterval: (query) => (query.state.data && !ACTIVE_GENERATION_STATUSES.includes(query.state.data.status) ? false : POLL_MS),
   });
   const estimate = estimateCost(pricing, formRequestValues(form, values), schema);
   const result = generation.data;
@@ -102,7 +108,7 @@ export function ModelPreview({
             data-testid="studio-test-result"
           >
             <p className={styles.status}>
-              {['queued', 'running'].includes(result.status) && <Spinner />}
+              {ACTIVE_GENERATION_STATUSES.includes(result.status) && <Spinner />}
               Test {result.status}
             </p>
             {result.error && (

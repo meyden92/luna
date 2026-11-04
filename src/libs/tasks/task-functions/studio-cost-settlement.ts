@@ -1,4 +1,4 @@
-import { listUnsettledGenerations, settleGenerationCosts } from '@/db/queries/studio';
+import { listUnsettledGenerations, settleGenerationCosts } from '@/db/queries/generations';
 import { throwIfAborted } from '@/libs/abort';
 import type { FalBillingEvent } from '@/libs/fal/client';
 import { falClient, hasFalBillingKey, isStudioEnabled } from '@/libs/studio/config';

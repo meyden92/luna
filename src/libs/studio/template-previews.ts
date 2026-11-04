@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { CopyObjectCommand, DeleteObjectsCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
-import { getOwnedOutput } from '@/db/queries/studio';
+import { getOwnedOutput } from '@/db/queries/generations';
 import { env } from '@/libs/env';
 import { getPrivateSignedUrl, s3Client } from '@/libs/S3Helper';
 import { UserFacingError } from '@/libs/user-facing-error';

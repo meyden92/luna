@@ -10,14 +10,15 @@ import { eq, inArray, sql } from 'drizzle-orm';
 const hasDatabase = Boolean(process.env.DATABASE_URL);
 
 async function loadModules() {
-  const [client, adminSchema, authSchema, studioSchema, queries] = await Promise.all([
+  const [client, adminSchema, authSchema, studioSchema, queries, generations] = await Promise.all([
     import('../client'),
     import('../schema/admin'),
     import('../schema/auth'),
     import('../schema/studio'),
     import('./studio'),
+    import('./generations'),
   ]);
-  return { db: client.db, ...adminSchema, ...authSchema, ...studioSchema, ...queries };
+  return { db: client.db, ...adminSchema, ...authSchema, ...studioSchema, ...queries, ...generations };
 }
 
 type Modules = Awaited<ReturnType<typeof loadModules>>;
@@ -149,25 +150,29 @@ describe.skipIf(!hasDatabase)('Budgets', () => {
     await m.db.insert(m.user).values({ id: spender, name: 'Budget test', email: `${spender}@lunashare.test`, emailVerified: false });
     // Written directly, not through setStudioBudgetOverride, so the test leaves no audit rows.
     await m.db.insert(m.studioBudgetOverride).values({ userId: spender, monthlyBudgetUsd: 1 });
-    await m.db
-      .insert(m.generation)
-      .values([
-        spend('settled', { estimatedCostUsd: 0.03, actualCostUsd: 0.25, createdAt: new Date('2026-11-01T00:00:00Z') }),
-        spend('unsettled', { estimatedCostUsd: 0.1, createdAt: new Date('2026-11-30T23:59:59Z') }),
-        spend('deleted', { estimatedCostUsd: 0.2, deletedAt: now, createdAt: new Date('2026-11-10T00:00:00Z') }),
-        spend('failed', { status: 'failed', estimatedCostUsd: 5, createdAt: new Date('2026-11-10T00:00:00Z') }),
-        spend('cancelled', { status: 'cancelled', estimatedCostUsd: 5, createdAt: new Date('2026-11-10T00:00:00Z') }),
-        spend('last month', { estimatedCostUsd: 5, createdAt: new Date('2026-10-31T23:59:59.999Z') }),
-        spend('next month', { estimatedCostUsd: 5, createdAt: new Date('2026-12-01T00:00:00Z') }),
-      ]);
+    await m.db.insert(m.generation).values([
+      spend('settled', { estimatedCostUsd: 0.03, actualCostUsd: 0.25, createdAt: new Date('2026-11-01T00:00:00Z') }),
+      spend('unsettled', { estimatedCostUsd: 0.1, createdAt: new Date('2026-11-30T23:59:59Z') }),
+      spend('deleted', { estimatedCostUsd: 0.2, deletedAt: now, createdAt: new Date('2026-11-10T00:00:00Z') }),
+      spend('failed', { status: 'failed', estimatedCostUsd: 5, createdAt: new Date('2026-11-10T00:00:00Z') }),
+      spend('billed failure', {
+        status: 'failed',
+        error: { message: 'fal returned no media.', billed: true },
+        estimatedCostUsd: 0.07,
+        createdAt: new Date('2026-11-10T00:00:00Z'),
+      }),
+      spend('cancelled', { status: 'cancelled', estimatedCostUsd: 5, createdAt: new Date('2026-11-10T00:00:00Z') }),
+      spend('last month', { estimatedCostUsd: 5, createdAt: new Date('2026-10-31T23:59:59.999Z') }),
+      spend('next month', { estimatedCostUsd: 5, createdAt: new Date('2026-12-01T00:00:00Z') }),
+    ]);
   });
 
   afterAll(async () => {
     await m.db.delete(m.user).where(inArray(m.user.id, [spender]));
   });
 
-  test('counts this UTC month’s billed costs and estimates, deleted entries too, but not failed or cancelled ones', async () => {
-    expect(await m.getBudgetState(spender, m.db, now)).toEqual({ limitUsd: 1, spentUsd: 0.55, remainingUsd: 0.45 });
+  test('counts this UTC month’s billed costs and estimates, deleted entries and billed failures too, but not other failed or cancelled ones', async () => {
+    expect(await m.getBudgetState(spender, m.db, now)).toEqual({ limitUsd: 1, spentUsd: 0.62, remainingUsd: 0.38 });
   });
 
   test('admission refuses an estimate the remainder does not cover, and an unlimited override lifts it', async () => {
@@ -189,18 +194,59 @@ describe.skipIf(!hasDatabase)('Budgets', () => {
     }
   });
 
-  test('deleting a Generation clears its inputs and hides it, but keeps its cost', async () => {
+  test('deleting a Generation clears its inputs and hides it, makes its live Outputs due, but keeps its cost', async () => {
     await m.db
       .insert(m.generation)
       .values(spend('to delete', { id: id('budget-delete'), estimatedCostUsd: 0.4, formValues: { prompt: 'secret' }, createdAt: now }));
-    expect(await m.deleteOwnedGeneration(id('budget-delete'), spender)).toEqual([]);
+    const output = (index: number, expiredAt: Date | null) => ({
+      id: id(`budget-delete-${index}`),
+      generationId: id('budget-delete'),
+      index,
+      mediaKind: 'image' as const,
+      contentType: 'image/png',
+      s3Key: `studio/${spender}/delete/${index}.png`,
+      sizeBytes: 1,
+      expiresAt: new Date('2026-11-20T00:00:00Z'),
+      expiredAt,
+    });
+    await m.db.insert(m.generationOutput).values([output(0, null), output(1, now)]);
+
+    const due = await m.deleteOwnedGeneration(id('budget-delete'), spender);
+    expect(due).toEqual([{ id: id('budget-delete-0'), s3Key: `studio/${spender}/delete/0.png` }]);
+    expect((await m.listGenerationOutputs(id('budget-delete'))).map((row) => row.expiresAt.getTime() <= Date.now())).toEqual([true, false]);
+    expect(await m.getOwnedOutput(id('budget-delete-0'), spender)).toBeUndefined();
     expect(await m.getOwnedGeneration(id('budget-delete'), spender)).toBeUndefined();
     const [row] = await m.db
       .select()
       .from(m.generation)
       .where(eq(m.generation.id, id('budget-delete')));
     expect(row?.formValues).toEqual({});
-    expect((await m.getBudgetState(spender, m.db, now)).spentUsd).toBe(0.95);
+    expect((await m.getBudgetState(spender, m.db, now)).spentUsd).toBe(1.02);
+  });
+
+  test('a Generation deleted while fal finished it records its Outputs already due', async () => {
+    await m.db
+      .insert(m.generation)
+      .values(spend('finishing', { id: id('budget-finishing'), status: 'cancelled', deletedAt: now, createdAt: now }));
+    const finished = await m.completeGeneration(id('budget-finishing'), {
+      status: 'succeeded',
+      outputs: [
+        {
+          index: 0,
+          mediaKind: 'image',
+          contentType: 'image/png',
+          s3Key: `studio/${spender}/finishing/0.png`,
+          sizeBytes: 1,
+          width: null,
+          height: null,
+          durationSeconds: null,
+          expiresAt: new Date(Date.now() + 86_400_000),
+        },
+      ],
+    });
+    expect(finished?.status).toBe('succeeded');
+    const [stored] = await m.listGenerationOutputs(id('budget-finishing'));
+    expect(stored?.expiresAt.getTime()).toBe(finished?.completedAt?.getTime());
   });
 });
 

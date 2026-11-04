@@ -42,23 +42,39 @@ async function loadModules() {
       import('../schema/analytics'),
       import('../schema/studio'),
     ]);
-  const [admin, auth, rbac, files, folders, features, flows, moderation, tasks, uploads, delivery, analytics, sourceSessions, studio] =
-    await Promise.all([
-      import('./admin'),
-      import('./auth'),
-      import('./rbac'),
-      import('./files'),
-      import('./folders'),
-      import('./features'),
-      import('./flows'),
-      import('./moderation'),
-      import('./tasks'),
-      import('./uploads'),
-      import('./delivery'),
-      import('./analytics'),
-      import('./source-sessions'),
-      import('./studio'),
-    ]);
+  const [
+    admin,
+    auth,
+    rbac,
+    files,
+    folders,
+    features,
+    flows,
+    moderation,
+    tasks,
+    uploads,
+    delivery,
+    analytics,
+    sourceSessions,
+    studio,
+    generations,
+  ] = await Promise.all([
+    import('./admin'),
+    import('./auth'),
+    import('./rbac'),
+    import('./files'),
+    import('./folders'),
+    import('./features'),
+    import('./flows'),
+    import('./moderation'),
+    import('./tasks'),
+    import('./uploads'),
+    import('./delivery'),
+    import('./analytics'),
+    import('./source-sessions'),
+    import('./studio'),
+    import('./generations'),
+  ]);
   return {
     db: client.db,
     AUDITED_MODELS: audit.AUDITED_MODELS,
@@ -84,6 +100,7 @@ async function loadModules() {
     analytics,
     sourceSessions,
     studio,
+    generations,
   };
 }
 
@@ -610,7 +627,7 @@ describe.skipIf(!hasDatabase)('unaudited models produce no audit rows', () => {
   });
 
   test('Generation and GenerationOutput writes are not audited', async () => {
-    const created = await M.studio.admitGeneration({
+    const created = await M.generations.admitGeneration({
       userId: ownerId,
       modelId: fixture.studioModelId,
       templateId: null,
@@ -619,7 +636,7 @@ describe.skipIf(!hasDatabase)('unaudited models produce no audit rows', () => {
       formValues: { prompt: `private prompt ${runId}` },
       estimatedCostUsd: 0.01,
     });
-    await M.studio.setGenerationSubmitted(created.id, {
+    await M.generations.setGenerationSubmitted(created.id, {
       falRequestId: `audit-request-${runId}`,
       statusUrl: 'https://queue.example.invalid/status',
       responseUrl: 'https://queue.example.invalid/response',
@@ -628,7 +645,7 @@ describe.skipIf(!hasDatabase)('unaudited models produce no audit rows', () => {
       formValues: { prompt: `private prompt ${runId}` },
       progress: null,
     });
-    const finished = await M.studio.completeGeneration(created.id, {
+    const finished = await M.generations.completeGeneration(created.id, {
       status: 'succeeded',
       outputs: [
         {
@@ -646,12 +663,12 @@ describe.skipIf(!hasDatabase)('unaudited models produce no audit rows', () => {
     });
     expect(finished?.status).toBe('succeeded');
     // Finishing is idempotent: a second delivery changes nothing.
-    expect(await M.studio.completeGeneration(created.id, { status: 'failed', error: { message: 'late' } })).toBeUndefined();
-    await M.studio.markGenerationsSeen(ownerId, [created.id]);
+    expect(await M.generations.completeGeneration(created.id, { status: 'failed', error: { message: 'late' } })).toBeUndefined();
+    await M.generations.markGenerationsSeen(ownerId, [created.id]);
 
-    const [output] = await M.studio.listGenerationOutputs(created.id);
+    const [output] = await M.generations.listGenerationOutputs(created.id);
     if (!output) throw new Error('generation output row missing');
-    await M.studio.markOutputsExpired([output.id], new Date());
+    await M.generations.markOutputsExpired([output.id], new Date());
     await expectUnaudited('Generation', created.id);
     await expectUnaudited('GenerationOutput', output.id);
   });

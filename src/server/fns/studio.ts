@@ -2,13 +2,12 @@ import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import {
   countUnseenGenerations,
-  getBudgetState,
   getOwnedGeneration,
-  listActiveStudioCatalog,
   listGenerationOutputs,
   listOwnGenerations,
   markGenerationsSeen as markSeen,
-} from '@/db/queries/studio';
+} from '@/db/queries/generations';
+import { getBudgetState, listActiveStudioCatalog } from '@/db/queries/studio';
 import type { JsonValue } from '@/db/schema/json';
 import { getPrivateSignedUrl } from '@/libs/S3Helper';
 import type { StudioCatalogCategory } from '@/libs/studio/catalog';

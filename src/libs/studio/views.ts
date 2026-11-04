@@ -1,5 +1,7 @@
-import type { Generation, GenerationOutput } from '@/db/queries/studio';
+import type { Generation, GenerationOutput } from '@/db/queries/generations';
+import type { JsonValue } from '@/db/schema/json';
 import { getPrivateSignedUrl } from '@/libs/S3Helper';
+import { uploadsExpireAt } from './history-actions';
 import type { GenerationProgress, GenerationStatus, MediaKind } from './types';
 
 /**
@@ -31,6 +33,10 @@ export interface GenerationView {
   prompt: string | null;
   modelId: string | null;
   templateId: string | null;
+  /** Its values fill a Template's form: it never becomes a Template itself. */
+  fromTemplate: boolean;
+  /** When fal deletes its first upload; *Again* and *Retry* fall back to *Use settings* after. */
+  uploadsExpireAt: string | null;
   status: GenerationStatus;
   progress: GenerationProgress | null;
   error: { message: string; type: string | null } | null;
@@ -51,6 +57,8 @@ export async function toGenerationView(row: Generation, outputs: GenerationOutpu
     prompt: typeof row.formValues.prompt === 'string' ? row.formValues.prompt : null,
     modelId: row.modelId,
     templateId: row.templateId,
+    fromTemplate: row.fromTemplate,
+    uploadsExpireAt: uploadsExpireAt(row.formValues as Record<string, JsonValue>),
     status: row.status,
     progress: row.progress,
     error: row.error ? { message: row.error.message, type: row.error.type ?? null } : null,

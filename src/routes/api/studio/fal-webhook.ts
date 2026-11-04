@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { getGenerationByRequestId } from '@/db/queries/studio';
+import { getGenerationByRequestId } from '@/db/queries/generations';
 import { verifyFalWebhook } from '@/libs/fal/webhook';
 import { falWebhookKeys, isStudioEnabled, studioWebhookTarget } from '@/libs/studio/config';
 import { finishGeneration } from '@/libs/studio/pipeline';

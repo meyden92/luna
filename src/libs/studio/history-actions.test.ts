@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import type { StudioCatalogCategory, StudioEntry } from './catalog';
 import { buildStudioForm } from './form';
-import { attachOutput, continueTargets, reseedValues, reusableValues } from './history-actions';
+import { attachOutput, continueTargets, reseedValues, reusableValues, uploadsExpireAt } from './history-actions';
 import type { FieldConfig, FileRef, JsonSchema } from './types';
 
 const prompt: JsonSchema = { type: 'string' };
@@ -112,11 +112,34 @@ describe('reusableValues', () => {
           prompt: 'a cat',
           num_images: 2,
           image_url: { source: 'output', outputId: 'expired-output' },
-          image_urls: [live, { source: 'url', url: 'https://fal.media/x.png' }, file, { source: 'file', fileId: 'deleted' }],
-          upload_url: { source: 'url', url: 'https://fal.media/y.png' },
+          image_urls: [
+            live,
+            { source: 'url', url: 'https://fal.media/x.png', expiresAt: '2026-11-05T00:00:00Z' },
+            file,
+            { source: 'file', fileId: 'deleted' },
+          ],
+          upload_url: { source: 'url', url: 'https://fal.media/y.png', expiresAt: '2026-11-05T00:00:00Z' },
         },
         usable,
       ),
     ).toEqual({ prompt: 'a cat', num_images: 2, image_urls: [live, file] });
+  });
+});
+
+describe('uploadsExpireAt', () => {
+  const upload = (expiresAt: string) => ({ source: 'url', url: 'https://fal.media/x.png', expiresAt });
+
+  test('is when the first upload goes, alone or in a list', () => {
+    expect(uploadsExpireAt({ prompt: 'a cat', image_url: upload('2026-11-05T11:59:59Z') })).toBe('2026-11-05T11:59:59Z');
+    expect(
+      uploadsExpireAt({
+        image_urls: [upload('2026-11-06T00:00:00Z'), upload('2026-11-05T12:00:00Z')],
+        mask: upload('2026-11-07T00:00:00Z'),
+      }),
+    ).toBe('2026-11-05T12:00:00Z');
+  });
+
+  test('is null without uploads', () => {
+    expect(uploadsExpireAt({ prompt: 'a cat', image_url: { source: 'output', outputId: 'o-1' } })).toBeNull();
   });
 });

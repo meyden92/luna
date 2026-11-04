@@ -100,17 +100,19 @@ export interface StudioPricing {
  *
  * `upload` names a part of the submit's FormData. `file` and `output` are the
  * User's own Files and Outputs. `url` is a file already on fal storage: the
- * pipeline stores uploads this way, so *Retry* can resend them while fal keeps
- * them (24 h). Clients never send `url`.
+ * pipeline stores uploads this way, so *Again* and *Retry* can resend them
+ * until fal deletes them at `expiresAt` (ISO). Clients never send `url`.
  */
 export type FileRef =
   | { source: 'upload'; key: string }
   | { source: 'file'; fileId: string }
   | { source: 'output'; outputId: string }
-  | { source: 'url'; url: string };
+  | { source: 'url'; url: string; expiresAt: string };
 
 export type GenerationStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
 export const ACTIVE_GENERATION_STATUSES: readonly GenerationStatus[] = ['queued', 'running'];
+/** A Generation in one of these has an outcome; a `cancelled` one may still have fal finishing it (see `completed_at`). */
+export const FINISHED_GENERATION_STATUSES: readonly GenerationStatus[] = ['succeeded', 'failed', 'cancelled'];
 
 /** What fal reported while the request waited or ran. */
 export interface GenerationProgress {
@@ -122,4 +124,6 @@ export interface GenerationError {
   /** fal's `error_type`, or the `type` of its first validation detail. */
   type?: string;
   detail?: JsonValue;
+  /** fal completed and billed the request, but its Outputs could not be used: its cost still counts. */
+  billed?: boolean;
 }

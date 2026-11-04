@@ -71,3 +71,16 @@ export function reusableValues(values: Record<string, JsonValue>, usable: (ref: 
   }
   return reused;
 }
+
+/**
+ * When fal deletes the first upload among `form_values` (ISO), or null without
+ * uploads. Uploads live only on fal storage, so from then on the Generation
+ * cannot be sent again as it was: *Again* and *Retry* fall back to *Use
+ * settings*, where the User attaches the file anew.
+ */
+export function uploadsExpireAt(values: Record<string, JsonValue>): string | null {
+  const expiries = Object.values(values)
+    .flatMap((value) => (Array.isArray(value) ? value : [value]))
+    .flatMap((value) => (isFileRef(value) && value.source === 'url' ? [value.expiresAt] : []));
+  return expiries.length === 0 ? null : expiries.reduce((first, expiry) => (Date.parse(expiry) < Date.parse(first) ? expiry : first));
+}

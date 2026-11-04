@@ -8,6 +8,7 @@ const succeeded = (id: string, overrides: Partial<UnsettledGeneration> = {}): Un
   id,
   falRequestId: `req-${id}`,
   status: 'succeeded',
+  error: null,
   estimatedCostUsd: 0.03,
   completedAt: minutesAgo(5),
   ...overrides,
@@ -37,6 +38,17 @@ describe('settledCosts', () => {
     expect(settledCosts({ generations: [succeeded('a'), unpriced], events: [], now, billing: false })).toEqual([
       { id: 'a', actualCostUsd: 0.03 },
       { id: 'unpriced', actualCostUsd: 0 },
+    ]);
+  });
+
+  test('a failure fal billed settles like a success: its billing events, else its estimate', () => {
+    const error = { message: 'fal returned no media.', billed: true };
+    const evented = succeeded('evented', { status: 'failed', error });
+    const estimated = succeeded('estimated', { status: 'failed', error });
+    const events = [{ requestId: 'req-evented', endpointId: 'fake/image', costTotal: 0.05 }];
+    expect(settledCosts({ generations: [evented, estimated], events, now, billing: false })).toEqual([
+      { id: 'evented', actualCostUsd: 0.05 },
+      { id: 'estimated', actualCostUsd: 0.03 },
     ]);
   });
 

@@ -152,7 +152,7 @@ test('audio plays and a 3D model made from a picked file renders inline', async 
   const picker = workerPage.getByRole('dialog', { name: 'Choose files' });
   await picker.getByRole('button', { name: picked!.title }).click();
   await picker.getByRole('button', { name: 'Use 1 file' }).click();
-  await expect(workerPage.getByText('From your Files')).toBeVisible();
+  await expect(workerPage.getByText('From your Files', { exact: true })).toBeVisible();
   await workerPage.getByRole('button', { name: 'Generate' }).click();
   await expectDone(workerPage, mesh);
   await expect(historyEntry(workerPage, mesh).locator('model-viewer')).toBeVisible();
@@ -190,7 +190,7 @@ test('a [fail] Generation shows fal’s error and is retried', async ({ workerPa
   await openStudio(workerPage, model);
   await generate(workerPage, prompt);
   const entry = historyEntry(workerPage, model);
-  await expect(entry.getByText('Failed')).toBeVisible({ timeout: FINISH_TIMEOUT_MS });
+  await expect(entry.getByText('Failed', { exact: true })).toBeVisible({ timeout: FINISH_TIMEOUT_MS });
   await expect(entry).toContainText('The fake failed this request');
 
   await entry.getByRole('button', { name: 'Retry' }).click();

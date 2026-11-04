@@ -4,6 +4,7 @@ import { pruneFileRenditionsExecutor } from './selected-feature-maintenance';
 import { deleteExpiredSessionsExecutor } from './session-cleanup';
 import { settleStudioCostsExecutor } from './studio-cost-settlement';
 import { expireStudioOutputsExecutor } from './studio-output-expiry';
+import { checkStudioSchemasExecutor } from './studio-schema-check';
 import { testLoggerTask } from './test-logger';
 import { updateYtDlpExecutor } from './update-yt-dlp';
 
@@ -15,6 +16,7 @@ const taskFunctionRegistry: TaskFunctionRegistry = {
   updateYtDlp: updateYtDlpExecutor,
   expireStudioOutputs: expireStudioOutputsExecutor,
   settleStudioCosts: settleStudioCostsExecutor,
+  checkStudioSchemas: checkStudioSchemasExecutor,
 };
 
 export function getTaskFunction(name: string): TaskFunction | undefined {

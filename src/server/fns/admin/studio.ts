@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import {
+  applyStudioSchema,
   countStudioModels,
   countStudioTemplatesOfModel,
   createStudioCategory as createCategoryRow,
@@ -11,7 +12,9 @@ import {
   getStudioCategory,
   listStudioCategories as listCategoryRows,
   listStudioModels as listModelRows,
+  listStudioTemplatesOfModel as listTemplatesOfModel,
   reorderStudioCategories as reorderCategoryRows,
+  type StudioModel,
   updateStudioCategory as updateCategoryRow,
   updateStudioModel as updateModelRow,
 } from '@/db/queries/studio';
@@ -29,6 +32,8 @@ import {
 import { resolveOpenapiSchemas } from '@/libs/studio/openapi';
 import { submitGeneration } from '@/libs/studio/pipeline';
 import { type RequestIssue, RequestValidationError } from '@/libs/studio/request';
+import { isApplyRefused, planSchemaApply, type SchemaApplyPlan } from '@/libs/studio/schema-apply';
+import { checkStudioSchemas } from '@/libs/studio/schema-check';
 import { validateTemplateConfig } from '@/libs/studio/template-config';
 import type { FieldConfig, VariableConfig } from '@/libs/studio/types';
 import { UserFacingError } from '@/libs/user-facing-error';
@@ -169,6 +174,7 @@ export const listStudioModels = createServerFn({ method: 'GET' })
     return listModelRows();
   });
 
+/** A Model with `drift`: what applying fal's pending schema would do, or null while there is none. */
 export const getStudioModel = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(idSchema)
@@ -176,7 +182,68 @@ export const getStudioModel = createServerFn({ method: 'GET' })
     assertStudioEnabled();
     const model = await getModelRow(data.id);
     if (!model) throw new UserFacingError('Model not found.');
-    return model;
+    return { ...model, drift: await schemaApplyPlan(model) };
+  });
+
+async function schemaApplyPlan(model: StudioModel): Promise<SchemaApplyPlan | null> {
+  if (!model.pendingSchema) return null;
+  return planSchemaApply({
+    before: model.schemaSnapshot.input,
+    after: model.pendingSchema.input,
+    model,
+    templates: await listTemplatesOfModel(model.id),
+  });
+}
+
+/** *Check now*: runs the schema drift check for one Model. */
+export const checkStudioModelSchema = createServerFn({ method: 'POST' })
+  .middleware(appMiddleware({ auth: 'admin' }))
+  .validator(idSchema)
+  .handler(async ({ data }) => {
+    assertStudioEnabled();
+    const result = await checkStudioSchemas({ modelIds: [data.id] });
+    if (result.checked === 0 && result.missing.length > 0) throw new UserFacingError('fal no longer lists this endpoint.');
+    if (result.failed[0]) throw new UserFacingError(`fal's schema could not be read: ${result.failed[0].message}`);
+    return { drifted: result.drifted > 0 };
+  });
+
+/**
+ * *Apply*: makes fal's pending schema the Model's snapshot and reconciles the
+ * Field configs of the Model and its Templates. Refuses, naming each issue,
+ * while the result would be invalid, such as a fixed value the new schema
+ * no longer allows.
+ */
+export const applyStudioModelSchema = createServerFn({ method: 'POST' })
+  .middleware(appMiddleware({ auth: 'admin' }))
+  .validator(idSchema)
+  .handler(async ({ data, context }) => {
+    assertStudioEnabled();
+    const model = await getModelRow(data.id);
+    if (!model) throw new UserFacingError('Model not found.');
+    const plan = await schemaApplyPlan(model);
+    if (!model.pendingSchema || !plan) throw new UserFacingError("This Model's schema has no pending changes.");
+    if (isApplyRefused(plan)) {
+      throw new RequestValidationError([
+        ...plan.model.issues.map((issue) => ({ ...issue, message: `${issue.field}: ${issue.message}` })),
+        ...plan.templates.flatMap((template) =>
+          template.issues.map((issue) => ({ ...issue, message: `${template.name}, ${issue.field}: ${issue.message}` })),
+        ),
+      ]);
+    }
+    const before = new Map((await listTemplatesOfModel(model.id)).map((template) => [template.id, template]));
+    const changed = plan.templates.filter((template) => {
+      const old = before.get(template.id);
+      return JSON.stringify([old?.fields, old?.variables]) !== JSON.stringify([template.fields, template.variables]);
+    });
+    await applyStudioSchema(
+      model.id,
+      {
+        schemaSnapshot: model.pendingSchema,
+        fields: plan.model.fields,
+        templates: changed.map(({ id, fields, variables }) => ({ id, fields, variables })),
+      },
+      adminIdFromCtx(context),
+    );
   });
 
 /**

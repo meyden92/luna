@@ -2,20 +2,22 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { eq, inArray, sql } from 'drizzle-orm';
 
 /**
- * The Studio history's listing: Category and media kind filters and keyset
- * pagination, against a real Postgres. Rows are written directly (no audit
- * rows) under a throwaway user and removed afterwards.
+ * The Studio history's listing (Category and media kind filters, keyset
+ * pagination), Budgets and the schema check's record, against a real
+ * Postgres. Rows are written directly under throwaway ids and removed
+ * afterwards, audit rows included.
  */
 const hasDatabase = Boolean(process.env.DATABASE_URL);
 
 async function loadModules() {
-  const [client, authSchema, studioSchema, queries] = await Promise.all([
+  const [client, adminSchema, authSchema, studioSchema, queries] = await Promise.all([
     import('../client'),
+    import('../schema/admin'),
     import('../schema/auth'),
     import('../schema/studio'),
     import('./studio'),
   ]);
-  return { db: client.db, ...authSchema, ...studioSchema, ...queries };
+  return { db: client.db, ...adminSchema, ...authSchema, ...studioSchema, ...queries };
 }
 
 type Modules = Awaited<ReturnType<typeof loadModules>>;
@@ -199,5 +201,43 @@ describe.skipIf(!hasDatabase)('Budgets', () => {
       .where(eq(m.generation.id, id('budget-delete')));
     expect(row?.formValues).toEqual({});
     expect((await m.getBudgetState(spender, m.db, now)).spentUsd).toBe(0.95);
+  });
+});
+
+describe.skipIf(!hasDatabase)('recordStudioSchemaCheck', () => {
+  const modelId = id('drift-model');
+  const categoryId = id('drift-cat');
+  const pending = { input: { type: 'object', properties: { prompt: { type: 'string' } } }, output: { type: 'object' } };
+  const updatedAt = new Date('2026-10-01T00:00:00Z');
+
+  beforeAll(async () => {
+    await m.db.insert(m.studioCategory).values({ id: categoryId, name: 'Drift', icon: 'Image' });
+    await m.db
+      .insert(m.studioModel)
+      .values({ id: modelId, categoryId, endpointId: 'fake/drift', name: 'Drift', schemaSnapshot: snapshot, updatedAt });
+  });
+
+  afterAll(async () => {
+    await m.db.delete(m.auditLog).where(eq(m.auditLog.recordId, modelId));
+    await m.db.delete(m.studioModel).where(eq(m.studioModel.id, modelId));
+    await m.db.delete(m.studioCategory).where(eq(m.studioCategory.id, categoryId));
+  });
+
+  const audits = async () => (await m.db.select().from(m.auditLog).where(eq(m.auditLog.recordId, modelId))).length;
+
+  test('stores the outcome without touching updated_at, and audits only a change', async () => {
+    const checkedAt = new Date('2026-11-04T05:00:00Z');
+    await m.recordStudioSchemaCheck(modelId, { pendingSchema: null, deprecated: false, checkedAt });
+    expect(await audits()).toBe(0);
+
+    const row = await m.recordStudioSchemaCheck(modelId, { pendingSchema: pending, deprecated: true, checkedAt });
+    expect(row?.pendingSchema).toEqual(pending);
+    expect(row?.deprecated).toBe(true);
+    expect(row?.schemaCheckedAt).toEqual(checkedAt);
+    expect(row?.updatedAt).toEqual(updatedAt);
+    expect(await audits()).toBe(1);
+
+    await m.recordStudioSchemaCheck(modelId, { pendingSchema: pending, deprecated: true, checkedAt: new Date() });
+    expect(await audits()).toBe(1);
   });
 });

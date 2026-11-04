@@ -1,7 +1,7 @@
 import { and, asc, count, desc, eq, gt, gte, inArray, isNotNull, isNull, lt, lte, notInArray, or, sql } from 'drizzle-orm';
 import { evaluateQuota, StorageQuotaExceededError } from '@/libs/storage-quota';
 import { type BudgetState, budgetLimit, budgetRefusal, budgetState, utcMonthStart } from '@/libs/studio/budget';
-import type { GenerationError, GenerationProgress, MediaKind } from '@/libs/studio/types';
+import type { FieldConfig, GenerationError, GenerationProgress, MediaKind, SchemaSnapshot, VariableConfig } from '@/libs/studio/types';
 import { UserFacingError } from '@/libs/user-facing-error';
 import { type AuditHandle, writeAuditLog } from '../audit';
 import { db, type Tx } from '../client';
@@ -219,6 +219,59 @@ export async function getStudioTemplate(id: string, handle: AuditHandle = db) {
     .innerJoin(studioModel, eq(studioModel.id, studioTemplate.modelId))
     .where(eq(studioTemplate.id, id));
   return row;
+}
+
+/** The Templates built on a Model, in no particular order. */
+export async function listStudioTemplatesOfModel(modelId: string, handle: AuditHandle = db) {
+  return handle.select().from(studioTemplate).where(eq(studioTemplate.modelId, modelId));
+}
+
+/**
+ * Stores what a schema check found. `updated_at` stays, because no admin
+ * edited the Model; the audit log records only a changed pending schema or
+ * deprecation, not every daily check.
+ */
+export async function recordStudioSchemaCheck(
+  id: string,
+  values: { pendingSchema: SchemaSnapshot | null; deprecated: boolean; checkedAt: Date },
+  handle: AuditHandle = db,
+) {
+  const [before] = await handle.select().from(studioModel).where(eq(studioModel.id, id));
+  if (!before) return undefined;
+  const [after] = await handle
+    .update(studioModel)
+    .set({ pendingSchema: values.pendingSchema, deprecated: values.deprecated, schemaCheckedAt: values.checkedAt })
+    .where(eq(studioModel.id, id))
+    .returning();
+  const changed = before.deprecated !== values.deprecated || JSON.stringify(before.pendingSchema) !== JSON.stringify(values.pendingSchema);
+  if (after && changed) await writeAuditLog(handle, { model: 'StudioModel', action: 'update', before, after, userId: null });
+  return after;
+}
+
+/**
+ * Makes a Model's pending schema its snapshot, with the reconciled Field
+ * configs of the Model and of the Templates given, in one transaction.
+ */
+export async function applyStudioSchema(
+  modelId: string,
+  values: {
+    schemaSnapshot: SchemaSnapshot;
+    fields: FieldConfig[];
+    templates: { id: string; fields: FieldConfig[]; variables: VariableConfig[] }[];
+  },
+  userId: string | null,
+  handle: AuditHandle = db,
+) {
+  return handle.transaction(async (tx: Tx) => {
+    const model = await updateStudioModel(
+      modelId,
+      { schemaSnapshot: values.schemaSnapshot, pendingSchema: null, fields: values.fields },
+      userId,
+      tx,
+    );
+    for (const { id, ...template } of values.templates) await updateStudioTemplate(id, template, userId, tx);
+    return model;
+  });
 }
 
 /** How many Templates a Category holds: a new one is sorted after them. */

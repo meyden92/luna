@@ -20,14 +20,16 @@ import { deleteStudioModel, type getStudioModel, type listStudioCategories, upda
 import { FieldCard } from './FieldCard';
 import styles from './ModelEditor.module.css';
 import { ModelPreview } from './ModelPreview';
+import { SchemaDriftCard } from './SchemaDriftCard';
 
 type Model = Awaited<ReturnType<typeof getStudioModel>>;
 type Category = Awaited<ReturnType<typeof listStudioCategories>>[number];
 
 /**
- * Edits one Model: its details, the Field cards (ordered by drag and drop),
- * the pricing quantity and the active switch, next to a live preview of the
- * User's form. Save is refused while any card has an issue.
+ * Edits one Model: its fal schema's drift, its details, the Field cards
+ * (ordered by drag and drop), the pricing quantity and the active switch,
+ * next to a live preview of the User's form. Save is refused while any card
+ * has an issue.
  */
 export function ModelEditor({ model, categories }: { model: Model; categories: Category[] }) {
   const id = useId();
@@ -54,6 +56,24 @@ export function ModelEditor({ model, categories }: { model: Model; categories: C
     successMessage: 'Model deleted',
     onSuccess: () => navigate({ to: '/admin/studio/models' }),
   });
+
+  const unsaved =
+    JSON.stringify([
+      name,
+      description.trim() || null,
+      categoryId,
+      isActive,
+      fields.map((field, order) => ({ ...field, order })),
+      quantity,
+    ]) !==
+    JSON.stringify([
+      model.name,
+      model.description,
+      model.categoryId,
+      model.isActive,
+      [...model.fields].sort((a, b) => a.order - b.order).map((field, order) => ({ ...field, order })),
+      model.pricing?.quantity ?? null,
+    ]);
 
   const setField = (next: FieldConfig) => setFields((current) => current.map((field) => (field.name === next.name ? next : field)));
 
@@ -103,6 +123,11 @@ export function ModelEditor({ model, categories }: { model: Model; categories: C
 
       <div className={styles.layout}>
         <div className="stack space-6">
+          <SchemaDriftCard
+            model={model}
+            unsaved={unsaved}
+          />
+
           <Card>
             <CardHeader>
               <CardTitle>Details</CardTitle>

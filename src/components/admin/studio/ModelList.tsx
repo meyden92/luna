@@ -60,7 +60,11 @@ export function ModelList() {
                   <TableCell>{model.categoryName}</TableCell>
                   <TableCell>{model.pricing ? formatPrice(model.pricing) : '—'}</TableCell>
                   <TableCell>
-                    <Badge variant={model.isActive ? 'default' : 'secondary'}>{model.isActive ? 'Active' : 'Inactive'}</Badge>
+                    <div className="cluster space-1">
+                      <Badge variant={model.isActive ? 'default' : 'secondary'}>{model.isActive ? 'Active' : 'Inactive'}</Badge>
+                      {model.pendingSchema && <Badge variant="destructive">Schema changed</Badge>}
+                      {model.deprecated && <Badge variant="outline">Deprecated</Badge>}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

@@ -1,0 +1,19 @@
+@layer components {
+  .list {
+    margin: 0;
+    padding-left: var(--space-5);
+    font-size: var(--text-sm);
+  }
+
+  .muted {
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+  }
+
+  .issues {
+    margin: 0;
+    padding-left: var(--space-5);
+    color: var(--destructive);
+    font-size: var(--text-sm);
+  }
+}

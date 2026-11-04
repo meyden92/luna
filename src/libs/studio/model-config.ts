@@ -38,7 +38,8 @@ export const DISPLAYS: Record<PropertyKind, FieldDisplay[]> = {
   object: [],
 };
 
-const KIND_NAMES: Record<PropertyKind, string> = {
+/** What a kind is called at the start of a sentence. */
+export const KIND_NAMES: Record<PropertyKind, string> = {
   string: 'Text',
   enum: 'A choice',
   integer: 'A whole number',

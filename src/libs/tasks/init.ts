@@ -58,6 +58,14 @@ const DEFAULT_TASKS: DefaultTask[] = [
     timeout: 300000,
     maxRetries: 3,
   },
+  {
+    name: 'check-studio-schemas',
+    description: "Compares each Studio Model's schema snapshot with fal's current schema and flags changed or deprecated Models",
+    cronExpression: '0 5 * * *',
+    taskFunction: 'checkStudioSchemas',
+    timeout: 300000,
+    maxRetries: 3,
+  },
 ];
 
 /**

@@ -10,6 +10,7 @@ const DEFAULT_TASKS = [
   { name: 'prune-file-renditions', fn: 'pruneFileRenditions', cron: '0 3 * * *', nextRun: /3:00:00 AM$/ },
   { name: 'expire-studio-outputs', fn: 'expireStudioOutputs', cron: '0 * * * *', nextRun: /\d{1,2}:00:00 (AM|PM)/ },
   { name: 'settle-studio-costs', fn: 'settleStudioCosts', cron: '*/10 * * * *', nextRun: /\d{1,2}:\d0:00 (AM|PM)/ },
+  { name: 'check-studio-schemas', fn: 'checkStudioSchemas', cron: '0 5 * * *', nextRun: /5:00:00 AM$/ },
 ];
 
 const taskRow = (page: Page, name: string) => page.getByRole('row').filter({ hasText: name });

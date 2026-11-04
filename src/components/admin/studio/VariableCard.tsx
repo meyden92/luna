@@ -9,8 +9,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import type { JsonValue } from '@/db/schema/json';
 import { buildStudioForm } from '@/libs/studio/form';
 import { fileInputs } from '@/libs/studio/template-config';
-import { type FieldConfig, type JsonSchema, MEDIA_KINDS, type MediaKind, type VariableConfig } from '@/libs/studio/types';
-import { CheckboxSetting, fieldCandidates, NumberSetting, TextSetting, type VisibleIfCandidate, VisibleIfSetting } from './FieldCard';
+import { type FieldConfig, type JsonSchema, MEDIA_KINDS, type VariableConfig } from '@/libs/studio/types';
+import {
+  CheckboxSetting,
+  fieldCandidates,
+  MEDIA_LABELS,
+  NumberSetting,
+  TextSetting,
+  type VisibleIfCandidate,
+  VisibleIfSetting,
+  withoutUndefined,
+} from './FieldCard';
 import styles from './FieldCard.module.css';
 
 type Kind = VariableConfig['kind'];
@@ -22,8 +31,6 @@ const TEXT_KINDS: { value: Exclude<Kind, 'file'>; label: string }[] = [
   { value: 'number', label: 'Number' },
   { value: 'switch', label: 'Switch' },
 ];
-
-const MEDIA_LABELS: Record<MediaKind, string> = { image: 'Images', video: 'Videos', audio: 'Audio', model3d: '3D models' };
 
 /** The Variables with finitely many values, as `visibleIf` candidates for anything but `exclude`. */
 export function variableCandidates(variables: VariableConfig[], exclude?: string): VisibleIfCandidate[] {
@@ -58,11 +65,6 @@ function withKind(variable: VariableConfig, kind: Kind): VariableConfig {
   if (kind === 'choice' || kind === 'multi') return { ...rest, kind, options: variable.options ?? [] };
   const { options: _options, ...plain } = rest;
   return { ...plain, kind };
-}
-
-/** Drops keys set to undefined, so the config stays plain JSON. */
-function withoutUndefined(variable: VariableConfig): VariableConfig {
-  return Object.fromEntries(Object.entries(variable).filter(([, value]) => value !== undefined)) as unknown as VariableConfig;
 }
 
 /**

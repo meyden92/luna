@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import type { JsonValue } from '@/db/schema/json';
 import { buildStudioForm } from '@/libs/studio/form';
-import { DISPLAYS, enumerableValues, fieldKind, propertyShape, suggestAccept } from '@/libs/studio/model-config';
+import { canTakeFiles, DISPLAYS, enumerableValues, fieldKind, propertyShape, suggestAccept } from '@/libs/studio/model-config';
 import { sameValue } from '@/libs/studio/request';
 import { type FieldConfig, type FieldMode, type JsonSchema, MEDIA_KINDS, type MediaKind, type VisibleIf } from '@/libs/studio/types';
 import styles from './FieldCard.module.css';
@@ -21,7 +21,7 @@ const MODES: { value: FieldMode; label: string }[] = [
   { value: 'default', label: 'fal default' },
 ];
 
-const MEDIA_LABELS: Record<MediaKind, string> = { image: 'Images', video: 'Videos', audio: 'Audio', model3d: '3D models' };
+export const MEDIA_LABELS: Record<MediaKind, string> = { image: 'Images', video: 'Videos', audio: 'Audio', model3d: '3D models' };
 
 const KIND_LABELS: Record<string, string> = {
   string: 'text',
@@ -83,7 +83,7 @@ export function FieldCard({ field, schema, fields, issues, onChange, handle, var
   const shape = propertyShape(field.name, property);
   const kind = fieldKind(field, property);
   const isFile = kind === 'file' || kind === 'files';
-  const canBeFile = shape.kind === 'string' || shape.kind === 'file' || shape.kind === 'files' || shape.kind === 'list';
+  const canBeFile = canTakeFiles(shape.kind);
   const required = schema.required?.includes(field.name) ?? false;
   const set = (change: Partial<FieldConfig>) => onChange(withoutUndefined({ ...field, ...change }));
 
@@ -258,8 +258,8 @@ export function FieldCard({ field, schema, fields, issues, onChange, handle, var
 }
 
 /** Drops keys set to undefined, so the config stays plain JSON. */
-function withoutUndefined(field: FieldConfig): FieldConfig {
-  return Object.fromEntries(Object.entries(field).filter(([, value]) => value !== undefined)) as unknown as FieldConfig;
+export function withoutUndefined<T extends object>(config: T): T {
+  return Object.fromEntries(Object.entries(config).filter(([, value]) => value !== undefined)) as T;
 }
 
 export function TextSetting({
@@ -343,7 +343,7 @@ export function CheckboxSetting({ label, checked, onChange }: { label: string; c
  * The default or fixed value, edited with the control the User would get;
  * lists and objects, which Users never see, as JSON.
  */
-function ValueSetting({
+export function ValueSetting({
   field,
   property,
   label,

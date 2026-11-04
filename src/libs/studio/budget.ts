@@ -1,3 +1,4 @@
+import { roundUsd } from './cost';
 import { formatUsd } from './format';
 
 /**
@@ -24,12 +25,10 @@ export function budgetLimit(defaultUsd: number | null, override: { monthlyBudget
   return override ? override.monthlyBudgetUsd : defaultUsd;
 }
 
-// Amounts are compared in micro-dollars, the precision costs are stored in, so 0.06 + 0.03 fits 0.09.
-const micros = (usd: number) => Math.round(usd * 1e6);
-
+// Amounts are rounded to the micro-dollar before they are compared, so 0.06 + 0.03 fits 0.09.
 export function budgetState(limitUsd: number | null, spentUsd: number): BudgetState {
   if (limitUsd === null) return { limitUsd, spentUsd, remainingUsd: null };
-  return { limitUsd, spentUsd, remainingUsd: Math.max(0, micros(limitUsd) - micros(spentUsd)) / 1e6 };
+  return { limitUsd, spentUsd, remainingUsd: Math.max(0, roundUsd(limitUsd - spentUsd)) };
 }
 
 /**
@@ -39,6 +38,6 @@ export function budgetState(limitUsd: number | null, spentUsd: number): BudgetSt
 export function budgetRefusal(budget: BudgetState, estimateUsd: number | null): string | null {
   if (budget.limitUsd === null || budget.remainingUsd === null) return null;
   if (estimateUsd === null) return budget.remainingUsd > 0 ? null : `Your monthly Budget of ${formatUsd(budget.limitUsd)} is used up.`;
-  if (micros(estimateUsd) <= micros(budget.remainingUsd)) return null;
+  if (roundUsd(estimateUsd) <= roundUsd(budget.remainingUsd)) return null;
   return `This would cost about ${formatUsd(estimateUsd)}, but only ${formatUsd(budget.remainingUsd)} of your monthly Budget is left.`;
 }

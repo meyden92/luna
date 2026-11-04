@@ -3,6 +3,7 @@ import { humanize } from './format';
 import { fieldKind, propertyShape } from './model-config';
 import { isEmpty, sameValue } from './request';
 import type { FieldConfig, FileRef, JsonSchema, MediaKind, VariableConfig, VisibleIf } from './types';
+import { visibilityResolver } from './visibility';
 
 /**
  * The form Users fill in, derived from a Model's or Template's configs: what the
@@ -184,34 +185,14 @@ export function initialFormValues(form: StudioFormSpec): StudioFormValues {
   return values;
 }
 
-/**
- * The items to render for these values. Mirrors the server's rule: an item
- * shows only while the Field it depends on is visible and holds a listed
- * value; an empty value counts as its default.
- */
+/** The items to render for these values, by the server's `visibleIf` rule; an empty value counts as its default. */
 export function visibleFormItems(form: StudioFormSpec, values: StudioFormValues): FormItem[] {
-  const byName = new Map(form.items.map((item) => [item.name, item]));
-  const visibility = new Map<string, boolean>();
-
-  const isVisible = (item: FormItem, seen: Set<string>): boolean => {
-    const cached = visibility.get(item.name);
-    if (cached !== undefined) return cached;
-    let visible = true;
-    if (item.visibleIf) {
-      const { field: dependency, in: allowed } = item.visibleIf;
-      const target = byName.get(dependency);
-      let current: unknown;
-      if (!target) current = dependency in form.context ? form.context[dependency] : values[dependency];
-      else if (!seen.has(item.name) && isVisible(target, new Set(seen).add(item.name))) {
-        current = isEmpty(values[dependency]) ? target.defaultValue : values[dependency];
-      }
-      visible = allowed.some((candidate) => sameValue(candidate, current));
-    }
-    visibility.set(item.name, visible);
-    return visible;
-  };
-
-  return form.items.filter((item) => isVisible(item, new Set()));
+  const isVisible = visibilityResolver(
+    form.items,
+    (item) => (isEmpty(values[item.name]) ? item.defaultValue : values[item.name]),
+    (name) => (Object.hasOwn(form.context, name) ? form.context[name] : values[name]),
+  );
+  return form.items.filter((item) => isVisible(item.name));
 }
 
 /**

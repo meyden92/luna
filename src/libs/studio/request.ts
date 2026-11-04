@@ -1,7 +1,9 @@
 import type { JsonValue } from '@/db/schema/json';
+import { isRecord } from '@/libs/is-record';
 import { UserFacingError } from '@/libs/user-facing-error';
 import type { FieldConfig, FileRef, JsonSchema, VariableConfig } from './types';
 import { substituteVariables } from './variables';
+import { visibilityResolver } from './visibility';
 
 /**
  * Builds a Generation's `request_input` from a Model's or Template's Field
@@ -41,8 +43,8 @@ export function isFileField(field: FieldConfig): boolean {
 }
 
 export function isFileRef(value: unknown): value is FileRef {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
-  const ref = value as Record<string, unknown>;
+  if (!isRecord(value)) return false;
+  const ref = value;
   switch (ref.source) {
     case 'upload':
       return typeof ref.key === 'string' && ref.key.length > 0;
@@ -51,7 +53,7 @@ export function isFileRef(value: unknown): value is FileRef {
     case 'output':
       return typeof ref.outputId === 'string' && ref.outputId.length > 0;
     case 'url':
-      return typeof ref.url === 'string' && URL.canParse(ref.url);
+      return typeof ref.url === 'string' && URL.canParse(ref.url) && typeof ref.expiresAt === 'string';
     default:
       return false;
   }
@@ -85,22 +87,9 @@ export function buildRequestInput(options: {
     return isEmpty(values[field.name]) ? field.value : values[field.name];
   };
 
-  const visibility = new Map<string, boolean>();
-  const isVisible = (field: FieldConfig, seen: Set<string> = new Set()): boolean => {
-    const cached = visibility.get(field.name);
-    if (cached !== undefined) return cached;
-    let visible = true;
-    if (field.visibleIf) {
-      const { field: dependency, in: allowed } = field.visibleIf;
-      const target = byName.get(dependency);
-      let current: unknown;
-      if (!target) current = Object.hasOwn(variableValues, dependency) ? variableValues[dependency] : values[dependency];
-      else if (!seen.has(field.name) && isVisible(target, new Set(seen).add(field.name))) current = effectiveValue(target);
-      visible = allowed.some((candidate) => sameValue(candidate, current));
-    }
-    visibility.set(field.name, visible);
-    return visible;
-  };
+  const isVisible = visibilityResolver(fields, effectiveValue, (name) =>
+    Object.hasOwn(variableValues, name) ? variableValues[name] : values[name],
+  );
 
   const input: RequestInput = {};
   const issues: RequestIssue[] = [...substituted.issues];
@@ -112,7 +101,7 @@ export function buildRequestInput(options: {
       issues.push({ field: field.name, message: `${label} is not an input of this model.` });
       continue;
     }
-    if (field.mode === 'default' || !isVisible(field)) continue;
+    if (field.mode === 'default' || !isVisible(field.name)) continue;
 
     const value = effectiveValue(field);
     if (isEmpty(value)) {
@@ -142,14 +131,14 @@ export function buildRequestInput(options: {
 function fileProblem(value: unknown, property: JsonSchema): string | null {
   if (!acceptsType(property, 'array')) return isFileRef(value) ? null : 'must be a file';
   if (!Array.isArray(value) || !value.every(isFileRef)) return 'must be a list of files';
-  const items = itemSchema(property);
-  if (items.minItems !== undefined && value.length < items.minItems) return `needs at least ${items.minItems} files`;
-  if (items.maxItems !== undefined && value.length > items.maxItems) return `takes at most ${items.maxItems} files`;
+  const list = nonNullBranch(property);
+  if (list.minItems !== undefined && value.length < list.minItems) return `needs at least ${list.minItems} files`;
+  if (list.maxItems !== undefined && value.length > list.maxItems) return `takes at most ${list.maxItems} files`;
   return null;
 }
 
 /** The non-null branch of a nullable property, or the property itself. */
-function itemSchema(property: JsonSchema): JsonSchema {
+function nonNullBranch(property: JsonSchema): JsonSchema {
   return property.anyOf?.find((branch) => branch.type !== 'null') ?? property;
 }
 
@@ -210,7 +199,7 @@ function hasType(value: unknown, type: string): boolean {
     case 'array':
       return Array.isArray(value);
     case 'object':
-      return typeof value === 'object' && value !== null && !Array.isArray(value);
+      return isRecord(value);
     case 'null':
       return value === null;
     default:

@@ -1,6 +1,7 @@
 import { humanize } from './format';
 import { isEmpty, isFileRef, type RequestIssue, sameValue } from './request';
 import { type FieldConfig, type FileRef, type JsonSchema, MEDIA_KINDS, type VariableConfig } from './types';
+import { visibilityResolver } from './visibility';
 
 /**
  * Template Variables: `{name}` and `{name: A | *B | C}` inside fixed text
@@ -225,40 +226,19 @@ function variableValue(variable: VariableConfig, values: Record<string, unknown>
   return isEmpty(value) || (Array.isArray(value) && value.length === 0) ? variable.default : value;
 }
 
-/**
- * Whether a Variable is shown, by its `visibleIf` on another Variable or a
- * Field. A dependency that is itself hidden has no value; a cycle hides.
- */
+/** Whether a Variable is shown, by its `visibleIf` on another Variable or a Field. */
 function variableVisibility(fields: FieldConfig[], variables: VariableConfig[], values: Record<string, unknown>, schema: JsonSchema) {
-  const variablesByName = new Map(variables.map((variable) => [variable.name, variable]));
-  const fieldsByName = new Map(fields.map((field) => [field.name, field]));
-  const cache = new Map<string, boolean>();
-
   const fieldValue = (field: FieldConfig): unknown => {
     if (field.mode === 'fixed') return field.value;
     if (field.mode === 'default') return schema.properties?.[field.name]?.default;
     return isEmpty(values[field.name]) ? field.value : values[field.name];
   };
-
-  const isVisible = (name: string, seen: Set<string>): boolean => {
-    const cached = cache.get(name);
-    if (cached !== undefined) return cached;
-    const condition = (variablesByName.get(name) ?? fieldsByName.get(name))?.visibleIf;
-    if (!condition) return true;
-    const dependency = condition.field;
-    const variable = variablesByName.get(dependency);
-    const field = fieldsByName.get(dependency);
-    let current: unknown;
-    if (seen.has(dependency)) current = undefined;
-    else if (variable) current = isVisible(dependency, new Set(seen).add(name)) ? variableValue(variable, values) : undefined;
-    else if (field) current = isVisible(dependency, new Set(seen).add(name)) ? fieldValue(field) : undefined;
-    else current = values[dependency];
-    const visible = condition.in.some((candidate) => sameValue(candidate, current));
-    cache.set(name, visible);
-    return visible;
-  };
-
-  return (name: string) => isVisible(name, new Set());
+  // Variables come last, so a Variable wins over a Field of the same name.
+  return visibilityResolver<FieldConfig | VariableConfig>(
+    [...fields, ...variables],
+    (item) => ('mode' in item ? fieldValue(item) : variableValue(item, values)),
+    (name) => values[name],
+  );
 }
 
 /** The text a Variable puts into the prompt. A visible switch without a value is off. */

@@ -1,4 +1,5 @@
 import type { JsonValue } from '@/db/schema/json';
+import { isRecord } from '@/libs/is-record';
 import type { JsonSchema, SchemaSnapshot } from './types';
 
 /**
@@ -49,5 +50,5 @@ export function resolveOpenapiSchemas(openapi: JsonValue, endpointId: string): S
 }
 
 function asRecord(value: JsonValue | undefined): Record<string, JsonValue> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value) ? value : {};
+  return isRecord(value) ? value : {};
 }

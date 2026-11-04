@@ -6,10 +6,10 @@
  * raw bytes as received, since re-serialised JSON hashes differently.
  *
  * Pure, so it is testable with a generated key pair. Fetching and caching the
- * JWKS lives with the webhook route.
+ * JWKS lives in `falWebhookKeys` (`libs/studio/config.ts`).
  */
 
-export const WEBHOOK_TOLERANCE_SECONDS = 300;
+const WEBHOOK_TOLERANCE_SECONDS = 300;
 
 export type WebhookVerification = { ok: true; requestId: string } | { ok: false; reason: 'missing-headers' | 'stale' | 'bad-signature' };
 

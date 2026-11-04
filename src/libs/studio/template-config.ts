@@ -1,6 +1,6 @@
 import type { JsonValue } from '@/db/schema/json';
-import { enumerableValues, fieldKind, propertyShape, validateModelConfig } from './model-config';
-import { isEmpty, isFileField, type RequestIssue, sameValue } from './request';
+import { canTakeFiles, enumerableValues, fieldKind, propertyShape, validateModelConfig, visibleIfProblems } from './model-config';
+import { isEmpty, isFileField, type RequestIssue } from './request';
 import type { FieldConfig, JsonSchema, VariableConfig } from './types';
 import { parseVariables } from './variables';
 
@@ -125,25 +125,22 @@ export function validateTemplateConfig({
   }
 
   // Visibility: a Variable may depend on a Field or Variable, and so may a Field.
+  const possibleValues = (name: string) => {
+    const target = variablesByName.get(name);
+    if (target) return variableValues(target);
+    const field = fieldsByName.get(name);
+    const property = properties[name];
+    return field && property ? enumerableValues(field, property) : undefined;
+  };
   for (const variable of variables) {
     if (!variable.visibleIf) continue;
-    const { field: dependency, in: allowed } = variable.visibleIf;
-    const target = variablesByName.get(dependency);
-    const field = fieldsByName.get(dependency);
-    const property = properties[dependency];
-    if (dependency === variable.name) add(variable.name, 'A Variable cannot depend on itself.');
-    else if (!target && !(field && property))
-      add(variable.name, `Shown only when references ${dependency}, which is not a Field or Variable.`);
-    else if (allowed.length === 0) add(variable.name, 'Shown only when needs at least one value.');
-    else {
-      const possible = target ? variableValues(target) : enumerableValues(field as FieldConfig, property as JsonSchema);
-      if (!possible) add(variable.name, `Shown only when references ${dependency}, which has no fixed set of values.`);
-      for (const value of allowed) {
-        if (possible && !possible.some((candidate) => sameValue(candidate, value))) {
-          add(variable.name, `Shown only when lists ${String(value)}, which ${dependency} cannot be.`);
-        }
-      }
+    const nouns = { self: 'Variable', targets: 'Field or Variable' };
+    const problems = visibleIfProblems(variable.name, variable.visibleIf, possibleValues, nouns);
+    const { field: dependency } = variable.visibleIf;
+    if (problems.length === 0 && possibleValues(dependency) === null) {
+      problems.push(`Shown only when references ${dependency}, which has no fixed set of values.`);
     }
+    for (const message of problems) add(variable.name, message);
   }
 
   // The Model checks, for the Fields no file Variable feeds.
@@ -209,7 +206,7 @@ function kindProblems(variable: VariableConfig, properties: Record<string, JsonS
       }
       const kind = fieldKind({ name: target.field, mode: 'shown', order: 0, display: 'file' }, property);
       const shape = propertyShape(target.field, property);
-      if (shape.kind !== 'string' && shape.kind !== 'file' && shape.kind !== 'files' && shape.kind !== 'list') {
+      if (!canTakeFiles(shape.kind)) {
         problems.push(`${target.field} cannot take files.`);
       } else if (target.position !== undefined) {
         if (kind !== 'files') problems.push(`${target.field} takes one file, so it has no positions.`);

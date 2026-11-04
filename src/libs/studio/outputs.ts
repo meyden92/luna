@@ -1,4 +1,5 @@
 import type { JsonValue } from '@/db/schema/json';
+import { isRecord } from '@/libs/is-record';
 import type { MediaKind } from './types';
 
 /**
@@ -70,10 +71,6 @@ function urlExtension(url: string): string | null {
 /** The extension for an Output's S3 key: from the content type, else the URL, else `bin`. */
 export function outputExtension(contentType: string, url: string): string {
   return TYPE_EXTENSIONS[contentType] ?? urlExtension(url) ?? 'bin';
-}
-
-function isRecord(value: JsonValue): value is Record<string, JsonValue> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function positiveNumber(value: JsonValue | undefined): number | null {

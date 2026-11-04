@@ -1,6 +1,6 @@
 import type { JsonValue } from '@/db/schema/json';
 import { isEmpty, isFileField, type RequestIssue, sameValue, valueProblem } from './request';
-import type { FieldConfig, JsonSchema, MediaKind, StudioPricing } from './types';
+import type { FieldConfig, JsonSchema, MediaKind, StudioPricing, VisibleIf } from './types';
 
 /**
  * How a Model's Field configs start out and what makes them valid. Pure,
@@ -80,6 +80,11 @@ export function propertyShape(name: string, property: JsonSchema): PropertyShape
   }
   if (type === 'integer' || type === 'number' || type === 'boolean' || type === 'object') return { ...base, kind: type };
   return { ...base, kind: 'object' };
+}
+
+/** Whether an input of this kind can be a file input: text and lists can, as can those detected as one. */
+export function canTakeFiles(kind: PropertyKind): boolean {
+  return kind === 'string' || kind === 'file' || kind === 'files' || kind === 'list';
 }
 
 /**
@@ -162,6 +167,27 @@ export function enumerableValues(field: FieldConfig, property: JsonSchema): Json
 }
 
 /**
+ * Why the `visibleIf` of the card `owner` cannot be saved. `possibleValues`
+ * gives a dependency's values: null when it has no fixed set, which allows any
+ * listed value, and undefined when no card has that name. `nouns` name the
+ * owner's kind and what it may depend on.
+ */
+export function visibleIfProblems(
+  owner: string,
+  { field: dependency, in: allowed }: VisibleIf,
+  possibleValues: (name: string) => JsonValue[] | null | undefined,
+  nouns: { self: string; targets: string },
+): string[] {
+  if (dependency === owner) return [`A ${nouns.self} cannot depend on itself.`];
+  const possible = possibleValues(dependency);
+  if (possible === undefined) return [`Shown only when references ${dependency}, which is not a ${nouns.targets}.`];
+  if (allowed.length === 0) return ['Shown only when needs at least one value.'];
+  return allowed
+    .filter((value) => possible && !possible.some((candidate) => sameValue(candidate, value)))
+    .map((value) => `Shown only when lists ${String(value)}, which ${dependency} cannot be.`);
+}
+
+/**
  * Every reason a Model's Field configs and pricing cannot be saved, phrased
  * for the card of the Field they name (`pricing` for the pricing panel).
  * `dependencies` are the Template Variables a Field's `visibleIf` may name
@@ -193,7 +219,7 @@ export function validateModelConfig(
     const kind = fieldKind(field, property);
     const isFile = kind === 'file' || kind === 'files';
 
-    if (isFile && shape.kind !== 'string' && shape.kind !== 'file' && shape.kind !== 'files' && shape.kind !== 'list') {
+    if (isFile && !canTakeFiles(shape.kind)) {
       add(field.name, 'Only a text input can take files.');
       continue;
     }
@@ -240,23 +266,14 @@ export function validateModelConfig(
     }
 
     if (field.visibleIf) {
-      const { field: dependency, in: allowed } = field.visibleIf;
-      const target = byName.get(dependency);
-      const targetProperty = properties[dependency];
-      const isVariable = Object.hasOwn(dependencies, dependency);
-      if (dependency === field.name) add(field.name, 'A Field cannot depend on itself.');
-      else if (!isVariable && (!target || !targetProperty))
-        add(field.name, `Shown only when references ${dependency}, which is not a Field.`);
-      else if (allowed.length === 0) add(field.name, 'Shown only when needs at least one value.');
-      else {
-        const possible = isVariable
-          ? (dependencies[dependency] ?? null)
-          : enumerableValues(target as FieldConfig, targetProperty as JsonSchema);
-        for (const value of allowed) {
-          if (possible && !possible.some((candidate) => sameValue(candidate, value))) {
-            add(field.name, `Shown only when lists ${String(value)}, which ${dependency} cannot be.`);
-          }
-        }
+      const possibleValues = (name: string) => {
+        if (Object.hasOwn(dependencies, name)) return dependencies[name] ?? null;
+        const target = byName.get(name);
+        const targetProperty = properties[name];
+        return target && targetProperty ? enumerableValues(target, targetProperty) : undefined;
+      };
+      for (const message of visibleIfProblems(field.name, field.visibleIf, possibleValues, { self: 'Field', targets: 'Field' })) {
+        add(field.name, message);
       }
     }
   }

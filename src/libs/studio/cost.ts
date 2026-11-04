@@ -15,5 +15,10 @@ export function estimateCost(pricing: StudioPricing | null, requestInput: Record
     const value = Number(requestInput[quantity.field] ?? schema.properties?.[quantity.field]?.default ?? 1);
     units = (Number.isFinite(value) ? value : 1) * (quantity.factor ?? 1);
   }
-  return Math.round(pricing.unitPrice * units * 1e6) / 1e6;
+  return roundUsd(pricing.unitPrice * units);
+}
+
+/** Rounds to the micro-dollar, the precision the database stores costs in. */
+export function roundUsd(usd: number): number {
+  return Math.round(usd * 1e6) / 1e6;
 }

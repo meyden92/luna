@@ -1,4 +1,5 @@
 import type { JsonValue } from '@/db/schema/json';
+import { isRecord } from '@/libs/is-record';
 
 /**
  * A thin, typed client over fal.ai's REST APIs. Every host comes from
@@ -290,12 +291,8 @@ function trimSlash(url: string): string {
   return url.replace(/\/+$/, '');
 }
 
-function isRecord(value: JsonValue | undefined): value is RawRecord {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 function asRecords(value: JsonValue | undefined): RawRecord[] {
-  return Array.isArray(value) ? value.filter(isRecord) : [];
+  return Array.isArray(value) ? value.filter((item) => isRecord(item)) : [];
 }
 
 function requiredString(body: RawRecord, key: string): string {
@@ -344,7 +341,7 @@ async function falErrorFrom(response: Response): Promise<FalError> {
       return new FalError(body.detail, { status, errorType, detail: body });
     }
     if (Array.isArray(body.detail)) {
-      const first = body.detail.find(isRecord);
+      const first = body.detail.find((item) => isRecord(item));
       const message = first && typeof first.msg === 'string' ? first.msg : `fal request failed (${status})`;
       const errorType = first && typeof first.type === 'string' ? first.type : headerType;
       return new FalError(message, { status, errorType, detail: body.detail });

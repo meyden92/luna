@@ -26,7 +26,8 @@ function TemplateEditorPage() {
   const { data: categories } = useSuspenseQuery(studioCategoriesQueryOptions);
   return (
     <TemplateEditor
-      key={template.updatedAt.toString()}
+      // A save or Apply remounts it with the stored config. Milliseconds: a write can follow the last one within a second.
+      key={template.updatedAt.getTime()}
       draft={{
         id: template.id,
         modelId: template.modelId,

@@ -22,7 +22,8 @@ function ModelEditorPage() {
   const { data: categories } = useSuspenseQuery(studioCategoriesQueryOptions);
   return (
     <ModelEditor
-      key={model.updatedAt.toString()}
+      // A save or Apply remounts it with the stored config. Milliseconds: a write can follow the last one within a second.
+      key={model.updatedAt.getTime()}
       model={model}
       categories={categories}
     />

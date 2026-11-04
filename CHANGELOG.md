@@ -2,6 +2,53 @@
 
 Every LunaShare release, newest first. Entries up to v4.7.0 were rewritten from their GitHub releases, or from the tag message where no release exists.
 
+## v4.8.0 (2026-11-04)
+
+**The One Where the AI Moves Into Its Own Studio**
+
+The old AI corner ran on Replicate, kept its variables in three places, and forgot your image the moment you closed the tab. We tore it out and built the Studio on fal.ai: admins curate what's on offer, you pick, type and hit Generate, and the server keeps working after you've wandered off. Also, the server now knows your real IP address behind a proxy, which matters more than it sounds.
+
+### ✨ New
+
+🎨 **Studio, at `/studio`.** Pick a Category, then a Model or a Template, fill in the form and press **Generate**. Images, video, audio and 3D models play right in the history. Generations run on the server, so closing the tab costs you nothing. A toast in every open tab tells you when it's done, and the **Studio** nav entry shows how many finished while you looked away. Outputs expire after 7 days unless you **Save to Files**. Each history entry also has **Again** with a fresh seed, **Use settings**, **Delete** and **Continue with …**, which hands an Output to another Category, say an image to a video Model. It works at phone width too, with the history below the form.
+
+🧩 **Templates with blanks to fill in.** Admins write the prompt once, e.g. `Turn the person into {style: Anime | *Comic}`, and every `{…}` becomes a Variable card on its own: text, choice, multi-choice, number, switch or file, with groups and show-if conditions. Users see friendly labels; fal gets the values. Admins also get **Save as Template** in the history, which turns a Generation they liked into a Template draft. They edit Templates under **Admin → Studio → Templates**.
+
+🛠️ **Models the admin actually picked.** Under **Admin → Studio → Models**, admins search the fal catalog, add a Model, and decide per Field whether Users see it (`shown`), never touch it (`fixed`) or get fal's default. **Test** runs it on the spot. Categories get sorted with drag and drop.
+
+💸 **Budgets.** Every User has a monthly Budget in US dollars. It's the default from **Admin → Studio → Settings** unless their user page sets their own amount or unlimited. The Studio shows the estimated cost before you click and refuses once the Budget is gone. Estimates are swapped for what fal actually billed when a billing key is set. **Admin → Studio → Overview** shows spend per month and User, failure rates per Model and the fal balance. It never shows a successful prompt or Output. Those stay yours.
+
+🔍 **Schema drift, caught before it bites.** A daily check compares each Model with what fal currently serves. Changed Models get a "Schema changed" or "Deprecated" badge, and the Model editor shows the diff, which Fields and Templates it touches, and an **Apply** button that refuses until everything left over is fixed.
+
+🛰️ **A Client IP card for the admin.** The admin start page shows the connection address, the `X-Forwarded-For` chain with hop numbers, the address the app derives, and a warning when `TRUSTED_PROXY_HOPS` looks wrong. It even suggests the right value when Cloudflare is in the chain.
+
+### 🐛 Fixed
+
+🕵️ **No more picking your own IP.** Sign-in rate limits and sessions used to trust `cf-connecting-ip`, so anyone who reached the origin directly could get a fresh rate-limit bucket on every attempt. The client IP now comes from the connection, or from `X-Forwarded-For` counted from the right by `TRUSTED_PROXY_HOPS`. The audit log records that same address, not whatever the client put first.
+
+🧾 **Audit rows know their session again.** The audit log looked for a cookie name we stopped using, so no row had a session ID. Now they do.
+
+🎚️ **Sliders with names.** Zoom, volume and fade sliders in the audio editor and the player now tell screen readers what they are.
+
+### 🧪 Under the hood
+
+The E2E stack got a fake fal service, so the Studio specs never spend a cent. Specs for the Studio screen, Models, Templates, schema drift and Budgets are new, and the Budget spec runs last in its own `instance-wide` Playwright project because it changes the default for everyone. The image cache went out with the old AI, along with its admin page and cleanup task. `CONTEXT.md` learned the Studio's words, and ADRs 0008–0010 record why fal, why the server runs Generations, and why admins can't see successful ones.
+
+### ⬆️ Upgrade
+
+Migration `drizzle/20261104101641_studio_foundation` drops the old AI tables (`ai_generation`, `template`, `template_generation`, `template_global_variable`, `global_variable`, `generation_model`, `model_field`, `editing_model`, `editing_model_field`, `image_preset`, `cached_image`) with their data, and creates the Studio tables. Back up first if you want the old generations. Run `bun run db:migrate`.
+
+Environment:
+- Remove `REPLICATE_API_TOKEN`; it's no longer read.
+- Add `FAL_KEY` (a fal API key) to turn the Studio on. Without it the Studio, its nav entry and its admin pages stay hidden.
+- Optional: `FAL_BILLING_KEY`, a fal key with `BILLING` or `FULL` scope, to settle actual costs and show the fal balance.
+- fal reports results by webhook only when `PUBLIC_BASE_URL`, or `BETTER_AUTH_URL` if that is unset, is `https` on a public host. Otherwise the server polls fal, which works too.
+- New `TRUSTED_PROXY_HOPS`, default `0`, now passed through `docker-compose.yml`. Behind a proxy, set it to the number of proxies that append to `X-Forwarded-For`: 1 for Cloudflare alone, 2 for Cloudflare in front of Traefik. Left at `0`, every user shares the proxy's address and one sign-in bucket of 5 attempts per 15 minutes. Raise it only when the origin is reachable through those proxies alone.
+
+The v4.8.0 tag triggers the GHCR image build and publishes the versioned and latest tags. Deployment is still manual.
+
+Implemented in #239 (for #219, #220, #221, #222, #223, #224, #225, #226, #227) and #235 (for #100, #161, #234, #236, #237).
+
 ## v4.7.3 (2026-11-03)
 
 **The One Where We Couldn't See Our Own Release**

@@ -28,7 +28,7 @@ function cssLayerOrder(): Plugin {
   };
 }
 
-const SERVER_ONLY_PACKAGES = ['pg', '@aws-sdk/client-s3', '@aws-sdk/lib-storage', '@aws-sdk/s3-request-presigner', 'sharp', 'replicate'];
+const SERVER_ONLY_PACKAGES = ['pg', '@aws-sdk/client-s3', '@aws-sdk/lib-storage', '@aws-sdk/s3-request-presigner', 'sharp'];
 
 export default defineConfig({
   plugins: [

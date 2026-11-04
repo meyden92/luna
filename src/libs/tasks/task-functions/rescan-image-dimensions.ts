@@ -1,7 +1,7 @@
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import sharp from 'sharp';
 import { listImagesMissingDimensions, upsertFileDimensions } from '@/db/queries/tasks';
-import { isAbortError, throwIfAborted } from '@/libs/ai-generation-utils';
+import { isAbortError, throwIfAborted } from '@/libs/abort';
 import { s3Client } from '@/libs/S3Helper';
 import type { TaskFunction } from '@/types/tasks';
 import { env } from '../../env';

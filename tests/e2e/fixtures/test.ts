@@ -31,7 +31,7 @@ type WorkerFixtures = {
   stack: StackEnv;
   /** S3 client on the stack's RustFS, for head, get and list. */
   bucket: { client: S3Client; name: string };
-  /** See `createTestDb`: reads, and backdating `file.created_at` only. */
+  /** See `createTestDb`: reads, and the few writes no screen can make. */
   db: TestDb;
   /** The fixture files (`corpus.ts`): the whole manifest and its lookups. */
   corpus: typeof corpus;

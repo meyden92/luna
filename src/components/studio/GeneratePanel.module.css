@@ -1,0 +1,26 @@
+@layer components {
+  .muted {
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+  }
+
+  .footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .cost {
+    display: flex;
+    flex-direction: column;
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .refusal {
+    color: var(--destructive);
+    font-size: var(--text-sm);
+  }
+}

@@ -1,0 +1,42 @@
+@layer components {
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .row {
+    position: relative;
+
+    &[data-dragging] {
+      z-index: 1;
+      opacity: 0.85;
+    }
+  }
+
+  .handle {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-1);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--muted-foreground);
+    cursor: grab;
+    touch-action: none;
+
+    &:focus-visible {
+      outline: 2px solid var(--ring);
+    }
+
+    & svg {
+      width: var(--space-4);
+      height: var(--space-4);
+    }
+  }
+}

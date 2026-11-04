@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
 import AdminNav from '@/components/admin/AdminNav';
 import AdminBreadcrumbsWrapper from '@/components/admin/admin-breadcrumbs-wrapper';
+import { studioStatusQueryOptions } from '@/components/studio/studio-status';
 import { queryKeys } from '@/libs/query-keys';
 import { checkCurrentUserIsAdmin } from '@/server/fns/rbac';
 import styles from './_admin.module.css';
@@ -14,6 +15,8 @@ export const Route = createFileRoute('/_admin')({
       staleTime: 30_000,
     });
     if (!allowed) throw redirect({ to: '/unauthorized' });
+    // The nav lists the Studio pages only while the Studio is enabled.
+    await context.queryClient.ensureQueryData(studioStatusQueryOptions);
   },
   head: () => ({ meta: [{ title: 'Admin Panel | LunaShare' }, { name: 'description', content: 'Private Filesharing' }] }),
   component: AdminLayout,

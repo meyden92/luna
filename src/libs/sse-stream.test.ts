@@ -1,13 +1,12 @@
 import { describe, expect, test } from 'bun:test';
-import { createPredictionAbortRegistry, createSseWriter, eventStreamResponse, SSE_HEARTBEAT_MS } from './sse-stream';
+import { createSseWriter, eventStreamResponse, SSE_HEARTBEAT_MS } from './sse-stream';
 
 /**
- * Issue #59: a template generation emits no bytes between "Creating AI
- * predictions..." and the first prediction settling, which is minutes of an
- * idle response body, and the stream died at ~10s in production. Nothing else
- * in the suite exercises a stream that is deliberately doing nothing, and a
- * heartbeat that keeps ticking after the client has gone would hold the request
- * open for the whole poll.
+ * A stream waiting on slow upstream work emits no bytes for minutes, and in
+ * production it dies at ~10s of silence; the Studio's event stream sits idle
+ * the same way between Generation updates. Nothing else in the suite exercises
+ * a stream that is deliberately doing nothing, and a heartbeat that keeps
+ * ticking after the client has gone would hold the request open for good.
  */
 
 const HEARTBEAT_MS = 20;
@@ -33,7 +32,7 @@ describe('createSseWriter heartbeat', () => {
     await sleep(HEARTBEAT_MS * 3.5);
     close();
 
-    // Comment frames, so `streamSSE` skips them and no client has to change.
+    // Comment frames, so an SSE client skips them and no client has to change.
     expect(chunks.every((chunk) => chunk.startsWith(':'))).toBe(true);
     expect(chunks.length).toBeGreaterThanOrEqual(2);
   });
@@ -72,55 +71,6 @@ describe('createSseWriter heartbeat', () => {
     close();
 
     expect(chunks).toEqual(['data: {"status":"processing"}\n\n']);
-  });
-});
-
-/**
- * Issue #59: a dropped transport and a user pressing Cancel reach the server as
- * the same disconnect, and cancelling the Replicate predictions on it destroyed
- * work the reconciler could have finished. Which of the two a route wants is
- * now a flag, and nothing else would catch it being read the wrong way round.
- */
-describe('createPredictionAbortRegistry disconnect policy', () => {
-  test('cancels registered predictions on disconnect by default', () => {
-    const canceled: string[] = [];
-    const request = new AbortController();
-    const registry = createPredictionAbortRegistry(request.signal, async (id) => void canceled.push(id), '[test]');
-    registry.registerPrediction('pred-1');
-    registry.registerPrediction('pred-2');
-
-    request.abort();
-
-    expect(registry.signal.aborted).toBe(true);
-    expect(canceled).toEqual(['pred-1', 'pred-2']);
-  });
-
-  test('leaves predictions running on disconnect when asked to, but still stops server-side work', () => {
-    const canceled: string[] = [];
-    const request = new AbortController();
-    const registry = createPredictionAbortRegistry(request.signal, async (id) => void canceled.push(id), '[test]', {
-      cancelPredictionsOnDisconnect: false,
-    });
-    registry.registerPrediction('pred-1');
-
-    request.abort();
-
-    // Polling and uploads still have to stop — there is nobody left to send to.
-    expect(registry.signal.aborted).toBe(true);
-    expect(canceled).toEqual([]);
-  });
-
-  test('leaves a prediction registered after the disconnect running too', () => {
-    const canceled: string[] = [];
-    const request = new AbortController();
-    const registry = createPredictionAbortRegistry(request.signal, async (id) => void canceled.push(id), '[test]', {
-      cancelPredictionsOnDisconnect: false,
-    });
-
-    request.abort();
-    registry.registerPrediction('pred-late');
-
-    expect(canceled).toEqual([]);
   });
 });
 
@@ -170,28 +120,27 @@ describe('heartbeat over a real response body', () => {
 });
 
 /**
- * The bug in #59, reproduced at its real source.
+ * The idle-timeout kill, reproduced at its real source.
  *
  * Production serves this app through Nitro's bun preset, which calls
  * `Bun.serve` with no `idleTimeout` — so Bun's 10-second default applies and it
  * kills any response whose socket goes quiet for that long, logging "request
- * timed out after 10 seconds". A template generation is silent for the whole
- * time a prediction polls, so the server dropped its own stream, the route read
- * the disconnect as a cancellation, and two running predictions were cancelled.
+ * timed out after 10 seconds". A stream silent while it waits on the provider
+ * is dropped by the server itself, which a route can misread as a client
+ * cancellation.
  *
  * `bun run dev` is Vite's Node server and has no such timeout, which is exactly
  * why this only ever showed up deployed. A shortened `idleTimeout` stands in for
  * the 10-second default here so the test costs seconds rather than a minute.
  */
 /**
- * The bug in #59, reproduced at its real source.
+ * The idle-timeout kill, reproduced at its real source.
  *
  * Production serves this app through Nitro's bun preset, which calls
  * `Bun.serve` with no `idleTimeout`, so Bun's 10-second default kills any
  * response whose socket goes quiet for that long — "request timed out after 10
- * seconds". A template generation is silent for the whole time a prediction
- * polls, so the server dropped its own stream, the route read the disconnect as
- * a cancellation, and two running predictions died with it.
+ * seconds". A stream silent while it waits on the provider is dropped by the
+ * server itself, which a route can misread as a client cancellation.
  *
  * `bun run dev` is Vite's Node server and has no such timeout, which is exactly
  * why this only ever appeared deployed and why no cheaper test would have
@@ -206,9 +155,8 @@ describe('heartbeat over a real response body', () => {
  * `Bun.serve` with no `idleTimeout` (`.output/server/index.mjs`), so Bun's
  * 10-second default governs every response: it drops any request whose socket
  * goes quiet for that long, logging "request timed out after 10 seconds". A
- * template generation is silent for the whole time a prediction polls, so the
- * server dropped its own stream, the route read the disconnect as a
- * cancellation, and two running predictions died with it — issue #59.
+ * stream silent while it waits on the provider is dropped by the server
+ * itself, which a route can misread as a client cancellation.
  *
  * `bun run dev` is Vite's Node server and has no such timeout, which is why
  * this only ever appeared deployed.
@@ -223,7 +171,7 @@ describe('heartbeat over a real response body', () => {
 describe('heartbeat interval', () => {
   test('stays comfortably inside the Bun default idle timeout', () => {
     // The preset never overrides Bun's 10s default, so this constant is the
-    // only thing keeping a polling generation's connection alive.
+    // only thing keeping an idle event stream's connection alive.
     expect(SSE_HEARTBEAT_MS).toBeLessThan(10_000 / 2);
   });
 });

@@ -1,4 +1,4 @@
-import { throwIfAborted, waitFor } from '@/libs/ai-generation-utils';
+import { throwIfAborted, waitFor } from '@/libs/abort';
 import type { TaskFunction } from '@/types/tasks';
 
 export const testLoggerTask: TaskFunction = async (...args) => {

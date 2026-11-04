@@ -70,12 +70,6 @@ export function getAvatarUrl(image: string | null | undefined): string | null {
   return `${getCdnUrl()}/${image}`;
 }
 
-export function getTemplateImageUrl(path: string): string {
-  if (!path) return '';
-  if (path.startsWith('http')) return path;
-  return `${getCdnUrl()}/${path}`;
-}
-
 export function getFileIcon(contentType: string) {
   if (contentType.startsWith('audio/')) return Music;
   if (contentType.startsWith('video/')) return Video;

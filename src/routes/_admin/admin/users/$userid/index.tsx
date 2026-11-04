@@ -1,4 +1,4 @@
-import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
+import { queryOptions, useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, notFound } from '@tanstack/react-router';
 import { Files } from 'lucide-react';
 import { ResetPasswordDialog } from '@/components/admin/user/reset-password-dialog';
@@ -6,6 +6,8 @@ import UserAccountDetails from '@/components/admin/user/user-account-details';
 import UserDangerZone from '@/components/admin/user/user-danger-zone';
 import UserHeader from '@/components/admin/user/user-header';
 import UserStorageInfo from '@/components/admin/user/user-storage-info';
+import UserStudioBudget from '@/components/admin/user/user-studio-budget';
+import { studioStatusQueryOptions } from '@/components/studio/studio-status';
 import { buttonVariants } from '@/components/ui/button';
 import { queryKeys } from '@/libs/query-keys';
 import { storageQuotaMiBToBytes } from '@/libs/storage-quota';
@@ -34,6 +36,7 @@ export const Route = createFileRoute('/_admin/admin/users/$userid/')({
 function UserDetailPage() {
   const { userid } = Route.useParams();
   const { data: user } = useSuspenseQuery(userDetailQueryOptions(userid));
+  const studio = useQuery(studioStatusQueryOptions);
 
   const totalSize = user.totalSize;
   const quotaBytes = storageQuotaMiBToBytes(user.storageQuotaMiB);
@@ -75,6 +78,7 @@ function UserDetailPage() {
               percentageUsed={percentageUsed}
               fileCount={user.fileCount}
             />
+            {studio.data?.enabled && <UserStudioBudget userId={user.id} />}
             <UserDangerZone
               user={user}
               fileCount={user.fileCount}

@@ -3,7 +3,6 @@ import { and, count, desc, eq, gte, isNull, lte, ne, or, sql } from 'drizzle-orm
 import { type AuditHandle, writeAuditLog } from '../audit';
 import { db } from '../client';
 import * as schema from '../schema';
-import { templateGeneration } from '../schema/ai';
 import { account, token, user } from '../schema/auth';
 import { file } from '../schema/files';
 
@@ -168,15 +167,6 @@ export function listOwnedUploadsInRange({ ownerId, from, to }: { ownerId: string
     .select({ createdAt: file.createdAt, title: file.title })
     .from(file)
     .where(and(eq(file.ownerId, ownerId), eq(file.isDeleted, false), gte(file.createdAt, from), lte(file.createdAt, to)));
-}
-
-/** Generation counts per status — grouping, so a core select (issue #21). */
-export function countTemplateGenerationsByStatus(userId: string, handle: AuditHandle = db) {
-  return handle
-    .select({ status: templateGeneration.status, total: count() })
-    .from(templateGeneration)
-    .where(eq(templateGeneration.userId, userId))
-    .groupBy(templateGeneration.status);
 }
 
 /** Every API token the user owns, newest first. */

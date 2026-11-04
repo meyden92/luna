@@ -1,5 +1,5 @@
 import { deleteExpiredSessions } from '@/db/queries/tasks';
-import { throwIfAborted } from '@/libs/ai-generation-utils';
+import { throwIfAborted } from '@/libs/abort';
 import type { TaskFunction } from '@/types/tasks';
 
 /**

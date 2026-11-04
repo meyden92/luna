@@ -1,6 +1,7 @@
 import { definePlugin } from 'nitro';
 import { getTaskByName } from '@/db/queries/tasks';
 import { sweepDownloadTemp } from '@/libs/downloads/runner';
+import { startGenerationPoller } from '@/libs/studio/pipeline';
 import { initializeTasks, UPDATE_YT_DLP_TASK_NAME } from '@/libs/tasks/init';
 import { TaskManager } from '@/libs/tasks/task-manager';
 
@@ -9,7 +10,8 @@ import { TaskManager } from '@/libs/tasks/task-manager';
 // invokes. First deletes the Download temp files a previous run left behind,
 // before any Download can start. Then kicks off the cron TaskManager without
 // blocking server startup, and runs the yt-dlp update once so a recreated
-// container leaves its pinned baseline right away (ADR 0007).
+// container leaves its pinned baseline right away (ADR 0007). Last, it starts
+// the Studio's Generation poller, which resumes any Generation still open.
 export default definePlugin(() => {
   try {
     sweepDownloadTemp();
@@ -29,4 +31,5 @@ export default definePlugin(() => {
     .catch((error) => {
       console.error('✗ Failed to initialize cron jobs:', error);
     });
+  startGenerationPoller();
 });

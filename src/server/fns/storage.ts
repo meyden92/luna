@@ -9,17 +9,15 @@ import { appMiddleware } from '@/server/server-fn';
 
 const proxyImageSchema = z.object({ imageUrl: z.string().min(1) });
 
-// Hosts the image proxy is allowed to fetch from. The deployment's own CDN is
-// derived from CDN_URL and Replicate's delivery hosts back the AI generation
-// flow; PROXY_ALLOWED_DOMAINS (comma-separated) adds any extras. Resolved
-// lazily so importing this module never touches the environment.
-const REPLICATE_DELIVERY_HOSTS = ['replicate.delivery', 'pbxt.replicate.delivery'];
-
+// Hosts the image proxy is allowed to fetch from: the deployment's own CDN,
+// derived from CDN_URL, plus any extras in PROXY_ALLOWED_DOMAINS
+// (comma-separated). Resolved lazily so importing this module never touches the
+// environment.
 let allowedProxyHosts: Set<string> | undefined;
 
 function getAllowedProxyHosts(): Set<string> {
   if (allowedProxyHosts) return allowedProxyHosts;
-  const hosts = new Set(REPLICATE_DELIVERY_HOSTS);
+  const hosts = new Set<string>();
   // CDN_URL is validated as a URL by the env schema.
   hosts.add(new URL(env.CDN_URL).hostname);
   for (const entry of env.PROXY_ALLOWED_DOMAINS?.split(',') ?? []) {

@@ -1,4 +1,19 @@
-import { Activity, FileImage, Gauge, Globe, MapIcon, ShieldAlert, Sparkles, User2, Variable, Zap } from 'lucide-react';
+import {
+  Activity,
+  BarChart3,
+  Gauge,
+  Globe,
+  LayoutTemplate,
+  MapIcon,
+  Settings2,
+  Shapes,
+  ShieldAlert,
+  Sparkles,
+  User2,
+  Zap,
+} from 'lucide-react';
+
+/** `studio` entries show only while the Studio is enabled. */
 
 export const adminDestinations = [
   {
@@ -12,24 +27,6 @@ export const adminDestinations = [
     to: '/admin/tasks',
     Icon: Zap,
     description: 'Track, assign, and complete tasks',
-  },
-  {
-    name: 'Templates',
-    to: '/admin/templates',
-    Icon: FileImage,
-    description: 'Manage image generation templates',
-  },
-  {
-    name: 'Global Variables',
-    to: '/admin/global-variables',
-    Icon: Variable,
-    description: 'Shared variables used across templates',
-  },
-  {
-    name: 'Models',
-    to: '/admin/models',
-    Icon: Sparkles,
-    description: 'Configure AI generation models',
   },
   {
     name: 'Sources',
@@ -60,5 +57,40 @@ export const adminDestinations = [
     to: '/admin/tasks/logs',
     Icon: Activity,
     description: 'Inspect recent task execution history',
+  },
+  {
+    name: 'Studio categories',
+    to: '/admin/studio/categories',
+    Icon: Shapes,
+    description: 'Define the tasks Users start from in the Studio',
+    studio: true,
+  },
+  {
+    name: 'Studio models',
+    to: '/admin/studio/models',
+    Icon: Sparkles,
+    description: 'Add fal Models and choose which inputs Users see',
+    studio: true,
+  },
+  {
+    name: 'Studio templates',
+    to: '/admin/studio/templates',
+    Icon: LayoutTemplate,
+    description: 'Write prompts with Variables Users fill in',
+    studio: true,
+  },
+  {
+    name: 'Studio overview',
+    to: '/admin/studio/overview',
+    Icon: BarChart3,
+    description: 'Spend, Budgets, failures and running Generations',
+    studio: true,
+  },
+  {
+    name: 'Studio settings',
+    to: '/admin/studio/settings',
+    Icon: Settings2,
+    description: 'The default monthly Budget and the active Generation limit',
+    studio: true,
   },
 ] as const;

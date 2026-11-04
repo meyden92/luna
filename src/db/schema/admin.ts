@@ -6,8 +6,8 @@ import type { JsonValue } from './json';
  * Admin, audit, and moderation domain (issue #30).
  *
  * Covers the audit trail (`audit_log`), the RBAC group model (`rbac_group`,
- * `user_group_assignment`), the image proxy cache (`cached_image`), and the
- * upload moderation pipeline (`denylist_entry`, `moderation_case`).
+ * `user_group_assignment`), and the upload moderation pipeline
+ * (`denylist_entry`, `moderation_case`).
  *
  * Physical column names are snake_case; TypeScript properties stay camelCase
  * (issue #28), following the same transform as the reference slice.
@@ -80,32 +80,6 @@ export const userGroupAssignment = pgTable(
     index('user_group_assignment_userId_idx').on(t.userId),
     index('user_group_assignment_groupId_idx').on(t.groupId),
     index('user_group_assignment_createdByUserId_idx').on(t.createdByUserId),
-  ],
-);
-
-export const cachedImage = pgTable(
-  'cached_image',
-  {
-    id: text('id').primaryKey(),
-    url: text('url').notNull(),
-    filename: text('filename').notNull(),
-    contentType: text('content_type').notNull(),
-    size: integer('size').notNull(),
-    hash: text('hash').notNull(),
-    purpose: text('purpose').notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-    ownerId: text('owner_id')
-      .notNull()
-      .references(() => user.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
-    lastAccessedAt: timestamp('last_accessed_at', { withTimezone: true }).defaultNow().notNull(),
-  },
-  (t) => [
-    uniqueIndex('cached_image_ownerId_hash_key').on(t.ownerId, t.hash),
-    index('cached_image_ownerId_idx').on(t.ownerId),
-    index('cached_image_purpose_idx').on(t.purpose),
-    index('cached_image_lastAccessedAt_idx').on(t.lastAccessedAt),
-    index('cached_image_url_idx').on(t.url),
   ],
 );
 

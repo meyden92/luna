@@ -34,19 +34,6 @@ const DEFAULT_TASKS: DefaultTask[] = [
     args: [30],
   },
   {
-    name: 'check-template-generations',
-    description: 'Finishes template generations whose stream ended before the Replicate prediction did',
-    // Well under the ten minutes a row must sit in `streaming` before it counts
-    // as stale, so a generation orphaned by a dropped connection is recovered
-    // promptly rather than at the next daily sweep (issue #59).
-    cronExpression: '*/5 * * * *',
-    taskFunction: 'checkTemplateGenerations',
-    // Up to twenty generations, each of which may download a result and upload
-    // it to S3.
-    timeout: 300000,
-    maxRetries: 3,
-  },
-  {
     name: UPDATE_YT_DLP_TASK_NAME,
     description: 'Updates the yt-dlp binary in place so Downloads survive Source changes without a redeploy (ADR 0007)',
     cronExpression: '0 4 * * *',
@@ -54,6 +41,30 @@ const DEFAULT_TASKS: DefaultTask[] = [
     timeout: 300000,
     // The next daily run, or "Run now" from Tasks, is the retry.
     maxRetries: 0,
+  },
+  {
+    name: 'expire-studio-outputs',
+    description: 'Deletes the stored media of Studio Outputs that expired unsaved; the history entries stay',
+    cronExpression: '0 * * * *',
+    taskFunction: 'expireStudioOutputs',
+    timeout: 300000,
+    maxRetries: 3,
+  },
+  {
+    name: 'settle-studio-costs',
+    description: "Replaces Studio cost estimates with fal's billed amounts, or books the estimate when fal reports none",
+    cronExpression: '*/10 * * * *',
+    taskFunction: 'settleStudioCosts',
+    timeout: 300000,
+    maxRetries: 3,
+  },
+  {
+    name: 'check-studio-schemas',
+    description: "Compares each Studio Model's schema snapshot with fal's current schema and flags changed or deprecated Models",
+    cronExpression: '0 5 * * *',
+    taskFunction: 'checkStudioSchemas',
+    timeout: 300000,
+    maxRetries: 3,
   },
 ];
 

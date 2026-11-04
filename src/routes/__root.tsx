@@ -10,6 +10,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { AppToaster } from '@/components/layout/app-toaster';
 import { ImpersonationBar } from '@/components/layout/ImpersonationBar';
 import { ThemeProvider } from '@/components/layout/theme-provider';
+import { studioStatusQueryOptions } from '@/components/studio/studio-status';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { queryKeys } from '@/libs/query-keys';
 import { getRuntimeConfig, runtimeConfigScript } from '@/libs/runtime-config';
@@ -42,6 +43,8 @@ export const Route = createRootRouteWithContext<RootRouteContext>()({
         revalidateIfStale: true,
       }),
     ]);
+    // The nav shows the Studio entry and holds its event stream only while it is enabled.
+    if (session?.user?.id) await context.queryClient.ensureQueryData(studioStatusQueryOptions);
     return { initialTheme, session };
   },
   head: () => ({

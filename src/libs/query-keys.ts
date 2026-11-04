@@ -84,16 +84,6 @@ export const queryKeys = {
     locale: ['user', 'locale'] as const,
     sharex: ['user', 'sharex-config'] as const,
   },
-  ai: {
-    models: ['ai', 'models'] as const,
-    templates: ['templates'] as const,
-    activeTemplate: ['ai', 'template', 'active'] as const,
-    templateById: (id: string) => ['ai', 'template', id] as const,
-    presets: (modelId: string) => ['ai', 'presets', modelId] as const,
-    imageGenerationHistory: ['ai', 'history', 'generation'] as const,
-    imageEditHistory: ['ai', 'history', 'edit'] as const,
-    templateHistory: ['ai', 'history', 'template'] as const,
-  },
   adminTasks: {
     all: ['admin', 'tasks'] as const,
     detail: (id: string) => ['admin', 'tasks', id] as const,
@@ -104,24 +94,26 @@ export const queryKeys = {
     execution: (id: string | null) => ['admin', 'task-execution', id] as const,
     manager: ['tasks'] as const,
   },
-  adminTemplates: {
-    all: ['admin', 'templates'] as const,
-    detail: (id: string) => ['admin', 'templates', id] as const,
-    list: ['admin', 'templates', 'list'] as const,
-    edit: (id: string) => ['admin', 'templates', 'edit', id] as const,
-    formData: ['admin', 'templates', 'form-data'] as const,
+  studio: {
+    status: ['studio', 'status'] as const,
+    generation: (id: string) => ['studio', 'generation', id] as const,
+    catalog: ['studio', 'catalog'] as const,
+    budget: ['studio', 'budget'] as const,
+    unseen: ['studio', 'unseen'] as const,
+    generationsAll: ['studio', 'generations'] as const,
+    generations: (filters: Record<string, unknown>) => ['studio', 'generations', filters] as const,
   },
-  adminModels: {
-    editing: ['admin', 'models', 'editing'] as const,
-    editingById: (id: string) => ['admin', 'models', 'editing', id] as const,
-    editingFields: (id: string) => ['admin', 'models', 'editing', id, 'fields'] as const,
-    generation: ['admin', 'models', 'generation'] as const,
-    generationById: (id: string) => ['admin', 'models', 'generation', id] as const,
-  },
-  adminGlobalVars: {
-    all: ['admin', 'global-variables'] as const,
-    detail: (id: string) => ['admin', 'global-variables', id] as const,
-    withUsage: ['admin', 'global-variables', 'with-usage'] as const,
+  adminStudio: {
+    categories: ['admin', 'studio', 'categories'] as const,
+    models: ['admin', 'studio', 'models'] as const,
+    model: (id: string) => ['admin', 'studio', 'models', id] as const,
+    templates: ['admin', 'studio', 'templates'] as const,
+    template: (id: string) => ['admin', 'studio', 'templates', id] as const,
+    templateDraft: (generationId: string) => ['admin', 'studio', 'template-draft', generationId] as const,
+    catalog: (search: Record<string, unknown>) => ['admin', 'studio', 'catalog', search] as const,
+    overview: ['admin', 'studio', 'overview'] as const,
+    settings: ['admin', 'studio', 'settings'] as const,
+    userBudget: (userId: string) => ['admin', 'studio', 'user-budget', userId] as const,
   },
   adminVersion: {
     info: ['admin', 'version'] as const,
@@ -135,14 +127,6 @@ export const queryKeys = {
   adminRbac: {
     userGroups: (userId: string) => ['admin', 'rbac', 'users', userId, 'groups'] as const,
     currentUserIsAdmin: ['admin', 'rbac', 'current-user-is-admin'] as const,
-  },
-  aiModels: {
-    generation: ['generationModels'] as const,
-    editing: ['editingModels'] as const,
-  },
-  cachedImages: {
-    all: ['cached-images'] as const,
-    byPurpose: (purpose: string) => ['cached-images', purpose] as const,
   },
   platform: {
     file: (id: string) => ['platform', 'file', id] as const,

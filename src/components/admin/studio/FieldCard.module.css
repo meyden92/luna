@@ -1,0 +1,120 @@
+@layer components {
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background-color: var(--card);
+
+    &[data-mode="default"] {
+      padding-block: var(--space-2);
+      background-color: transparent;
+    }
+  }
+
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .name {
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .kind {
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+  }
+
+  .mode {
+    margin-left: auto;
+  }
+
+  .body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding-left: var(--space-8);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    gap: var(--space-3);
+  }
+
+  .setting {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .valueLabel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .legend {
+    margin-bottom: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: 500;
+  }
+
+  .inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    margin: 0;
+    padding: 0;
+    border: none;
+
+    & > .legend {
+      width: 100%;
+      margin-bottom: 0;
+    }
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    border: none;
+  }
+
+  .option {
+    display: grid;
+    grid-template-columns: minmax(6rem, auto) 1fr;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
+
+  .issues {
+    margin: 0;
+    padding-left: var(--space-5);
+    color: var(--destructive);
+    font-size: var(--text-sm);
+  }
+
+  .note {
+    margin: 0;
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+  }
+}

@@ -2,6 +2,7 @@ import type React from 'react';
 import Navigation from '@/components/landing/Navigation';
 import { AppNav } from '@/components/layout/AppNav';
 import { MainContent } from '@/components/layout/MainContent';
+import { StudioEvents } from '@/components/studio/StudioEvents';
 import { UploadSheetProvider } from '@/components/uploader/UploadSheetProvider';
 import { FoldersProvider } from '@/contexts/FoldersContext';
 
@@ -15,6 +16,8 @@ import { FoldersProvider } from '@/contexts/FoldersContext';
  * the upload controller, which has to sit above the nav so the Upload button,
  * a window-wide drop and a ⌘V paste all reach the same queue — and the folder
  * list with it, since the upload sheet needs it on any page, not just Files.
+ * The Studio's event stream lives here too, so its toasts and nav badge reach
+ * every signed-in page.
  */
 function AppShell({ signedIn, children }: { signedIn: boolean; children: React.ReactNode }) {
   if (!signedIn) {
@@ -30,6 +33,7 @@ function AppShell({ signedIn, children }: { signedIn: boolean; children: React.R
     <FoldersProvider>
       <UploadSheetProvider>
         <AppNav />
+        <StudioEvents />
         <MainContent>{children}</MainContent>
       </UploadSheetProvider>
     </FoldersProvider>

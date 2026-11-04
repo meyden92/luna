@@ -101,21 +101,6 @@
     color: var(--accent-foreground);
   }
 
-  /* The Studio's count of finished, unseen Generations. */
-  .badge {
-    display: inline-grid;
-    min-width: 1.125rem;
-    height: 1.125rem;
-    padding-inline: var(--space-1);
-    border-radius: var(--radius-full);
-    background-color: var(--primary);
-    color: var(--primary-foreground);
-    font-size: var(--text-xs);
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
-    place-items: center;
-  }
-
   .chevron {
     width: 13px;
     height: 13px;

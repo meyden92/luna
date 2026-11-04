@@ -1,5 +1,5 @@
 import { type InfiniteData, type QueryClient, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
+import { useLocation, useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { queryKeys } from '@/libs/query-keys';
@@ -56,15 +56,16 @@ function patchHistory(queryClient: QueryClient, id: string, next: GenerationView
 }
 
 /**
- * Holds the User's Studio event stream for every signed-in page while the
- * Studio is enabled: it keeps the history live, raises a toast when a
+ * Holds the User's Studio event stream for every signed-in page except the
+ * embed iframes, while the Studio is enabled: it keeps the history live, raises a toast when a
  * Generation finishes, and refreshes the nav badge's count.
  */
 export function StudioEvents() {
   const { data: status } = useQuery(studioStatusQueryOptions);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const enabled = status?.enabled ?? false;
+  const { pathname } = useLocation();
+  const enabled = (status?.enabled ?? false) && !pathname.startsWith('/embed/');
 
   useEffect(() => {
     if (!enabled) return;

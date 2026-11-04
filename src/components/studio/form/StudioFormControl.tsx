@@ -76,7 +76,7 @@ export function StudioFormControl({ item, value, onChange, id, disabled }: Studi
         <Segmented
           id={id}
           label={item.label}
-          items={options.map((option, index) => ({ value: String(index), label: option.label }))}
+          items={options.map((option, index) => ({ value: String(index), label: option.label, disabled }))}
           value={String(selectedIndex)}
           onValueChange={(index) => onChange(options[Number(index)]?.value)}
         />
@@ -114,6 +114,7 @@ export function StudioFormControl({ item, value, onChange, id, disabled }: Studi
           id={id}
           aria-label={item.label}
           multiple
+          disabled={disabled}
           variant="outline"
           value={options.flatMap((option, index) => (selected.some((entry) => sameValue(entry, option.value)) ? [String(index)] : []))}
           onValueChange={(indices: string[]) => onChange(indices.map((index) => options[Number(index)]?.value ?? null))}

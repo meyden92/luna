@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { unseenGenerationsQueryOptions } from '@/components/studio/queries';
 import { studioStatusQueryOptions } from '@/components/studio/studio-status';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -159,10 +160,10 @@ function NavLinks({ showAdmin }: { showAdmin: boolean }) {
           >
             {link.label}
             {'studio' in link && unseenCount > 0 && (
-              <span className={styles.badge}>
+              <Badge>
                 {unseenCount}
                 <span className="sr-only"> new</span>
-              </span>
+              </Badge>
             )}
           </Link>
         );

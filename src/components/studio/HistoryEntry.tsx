@@ -81,6 +81,16 @@ export function HistoryEntry({
     }
   };
 
+  // fal keeps uploads for a day; after that the Generation cannot run as it was, so its settings open instead.
+  const rerun = (reseed: boolean) => {
+    if (generation.uploadsExpireAt && Date.parse(generation.uploadsExpireAt) <= Date.now()) {
+      toast.info('A file uploaded for this Generation has expired. Attach it again.');
+      void applySettings();
+      return;
+    }
+    retry.mutate(reseed ? { id: generation.id, reseed } : { id: generation.id });
+  };
+
   return (
     <article
       className={styles.root}
@@ -144,7 +154,7 @@ export function HistoryEntry({
             variant="outline"
             size="sm"
             disabled={retry.isPending}
-            onClick={() => retry.mutate({ id: generation.id })}
+            onClick={() => rerun(false)}
           >
             <RefreshCw />
             Retry
@@ -155,7 +165,7 @@ export function HistoryEntry({
             variant="outline"
             size="sm"
             disabled={retry.isPending}
-            onClick={() => retry.mutate({ id: generation.id, reseed: true })}
+            onClick={() => rerun(true)}
           >
             <Repeat />
             Again
@@ -169,7 +179,7 @@ export function HistoryEntry({
           <SlidersHorizontal />
           Use settings
         </Button>
-        {isAdmin && generation.status === 'succeeded' && (
+        {isAdmin && generation.status === 'succeeded' && !generation.fromTemplate && (
           <Link
             to="/admin/studio/templates/new"
             search={{ from: generation.id }}

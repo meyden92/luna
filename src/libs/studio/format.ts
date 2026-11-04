@@ -27,9 +27,9 @@ function usdAmount(amount: number): string {
   return amount.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: Math.max(digits, 4), useGrouping: false });
 }
 
-/** "12.40 of 20 $" for this month's spend, or "No Budget limit". */
+/** This month's spend against the Budget: "12.40 of 20 $", or "12.40 $ spent, unlimited". */
 export function budgetLabel(budget: { limitUsd: number | null; spentUsd: number }): string {
-  if (budget.limitUsd === null) return 'No Budget limit';
+  if (budget.limitUsd === null) return `${formatUsd(budget.spentUsd)} spent, unlimited`;
   return `${usdAmount(budget.spentUsd)} of ${formatUsd(budget.limitUsd)}`;
 }
 

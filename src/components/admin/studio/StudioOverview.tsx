@@ -92,6 +92,7 @@ export function StudioOverview() {
         </CardContent>
       </Card>
 
+      <MonthTable rows={data.spend.byMonth} />
       <BudgetTable data={data} />
       <FailureRates rows={data.failureRates} />
       <RunningTable rows={data.running} />
@@ -157,6 +158,44 @@ function SpendTable({
   );
 }
 
+function MonthTable({ rows }: { rows: Overview['spend']['byMonth'] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Spend per month</CardTitle>
+        <CardDescription>This month and the five before it.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table aria-label="Spend per month">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Month</TableHead>
+              <TableHead className={styles.alignEnd}>Generations</TableHead>
+              <TableHead className={styles.alignEnd}>Spend</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((row) => (
+              <TableRow key={row.monthStart}>
+                <TableCell>
+                  {new Date(row.monthStart).toLocaleDateString(undefined, { month: 'long', year: 'numeric', timeZone: 'UTC' })}
+                </TableCell>
+                <TableCell className={styles.alignEnd}>{row.generations}</TableCell>
+                <TableCell className={styles.alignEnd}>{formatUsd(row.spentUsd)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+/** A 0 $ Budget is used up from the start. */
+function usedPercent(spentUsd: number, limitUsd: number): number {
+  return limitUsd === 0 ? 100 : Math.round((spentUsd / limitUsd) * 100);
+}
+
 function BudgetTable({ data }: { data: Overview }) {
   const defaultLabel = data.defaultMonthlyBudgetUsd === null ? 'unlimited' : formatUsd(data.defaultMonthlyBudgetUsd);
   return (
@@ -194,7 +233,7 @@ function BudgetTable({ data }: { data: Overview }) {
                   )}
                 </TableCell>
                 <TableCell className={styles.alignEnd}>
-                  {row.limitUsd ? `${Math.round((row.spentUsd / row.limitUsd) * 100)}%` : '—'}
+                  {row.limitUsd === null ? '—' : `${usedPercent(row.spentUsd, row.limitUsd)}%`}
                 </TableCell>
               </TableRow>
             ))}

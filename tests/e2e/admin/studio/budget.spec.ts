@@ -74,10 +74,10 @@ test('a small default Budget refuses the Generation that no longer fits, and an 
     );
     await adminPage.getByRole('button', { name: 'Save Budget' }).click();
     await expect(adminPage.getByText('Studio Budget saved')).toBeVisible();
-    await expect(adminPage.getByTestId('user-studio-spend')).toHaveText('No Budget limit');
+    await expect(adminPage.getByTestId('user-studio-spend')).toHaveText('0.03 $ spent, unlimited');
 
     await openStudio(userPage, model);
-    await expect(userPage.getByTestId('studio-budget')).toHaveText('No Budget limit');
+    await expect(userPage.getByTestId('studio-budget')).toHaveText('0.03 $ spent, unlimited');
     await generate(userPage, second);
     await expectDone(userPage, model, second);
   } finally {

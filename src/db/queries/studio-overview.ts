@@ -1,4 +1,5 @@
 import { and, count, desc, eq, gte, inArray, isNull, lt, sql } from 'drizzle-orm';
+import { ACTIVE_GENERATION_STATUSES } from '@/libs/studio/types';
 import type { AuditHandle } from '../audit';
 import { db } from '../client';
 import { user } from '../schema/auth';
@@ -36,6 +37,16 @@ export async function spendByModel(from: Date, to: Date, handle: AuditHandle = d
     .where(and(isSpending, gte(generation.createdAt, from), lt(generation.createdAt, to)))
     .groupBy(generation.modelId, generation.endpointId, studioModel.name)
     .orderBy(desc(spentUsd));
+}
+
+/** Spend per UTC calendar month ("2026-11") on Generations created in `[from, to)`; months without spend are left out. */
+export async function spendByMonth(from: Date, to: Date, handle: AuditHandle = db) {
+  const month = sql<string>`to_char(${generation.createdAt} at time zone 'UTC', 'YYYY-MM')`;
+  return handle
+    .select({ month, spentUsd, generations: count() })
+    .from(generation)
+    .where(and(isSpending, gte(generation.createdAt, from), lt(generation.createdAt, to)))
+    .groupBy(month);
 }
 
 /** Every User with an own Budget; null means unlimited. */
@@ -78,7 +89,7 @@ export async function runningGenerations(handle: AuditHandle = db) {
     })
     .from(generation)
     .innerJoin(user, eq(user.id, generation.userId))
-    .where(inArray(generation.status, ['queued', 'running']))
+    .where(inArray(generation.status, ACTIVE_GENERATION_STATUSES))
     .orderBy(generation.createdAt);
 }
 

@@ -15,11 +15,13 @@ import {
   listBudgetOverrides,
   runningGenerations,
   spendByModel,
+  spendByMonth,
   spendByUser,
 } from '@/db/queries/studio-overview';
 import { FalError } from '@/libs/fal/client';
 import { budgetLimit, budgetState, utcMonthStart } from '@/libs/studio/budget';
 import { assertStudioEnabled, falClient, hasFalBillingKey } from '@/libs/studio/config';
+import { roundUsd } from '@/libs/studio/cost';
 import { UserFacingError } from '@/libs/user-facing-error';
 import { studioSettingsSchema, userStudioBudgetSchema } from '@/schemas/studio-schema';
 import { userIdFromCtx as adminIdFromCtx } from '@/server/middleware/context-helpers';
@@ -96,8 +98,9 @@ async function falBalance(): Promise<{ usd: number; currency: string } | { error
 
 /**
  * Spend this month and over the last six calendar months (this one
- * included), per User and per Model; Budget usage this month; failure rates
- * and failed Generations over 30 days; what is running; fal's balance.
+ * included), per User and per Model, and the total of each of those months;
+ * Budget usage this month; failure rates and failed Generations over 30
+ * days; what is running; fal's balance.
  */
 export const getStudioOverview = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'admin' }))
@@ -109,18 +112,20 @@ export const getStudioOverview = createServerFn({ method: 'GET' })
     const nextMonth = utcMonthStart(now, 1);
     const failureSince = new Date(now.getTime() - FAILURE_WINDOW_MS);
 
-    const [monthByUser, monthByModel, sixByUser, sixByModel, overrides, settings, rates, running, failed, balance] = await Promise.all([
-      spendByUser(monthStart, nextMonth),
-      spendByModel(monthStart, nextMonth),
-      spendByUser(sixMonthsStart, nextMonth),
-      spendByModel(sixMonthsStart, nextMonth),
-      listBudgetOverrides(),
-      getStudioSettings(),
-      failureRates(failureSince),
-      runningGenerations(),
-      failedGenerations(failureSince, FAILED_LIST_LIMIT),
-      falBalance(),
-    ]);
+    const [monthByUser, monthByModel, sixByUser, sixByModel, sixByMonth, overrides, settings, rates, running, failed, balance] =
+      await Promise.all([
+        spendByUser(monthStart, nextMonth),
+        spendByModel(monthStart, nextMonth),
+        spendByUser(sixMonthsStart, nextMonth),
+        spendByModel(sixMonthsStart, nextMonth),
+        spendByMonth(sixMonthsStart, nextMonth),
+        listBudgetOverrides(),
+        getStudioSettings(),
+        failureRates(failureSince),
+        runningGenerations(),
+        failedGenerations(failureSince, FAILED_LIST_LIMIT),
+        falBalance(),
+      ]);
 
     // Everyone who spent this month, and everyone with an own Budget.
     const budgetUsers = new Map(
@@ -141,7 +146,14 @@ export const getStudioOverview = createServerFn({ method: 'GET' })
       })
       .sort((a, b) => b.spentUsd - a.spentUsd || a.userName.localeCompare(b.userName));
 
-    const total = (rows: { spentUsd: number }[]) => Math.round(rows.reduce((sum, row) => sum + row.spentUsd, 0) * 1e6) / 1e6;
+    const total = (rows: { spentUsd: number }[]) => roundUsd(rows.reduce((sum, row) => sum + row.spentUsd, 0));
+    // Newest first, with the months nothing was spent in.
+    const spentByMonth = new Map(sixByMonth.map((row) => [row.month, row]));
+    const byMonth = [0, -1, -2, -3, -4, -5].map((offset) => {
+      const start = utcMonthStart(now, offset).toISOString();
+      const row = spentByMonth.get(start.slice(0, 7));
+      return { monthStart: start, spentUsd: row?.spentUsd ?? 0, generations: row?.generations ?? 0 };
+    });
     return {
       monthStart: monthStart.toISOString(),
       sixMonthsStart: sixMonthsStart.toISOString(),
@@ -149,6 +161,7 @@ export const getStudioOverview = createServerFn({ method: 'GET' })
       spend: {
         month: { totalUsd: total(monthByUser), byUser: monthByUser, byModel: monthByModel },
         sixMonths: { totalUsd: total(sixByUser), byUser: sixByUser, byModel: sixByModel },
+        byMonth,
       },
       budgets,
       failureRates: rates,

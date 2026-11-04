@@ -12,9 +12,9 @@ describe('formatUsd', () => {
 });
 
 describe('budgetLabel', () => {
-  test('states the spend against the limit, or that there is none', () => {
+  test("states this month's spend against the Budget, also when it is unlimited", () => {
     expect(budgetLabel({ limitUsd: 20, spentUsd: 12.4 })).toBe('12.40 of 20 $');
-    expect(budgetLabel({ limitUsd: null, spentUsd: 3 })).toBe('No Budget limit');
+    expect(budgetLabel({ limitUsd: null, spentUsd: 12.4 })).toBe('12.40 $ spent, unlimited');
   });
 });
 

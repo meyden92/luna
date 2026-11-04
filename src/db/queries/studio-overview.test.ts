@@ -69,6 +69,14 @@ describe.skipIf(!hasDatabase)('the admin overview', () => {
         requestInput: { prompt: SECRET },
         estimatedCostUsd: 0.1,
       },
+      {
+        ...base,
+        id: id('long-ago'),
+        status: 'succeeded',
+        formValues: {},
+        estimatedCostUsd: 0.5,
+        createdAt: new Date('1999-03-31T23:30:00Z'),
+      },
     ]);
   });
 
@@ -83,6 +91,11 @@ describe.skipIf(!hasDatabase)('the admin overview', () => {
     expect(users.find((row) => row.userId === userId)).toMatchObject({ spentUsd: 1.3345, generations: 2 });
     const models = await m.spendByModel(from, to);
     expect(models.find((row) => row.modelId === id('model'))).toMatchObject({ modelName: `Model ${runId}`, spentUsd: 1.3345 });
+  });
+
+  test('totals spend per UTC calendar month', async () => {
+    const months = await m.spendByMonth(new Date('1999-01-01T00:00:00Z'), new Date('1999-07-01T00:00:00Z'));
+    expect(months).toEqual([{ month: '1999-03', spentUsd: 0.5, generations: 1 }]);
   });
 
   test('rates failures among finished Generations', async () => {

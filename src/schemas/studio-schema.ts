@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { CATEGORY_ICONS } from '@/libs/studio/category-icons';
-import type { FieldConfig, StudioPricing } from '@/libs/studio/types';
+import { type FieldConfig, MEDIA_KINDS, type MediaKind, type StudioPricing, type VariableConfig } from '@/libs/studio/types';
 
 export const studioCategorySchema = z.object({
   name: z.string().trim().min(1).max(60),
@@ -20,7 +20,7 @@ export const fieldConfigSchema = z.object({
   step: z.number().optional(),
   options: z.array(z.object({ value: z.string(), label: z.string().max(120) })).optional(),
   display: z.enum(['slider', 'number', 'chips', 'select', 'text', 'textarea', 'switch', 'file']).optional(),
-  accept: z.array(z.enum(['image', 'video', 'audio', 'model3d'])).optional(),
+  accept: z.array(z.enum(MEDIA_KINDS as [MediaKind, ...MediaKind[]])).optional(),
   group: z.string().max(60).optional(),
   order: z.number().int(),
   visibleIf: visibleIfSchema.optional(),
@@ -43,3 +43,55 @@ export const updateStudioModelSchema = z.object({
 });
 
 export type UpdateStudioModelInput = z.infer<typeof updateStudioModelSchema>;
+
+export const variableConfigSchema = z.object({
+  name: z.string().min(1).max(60),
+  kind: z.enum(['text', 'choice', 'multi', 'number', 'switch', 'file']),
+  label: z.string().max(120).optional(),
+  help: z.string().max(500).optional(),
+  required: z.boolean(),
+  default: z.json().optional(),
+  group: z.string().max(60).optional(),
+  order: z.number().int(),
+  visibleIf: visibleIfSchema.optional(),
+  text: z
+    .object({ multiline: z.boolean(), placeholder: z.string().max(200).optional(), maxLength: z.number().int().optional() })
+    .optional(),
+  options: z
+    .array(z.object({ label: z.string().max(120), value: z.string().max(2000) }))
+    .max(50)
+    .optional(),
+  number: z.object({ min: z.number(), max: z.number(), step: z.number(), display: z.enum(['slider', 'number']) }).optional(),
+  switch: z.object({ on: z.string().max(2000), off: z.string().max(2000) }).optional(),
+  file: z
+    .object({
+      field: z.string().min(1),
+      position: z.number().int().optional(),
+      accept: z.array(z.enum(MEDIA_KINDS as [MediaKind, ...MediaKind[]])),
+    })
+    .optional(),
+}) satisfies z.ZodType<VariableConfig>;
+
+/** A Template preview image: one it already has, a new upload (a FormData part), or one of the admin's own Outputs. */
+export const templatePreviewSchema = z.discriminatedUnion('source', [
+  z.object({ source: z.literal('key'), key: z.string().min(1) }),
+  z.object({ source: z.literal('upload'), key: z.string().min(1) }),
+  z.object({ source: z.literal('output'), outputId: z.string().min(1) }),
+]);
+
+export type TemplatePreview = z.infer<typeof templatePreviewSchema>;
+
+/** The Template editor's save; without `id` it creates the Template. */
+export const saveStudioTemplateSchema = z.object({
+  id: z.string().min(1).optional(),
+  modelId: z.string().min(1),
+  categoryId: z.string().min(1),
+  name: z.string().trim().min(1).max(120),
+  description: z.string().max(1000).nullable(),
+  isActive: z.boolean(),
+  fields: z.array(fieldConfigSchema),
+  variables: z.array(variableConfigSchema).max(50),
+  previews: z.array(templatePreviewSchema).max(6),
+});
+
+export type SaveStudioTemplateInput = z.infer<typeof saveStudioTemplateSchema>;

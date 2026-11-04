@@ -10,6 +10,7 @@ declare const styles: {
   readonly "legend": string;
   readonly "mode": string;
   readonly "name": string;
+  readonly "note": string;
   readonly "option": string;
   readonly "options": string;
   readonly "setting": string;

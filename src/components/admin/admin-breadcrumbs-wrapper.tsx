@@ -15,6 +15,7 @@ const ADMIN_BREADCRUMB_LINKS = {
   '/admin/audit': '/admin/audit',
   '/admin/studio/categories': '/admin/studio/categories',
   '/admin/studio/models': '/admin/studio/models',
+  '/admin/studio/templates': '/admin/studio/templates',
   '/admin/tasks': '/admin/tasks',
   '/admin/tasks/deleted-files': '/admin/tasks/deleted-files',
   '/admin/tasks/logs': '/admin/tasks/logs',

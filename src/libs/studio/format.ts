@@ -6,6 +6,12 @@ export function formatPrice(price: { unitPrice: number; unit: string; currency: 
   return `${amount} / ${price.unit}`;
 }
 
+/** "num_images" -> "Num images": the label of a Field or Variable the admin left unlabelled. */
+export function humanize(name: string): string {
+  const words = name.replace(/_/g, ' ').trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 /** "1 Model", "2 Models". */
 export function countOf(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? '' : 's'}`;

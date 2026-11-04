@@ -1,0 +1,73 @@
+@layer components {
+  /* The highlighted copy and the textarea share one grid cell, so both grow with the text. */
+  .editor {
+    display: grid;
+    border: 1px solid var(--input);
+    border-radius: var(--radius-lg);
+    background-color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: var(--leading-sm);
+
+    &:focus-within {
+      border-color: var(--ring);
+    }
+  }
+
+  .highlight,
+  .input {
+    grid-area: 1 / 1;
+    margin: 0;
+    padding: var(--space-3);
+    border: 0;
+    font: inherit;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .highlight {
+    color: var(--foreground);
+    pointer-events: none;
+  }
+
+  /* Transparent text over the highlight: only the caret and selection show. */
+  .input {
+    min-height: var(--space-16);
+    field-sizing: content;
+    resize: none;
+    background: transparent;
+    color: transparent;
+    caret-color: var(--foreground);
+    outline: none;
+  }
+
+  .token {
+    border-radius: var(--radius-md);
+    background-color: color-mix(in oklch, var(--primary) 25%, transparent);
+    color: inherit;
+  }
+
+  .suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .suggestion {
+    padding: 0 var(--space-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--card);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    cursor: pointer;
+
+    &[data-first],
+    &:hover {
+      border-color: var(--ring);
+    }
+  }
+}

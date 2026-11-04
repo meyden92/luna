@@ -1,4 +1,4 @@
-import { Activity, Gauge, Globe, MapIcon, Shapes, ShieldAlert, Sparkles, User2, Zap } from 'lucide-react';
+import { Activity, Gauge, Globe, LayoutTemplate, MapIcon, Shapes, ShieldAlert, Sparkles, User2, Zap } from 'lucide-react';
 
 /** `studio` entries show only while the Studio is enabled. */
 
@@ -57,6 +57,13 @@ export const adminDestinations = [
     to: '/admin/studio/models',
     Icon: Sparkles,
     description: 'Add fal Models and choose which inputs Users see',
+    studio: true,
+  },
+  {
+    name: 'Studio templates',
+    to: '/admin/studio/templates',
+    Icon: LayoutTemplate,
+    description: 'Write prompts with Variables Users fill in',
     studio: true,
   },
 ] as const;

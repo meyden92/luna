@@ -13,6 +13,7 @@ import { substituteVariables } from './variables';
  * - `shown` Fields send the User's value, else the configured default; an
  *   empty optional one is omitted.
  * - Fields hidden by `visibleIf` are neither validated nor sent.
+ * - A Template's Variables are applied first (`substituteVariables`).
  *
  * File inputs stay `FileRef`s here; the pipeline uploads them and swaps in the
  * fal URLs. Pure, so the client could run it too.
@@ -71,7 +72,8 @@ export function buildRequestInput(options: {
   variables?: VariableConfig[];
 }): RequestInput {
   const { schema, values } = options;
-  const fields = substituteVariables(options.fields, options.variables ?? [], values);
+  const substituted = substituteVariables({ fields: options.fields, variables: options.variables ?? [], values, schema });
+  const { fields, variableValues } = substituted;
   const byName = new Map(fields.map((field) => [field.name, field]));
   const properties = schema.properties ?? {};
   const required = new Set(schema.required ?? []);
@@ -92,8 +94,7 @@ export function buildRequestInput(options: {
       const { field: dependency, in: allowed } = field.visibleIf;
       const target = byName.get(dependency);
       let current: unknown;
-      if (!target)
-        current = values[dependency]; // a Template Variable
+      if (!target) current = Object.hasOwn(variableValues, dependency) ? variableValues[dependency] : values[dependency];
       else if (!seen.has(field.name) && isVisible(target, new Set(seen).add(field.name))) current = effectiveValue(target);
       visible = allowed.some((candidate) => sameValue(candidate, current));
     }
@@ -102,7 +103,7 @@ export function buildRequestInput(options: {
   };
 
   const input: RequestInput = {};
-  const issues: RequestIssue[] = [];
+  const issues: RequestIssue[] = [...substituted.issues];
 
   for (const field of fields) {
     const label = field.label ?? field.name;

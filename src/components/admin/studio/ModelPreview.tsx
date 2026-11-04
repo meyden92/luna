@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { FlaskConical } from 'lucide-react';
+import { FlaskConical, ImagePlus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { StudioForm } from '@/components/studio/form/StudioForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -11,7 +11,7 @@ import { queryKeys } from '@/libs/query-keys';
 import { estimateCost } from '@/libs/studio/cost';
 import { buildStudioForm, initialFormValues, type StudioFormValues, studioFormData } from '@/libs/studio/form';
 import { sameValue } from '@/libs/studio/request';
-import type { FieldConfig, JsonSchema, StudioPricing } from '@/libs/studio/types';
+import type { FieldConfig, JsonSchema, StudioPricing, VariableConfig } from '@/libs/studio/types';
 import type { OutputView } from '@/libs/studio/views';
 import { testStudioModel } from '@/server/fns/admin/studio';
 import { getGeneration } from '@/server/fns/studio';
@@ -20,25 +20,31 @@ import styles from './ModelPreview.module.css';
 const POLL_MS = 1500;
 
 /**
- * The Model editor's right side: the form Users will see for the unsaved
- * Fields, and *Test*, which runs it as a Generation of the admin's and shows
- * the Output here.
+ * The Model and Template editors' right side: the form Users will see for
+ * the unsaved Fields (and a Template's Variables), and *Test*, which runs it
+ * as a Generation of the admin's and shows the Output here.
  */
 export function ModelPreview({
   modelId,
   fields,
+  variables,
   schema,
   pricing,
   disabledReason,
+  onUseOutput,
 }: {
   modelId: string;
   fields: FieldConfig[];
+  /** Given by the Template editor: the test runs as a Template. */
+  variables?: VariableConfig[];
   schema: JsonSchema;
   pricing: StudioPricing | null;
   /** Why the current Fields cannot be tested, if they cannot. */
   disabledReason: string | null;
+  /** Offers *Use as preview* on image Outputs. */
+  onUseOutput?: (output: OutputView) => void;
 }) {
-  const form = useMemo(() => buildStudioForm({ fields, schema }), [fields, schema]);
+  const form = useMemo(() => buildStudioForm({ fields, schema, variables }), [fields, schema, variables]);
   const initial = useMemo(() => initialFormValues(form), [form]);
   // Only what the admin changed, so editing a default in a card shows here at once.
   const [changed, setChanged] = useState<StudioFormValues>({});
@@ -82,7 +88,7 @@ export function ModelPreview({
           <Button
             disabled={disabledReason !== null || test.isPending}
             title={disabledReason ?? undefined}
-            onClick={() => test.mutate(studioFormData({ modelId, fields }, values))}
+            onClick={() => test.mutate(studioFormData({ modelId, fields, ...(variables ? { variables } : {}) }, values))}
           >
             <FlaskConical />
             Test
@@ -106,10 +112,22 @@ export function ModelPreview({
             )}
             <div className={styles.outputs}>
               {result.outputs.map((output) => (
-                <OutputPreview
+                <div
                   key={output.id}
-                  output={output}
-                />
+                  className="stack space-1"
+                >
+                  <OutputPreview output={output} />
+                  {onUseOutput && output.url && output.mediaKind === 'image' && (
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      onClick={() => onUseOutput(output)}
+                    >
+                      <ImagePlus />
+                      Use as preview
+                    </Button>
+                  )}
+                </div>
               ))}
             </div>
           </div>

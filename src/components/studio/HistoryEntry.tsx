@@ -1,10 +1,10 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { formatDistanceToNow } from 'date-fns';
-import { Ban, Download, FolderInput, RefreshCw, Repeat, SlidersHorizontal, Trash2, Wand2 } from 'lucide-react';
+import { Ban, Download, FolderInput, LayoutTemplate, RefreshCw, Repeat, SlidersHorizontal, Trash2, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +22,7 @@ import { buildStudioForm, initialFormValues, type StudioFormValues } from '@/lib
 import { expiryLabel, formatUsd } from '@/libs/studio/format';
 import { attachOutput, continueTargets } from '@/libs/studio/history-actions';
 import type { GenerationView, OutputView } from '@/libs/studio/views';
+import { checkCurrentUserIsAdmin } from '@/server/fns/rbac';
 import {
   cancelGeneration,
   deleteGeneration,
@@ -54,6 +55,10 @@ export function HistoryEntry({
   onOpen: OpenEntry;
 }) {
   const active = generation.status === 'queued' || generation.status === 'running';
+  // The admin layout's own check: super admins and RBAC admins alike.
+  const isAdmin =
+    useQuery({ queryKey: queryKeys.adminRbac.currentUserIsAdmin, queryFn: () => checkCurrentUserIsAdmin(), staleTime: 30_000 }).data ===
+    true;
   const confirm = useConfirmation<null>();
   const resubmitted = { invalidates: [queryKeys.studio.generationsAll, queryKeys.studio.budget] };
   const cancel = useAppMutation(cancelGeneration);
@@ -164,6 +169,16 @@ export function HistoryEntry({
           <SlidersHorizontal />
           Use settings
         </Button>
+        {isAdmin && generation.status === 'succeeded' && (
+          <Link
+            to="/admin/studio/templates/new"
+            search={{ from: generation.id }}
+            className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+          >
+            <LayoutTemplate />
+            Save as Template
+          </Link>
+        )}
         {!active && (
           <Button
             variant="ghost"

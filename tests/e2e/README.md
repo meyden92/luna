@@ -102,7 +102,7 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
 | `gallery` | The seeded dataset (`GalleryDataset`) |
 | `corpus` | The fixture files: `files`, and the lookups `file`, `byKind`, `edgeCase`, `uploadable` |
 | `bucket` | `{ client, name }`: an S3 client on the stack's RustFS |
-| `db` | Drizzle on the stack's Postgres. Reads, backdating `file.created_at`, seeding/backdating form shares (`utils/form-shares.ts`), seeding submitted Generations (`studio/smoke.spec.ts`), and seeding Studio Categories and Models (`utils/studio.ts`) |
+| `db` | Drizzle on the stack's Postgres. Reads, backdating `file.created_at`, seeding/backdating form shares (`utils/form-shares.ts`), seeding Generations (`studio/smoke.spec.ts`, `admin/studio/templates.spec.ts`), and seeding Studio Categories and Models (`utils/studio.ts`) |
 | `stack` | The `E2E_*` values (base URL, CDN URL, admin credentials, …) |
 
 - Specs that change data use the worker user and only assert on items they created,

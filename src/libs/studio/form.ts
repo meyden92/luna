@@ -1,10 +1,11 @@
 import type { JsonValue } from '@/db/schema/json';
+import { humanize } from './format';
 import { fieldKind, propertyShape } from './model-config';
 import { isEmpty, sameValue } from './request';
-import type { FieldConfig, FileRef, JsonSchema, MediaKind, VisibleIf } from './types';
+import type { FieldConfig, FileRef, JsonSchema, MediaKind, VariableConfig, VisibleIf } from './types';
 
 /**
- * The form Users fill in, derived from a Model's Field configs: what the
+ * The form Users fill in, derived from a Model's or Template's configs: what the
  * Studio, the Model editor's preview and the Template editor render through
  * `components/studio/form`. Pure.
  */
@@ -50,10 +51,19 @@ export type StudioFormValues = Record<string, StudioFormValue>;
 
 const CHIPS_MAX_OPTIONS = 5;
 
-export function buildStudioForm({ fields, schema }: { fields: FieldConfig[]; schema: JsonSchema }): StudioFormSpec {
+/** A Template's Variables come first, in their order, then the Fields it releases to Users. */
+export function buildStudioForm({
+  fields,
+  schema,
+  variables = [],
+}: {
+  fields: FieldConfig[];
+  schema: JsonSchema;
+  variables?: VariableConfig[];
+}): StudioFormSpec {
   const properties = schema.properties ?? {};
   const required = new Set(schema.required ?? []);
-  const items: FormItem[] = [];
+  const items: FormItem[] = [...variables].sort((a, b) => a.order - b.order).map(variableItem);
   const context: Record<string, JsonValue> = {};
 
   for (const field of [...fields].sort((a, b) => a.order - b.order)) {
@@ -122,9 +132,46 @@ function fieldItem(field: FieldConfig, property: JsonSchema, required: boolean):
   return item;
 }
 
-function humanize(name: string): string {
-  const words = name.replace(/_/g, ' ').trim();
-  return words.charAt(0).toUpperCase() + words.slice(1);
+function variableItem(variable: VariableConfig): FormItem {
+  const item: FormItem = {
+    name: variable.name,
+    control: 'text',
+    label: variable.label || humanize(variable.name),
+    help: variable.help || undefined,
+    required: variable.required,
+    group: variable.group || undefined,
+    order: variable.order,
+    visibleIf: variable.visibleIf,
+    ...(variable.default === undefined ? {} : { defaultValue: variable.default }),
+  };
+  switch (variable.kind) {
+    case 'choice':
+    case 'multi': {
+      item.options = (variable.options ?? []).map((option) => ({ value: option.value, label: option.label || option.value }));
+      item.control = variable.kind === 'multi' ? 'multi' : item.options.length > CHIPS_MAX_OPTIONS ? 'select' : 'chips';
+      break;
+    }
+    case 'number':
+      item.control = variable.number?.display ?? 'number';
+      item.min = variable.number?.min;
+      item.max = variable.number?.max;
+      item.step = variable.number?.step;
+      break;
+    case 'switch':
+      item.control = 'switch';
+      break;
+    case 'file':
+      item.control = 'file';
+      item.multiple = false;
+      item.maxItems = 1;
+      item.accept = variable.file?.accept;
+      break;
+    default:
+      item.control = variable.text?.multiline ? 'textarea' : 'text';
+      item.placeholder = variable.text?.placeholder;
+      item.maxLength = variable.text?.maxLength;
+  }
+  return item;
 }
 
 /** The values a fresh form starts with: each item's default, and an empty list for multi-file inputs. */

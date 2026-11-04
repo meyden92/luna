@@ -29,9 +29,10 @@ import {
 import { resolveOpenapiSchemas } from '@/libs/studio/openapi';
 import { submitGeneration } from '@/libs/studio/pipeline';
 import { type RequestIssue, RequestValidationError } from '@/libs/studio/request';
-import type { FieldConfig } from '@/libs/studio/types';
+import { validateTemplateConfig } from '@/libs/studio/template-config';
+import type { FieldConfig, VariableConfig } from '@/libs/studio/types';
 import { UserFacingError } from '@/libs/user-facing-error';
-import { fieldConfigSchema, studioCategorySchema, updateStudioModelSchema } from '@/schemas/studio-schema';
+import { fieldConfigSchema, studioCategorySchema, updateStudioModelSchema, variableConfigSchema } from '@/schemas/studio-schema';
 import { userIdFromCtx as adminIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
 
@@ -245,13 +246,16 @@ export const deleteStudioModel = createServerFn({ method: 'POST' })
 const testPayloadSchema = z.object({
   modelId: z.string().min(1),
   fields: z.array(fieldConfigSchema),
+  /** Set by the Template editor, even when empty: the draft is a Template's. */
+  variables: z.array(variableConfigSchema).max(50).optional(),
   values: z.record(z.string(), z.json()),
 });
 
 /**
- * Runs the Model editor's preview as a real Generation of the admin's, with
- * the editor's unsaved Fields: the normal pipeline and Budget, also for an
- * inactive Model. FormData as written by `studioFormData`.
+ * Runs the Model or Template editor's preview as a real Generation of the
+ * admin's, with the editor's unsaved Fields and Variables: the normal
+ * pipeline and Budget, also for an inactive Model. FormData as written by
+ * `studioFormData`.
  */
 export const testStudioModel = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'admin' }))
@@ -261,10 +265,12 @@ export const testStudioModel = createServerFn({ method: 'POST' })
     const model = await getModelRow(data.modelId);
     if (!model) throw new UserFacingError('Model not found.');
     const fields = data.fields as FieldConfig[];
-    assertValidConfig(validateModelConfig(fields, model.schemaSnapshot.input));
+    const variables = data.variables as VariableConfig[] | undefined;
+    const input = model.schemaSnapshot.input;
+    assertValidConfig(variables ? validateTemplateConfig({ fields, variables, input }) : validateModelConfig(fields, input));
     return submitGeneration({
       userId: adminIdFromCtx(context),
-      target: { draft: { modelId: model.id, fields } },
+      target: { draft: { modelId: model.id, fields, variables } },
       values: data.values as Record<string, JsonValue>,
       uploads: data.uploads,
     });

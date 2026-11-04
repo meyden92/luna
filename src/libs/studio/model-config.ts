@@ -163,8 +163,15 @@ export function enumerableValues(field: FieldConfig, property: JsonSchema): Json
 /**
  * Every reason a Model's Field configs and pricing cannot be saved, phrased
  * for the card of the Field they name (`pricing` for the pricing panel).
+ * `dependencies` are the Template Variables a Field's `visibleIf` may name
+ * besides Fields, with their values when there are finitely many.
  */
-export function validateModelConfig(fields: FieldConfig[], input: JsonSchema, pricing?: StudioPricing | null): RequestIssue[] {
+export function validateModelConfig(
+  fields: FieldConfig[],
+  input: JsonSchema,
+  pricing?: StudioPricing | null,
+  dependencies: Record<string, JsonValue[] | null> = {},
+): RequestIssue[] {
   const properties = input.properties ?? {};
   const byName = new Map<string, FieldConfig>();
   const issues: RequestIssue[] = [];
@@ -235,11 +242,15 @@ export function validateModelConfig(fields: FieldConfig[], input: JsonSchema, pr
       const { field: dependency, in: allowed } = field.visibleIf;
       const target = byName.get(dependency);
       const targetProperty = properties[dependency];
+      const isVariable = Object.hasOwn(dependencies, dependency);
       if (dependency === field.name) add(field.name, 'A Field cannot depend on itself.');
-      else if (!target || !targetProperty) add(field.name, `Shown only when references ${dependency}, which is not a Field.`);
+      else if (!isVariable && (!target || !targetProperty))
+        add(field.name, `Shown only when references ${dependency}, which is not a Field.`);
       else if (allowed.length === 0) add(field.name, 'Shown only when needs at least one value.');
       else {
-        const possible = enumerableValues(target, targetProperty);
+        const possible = isVariable
+          ? (dependencies[dependency] ?? null)
+          : enumerableValues(target as FieldConfig, targetProperty as JsonSchema);
         for (const value of allowed) {
           if (possible && !possible.some((candidate) => sameValue(candidate, value))) {
             add(field.name, `Shown only when lists ${String(value)}, which ${dependency} cannot be.`);

@@ -199,6 +199,33 @@ export async function countStudioTemplatesOfModel(modelId: string, handle: Audit
   return row?.count ?? 0;
 }
 
+/** Every Template, by Category order then its own, with its Category's and Model's names. */
+export async function listStudioTemplates(handle: AuditHandle = db) {
+  const rows = await handle
+    .select({ template: studioTemplate, categoryName: studioCategory.name, modelName: studioModel.name })
+    .from(studioTemplate)
+    .innerJoin(studioCategory, eq(studioCategory.id, studioTemplate.categoryId))
+    .innerJoin(studioModel, eq(studioModel.id, studioTemplate.modelId))
+    .orderBy(asc(studioCategory.sortOrder), asc(studioTemplate.sortOrder), asc(studioTemplate.createdAt));
+  return rows.map(({ template, categoryName, modelName }) => ({ ...template, categoryName, modelName }));
+}
+
+/** Any Template, also an inactive one, with its Model. */
+export async function getStudioTemplate(id: string, handle: AuditHandle = db) {
+  const [row] = await handle
+    .select({ template: studioTemplate, model: studioModel })
+    .from(studioTemplate)
+    .innerJoin(studioModel, eq(studioModel.id, studioTemplate.modelId))
+    .where(eq(studioTemplate.id, id));
+  return row;
+}
+
+/** How many Templates a Category holds: a new one is sorted after them. */
+export async function countStudioTemplates(categoryId: string, handle: AuditHandle = db) {
+  const [row] = await handle.select({ count: count() }).from(studioTemplate).where(eq(studioTemplate.categoryId, categoryId));
+  return row?.count ?? 0;
+}
+
 /** An active Model, as a submit target. */
 export async function getActiveStudioModel(id: string, handle: AuditHandle = db) {
   const [row] = await handle

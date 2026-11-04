@@ -12,7 +12,7 @@ import type { JsonValue } from '@/db/schema/json';
 import { buildStudioForm } from '@/libs/studio/form';
 import { DISPLAYS, enumerableValues, fieldKind, propertyShape, suggestAccept } from '@/libs/studio/model-config';
 import { sameValue } from '@/libs/studio/request';
-import { type FieldConfig, type FieldMode, type JsonSchema, MEDIA_KINDS, type MediaKind } from '@/libs/studio/types';
+import { type FieldConfig, type FieldMode, type JsonSchema, MEDIA_KINDS, type MediaKind, type VisibleIf } from '@/libs/studio/types';
 import styles from './FieldCard.module.css';
 
 const MODES: { value: FieldMode; label: string }[] = [
@@ -44,6 +44,32 @@ export interface FieldCardProps {
   onChange: (field: FieldConfig) => void;
   /** The drag handle from `SortableList`. */
   handle: ReactNode;
+  /** A Template's Variables, which `visibleIf` may name too. */
+  variableCandidates?: VisibleIfCandidate[];
+  /** Replaces the value editor, e.g. the Template editor's text editor. */
+  valueEditor?: ReactNode;
+  /** Shown under the card's head. */
+  note?: string;
+}
+
+/** A Field or Variable that `visibleIf` can depend on, with the values it can take. */
+export interface VisibleIfCandidate {
+  name: string;
+  values: { value: JsonValue; label: string }[];
+}
+
+/** The Fields with finitely many values, as `visibleIf` candidates for any Field or Variable but `exclude`. */
+export function fieldCandidates(fields: FieldConfig[], schema: JsonSchema, exclude?: string): VisibleIfCandidate[] {
+  const properties = schema.properties ?? {};
+  return fields.flatMap((field) => {
+    const property = properties[field.name];
+    const values = field.name === exclude || !property ? null : enumerableValues(field, property);
+    if (!values) return [];
+    const labelOf = (value: JsonValue) =>
+      field.options?.find((option) => option.value === value)?.label ||
+      (typeof value === 'boolean' ? (value ? 'On' : 'Off') : String(value));
+    return [{ name: field.name, values: values.map((value) => ({ value, label: labelOf(value) })) }];
+  });
 }
 
 /**
@@ -51,7 +77,7 @@ export interface FieldCardProps {
  * range, options, display, accepted media, group and conditional visibility.
  * A Field left at fal's default collapses to one line.
  */
-export function FieldCard({ field, schema, fields, issues, onChange, handle }: FieldCardProps) {
+export function FieldCard({ field, schema, fields, issues, onChange, handle, variableCandidates = [], valueEditor, note }: FieldCardProps) {
   const id = useId();
   const property = schema.properties?.[field.name] ?? {};
   const shape = propertyShape(field.name, property);
@@ -88,6 +114,8 @@ export function FieldCard({ field, schema, fields, issues, onChange, handle }: F
           }))}
         />
       </div>
+
+      {note && <p className={styles.note}>{note}</p>}
 
       {field.mode !== 'default' && (
         <div className={styles.body}>
@@ -133,7 +161,8 @@ export function FieldCard({ field, schema, fields, issues, onChange, handle }: F
             </fieldset>
           )}
 
-          {!isFile && (
+          {!isFile && valueEditor}
+          {!isFile && !valueEditor && (
             <ValueSetting
               field={field}
               property={property}
@@ -210,9 +239,8 @@ export function FieldCard({ field, schema, fields, issues, onChange, handle }: F
           )}
 
           <VisibleIfSetting
-            field={field}
-            fields={fields}
-            schema={schema}
+            value={field.visibleIf}
+            candidates={[...variableCandidates, ...fieldCandidates(fields, schema, field.name)]}
             onChange={(visibleIf) => set({ visibleIf })}
           />
         </div>
@@ -234,7 +262,7 @@ function withoutUndefined(field: FieldConfig): FieldConfig {
   return Object.fromEntries(Object.entries(field).filter(([, value]) => value !== undefined)) as unknown as FieldConfig;
 }
 
-function TextSetting({
+export function TextSetting({
   label,
   value,
   placeholder,
@@ -272,7 +300,7 @@ function TextSetting({
   );
 }
 
-function NumberSetting({
+export function NumberSetting({
   label,
   value,
   placeholder,
@@ -299,7 +327,7 @@ function NumberSetting({
   );
 }
 
-function CheckboxSetting({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
+export function CheckboxSetting({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
   return (
     <label className={styles.checkbox}>
       <Checkbox
@@ -460,41 +488,29 @@ function OptionsSetting({
   );
 }
 
-/** "Shown only when": another Field with finitely many values, and which of them. */
-function VisibleIfSetting({
-  field,
-  fields,
-  schema,
+/** "Shown only when": another Field or Variable with finitely many values, and which of them. */
+export function VisibleIfSetting({
+  value: visibleIf,
+  candidates,
   onChange,
 }: {
-  field: FieldConfig;
-  fields: FieldConfig[];
-  schema: JsonSchema;
-  onChange: (visibleIf: FieldConfig['visibleIf']) => void;
+  value: VisibleIf | undefined;
+  candidates: VisibleIfCandidate[];
+  onChange: (visibleIf: VisibleIf | undefined) => void;
 }) {
   const id = useId();
-  const properties = schema.properties ?? {};
-  const candidates = fields.filter((other) => {
-    const property = properties[other.name];
-    return other.name !== field.name && property !== undefined && enumerableValues(other, property) !== null;
-  });
-  const target = candidates.find((candidate) => candidate.name === field.visibleIf?.field);
-  const values = target ? (enumerableValues(target, properties[target.name] ?? {}) ?? []) : [];
-  const labelOf = (value: JsonValue) =>
-    target?.options?.find((option) => option.value === value)?.label ||
-    (typeof value === 'boolean' ? (value ? 'On' : 'Off') : String(value));
+  const target = candidates.find((candidate) => candidate.name === visibleIf?.field);
 
   return (
     <div className={styles.setting}>
       <Label htmlFor={id}>Shown only when</Label>
       <Select
         items={[{ value: null, label: 'Always' }, ...candidates.map((candidate) => ({ value: candidate.name, label: candidate.name }))]}
-        value={field.visibleIf?.field ?? null}
+        value={visibleIf?.field ?? null}
         onValueChange={(name) => {
           if (!name) return onChange(undefined);
-          const next = candidates.find((candidate) => candidate.name === name);
-          const first = next ? enumerableValues(next, properties[name] ?? {})?.[0] : undefined;
-          onChange({ field: name, in: first === undefined ? [] : [first] });
+          const first = candidates.find((candidate) => candidate.name === name)?.values[0];
+          onChange({ field: name, in: first === undefined ? [] : [first.value] });
         }}
       >
         <SelectTrigger id={id}>
@@ -512,17 +528,16 @@ function VisibleIfSetting({
           ))}
         </SelectContent>
       </Select>
-      {target && field.visibleIf && (
+      {target && visibleIf && (
         <fieldset className={styles.inline}>
           <legend className={styles.legend}>is one of</legend>
-          {values.map((value) => (
+          {target.values.map(({ value, label }) => (
             <CheckboxSetting
               key={String(value)}
-              label={labelOf(value)}
-              checked={field.visibleIf?.in.some((candidate) => sameValue(candidate, value)) ?? false}
+              label={label}
+              checked={visibleIf.in.some((candidate) => sameValue(candidate, value))}
               onChange={(checked) => {
-                const current = field.visibleIf?.in ?? [];
-                const next = checked ? [...current, value] : current.filter((candidate) => !sameValue(candidate, value));
+                const next = checked ? [...visibleIf.in, value] : visibleIf.in.filter((candidate) => !sameValue(candidate, value));
                 onChange({ field: target.name, in: next });
               }}
             />

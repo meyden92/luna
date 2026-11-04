@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { buildStudioForm, initialFormValues, studioFormData, visibleFormItems } from './form';
-import type { FieldConfig, JsonSchema } from './types';
+import type { FieldConfig, JsonSchema, VariableConfig } from './types';
 
 const input: JsonSchema = {
   type: 'object',
@@ -59,6 +59,77 @@ describe('buildStudioForm', () => {
 
   test('keeps the values of Fields Users do not see, for conditional visibility', () => {
     expect(buildStudioForm({ fields, schema: input }).context).toEqual({ safety: false });
+  });
+});
+
+describe('buildStudioForm with Variables', () => {
+  const variables: VariableConfig[] = [
+    { name: 'extra', kind: 'text', required: false, order: 2, text: { multiline: true, placeholder: 'e.g. a hat', maxLength: 80 } },
+    {
+      name: 'style',
+      kind: 'choice',
+      label: 'Stil',
+      required: true,
+      default: 'comic book style',
+      order: 0,
+      options: [
+        { label: 'Anime', value: 'anime style' },
+        { label: '', value: 'comic book style' },
+      ],
+    },
+    {
+      name: 'photo',
+      kind: 'file',
+      label: 'Photo of the person',
+      required: true,
+      order: 1,
+      file: { field: 'image_urls', position: 0, accept: ['image'] },
+    },
+    { name: 'age', kind: 'number', required: false, order: 3, group: 'Details', number: { min: 1, max: 99, step: 1, display: 'slider' } },
+    {
+      name: 'hd',
+      kind: 'switch',
+      required: false,
+      order: 4,
+      default: true,
+      switch: { on: 'in 4k', off: '' },
+      visibleIf: { field: 'style', in: ['anime style'] },
+    },
+  ];
+  const released: FieldConfig[] = [
+    { name: 'prompt', mode: 'fixed', order: 0, value: '{style} {extra}' },
+    { name: 'num_images', mode: 'shown', order: 1 },
+  ];
+
+  test("renders the Variables in their order before the released Fields, with each choice's label for its value", () => {
+    const form = buildStudioForm({ fields: released, schema: input, variables });
+    expect(form.items.map((item) => [item.name, item.control])).toEqual([
+      ['style', 'chips'],
+      ['photo', 'file'],
+      ['extra', 'textarea'],
+      ['age', 'slider'],
+      ['hd', 'switch'],
+      ['num_images', 'number'],
+    ]);
+    expect(form.items[0]).toMatchObject({
+      label: 'Stil',
+      required: true,
+      defaultValue: 'comic book style',
+      options: [
+        { value: 'anime style', label: 'Anime' },
+        { value: 'comic book style', label: 'comic book style' },
+      ],
+    });
+    expect(form.items[1]).toMatchObject({ label: 'Photo of the person', multiple: false, maxItems: 1, accept: ['image'] });
+    expect(form.items[2]).toMatchObject({ label: 'Extra', placeholder: 'e.g. a hat', maxLength: 80 });
+    expect(form.items[3]).toMatchObject({ min: 1, max: 99, step: 1, group: 'Details' });
+  });
+
+  test('a Variable shown only for one choice appears once that choice is picked', () => {
+    const form = buildStudioForm({ fields: released, schema: input, variables });
+    const values = initialFormValues(form);
+    expect(visibleFormItems(form, values).map((item) => item.name)).not.toContain('hd');
+    expect(visibleFormItems(form, { ...values, style: 'anime style' }).map((item) => item.name)).toContain('hd');
   });
 });
 

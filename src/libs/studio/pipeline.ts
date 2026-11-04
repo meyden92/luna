@@ -39,7 +39,8 @@ import { hasStudioListeners, publishStudioEvent } from './events';
 import { reseedValues, reusableValues } from './history-actions';
 import { extractOutputs, mediaKindOf, outputExtension } from './outputs';
 import { buildRequestInput, isFileField, isFileRef, type RequestInput, RequestValidationError } from './request';
-import type { FieldConfig, FileRef, GenerationError } from './types';
+import type { FieldConfig, FileRef, GenerationError, VariableConfig } from './types';
+import { fileVariableTargets } from './variables';
 import { type GenerationView, toGenerationView } from './views';
 
 /**
@@ -85,9 +86,13 @@ interface PipelineState {
 
 /**
  * What a Generation runs: an active Model or Template, or, for an admin's
- * test run from the Model editor, any Model with the editor's unsaved Fields.
+ * test run from the Model or Template editor, any Model with the editor's
+ * unsaved Fields and Variables.
  */
-export type SubmitTarget = { modelId: string } | { templateId: string } | { draft: { modelId: string; fields: FieldConfig[] } };
+export type SubmitTarget =
+  | { modelId: string }
+  | { templateId: string }
+  | { draft: { modelId: string; fields: FieldConfig[]; variables?: VariableConfig[] } };
 
 // ---------------------------------------------------------------------------
 // Submit
@@ -113,11 +118,17 @@ export async function submitGeneration(options: {
 }): Promise<GenerationView> {
   const fal = falClient();
   const { userId, values } = options;
-  const { model, template, fields } = await resolveTarget(options.target);
+  const { model, template, fields, variables } = await resolveTarget(options.target);
   const schema = model.schemaSnapshot.input;
 
-  const draft = buildRequestInput({ fields, schema, values, variables: template?.variables });
-  const files = await checkFileInputs(draft, fields, userId, options.uploads ?? new Map(), options.allowUrlRefs ?? false);
+  const draft = buildRequestInput({ fields, schema, values, variables });
+  const files = await checkFileInputs(
+    draft,
+    fileVariableTargets(fields, variables),
+    userId,
+    options.uploads ?? new Map(),
+    options.allowUrlRefs ?? false,
+  );
 
   const row = await admitGeneration({
     userId,
@@ -153,20 +164,20 @@ export async function submitGeneration(options: {
 
 async function resolveTarget(
   target: SubmitTarget,
-): Promise<{ model: StudioModel; template: StudioTemplate | null; fields: FieldConfig[] }> {
+): Promise<{ model: StudioModel; template: StudioTemplate | null; fields: FieldConfig[]; variables: VariableConfig[] }> {
   if ('templateId' in target) {
     const found = await getActiveStudioTemplate(target.templateId);
     if (!found) throw new UserFacingError('This Template is not available.');
-    return { ...found, fields: found.template.fields };
+    return { ...found, fields: found.template.fields, variables: found.template.variables };
   }
   if ('draft' in target) {
     const model = await getStudioModel(target.draft.modelId);
     if (!model) throw new UserFacingError('This Model no longer exists.');
-    return { model, template: null, fields: target.draft.fields };
+    return { model, template: null, fields: target.draft.fields, variables: target.draft.variables ?? [] };
   }
   const model = await getActiveStudioModel(target.modelId);
   if (!model) throw new UserFacingError('This Model is not available.');
-  return { model, template: null, fields: model.fields };
+  return { model, template: null, fields: model.fields, variables: [] };
 }
 
 /** One file input of a draft request: where it goes and how to read it. */
@@ -284,18 +295,22 @@ function withFileUrls(draft: RequestInput, inputs: FileInput[], urls: string[]):
 
 /**
  * `form_values` as stored: an upload becomes a `url` ref to its copy on fal
- * storage, so *Retry* can resend it while fal keeps it.
+ * storage, so *Retry* can resend it while fal keeps it. Found by its part
+ * name, wherever it sits: under a Field or a file Variable.
  */
 function withUploadedRefs(values: Record<string, JsonValue>, inputs: FileInput[], urls: string[]): Record<string, JsonValue> {
-  const stored: Record<string, JsonValue> = { ...values };
+  const uploaded = new Map<string, string>();
   inputs.forEach((input, index) => {
-    if (input.ref.source !== 'upload') return;
-    const ref: JsonValue = { source: 'url', url: urls[index] as string };
-    const current = stored[input.field];
-    if (input.position === null) stored[input.field] = ref;
-    else if (Array.isArray(current)) stored[input.field] = current.map((item, position) => (position === input.position ? ref : item));
+    if (input.ref.source === 'upload') uploaded.set(input.ref.key, urls[index] as string);
   });
-  return stored;
+  const stored = (value: JsonValue): JsonValue => {
+    if (!isFileRef(value) || value.source !== 'upload') return value;
+    const url = uploaded.get(value.key);
+    return url ? { source: 'url', url } : value;
+  };
+  return Object.fromEntries(
+    Object.entries(values).map(([name, value]) => [name, Array.isArray(value) ? value.map(stored) : stored(value)]),
+  );
 }
 
 function generationError(error: unknown): GenerationError {

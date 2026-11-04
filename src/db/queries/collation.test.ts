@@ -24,7 +24,6 @@ import { asc, count, desc, eq, inArray, sql } from 'drizzle-orm';
  *     status comparison — `moderation.test.ts`
  *   - upload hashes normalised on write — `uploads.test.ts`
  *   - the CDN and audio-player content-type filters — `delivery.test.ts`
- *   - the global-variable name uniqueness check — `ai.test.ts`
  *
  * The last block asserts something different in kind: that the gallery listing
  * still reaches its composite index. A translation can preserve results and lose

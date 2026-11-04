@@ -92,7 +92,9 @@ test('the daily check flags a removed input and deprecation, names the Template 
   await expect(row.getByText('Deprecated', { exact: true })).toBeVisible();
 
   await openEditor(adminPage, model);
-  await expect(adminPage.getByText('fal marks this endpoint as deprecated. It keeps working until fal removes it.')).toBeVisible();
+  await expect(
+    adminPage.getByText('fal marks this endpoint as deprecated or no longer lists it. Its Generations fail once fal removes it.'),
+  ).toBeVisible();
   const changes = adminPage.getByRole('region', { name: 'Schema changes' });
   await expect(changes.getByRole('listitem')).toContainText(['Removed input: aspect_ratio.']);
   await expect(changes).toContainText('This Model: aspect_ratio');

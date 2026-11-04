@@ -7,7 +7,8 @@ import { diffInputSchemas, isEmptyDiff } from './schema-diff';
 /**
  * The schema drift check: compares Models' snapshots with fal's current
  * schemas and records a differing one as the pending schema, and fal's
- * deprecation. Never changes a Model's snapshot or Field configs. Server-only;
+ * deprecation. A Model whose endpoint fal no longer lists is recorded as
+ * deprecated. Never changes a Model's snapshot or Field configs. Server-only;
  * run daily by the `check-studio-schemas` task and for one Model by *Check now*.
  */
 
@@ -19,7 +20,7 @@ export interface SchemaCheckResult {
   /** Models whose fal schema differs from their snapshot. */
   drifted: number;
   deprecated: number;
-  /** Endpoints fal no longer lists; their Models are left as they are. */
+  /** Endpoints fal no longer lists; their Models are recorded as deprecated, keeping any pending schema. */
   missing: string[];
   /** Endpoints whose OpenAPI document could not be read. */
   failed: { endpointId: string; message: string }[];
@@ -43,6 +44,9 @@ export async function checkStudioSchemas({ modelIds, signal }: { modelIds?: stri
       const current = found.get(endpointId);
       if (!current?.openapi) {
         result.missing.push(endpointId);
+        for (const model of byEndpoint.get(endpointId) ?? []) {
+          await recordStudioSchemaCheck(model.id, { pendingSchema: model.pendingSchema, deprecated: true, checkedAt: new Date() });
+        }
         continue;
       }
       let schema: ReturnType<typeof resolveOpenapiSchemas>;

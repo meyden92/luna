@@ -1,5 +1,13 @@
 import type { JsonValue } from '@/db/schema/json';
-import { DISPLAYS, defaultFieldConfigs, enumerableValues, fieldKind, propertyShape, validateModelConfig } from './model-config';
+import {
+  canTakeFiles,
+  DISPLAYS,
+  defaultFieldConfigs,
+  enumerableValues,
+  fieldKind,
+  propertyShape,
+  validateModelConfig,
+} from './model-config';
 import { isEmpty, isFileField, type RequestIssue, sameValue, valueProblem } from './request';
 import { brokenProperties, describeSchemaDiff, diffInputSchemas, type SchemaDiff } from './schema-diff';
 import { validateTemplateConfig } from './template-config';
@@ -83,6 +91,45 @@ export function planSchemaApply({
   };
 }
 
+/** Fixed values the admin entered for the new schema, by Field name: the Model's, and each Template's by its id. */
+export interface FixedValueCorrections {
+  model: Record<string, JsonValue>;
+  templates: Record<string, Record<string, JsonValue>>;
+}
+
+/** The fixed Fields whose value the plan reports an issue for: the ones a correction may replace. */
+export function invalidFixedFields(config: ConfigPlan): FieldConfig[] {
+  return config.fields.filter((field) => field.mode === 'fixed' && config.issues.some((issue) => issue.field === field.name));
+}
+
+/**
+ * The plan with the corrected fixed values in place of the reported ones,
+ * validated again against the new schema. Corrections for any other Field
+ * are ignored.
+ */
+export function correctSchemaApplyPlan(
+  plan: SchemaApplyPlan,
+  corrections: FixedValueCorrections,
+  { after, pricing }: { after: JsonSchema; pricing: StudioPricing | null },
+): SchemaApplyPlan {
+  const correct = (config: ConfigPlan, values: Record<string, JsonValue> = {}) => {
+    const invalid = new Set(invalidFixedFields(config).map((field) => field.name));
+    return config.fields.map((field) => {
+      const value = values[field.name];
+      return invalid.has(field.name) && value !== undefined ? { ...field, value } : field;
+    });
+  };
+  const modelFields = correct(plan.model, corrections.model);
+  return {
+    ...plan,
+    model: { ...plan.model, fields: modelFields, issues: validateModelConfig(modelFields, after, pricing) },
+    templates: plan.templates.map((template) => {
+      const fields = correct(template, corrections.templates[template.id]);
+      return { ...template, fields, issues: validateTemplateConfig({ fields, variables: template.variables, input: after }) };
+    }),
+  };
+}
+
 /** Whether the plan leaves an issue on the Model or any of its Templates. */
 export function isApplyRefused(plan: SchemaApplyPlan): boolean {
   return plan.model.issues.length > 0 || plan.templates.some((template) => template.issues.length > 0);
@@ -119,7 +166,7 @@ function reconcileFields(fields: FieldConfig[], after: JsonSchema, diff: SchemaD
 function fitField(field: FieldConfig, property: JsonSchema): FieldConfig {
   const shape = propertyShape(field.name, property);
   const next: FieldConfig = { ...field };
-  if (isFileField(next) && !['string', 'file', 'files', 'list'].includes(shape.kind)) {
+  if (isFileField(next) && !canTakeFiles(shape.kind)) {
     delete next.display;
     delete next.accept;
   }

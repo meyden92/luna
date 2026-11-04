@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { planSchemaApply } from './schema-apply';
+import { correctSchemaApplyPlan, isApplyRefused, planSchemaApply } from './schema-apply';
 import type { FieldConfig, JsonSchema, StudioPricing, VariableConfig } from './types';
 
 // fake/edit-like: a prompt, an image list and an aspect ratio choice.
@@ -141,5 +141,38 @@ describe('planSchemaApply', () => {
     expect(result.model.affected).toEqual([]);
     expect(result.templates[0]?.affected).toEqual([]);
     expect(result.templates[0]?.variables).toEqual([style, photo]);
+  });
+});
+
+describe('correctSchemaApplyPlan', () => {
+  // The new schema takes the aspect ratio as a number, which no old value fits.
+  const after = schema({ aspect_ratio: { type: 'number', minimum: 0.25, maximum: 4 } });
+  const fixedModel = modelFields.map((field) =>
+    field.name === 'aspect_ratio' ? { name: 'aspect_ratio', mode: 'fixed' as const, order: 2, value: '16:9' } : field,
+  );
+  const uncorrected = planSchemaApply({ before, after, model: { fields: fixedModel, pricing }, templates: [template] });
+  const correct = (corrections: Parameters<typeof correctSchemaApplyPlan>[1]) =>
+    correctSchemaApplyPlan(uncorrected, corrections, { after, pricing });
+  const ratioOf = (fields: FieldConfig[]) => fields.find((field) => field.name === 'aspect_ratio')?.value;
+
+  test('takes corrected fixed values of the Model and its Templates, validated against the new schema', () => {
+    expect(isApplyRefused(uncorrected)).toBe(true);
+
+    const result = correct({ model: { aspect_ratio: 1.78 }, templates: { t1: { aspect_ratio: 1.78 } } });
+    expect(ratioOf(result.model.fields)).toBe(1.78);
+    expect(ratioOf(result.templates[0]?.fields ?? [])).toBe(1.78);
+    expect(isApplyRefused(result)).toBe(false);
+  });
+
+  test('still refuses a correction the new schema rejects, or a Template left uncorrected', () => {
+    expect(correct({ model: { aspect_ratio: 9 }, templates: { t1: { aspect_ratio: 1.78 } } }).model.issues).toHaveLength(1);
+    expect(correct({ model: { aspect_ratio: 1.78 }, templates: {} }).templates[0]?.issues).toHaveLength(1);
+  });
+
+  test('ignores corrections for Fields the plan reports no issue for', () => {
+    const result = correct({ model: { aspect_ratio: 1.78, num_images: 3 }, templates: {} });
+    expect(result.model.fields.find((field) => field.name === 'num_images')).toEqual(
+      uncorrected.model.fields.find((field) => field.name === 'num_images'),
+    );
   });
 });

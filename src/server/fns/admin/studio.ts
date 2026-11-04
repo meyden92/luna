@@ -32,7 +32,13 @@ import {
 import { resolveOpenapiSchemas } from '@/libs/studio/openapi';
 import { submitGeneration } from '@/libs/studio/pipeline';
 import { type RequestIssue, RequestValidationError } from '@/libs/studio/request';
-import { isApplyRefused, planSchemaApply, type SchemaApplyPlan } from '@/libs/studio/schema-apply';
+import {
+  correctSchemaApplyPlan,
+  type FixedValueCorrections,
+  isApplyRefused,
+  planSchemaApply,
+  type SchemaApplyPlan,
+} from '@/libs/studio/schema-apply';
 import { checkStudioSchemas } from '@/libs/studio/schema-check';
 import { validateTemplateConfig } from '@/libs/studio/template-config';
 import type { FieldConfig, VariableConfig } from '@/libs/studio/types';
@@ -202,26 +208,37 @@ export const checkStudioModelSchema = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     assertStudioEnabled();
     const result = await checkStudioSchemas({ modelIds: [data.id] });
-    if (result.checked === 0 && result.missing.length > 0) throw new UserFacingError('fal no longer lists this endpoint.');
     if (result.failed[0]) throw new UserFacingError(`fal's schema could not be read: ${result.failed[0].message}`);
-    return { drifted: result.drifted > 0 };
+    return { drifted: result.drifted > 0, missing: result.missing.length > 0 };
   });
 
 /**
  * *Apply*: makes fal's pending schema the Model's snapshot and reconciles the
- * Field configs of the Model and its Templates. Refuses, naming each issue,
- * while the result would be invalid, such as a fixed value the new schema
- * no longer allows.
+ * Field configs of the Model and its Templates, taking the fixed values the
+ * admin corrected for the new schema. Refuses, naming each issue, while the
+ * result would be invalid, such as a fixed value the new schema no longer
+ * allows.
  */
 export const applyStudioModelSchema = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'admin' }))
-  .validator(idSchema)
+  .validator(
+    idSchema.extend({
+      corrections: z.object({
+        model: z.record(z.string(), z.json()),
+        templates: z.record(z.string(), z.record(z.string(), z.json())),
+      }),
+    }),
+  )
   .handler(async ({ data, context }) => {
     assertStudioEnabled();
     const model = await getModelRow(data.id);
     if (!model) throw new UserFacingError('Model not found.');
-    const plan = await schemaApplyPlan(model);
-    if (!model.pendingSchema || !plan) throw new UserFacingError("This Model's schema has no pending changes.");
+    const planned = await schemaApplyPlan(model);
+    if (!model.pendingSchema || !planned) throw new UserFacingError("This Model's schema has no pending changes.");
+    const plan = correctSchemaApplyPlan(planned, data.corrections as FixedValueCorrections, {
+      after: model.pendingSchema.input,
+      pricing: model.pricing,
+    });
     if (isApplyRefused(plan)) {
       throw new RequestValidationError([
         ...plan.model.issues.map((issue) => ({ ...issue, message: `${issue.field}: ${issue.message}` })),
@@ -296,7 +313,9 @@ export const updateStudioModel = createServerFn({ method: 'POST' })
     assertValidConfig(validateModelConfig(fields, model.schemaSnapshot.input, pricing));
 
     const { id, quantity: _quantity, ...values } = data;
-    return updateModelRow(id, { ...values, fields, pricing }, adminIdFromCtx(context));
+    // A Model moved to another Category goes after the Models already there.
+    const sortOrder = data.categoryId === model.categoryId ? model.sortOrder : await countStudioModels(data.categoryId);
+    return updateModelRow(id, { ...values, fields, pricing, sortOrder }, adminIdFromCtx(context));
   });
 
 /** Refuses while Templates use the Model. Its Generations stay in their Users' history. */

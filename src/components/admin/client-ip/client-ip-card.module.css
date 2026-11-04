@@ -1,0 +1,25 @@
+@layer components {
+  .card {
+    margin-top: var(--space-6);
+  }
+
+  .facts {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: var(--space-1) var(--space-4);
+    margin: 0;
+
+    & dt {
+      color: var(--muted-foreground);
+    }
+
+    & dd {
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .warning {
+    margin-top: var(--space-4);
+  }
+}

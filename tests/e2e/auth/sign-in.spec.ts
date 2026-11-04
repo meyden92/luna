@@ -3,7 +3,7 @@ import { test } from '../fixtures/test';
 import { fixtureUser, workerRole } from '../fixtures/users';
 import { signInThroughForm, submitLoginForm } from '../utils/sign-in';
 
-// Each test gets a fresh, signed-out context with its own `cf-connecting-ip`, so
+// Each test gets a fresh, signed-out context with its own `x-forwarded-for`, so
 // none of them can trip the production sign-in rate limiter (5 per 15 minutes).
 
 const WRONG_PASSWORD = 'definitely-not-the-password';

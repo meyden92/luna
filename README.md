@@ -106,6 +106,17 @@ from somewhere else:
 PROXY_ALLOWED_DOMAINS=images.example.com,static.example.org
 ```
 
+Rate limits, sign-in included, are keyed on the client's IP address. Set
+`TRUSTED_PROXY_HOPS` to the number of reverse proxies in front of the app that
+append to `X-Forwarded-For` (Cloudflare with a Traefik behind it is 2); the app
+then takes the address that many entries from the right. Left at `0`, it uses the
+connection's own address and ignores every forwarded header, so only raise it
+when the origin is reachable through those proxies alone: anyone who can reach
+it directly could otherwise choose their own address.
+The admin start page's **Client IP** card shows the forwarded chain with the hop
+number of each entry, the address the app derives from it, and a warning when the
+value looks wrong.
+
 ## Deployment
 
 The build targets Nitro's `bun` preset, producing a server that boots on

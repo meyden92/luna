@@ -23,7 +23,7 @@ export async function submitLoginForm(page: Page, username: string, password: st
  * Signs in through the real `/login` form and waits for the dashboard. Returns
  * the sign-in response, so a caller can inspect the cookies it set.
  *
- * The page's context must send its own `cf-connecting-ip`: production allows
+ * The page's context must send its own `x-forwarded-for`: production allows
  * five sign-ins per 15 minutes per address.
  */
 export async function signInThroughForm(page: Page, username: string, password: string): Promise<Response> {

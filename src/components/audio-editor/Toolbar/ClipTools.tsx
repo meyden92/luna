@@ -158,6 +158,7 @@ export function ClipTools() {
           min={0}
           max={100}
           step={1}
+          thumbAriaLabel="Clip volume"
           className={styles.volumeSlider}
         />
         <span className={styles.valueFixed}>{Math.round(clip.volume * 100)}%</span>
@@ -174,6 +175,7 @@ export function ClipTools() {
         <Slider
           value={[clip.fadeIn]}
           onValueChange={handleFadeInChange}
+          thumbAriaLabel="Fade in"
           min={0}
           max={Math.min(5, playDuration / 2)}
           step={0.1}
@@ -187,6 +189,7 @@ export function ClipTools() {
         <Slider
           value={[clip.fadeOut]}
           onValueChange={handleFadeOutChange}
+          thumbAriaLabel="Fade out"
           min={0}
           max={Math.min(5, playDuration / 2)}
           step={0.1}

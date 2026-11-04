@@ -13,7 +13,7 @@ test('the sixth failed sign-in from one address is rate limited, another address
   stack,
 }) => {
   const { username, password } = fixtureUser('empty');
-  const throttledIp = { 'cf-connecting-ip': '203.0.113.77' };
+  const throttledIp = { 'x-forwarded-for': '203.0.113.77' };
 
   const attacker = await playwright.request.newContext({ baseURL: stack.E2E_BASE_URL, extraHTTPHeaders: throttledIp });
   for (let attempt = 1; attempt <= 5; attempt++) {
@@ -25,6 +25,12 @@ test('the sixth failed sign-in from one address is rate limited, another address
   // The limit is on the address: even the right password is refused from it.
   const correct = await attacker.post('/api/auth/sign-in/username', { data: { username, password } });
   expect(correct.status()).toBe(429);
+  // A made-up Cloudflare header does not buy a fresh bucket (#100).
+  const spoofed = await attacker.post('/api/auth/sign-in/username', {
+    data: { username, password },
+    headers: { 'cf-connecting-ip': '198.51.100.9' },
+  });
+  expect(spoofed.status()).toBe(429);
   await attacker.dispose();
 
   // The login form tells the same visitor why.
@@ -41,7 +47,7 @@ test('the sixth failed sign-in from one address is rate limited, another address
   await throttled.close();
 
   // Somebody else on another address is unaffected.
-  const other = await browser.newContext({ extraHTTPHeaders: { 'cf-connecting-ip': '203.0.113.78' } });
+  const other = await browser.newContext({ extraHTTPHeaders: { 'x-forwarded-for': '203.0.113.78' } });
   await signInThroughForm(await other.newPage(), username, password);
   await other.close();
 });

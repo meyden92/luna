@@ -1,22 +1,12 @@
 import { createMiddleware } from '@tanstack/react-start';
 import { checkRateLimit, type RateLimitConfig } from '@/libs/api/rate-limit';
+import { clientIp } from '@/libs/client-ip';
 import { RateLimitError } from './error-mapping';
 
 export type { RateLimitConfig };
 
-function forwardedIpForTrustedProxy(headers: Headers, trustedProxyHops: number): string | null {
-  if (trustedProxyHops <= 0) return null;
-
-  const forwardedFor = headers
-    .get('x-forwarded-for')
-    ?.split(',')
-    .map((part) => part.trim())
-    .filter(Boolean);
-  return forwardedFor?.at(-trustedProxyHops) ?? null;
-}
-
 function rateLimitClientKey(request: Request, trustedProxyHops: number, fallbackIp?: string): string {
-  const ip = forwardedIpForTrustedProxy(request.headers, trustedProxyHops) ?? fallbackIp;
+  const ip = clientIp(request.headers, trustedProxyHops, fallbackIp);
   if (ip) return `ip:${ip}`;
 
   throw new Error('Unable to determine client IP for rate limiting');

@@ -13,7 +13,7 @@ import { historyEntry, openStudio, type SeededModel, seedStudioModel } from '../
 const FINISH_TIMEOUT_MS = 30_000;
 
 async function generate(page: Page, prompt: string) {
-  await page.getByLabel('Prompt', { exact: true }).fill(prompt);
+  await page.getByRole('textbox', { name: 'Prompt', exact: true }).fill(prompt);
   await page.getByRole('button', { name: 'Generate' }).click();
 }
 
@@ -87,9 +87,9 @@ test('Again draws a new seed, and Use settings fills the form, also after the Ou
   const expired = workerPage.getByRole('region', { name: 'History' }).getByRole('article', { name: model.name }).last();
   await expect(expired.getByText('Output expired').first()).toBeVisible();
 
-  await workerPage.getByLabel('Prompt', { exact: true }).fill('something else');
+  await workerPage.getByRole('textbox', { name: 'Prompt', exact: true }).fill('something else');
   await expired.getByRole('button', { name: 'Use settings' }).click();
-  await expect(workerPage.getByLabel('Prompt', { exact: true })).toHaveValue(prompt);
+  await expect(workerPage.getByRole('textbox', { name: 'Prompt', exact: true })).toHaveValue(prompt);
   await expect(workerPage.getByLabel('Seed', { exact: true })).toHaveValue('42');
 
   await expired.getByRole('button', { name: 'Again' }).click();

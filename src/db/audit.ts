@@ -20,7 +20,7 @@ import type { JsonValue } from './schema/json';
  */
 
 /**
- * The 20 models that record deliberate user or admin action (#13). Session
+ * The 20 models that record deliberate user or admin action. Session
  * churn, derived artifacts, analytics and execution records are deliberately
  * absent; the implicit extension covered everything, so an over-eager port is
  * as wrong as a missing one.

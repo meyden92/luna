@@ -33,7 +33,7 @@ export function eventStreamResponse(stream: ReadableStream<Uint8Array>): Respons
 /**
  * `heartbeatMs` keeps the response body from going silent: an SSE comment every
  * interval, which the spec says a client ignores. Without it a stream waiting
- * on slow upstream work emits nothing for minutes (issue #59).
+ * on slow upstream work emits nothing for minutes.
  */
 export function createSseWriter(
   controller: ReadableStreamDefaultController<Uint8Array>,

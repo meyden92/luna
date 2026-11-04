@@ -1,7 +1,10 @@
+import { GetObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { expect, type Page } from '@playwright/test';
 import { eq, inArray } from 'drizzle-orm';
 import { generation, generationOutput } from '../../../src/db/schema/studio';
+import type { TestDb } from '../fixtures/db';
 import { test } from '../fixtures/test';
+import { MEDIA } from '../stack/fal-fake/catalog';
 import { falRequestContaining, falRequests, falUploads, releaseFalRequest } from '../utils/fal-fake';
 import { openOwnFiles, uniquePrefix, uploadOwnFiles } from '../utils/own-files';
 import { historyEntry, openStudio, type SeededModel, seedStudioModel } from '../utils/studio';
@@ -21,14 +24,14 @@ async function expectDone(page: Page, model: SeededModel) {
   await expect(historyEntry(page, model).getByText('Done')).toBeVisible({ timeout: FINISH_TIMEOUT_MS });
 }
 
-test('a User generates an image and sees it in the history, also at phone width', async ({ workerPage, db, stack }) => {
+test('a User generates an image and sees it in the history, also at phone width', async ({ workerPage, db, stack, bucket }) => {
   const model = await seedStudioModel(db, stack, { label: 'Bilder', endpointId: 'fake/image' });
   const prompt = uniquePrefix('a lighthouse');
 
   await openStudio(workerPage, model);
   await expect(workerPage.getByRole('button', { name: model.categoryName })).toHaveAttribute('aria-pressed', 'true');
   await expect(workerPage.getByTestId('studio-estimate')).toHaveText('≈ 0.03 $');
-  await expect(workerPage.getByTestId('studio-budget')).toHaveText('No Budget limit');
+  await expect(workerPage.getByTestId('studio-budget')).toHaveText(/ \$ spent, unlimited$/);
   await generate(workerPage, prompt);
 
   const entry = historyEntry(workerPage, model);
@@ -36,6 +39,23 @@ test('a User generates an image and sees it in the history, also at phone width'
   await expectDone(workerPage, model);
   await expect(entry).toContainText('≈ 0.03 $');
   await expect(entry).toContainText('expires in 7 days');
+
+  // The Output was copied from the fake into our storage, byte for byte.
+  const [stored] = await db
+    .select({
+      s3Key: generationOutput.s3Key,
+      mediaKind: generationOutput.mediaKind,
+      contentType: generationOutput.contentType,
+      width: generationOutput.width,
+      height: generationOutput.height,
+    })
+    .from(generationOutput)
+    .innerJoin(generation, eq(generation.id, generationOutput.generationId))
+    .where(eq(generation.modelId, model.id));
+  expect(stored).toMatchObject({ mediaKind: 'image', contentType: 'image/png', width: 128, height: 128 });
+  const object = await bucket.client.send(new GetObjectCommand({ Bucket: bucket.name, Key: stored!.s3Key }));
+  const fixture = Buffer.from(await (await fetch(`${stack.E2E_FAL_URL}/media/${MEDIA.image.name}`)).arrayBuffer());
+  expect(Buffer.from(await object.Body!.transformToByteArray()).equals(fixture)).toBe(true);
   await expect(entry.getByRole('img', { name: 'Output 1' })).toBeVisible();
   await entry.getByRole('button', { name: 'Open Output 1 full size' }).click();
   await expect(workerPage.getByRole('dialog', { name: 'Output 1' }).getByRole('img')).toBeVisible();
@@ -51,9 +71,6 @@ test('a User generates an image and sees it in the history, also at phone width'
   await generate(workerPage, `${prompt} again`);
   await expect(historyEntry(workerPage, model)).toContainText(`${prompt} again`);
   await expectDone(workerPage, model);
-
-  const legacy = await workerPage.goto('/ai/generate');
-  expect(legacy?.status()).toBe(404);
 });
 
 test('Again draws a new seed, and Use settings fills the form, also after the Output expired', async ({ workerPage, db, stack }) => {
@@ -198,19 +215,84 @@ test('a [fail] Generation shows fal’s error and is retried', async ({ workerPa
   await expect.poll(async () => (await falRequests(stack)).filter((request) => request.input.prompt === prompt).length).toBe(2);
 });
 
-test('Save to Files turns the Output into a file in Files', async ({ workerPage, db, stack }) => {
+/** The model's only Output row, as stored. */
+async function onlyOutput(db: TestDb, model: SeededModel) {
+  const [row] = await db
+    .select({ id: generationOutput.id, s3Key: generationOutput.s3Key, expiredAt: generationOutput.expiredAt })
+    .from(generationOutput)
+    .innerJoin(generation, eq(generation.id, generationOutput.generationId))
+    .where(eq(generation.modelId, model.id));
+  return row!;
+}
+
+test('Save to Files moves the Output into Files', async ({ workerPage, db, stack, bucket }) => {
   const model = await seedStudioModel(db, stack, { label: 'Keeper', endpointId: 'fake/image' });
 
   await openStudio(workerPage, model);
   await generate(workerPage, uniquePrefix('a kept moon'));
   await expectDone(workerPage, model);
+  const studioKey = (await onlyOutput(db, model)).s3Key;
   const entry = historyEntry(workerPage, model);
   await entry.getByRole('button', { name: 'Save to Files' }).click();
   await expect(workerPage.getByText('Saved to Files').first()).toBeVisible();
   await expect(entry.getByRole('link', { name: 'Saved to Files' })).toBeVisible();
 
+  // Moved, not copied: the Output now points at the file's object, and its own is gone.
+  await expect.poll(async () => (await onlyOutput(db, model)).s3Key).not.toBe(studioKey);
+  await expect(bucket.client.send(new HeadObjectCommand({ Bucket: bucket.name, Key: studioKey }))).rejects.toThrow();
+
   await openOwnFiles(workerPage, model.name, 1);
   await expect(workerPage.getByRole('button', { name: `${model.name} 1.png`, exact: true })).toBeVisible();
+});
+
+test('Delete removes a Generation from the history and its Output from storage', async ({ workerPage, db, stack, bucket }) => {
+  const model = await seedStudioModel(db, stack, { label: 'Discard', endpointId: 'fake/image' });
+
+  await openStudio(workerPage, model);
+  await generate(workerPage, uniquePrefix('a discarded idea'));
+  await expectDone(workerPage, model);
+  const output = await onlyOutput(db, model);
+
+  await historyEntry(workerPage, model).getByRole('button', { name: 'Delete' }).click();
+  await workerPage.getByRole('dialog', { name: 'Delete this Generation?' }).getByRole('button', { name: 'Confirm' }).click();
+  await expect(workerPage.getByRole('region', { name: 'History' }).getByRole('article', { name: model.name })).toHaveCount(0);
+  await expect.poll(async () => (await onlyOutput(db, model)).expiredAt).not.toBeNull();
+  await expect(bucket.client.send(new HeadObjectCommand({ Bucket: bucket.name, Key: output.s3Key }))).rejects.toThrow();
+});
+
+test('Again on a Generation whose upload fal deleted opens its settings to attach the file anew', async ({
+  workerPage,
+  db,
+  stack,
+  corpus,
+}) => {
+  const model = await seedStudioModel(db, stack, { label: 'Animate upload', endpointId: 'fake/video', icon: 'Video' });
+  const prompt = uniquePrefix('a waving flag');
+
+  await openStudio(workerPage, model);
+  await workerPage.getByLabel('Image Url').setInputFiles(corpus.file('square-food.png').path);
+  await generate(workerPage, prompt);
+  await expectDone(workerPage, model);
+
+  // fal keeps uploads for a day; here that day has passed.
+  const [stored] = await db
+    .select({ id: generation.id, formValues: generation.formValues })
+    .from(generation)
+    .where(eq(generation.modelId, model.id));
+  const { id, formValues } = stored!;
+  expect(formValues.image_url).toMatchObject({ source: 'url' });
+  const expired = { ...(formValues.image_url as object), expiresAt: new Date(Date.now() - 1000).toISOString() };
+  await db
+    .update(generation)
+    .set({ formValues: { ...formValues, image_url: expired } as typeof formValues })
+    .where(eq(generation.id, id));
+
+  await openStudio(workerPage, model);
+  await workerPage.getByRole('textbox', { name: 'Prompt', exact: true }).fill('something else');
+  await historyEntry(workerPage, model).getByRole('button', { name: 'Again' }).click();
+  await expect(workerPage.getByText('A file uploaded for this Generation has expired. Attach it again.')).toBeVisible();
+  await expect(workerPage.getByRole('textbox', { name: 'Prompt', exact: true })).toHaveValue(prompt);
+  await expect(workerPage.getByRole('region', { name: 'History' }).getByRole('article', { name: model.name })).toHaveCount(1);
 });
 
 test('a Generation finishing elsewhere raises a toast and the nav badge on /dashboard, cleared by viewing the history', async ({

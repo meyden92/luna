@@ -2,6 +2,7 @@ declare const styles: {
   readonly "chevron": string;
   readonly "field": string;
   readonly "file": string;
+  readonly "fileButtons": string;
   readonly "fileList": string;
   readonly "files": string;
   readonly "form": string;

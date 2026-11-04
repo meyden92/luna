@@ -5,6 +5,7 @@ declare const styles: {
   readonly "avatar": string;
   readonly "avatarFallback": string;
   readonly "avatarTrigger": string;
+  readonly "badge": string;
   readonly "brand": string;
   readonly "chevron": string;
   readonly "ghost": string;

@@ -1,9 +1,10 @@
-import { Paperclip, X } from 'lucide-react';
-import { useRef } from 'react';
+import { FolderOpen, Paperclip, X } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { FormItem, StudioFile, StudioFormValue } from '@/libs/studio/form';
 import { isFileRef } from '@/libs/studio/request';
 import type { MediaKind } from '@/libs/studio/types';
+import { FilePickerDialog } from './FilePickerDialog';
 import styles from './StudioForm.module.css';
 
 const ACCEPT: Record<MediaKind, string> = {
@@ -25,7 +26,7 @@ function asFiles(value: StudioFormValue | undefined): StudioFile[] {
   return list.filter((entry): entry is StudioFile => entry instanceof File || isFileRef(entry));
 }
 
-/** A file input of the form: files picked from the device, listed with a remove button each. */
+/** A file input of the form: files from the device, the User's Files or their Outputs, listed with a remove button each. */
 export function FileInput({
   item,
   value,
@@ -40,8 +41,10 @@ export function FileInput({
   disabled?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [picking, setPicking] = useState(false);
   const files = asFiles(value);
   const full = item.maxItems !== undefined && files.length >= item.maxItems;
+  const room = item.multiple ? (item.maxItems ?? 20) - files.length : 1;
 
   const set = (next: StudioFile[]) => onChange(item.multiple ? next : next[0]);
 
@@ -70,16 +73,34 @@ export function FileInput({
         </ul>
       )}
       {(!full || !item.multiple) && (
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={disabled}
-          onClick={() => inputRef.current?.click()}
-        >
-          <Paperclip />
-          {files.length > 0 && !item.multiple ? 'Replace file' : 'Add file'}
-        </Button>
+        <div className={styles.fileButtons}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={disabled}
+            onClick={() => inputRef.current?.click()}
+          >
+            <Paperclip />
+            {files.length > 0 && !item.multiple ? 'Replace file' : 'Add file'}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={disabled}
+            onClick={() => setPicking(true)}
+          >
+            <FolderOpen />
+            Choose…
+          </Button>
+        </div>
       )}
+      <FilePickerDialog
+        open={picking}
+        onOpenChange={setPicking}
+        accept={item.accept}
+        remaining={room}
+        onSelect={(refs) => set(item.multiple ? [...files, ...refs].slice(0, item.maxItems) : refs.slice(0, 1))}
+      />
       <input
         ref={inputRef}
         id={id}

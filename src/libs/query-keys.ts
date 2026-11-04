@@ -97,6 +97,11 @@ export const queryKeys = {
   studio: {
     status: ['studio', 'status'] as const,
     generation: (id: string) => ['studio', 'generation', id] as const,
+    catalog: ['studio', 'catalog'] as const,
+    budget: ['studio', 'budget'] as const,
+    unseen: ['studio', 'unseen'] as const,
+    generationsAll: ['studio', 'generations'] as const,
+    generations: (filters: Record<string, unknown>) => ['studio', 'generations', filters] as const,
   },
   adminStudio: {
     categories: ['admin', 'studio', 'categories'] as const,

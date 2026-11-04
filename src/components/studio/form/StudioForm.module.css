@@ -107,4 +107,10 @@
     border-radius: var(--radius-md);
     font-size: var(--text-sm);
   }
+
+  .fileButtons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
 }

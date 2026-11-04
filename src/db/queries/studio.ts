@@ -1,4 +1,4 @@
-import { and, asc, count, eq, inArray, isNotNull, isNull, lt, lte, or } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNotNull, isNull, lt, lte, or, sql } from 'drizzle-orm';
 import { evaluateQuota, StorageQuotaExceededError } from '@/libs/storage-quota';
 import type { GenerationError, GenerationProgress, MediaKind } from '@/libs/studio/types';
 import { UserFacingError } from '@/libs/user-facing-error';
@@ -572,4 +572,140 @@ export async function saveOutputAsFile(
     await tx.update(generationOutput).set({ savedFileId: created.id, s3Key }).where(eq(generationOutput.id, outputId));
     return created;
   });
+}
+
+// ---------------------------------------------------------------------------
+// The Studio screen
+// ---------------------------------------------------------------------------
+
+/** Every Category in order, with its active Models and Templates in order; empty Categories are left out. */
+export async function listActiveStudioCatalog(handle: AuditHandle = db) {
+  const [categories, models, templates] = await Promise.all([
+    handle.select().from(studioCategory).orderBy(asc(studioCategory.sortOrder), asc(studioCategory.createdAt)),
+    handle.select().from(studioModel).where(eq(studioModel.isActive, true)).orderBy(asc(studioModel.sortOrder), asc(studioModel.createdAt)),
+    handle
+      .select({ template: studioTemplate, model: studioModel })
+      .from(studioTemplate)
+      .innerJoin(studioModel, eq(studioModel.id, studioTemplate.modelId))
+      .where(eq(studioTemplate.isActive, true))
+      .orderBy(asc(studioTemplate.sortOrder), asc(studioTemplate.createdAt)),
+  ]);
+  return categories
+    .map((category) => ({
+      category,
+      models: models.filter((model) => model.categoryId === category.id),
+      templates: templates.filter(({ template }) => template.categoryId === category.id),
+    }))
+    .filter(({ models, templates }) => models.length + templates.length > 0);
+}
+
+export interface GenerationFilters {
+  /** The Category of the Generation's Template, else of its Model. */
+  categoryId?: string;
+  /** Generations with an Output of one of these kinds. */
+  mediaKinds?: MediaKind[];
+  /** The id of the last Generation of the previous page. */
+  cursor?: string;
+  limit: number;
+}
+
+/**
+ * The User's Generations newest first, each with its Outputs, by keyset
+ * pagination on `(created_at, id)`. The cursor row's timestamp is read in SQL:
+ * a JS Date would cut its microseconds and skip rows.
+ */
+export async function listOwnGenerations(userId: string, filters: GenerationFilters, handle: AuditHandle = db) {
+  const { categoryId, mediaKinds, cursor, limit } = filters;
+  const rows = await handle
+    .select()
+    .from(generation)
+    .where(
+      and(
+        eq(generation.userId, userId),
+        categoryId
+          ? or(
+              inArray(
+                generation.templateId,
+                handle.select({ id: studioTemplate.id }).from(studioTemplate).where(eq(studioTemplate.categoryId, categoryId)),
+              ),
+              and(
+                isNull(generation.templateId),
+                inArray(
+                  generation.modelId,
+                  handle.select({ id: studioModel.id }).from(studioModel).where(eq(studioModel.categoryId, categoryId)),
+                ),
+              ),
+            )
+          : undefined,
+        mediaKinds?.length
+          ? inArray(
+              generation.id,
+              handle
+                .select({ id: generationOutput.generationId })
+                .from(generationOutput)
+                .where(inArray(generationOutput.mediaKind, mediaKinds)),
+            )
+          : undefined,
+        cursor
+          ? sql`(${generation.createdAt}, ${generation.id}) < ((SELECT ${generation.createdAt} FROM ${generation} WHERE ${generation.id} = ${cursor}), ${cursor})`
+          : undefined,
+      ),
+    )
+    .orderBy(desc(generation.createdAt), desc(generation.id))
+    .limit(limit);
+
+  const outputs =
+    rows.length === 0
+      ? []
+      : await handle
+          .select()
+          .from(generationOutput)
+          .where(
+            inArray(
+              generationOutput.generationId,
+              rows.map((row) => row.id),
+            ),
+          )
+          .orderBy(asc(generationOutput.index));
+  return rows.map((row) => ({ row, outputs: outputs.filter((output) => output.generationId === row.id) }));
+}
+
+/** How many of the User's Generations finished (succeeded or failed) unseen: the nav badge. */
+export async function countUnseenGenerations(userId: string, handle: AuditHandle = db) {
+  const [row] = await handle
+    .select({ count: count() })
+    .from(generation)
+    .where(and(eq(generation.userId, userId), isNull(generation.seenAt), inArray(generation.status, ['succeeded', 'failed'])));
+  return row?.count ?? 0;
+}
+
+/**
+ * Deletes one of the User's finished Generations and its Output rows. Returns
+ * the S3 keys of Outputs whose objects are still the Output's own (neither
+ * expired nor saved to Files), or undefined when there was no such Generation.
+ */
+export async function deleteOwnedGeneration(id: string, userId: string, handle: AuditHandle = db) {
+  return handle.transaction(async (tx: Tx) => {
+    const [row] = await tx
+      .select()
+      .from(generation)
+      .where(and(eq(generation.id, id), eq(generation.userId, userId)))
+      .for('update');
+    if (!row) return undefined;
+    if (row.status === 'queued' || row.status === 'running') throw new UserFacingError('Cancel this Generation before deleting it.');
+    const outputs = await tx.select().from(generationOutput).where(eq(generationOutput.generationId, id));
+    await tx.delete(generation).where(eq(generation.id, id));
+    return outputs.filter((output) => !output.expiredAt && !output.savedFileId).map((output) => output.s3Key);
+  });
+}
+
+/** Which of these Outputs of the User's still have their media. */
+export async function listAvailableOutputIds(userId: string, outputIds: string[], handle: AuditHandle = db) {
+  if (outputIds.length === 0) return new Set<string>();
+  const rows = await handle
+    .select({ id: generationOutput.id })
+    .from(generationOutput)
+    .innerJoin(generation, eq(generation.id, generationOutput.generationId))
+    .where(and(eq(generation.userId, userId), inArray(generationOutput.id, outputIds), isNull(generationOutput.expiredAt)));
+  return new Set(rows.map((row) => row.id));
 }

@@ -27,6 +27,8 @@ export interface OutputView {
 export interface GenerationView {
   id: string;
   name: string;
+  /** The `prompt` the User entered, if the form had one. */
+  prompt: string | null;
   modelId: string | null;
   templateId: string | null;
   status: GenerationStatus;
@@ -46,6 +48,7 @@ export async function toGenerationView(row: Generation, outputs: GenerationOutpu
   return {
     id: row.id,
     name: row.name,
+    prompt: typeof row.formValues.prompt === 'string' ? row.formValues.prompt : null,
     modelId: row.modelId,
     templateId: row.templateId,
     status: row.status,

@@ -8,7 +8,7 @@ import type { GenerationView } from './views';
  * plugin) and the routes can load this module as separate instances in dev.
  */
 
-export type StudioEvent = { type: 'generation.updated'; generation: GenerationView };
+export type StudioEvent = { type: 'generation.updated'; generation: GenerationView } | { type: 'generation.deleted'; id: string };
 
 type Listener = (event: StudioEvent) => void;
 

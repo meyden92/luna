@@ -1,16 +1,30 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
-import { getOwnedGeneration, listGenerationOutputs, markGenerationsSeen as markSeen } from '@/db/queries/studio';
+import {
+  countUnseenGenerations,
+  getBudgetState,
+  getOwnedGeneration,
+  listActiveStudioCatalog,
+  listGenerationOutputs,
+  listOwnGenerations,
+  markGenerationsSeen as markSeen,
+} from '@/db/queries/studio';
 import type { JsonValue } from '@/db/schema/json';
+import { getPrivateSignedUrl } from '@/libs/S3Helper';
+import type { StudioCatalogCategory } from '@/libs/studio/catalog';
 import { assertStudioEnabled, isStudioEnabled } from '@/libs/studio/config';
 import { readStudioFormData } from '@/libs/studio/form';
 import {
   cancelGeneration as cancel,
+  generationSettings,
+  outputDownloadUrl,
+  deleteGeneration as remove,
   retryGeneration as retry,
   saveOutputToFiles as save,
   submitGeneration as submit,
 } from '@/libs/studio/pipeline';
-import { toGenerationView } from '@/libs/studio/views';
+import { MEDIA_KINDS } from '@/libs/studio/types';
+import { type GenerationView, toGenerationView } from '@/libs/studio/views';
 import { UserFacingError } from '@/libs/user-facing-error';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
@@ -65,11 +79,11 @@ export const cancelGeneration = createServerFn({ method: 'POST' })
   .validator(generationIdSchema)
   .handler(async ({ data, context }) => cancel(userIdFromCtx(context), data.id));
 
-/** Submits a finished Generation's settings again, as a new Generation. */
+/** Submits a finished Generation's settings again, as a new Generation; `reseed` (*Again*) draws a new seed. */
 export const retryGeneration = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'user' }))
-  .validator(generationIdSchema)
-  .handler(async ({ data, context }) => retry(userIdFromCtx(context), data.id));
+  .validator(generationIdSchema.extend({ reseed: z.boolean().optional() }))
+  .handler(async ({ data, context }) => retry(userIdFromCtx(context), data.id, { reseed: data.reseed }));
 
 export const saveOutputToFiles = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'user' }))
@@ -84,3 +98,111 @@ export const markGenerationsSeen = createServerFn({ method: 'POST' })
     assertStudioEnabled();
     return { seen: await markSeen(userIdFromCtx(context), data.ids) };
   });
+
+const STUDIO_PREVIEW_URL_TTL_SECONDS = 3600;
+
+/** The Categories with their active Models and Templates, as the Studio screen offers them. */
+export const getStudioCatalog = createServerFn({ method: 'GET' })
+  .middleware(appMiddleware({ auth: 'user' }))
+  .handler(async (): Promise<StudioCatalogCategory[]> => {
+    assertStudioEnabled();
+    const catalog = await listActiveStudioCatalog();
+    return Promise.all(
+      catalog.map(async ({ category, models, templates }) => ({
+        id: category.id,
+        name: category.name,
+        icon: category.icon,
+        entries: [
+          ...models.map((model) => ({
+            kind: 'model' as const,
+            id: model.id,
+            name: model.name,
+            description: model.description,
+            categoryId: category.id,
+            fields: model.fields,
+            variables: [],
+            schema: model.schemaSnapshot.input,
+            pricing: model.pricing,
+            previewUrls: [],
+          })),
+          ...(await Promise.all(
+            templates.map(async ({ template, model }) => ({
+              kind: 'template' as const,
+              id: template.id,
+              name: template.name,
+              description: template.description,
+              categoryId: category.id,
+              fields: template.fields,
+              variables: template.variables,
+              schema: model.schemaSnapshot.input,
+              pricing: model.pricing,
+              previewUrls: await Promise.all(template.previewKeys.map((key) => getPrivateSignedUrl(key, STUDIO_PREVIEW_URL_TTL_SECONDS))),
+            })),
+          )),
+        ],
+      })),
+    );
+  });
+
+const HISTORY_PAGE_SIZE = 20;
+
+/** One page of the User's history, newest first; `nextCursor` continues it. */
+export const listGenerations = createServerFn({ method: 'GET' })
+  .middleware(appMiddleware({ auth: 'user' }))
+  .validator(
+    z.object({
+      categoryId: z.string().min(1).optional(),
+      mediaKinds: z.array(z.enum(MEDIA_KINDS as [string, ...string[]])).optional(),
+      cursor: z.string().min(1).optional(),
+    }),
+  )
+  .handler(async ({ data, context }): Promise<{ generations: GenerationView[]; nextCursor: string | null }> => {
+    assertStudioEnabled();
+    const entries = await listOwnGenerations(userIdFromCtx(context), {
+      categoryId: data.categoryId,
+      mediaKinds: data.mediaKinds as (typeof MEDIA_KINDS)[number][] | undefined,
+      cursor: data.cursor,
+      limit: HISTORY_PAGE_SIZE,
+    });
+    const generations = await Promise.all(entries.map(({ row, outputs }) => toGenerationView(row, outputs)));
+    const last = generations.at(-1);
+    return {
+      generations,
+      nextCursor: last && generations.length === HISTORY_PAGE_SIZE ? last.id : null,
+    };
+  });
+
+/** The User's Budget this month, shown next to *Generate*. */
+export const getStudioBudget = createServerFn({ method: 'GET' })
+  .middleware(appMiddleware({ auth: 'user' }))
+  .handler(async ({ context }) => {
+    assertStudioEnabled();
+    return getBudgetState(userIdFromCtx(context));
+  });
+
+/** How many finished Generations the User has not seen: the Studio nav badge. */
+export const getUnseenGenerationCount = createServerFn({ method: 'GET' })
+  .middleware(appMiddleware({ auth: 'user' }))
+  .handler(async ({ context }) => {
+    assertStudioEnabled();
+    return { count: await countUnseenGenerations(userIdFromCtx(context)) };
+  });
+
+/** *Use settings*: the Generation's Model or Template and the values to fill its form with. */
+export const getGenerationSettings = createServerFn({ method: 'GET' })
+  .middleware(appMiddleware({ auth: 'user' }))
+  .validator(generationIdSchema)
+  .handler(async ({ data, context }) => generationSettings(userIdFromCtx(context), data.id));
+
+export const deleteGeneration = createServerFn({ method: 'POST' })
+  .middleware(appMiddleware({ auth: 'user' }))
+  .validator(generationIdSchema)
+  .handler(async ({ data, context }) => {
+    await remove(userIdFromCtx(context), data.id);
+    return { deleted: true };
+  });
+
+export const getOutputDownloadUrl = createServerFn({ method: 'GET' })
+  .middleware(appMiddleware({ auth: 'user' }))
+  .validator(z.object({ outputId: z.string().min(1) }))
+  .handler(async ({ data, context }) => ({ url: await outputDownloadUrl(userIdFromCtx(context), data.outputId) }));

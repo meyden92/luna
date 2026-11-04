@@ -1,9 +1,11 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { ChevronDown, LogOut, Moon, Settings2, Shield, Sun, Upload } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import * as React from 'react';
 import { toast } from 'sonner';
+import { unseenGenerationsQueryOptions } from '@/components/studio/queries';
+import { studioStatusQueryOptions } from '@/components/studio/studio-status';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,8 +22,10 @@ import { queryKeys } from '@/libs/query-keys';
 import { cn, getAvatarUrl } from '@/libs/utils';
 import styles from './AppNav.module.css';
 
-/** A destination, or a label whose destinations live in a dropdown. */
-type NavEntry = { label: string; to: LinkTo } | { label: string; match: string; children: readonly { label: string; to: LinkTo }[] };
+/** A destination, or a label whose destinations live in a dropdown. `studio` entries show only while the Studio is enabled. */
+type NavEntry =
+  | { label: string; to: LinkTo; studio?: true }
+  | { label: string; match: string; children: readonly { label: string; to: LinkTo }[] };
 
 type LinkTo = React.ComponentProps<typeof Link>['to'];
 
@@ -35,6 +39,7 @@ const TOOLS_LINKS = [
 
 const NAV_LINKS: readonly NavEntry[] = [
   { to: '/dashboard', label: 'Files' },
+  { to: '/studio', label: 'Studio', studio: true },
   { to: '/bin', label: 'Snippets' },
   { to: '/automations', label: 'Automations' },
   { label: 'Tools', match: '/tools', children: TOOLS_LINKS },
@@ -59,6 +64,10 @@ function boxOf(element: HTMLElement | null): Box | null {
  */
 function NavLinks({ showAdmin }: { showAdmin: boolean }) {
   const { pathname } = useLocation();
+  const { data: studio } = useQuery(studioStatusQueryOptions);
+  const studioEnabled = studio?.enabled ?? false;
+  const { data: unseen } = useQuery({ ...unseenGenerationsQueryOptions, enabled: studioEnabled });
+  const unseenCount = unseen?.count ?? 0;
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [active, setActive] = React.useState<Box | null>(null);
   const [hovered, setHovered] = React.useState<Box | null>(null);
@@ -109,7 +118,7 @@ function NavLinks({ showAdmin }: { showAdmin: boolean }) {
         />
       )}
 
-      {NAV_LINKS.map((link) => {
+      {NAV_LINKS.filter((link) => !('studio' in link) || studioEnabled).map((link) => {
         if ('children' in link) {
           return (
             <DropdownMenu key={link.label}>
@@ -149,6 +158,12 @@ function NavLinks({ showAdmin }: { showAdmin: boolean }) {
             onPointerEnter={(event) => setHovered(boxOf(event.currentTarget))}
           >
             {link.label}
+            {'studio' in link && unseenCount > 0 && (
+              <span className={styles.badge}>
+                {unseenCount}
+                <span className="sr-only"> new</span>
+              </span>
+            )}
           </Link>
         );
       })}

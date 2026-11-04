@@ -5,6 +5,7 @@ import { getOwnedFile } from '@/db/queries/files';
 import {
   admitGeneration,
   completeGeneration,
+  deleteOwnedGeneration,
   failUnsubmittedGenerations,
   type Generation,
   getActiveStudioModel,
@@ -13,6 +14,7 @@ import {
   getOwnedGeneration,
   getOwnedOutput,
   getStudioModel,
+  listAvailableOutputIds,
   listExpiredOutputs,
   listGenerationOutputs,
   listGenerationsToPoll,
@@ -29,11 +31,12 @@ import type { JsonValue } from '@/db/schema/json';
 import { throwIfAborted } from '@/libs/abort';
 import { env } from '@/libs/env';
 import { FalError } from '@/libs/fal/client';
-import { fileS3Key, s3Client } from '@/libs/S3Helper';
+import { fileS3Key, getDownloadSignedUrl, s3Client } from '@/libs/S3Helper';
 import { UserFacingError } from '@/libs/user-facing-error';
 import { assertStudioEnabled, falClient, isStudioEnabled, studioWebhookTarget } from './config';
 import { estimateCost } from './cost';
 import { hasStudioListeners, publishStudioEvent } from './events';
+import { reseedValues, reusableValues } from './history-actions';
 import { extractOutputs, mediaKindOf, outputExtension } from './outputs';
 import { buildRequestInput, isFileField, isFileRef, type RequestInput, RequestValidationError } from './request';
 import type { FieldConfig, FileRef, GenerationError } from './types';
@@ -471,15 +474,79 @@ export async function cancelGeneration(userId: string, generationId: string): Pr
   return publishGeneration((await getGeneration(row.id)) ?? row, true);
 }
 
-/** Submits a finished Generation's `form_values` again, as a new Generation. */
-export async function retryGeneration(userId: string, generationId: string): Promise<GenerationView> {
+/**
+ * Submits a finished Generation's `form_values` again, as a new Generation:
+ * *Retry*, and with `reseed` *Again*, which draws a new seed when Users set it.
+ */
+export async function retryGeneration(userId: string, generationId: string, { reseed = false } = {}): Promise<GenerationView> {
   assertStudioEnabled();
   const row = await getOwnedGeneration(generationId, userId);
   if (!row) throw new UserFacingError('Generation not found.');
   if (row.status === 'queued' || row.status === 'running') throw new UserFacingError('This Generation is still running.');
   const target = row.templateId ? { templateId: row.templateId } : row.modelId ? { modelId: row.modelId } : null;
   if (!target) throw new UserFacingError('The Model of this Generation no longer exists.');
-  return submitGeneration({ userId, target, values: row.formValues as Record<string, JsonValue>, allowUrlRefs: true });
+  let values = row.formValues as Record<string, JsonValue>;
+  if (reseed) values = reseedValues((await resolveTarget(target)).fields, values);
+  return submitGeneration({ userId, target, values, allowUrlRefs: true });
+}
+
+/**
+ * *Use settings*: what the Generation ran and its `form_values` as the form
+ * can take them again, keeping only the Files and Outputs that still exist.
+ */
+export async function generationSettings(userId: string, generationId: string) {
+  assertStudioEnabled();
+  const row = await getOwnedGeneration(generationId, userId);
+  if (!row) throw new UserFacingError('Generation not found.');
+  const values = row.formValues as Record<string, JsonValue>;
+  const refs = Object.values(values)
+    .flatMap((value) => (Array.isArray(value) ? value : [value]))
+    .filter(isFileRef);
+  const outputs = await listAvailableOutputIds(
+    userId,
+    refs.flatMap((ref) => (ref.source === 'output' ? [ref.outputId] : [])),
+  );
+  const files = new Set<string>();
+  for (const ref of refs) {
+    if (ref.source !== 'file') continue;
+    const owned = await getOwnedFile(ref.fileId, userId);
+    if (owned && !owned.isDeleted) files.add(ref.fileId);
+  }
+  return {
+    modelId: row.modelId,
+    templateId: row.templateId,
+    values: reusableValues(values, (ref) =>
+      ref.source === 'output' ? outputs.has(ref.outputId) : ref.source === 'file' && files.has(ref.fileId),
+    ),
+  };
+}
+
+/** Deletes a finished Generation with its Outputs and their objects; Outputs saved to Files stay as files. */
+export async function deleteGeneration(userId: string, generationId: string): Promise<void> {
+  assertStudioEnabled();
+  const keys = await deleteOwnedGeneration(generationId, userId);
+  if (!keys) throw new UserFacingError('Generation not found.');
+  if (keys.length > 0) {
+    await s3Client
+      .send(new DeleteObjectsCommand({ Bucket: env.AWS_BUCKET_NAME, Delete: { Objects: keys.map((Key) => ({ Key })), Quiet: true } }))
+      .catch((error) => console.error(`[studio] Removing the Outputs of the deleted Generation ${generationId} failed:`, error));
+  }
+  publishStudioEvent(userId, { type: 'generation.deleted', id: generationId });
+}
+
+/** A short-lived URL that downloads an Output as `<Generation name> <n>.<ext>`. */
+export async function outputDownloadUrl(userId: string, outputId: string): Promise<string> {
+  assertStudioEnabled();
+  const owned = await getOwnedOutput(outputId, userId);
+  if (!owned) throw new UserFacingError('Output not found.');
+  if (owned.output.expiredAt) throw new UserFacingError('This Output has expired.');
+  return getDownloadSignedUrl(owned.output.s3Key, outputTitle(owned.generationName, owned.output));
+}
+
+/** "<Generation name> <n>.<ext>", safe as a file name. */
+function outputTitle(generationName: string, output: { index: number; contentType: string; s3Key: string }): string {
+  const extension = outputExtension(output.contentType, output.s3Key);
+  return `${generationName.replace(/[\\/:*?"<>|\r\n]+/g, '_').trim() || 'Studio'} ${output.index + 1}.${extension}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -498,8 +565,7 @@ export async function saveOutputToFiles(userId: string, outputId: string): Promi
   if (output.savedFileId) return { fileId: output.savedFileId };
   if (output.expiredAt) throw new UserFacingError('This Output has expired.');
 
-  const extension = outputExtension(output.contentType, output.s3Key);
-  const title = `${generationName.replace(/[\\/:*?"<>|\r\n]+/g, '_').trim() || 'Studio'} ${output.index + 1}.${extension}`;
+  const title = outputTitle(generationName, output);
   const storedName = `${randomUUID()}-${title}`;
   const key = `${userId}/${storedName}`;
   await s3Client.send(

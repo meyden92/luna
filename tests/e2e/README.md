@@ -102,7 +102,7 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
 | `gallery` | The seeded dataset (`GalleryDataset`) |
 | `corpus` | The fixture files: `files`, and the lookups `file`, `byKind`, `edgeCase`, `uploadable` |
 | `bucket` | `{ client, name }`: an S3 client on the stack's RustFS |
-| `db` | Drizzle on the stack's Postgres. Reads, backdating `file.created_at`, seeding/backdating form shares (`utils/form-shares.ts`), and seeding submitted Generations (`studio/smoke.spec.ts`) |
+| `db` | Drizzle on the stack's Postgres. Reads, backdating `file.created_at`, seeding/backdating form shares (`utils/form-shares.ts`), seeding submitted Generations (`studio/smoke.spec.ts`), and seeding Studio Categories and Models (`utils/studio.ts`) |
 | `stack` | The `E2E_*` values (base URL, CDN URL, admin credentials, …) |
 
 - Specs that change data use the worker user and only assert on items they created,
@@ -124,6 +124,10 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
 - `utils/own-files.ts` gives a data-changing spec its own files: `uniquePrefix`, `uploadOwnFiles` (corpus files through
   `/api/upload/web`, titled `<prefix> <name>`, optionally in a folder or private), `openOwnFiles` (Files screen narrowed to
   the prefix by search), `cardOf`, `openCardMenu`, `createFolderThroughSidebar` and `folderIdOf`.
+- `utils/studio.ts` sets up the Studio screen: `seedStudioModel(db, stack, { label, endpointId, fields? })` writes a Category
+  holding one Model of a fake endpoint, configured as an admin's "Add" would (fal's schema and price, default Field cards;
+  `fields` adjusts them), with `uniquePrefix` names. `openStudio(page, model)` opens it, and `historyEntry(page, model)` is
+  the Model's newest history entry.
 - `utils/preview.ts` helps with the Preview overlay: `previewOf(page, title)` (its dialog is named by the file), `previewCounter` ("N / total") and `galleryFileIds(db)` (title -> id of the gallery user's files, to open `/dashboard?file=<id>`).
 - `utils/media.ts` checks media as a user's player would: `decodeMedia(page, bytes, mimeType)` plays bytes in the page and returns `{ duration, width, height }` (rejects if undecodable), and `recordClipWithSound(page, seconds)` records an MP4 with a video and an audio track in Chromium (`clip.mp4` has no audio).
 - `utils/ffmpeg.ts` has `serveFfmpegCore(page)` for specs of tools that run ffmpeg.wasm (video editor, converter, audio editor's MP3). Call it before `goto`: the test contexts' made-up `cf-connecting-ip` header makes the CDN answer 403, so the core is fetched from node instead. Those specs need the internet.

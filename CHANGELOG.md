@@ -2,6 +2,28 @@
 
 Every LunaShare release, newest first. Entries up to v4.7.0 were rewritten from their GitHub releases, or from the tag message where no release exists.
 
+## v4.8.1 (2026-11-05)
+
+**The One Where Half the Catalog Was Wearing a Fake Moustache**
+
+One day after the Studio launched, it turned out about half of fal's catalog couldn't be added as a Model at all. GPT Image, Nano Banana 2.1, Seedream, Grok Imagine and friends all bounced off with the same error. This patch lets them in.
+
+### 🐛 Fixed
+
+🥸 **Aliases welcome.** Many fal models are aliases for another app, like `openai/gpt-image-2`, which fal documents as `fal-ai/gpt-image-2`. Adding one under **Admin → Studio → Models** failed with "fal's OpenAPI document … has no input or output schema", because we looked the schema up by the id you picked. We now read the path from fal's document itself. Models keep the id you chose, and the daily schema check handles aliases the same way. In a random sample of 40 catalog models, 20 were aliases, and all 40 now add cleanly.
+
+### 🧪 Under the hood
+
+A unit test pins the alias case in `src/libs/studio/openapi.test.ts`.
+
+### ⬆️ Upgrade
+
+No migrations and no new environment variables.
+
+The v4.8.1 tag triggers the GHCR image build and publishes the versioned and latest tags. Deployment is still manual.
+
+Implemented in #242 (for #241).
+
 ## v4.8.0 (2026-11-04)
 
 **The One Where the AI Moves Into Its Own Studio**

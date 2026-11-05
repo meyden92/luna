@@ -7,7 +7,8 @@ import type { JsonSchema, SchemaSnapshot } from './types';
  * Model's `schema_snapshot`: the request body and result schemas with every
  * `$ref` inlined, single-`$ref` `allOf`s merged and nullable `anyOf`s
  * collapsed into their non-null branch. A recursive `$ref` resolves to a bare
- * `{ type: 'object' }` at its second visit. Pure.
+ * `{ type: 'object' }` at its second visit. fal's `{ error }` stand-in for a
+ * document it could not load throws with fal's message. Pure.
  *
  * The submit path is the document's one `post` operation, not `/${endpointId}`:
  * aliased endpoints (`openai/gpt-image-2`, `google/nano-banana-2.1`) are
@@ -15,6 +16,10 @@ import type { JsonSchema, SchemaSnapshot } from './types';
  */
 export function resolveOpenapiSchemas(openapi: JsonValue, endpointId: string): SchemaSnapshot {
   const doc = asRecord(openapi);
+  const falError = asRecord(doc.error);
+  if (typeof falError.message === 'string') {
+    throw new Error(`fal could not load the OpenAPI document for ${endpointId}: ${falError.message}`);
+  }
   const schemas = asRecord(asRecord(doc.components).schemas);
   const paths = asRecord(doc.paths);
   const bodySchema = (operation: JsonValue | undefined) => asRecord(asRecord(asRecord(operation).content)['application/json']).schema;

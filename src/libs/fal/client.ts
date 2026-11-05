@@ -113,18 +113,19 @@ export function createFalClient(config: FalConfig) {
   const timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const api = trimSlash(config.apiBaseUrl);
 
-  async function call(url: string, init: RequestInit & { key?: string } = {}): Promise<Response> {
+  /** `key: null` sends no `Authorization` header. */
+  async function call(url: string, init: RequestInit & { key?: string | null } = {}): Promise<Response> {
     const { key = config.key, headers, ...rest } = init;
     const response = await fetchImpl(url, {
       ...rest,
-      headers: { Authorization: `Key ${key}`, Accept: 'application/json', ...headers },
+      headers: { ...(key !== null && { Authorization: `Key ${key}` }), Accept: 'application/json', ...headers },
       signal: AbortSignal.timeout(timeoutMs),
     });
     if (!response.ok) throw await falErrorFrom(response);
     return response;
   }
 
-  async function callJson<T = RawRecord>(url: string, init: RequestInit & { key?: string } = {}): Promise<T> {
+  async function callJson<T = RawRecord>(url: string, init: RequestInit & { key?: string | null } = {}): Promise<T> {
     const response = await call(url, init);
     return (await response.json()) as T;
   }
@@ -217,6 +218,11 @@ export function createFalClient(config: FalConfig) {
   };
 
   const platform = {
+    /**
+     * Searches fal's catalog. With `expandOpenapi` it asks without a key: fal
+     * answers keyed requests with `{ error: { code: 'expansion_failed' } }` in
+     * place of every document (#244), while the public catalog serves them.
+     */
     async models(query: FalModelsQuery = {}): Promise<FalModelPage> {
       const url = new URL(`${api}/models`);
       if (query.q) url.searchParams.set('q', query.q);
@@ -226,7 +232,7 @@ export function createFalClient(config: FalConfig) {
       if (query.status) url.searchParams.set('status', query.status);
       if (query.cursor) url.searchParams.set('cursor', query.cursor);
       if (query.limit) url.searchParams.set('limit', String(query.limit));
-      const body = await callJson(url.toString());
+      const body = await callJson(url.toString(), query.expandOpenapi ? { key: null } : {});
       return {
         models: asRecords(body.models).map(toModel),
         nextCursor: typeof body.next_cursor === 'string' ? body.next_cursor : null,

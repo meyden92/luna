@@ -271,8 +271,9 @@ function platformRoute(request: Request, url: URL, path: string): Response {
     if (url.searchParams.getAll('expand').includes('credits')) body.credits = { current_balance: FAKE_BALANCE_USD, currency: 'USD' };
     return json(body);
   }
-  if (!authorized(request, FAL_KEY)) return detail('Invalid fal key', 401);
+  // Real fal serves the catalog without a key, and the client asks for it that way.
   if (path === '/v1/models') return models(url);
+  if (!authorized(request, FAL_KEY)) return detail('Invalid fal key', 401);
   if (path === '/v1/models/pricing') return pricing(url);
   return detail('Not found', 404);
 }

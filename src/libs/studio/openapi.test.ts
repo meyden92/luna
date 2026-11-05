@@ -118,6 +118,13 @@ describe('resolveOpenapiSchemas', () => {
     expect(snapshot.input.properties?.prompt).toEqual({ type: 'string' });
   });
 
+  test("passes on fal's message when fal could not load the document", () => {
+    const failed = { error: { code: 'expansion_failed', message: 'Failed to fetch OpenAPI schema' } };
+    expect(() => resolveOpenapiSchemas(failed, 'fal-ai/flux')).toThrow(
+      'fal could not load the OpenAPI document for fal-ai/flux: Failed to fetch OpenAPI schema',
+    );
+  });
+
   test('refuses a document without the endpoint input schema', () => {
     expect(() => resolveOpenapiSchemas({ openapi: '3.0.4', components: { schemas: {} }, paths: {} }, 'fal-ai/flux')).toThrow('fal-ai/flux');
   });

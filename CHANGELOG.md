@@ -2,6 +2,30 @@
 
 Every LunaShare release, newest first. Entries up to v4.7.0 were rewritten from their GitHub releases, or from the tag message where no release exists.
 
+## v4.8.2 (2026-11-05)
+
+**The One Where Showing Our ID Got Us Thrown Out**
+
+Turns out fal's catalog hands out model schemas to anyone who asks, except to people who show their API key. We showed ours, every time, politely. v4.8.1 fixed a real bug that wasn't the one blocking you. This one is.
+
+### 🐛 Fixed
+
+🔑 **Models can be added again, for real this time.** When our fal key came along on the catalog request, fal answered every model's schema with "Failed to fetch OpenAPI schema". So **Admin → Studio → Models → Add model** failed for every model, `fal-ai/nano-banana-2` included. The Studio now fetches schemas without the key, which is how fal serves them. Generating, pricing and billing still use the key. The daily schema check got the same fix.
+
+🗯️ **Errors that say what went wrong.** If fal can't load a model's schema, the toast now shows fal's own message instead of "has no input or output schema", the message that sent us looking in the wrong place.
+
+### 🧪 Under the hood
+
+Unit tests check that only the schema lookup leaves the key at home. The fake fal in the e2e stack now serves its catalog without a key, like the real one.
+
+### ⬆️ Upgrade
+
+No migrations and no new environment variables.
+
+The v4.8.2 tag triggers the GHCR image build and publishes the versioned and latest tags. Deployment is still manual.
+
+Implemented in #245 (for #244).
+
 ## v4.8.1 (2026-11-05)
 
 **The One Where Half the Catalog Was Wearing a Fake Moustache**

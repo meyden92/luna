@@ -8,6 +8,10 @@ import type { JsonSchema, SchemaSnapshot } from './types';
  * `$ref` inlined, single-`$ref` `allOf`s merged and nullable `anyOf`s
  * collapsed into their non-null branch. A recursive `$ref` resolves to a bare
  * `{ type: 'object' }` at its second visit. Pure.
+ *
+ * The submit path is the document's one `post` operation, not `/${endpointId}`:
+ * aliased endpoints (`openai/gpt-image-2`, `google/nano-banana-2.1`) are
+ * documented under the app they alias (`/fal-ai/gpt-image-2`).
  */
 export function resolveOpenapiSchemas(openapi: JsonValue, endpointId: string): SchemaSnapshot {
   const doc = asRecord(openapi);
@@ -15,8 +19,9 @@ export function resolveOpenapiSchemas(openapi: JsonValue, endpointId: string): S
   const paths = asRecord(doc.paths);
   const bodySchema = (operation: JsonValue | undefined) => asRecord(asRecord(asRecord(operation).content)['application/json']).schema;
 
-  const submit = asRecord(asRecord(paths[`/${endpointId}`]).post);
-  const result = asRecord(asRecord(paths[`/${endpointId}/requests/{request_id}`]).get);
+  const submitPath = Object.keys(paths).find((path) => asRecord(paths[path]).post !== undefined);
+  const submit = asRecord(asRecord(paths[submitPath ?? '']).post);
+  const result = asRecord(asRecord(paths[`${submitPath}/requests/{request_id}`]).get);
   const input = bodySchema(submit.requestBody);
   const output = bodySchema(asRecord(result.responses)['200']);
   if (!input || !output) throw new Error(`fal's OpenAPI document for ${endpointId} has no input or output schema`);

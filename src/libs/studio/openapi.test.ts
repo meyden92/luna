@@ -106,6 +106,18 @@ describe('resolveOpenapiSchemas', () => {
     expect(snapshot.input.properties?.tree?.properties?.child).toEqual({ type: 'object' });
   });
 
+  test('reads an aliased endpoint whose paths are documented under the app it aliases', () => {
+    const snapshot = resolveOpenapiSchemas(
+      document('fal-ai/gpt-image-2', {
+        FluxInput: { type: 'object', properties: { prompt: { type: 'string' } } },
+        FluxOutput: { type: 'object' },
+      }),
+      'openai/gpt-image-2',
+    );
+
+    expect(snapshot.input.properties?.prompt).toEqual({ type: 'string' });
+  });
+
   test('refuses a document without the endpoint input schema', () => {
     expect(() => resolveOpenapiSchemas({ openapi: '3.0.4', components: { schemas: {} }, paths: {} }, 'fal-ai/flux')).toThrow('fal-ai/flux');
   });

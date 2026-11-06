@@ -125,6 +125,12 @@ describe('buildStudioForm with Variables', () => {
     expect(form.items[3]).toMatchObject({ min: 1, max: 99, step: 1, group: 'Details' });
   });
 
+  test('a file input a file Variable feeds is asked for once, through the Variable, even while its Field is shown', () => {
+    const shownImages: FieldConfig = { name: 'image_urls', mode: 'shown', order: 2, display: 'file', accept: ['image'] };
+    const form = buildStudioForm({ fields: [...released, shownImages], schema: input, variables });
+    expect(form.items.filter((item) => item.control === 'file').map((item) => item.name)).toEqual(['photo']);
+  });
+
   test('a Variable shown only for one choice appears once that choice is picked', () => {
     const form = buildStudioForm({ fields: released, schema: input, variables });
     const values = initialFormValues(form);

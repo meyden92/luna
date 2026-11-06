@@ -15,10 +15,11 @@ import { sameValue } from '@/libs/studio/request';
 import { type FieldConfig, type FieldMode, type JsonSchema, MEDIA_KINDS, type MediaKind, type VisibleIf } from '@/libs/studio/types';
 import styles from './FieldCard.module.css';
 
-const MODES: { value: FieldMode; label: string }[] = [
-  { value: 'shown', label: 'Shown' },
-  { value: 'fixed', label: 'Fixed' },
-  { value: 'default', label: 'fal default' },
+/** The three ways to set up a Field, each with the line that explains it under the choice. */
+const MODES: { value: FieldMode; label: string; help: string }[] = [
+  { value: 'shown', label: 'User input', help: 'Users fill this in on the Studio form.' },
+  { value: 'fixed', label: 'Fixed value', help: 'Always sent with the value below. Users do not see it.' },
+  { value: 'default', label: 'fal default', help: 'Not sent: fal uses its own default. Users do not see it.' },
 ];
 
 export const MEDIA_LABELS: Record<MediaKind, string> = { image: 'Images', video: 'Videos', audio: 'Audio', model3d: '3D models' };
@@ -48,8 +49,8 @@ export interface FieldCardProps {
   variableCandidates?: VisibleIfCandidate[];
   /** Replaces the value editor, e.g. the Template editor's text editor. */
   valueEditor?: ReactNode;
-  /** Shown under the card's head. */
-  note?: string;
+  /** The Template's file Variables that feed this input: they own it, so the card offers no mode or settings. */
+  filledBy?: string[];
 }
 
 /** A Field or Variable that `visibleIf` can depend on, with the values it can take. */
@@ -75,9 +76,19 @@ export function fieldCandidates(fields: FieldConfig[], schema: JsonSchema, exclu
 /**
  * Configures one schema property of a Model: mode, label, help, value,
  * range, options, display, accepted media, group and conditional visibility.
- * A Field left at fal's default collapses to one line.
+ * A Field left at fal's default, or fed by a file Variable, collapses to one line.
  */
-export function FieldCard({ field, schema, fields, issues, onChange, handle, variableCandidates = [], valueEditor, note }: FieldCardProps) {
+export function FieldCard({
+  field,
+  schema,
+  fields,
+  issues,
+  onChange,
+  handle,
+  variableCandidates = [],
+  valueEditor,
+  filledBy = [],
+}: FieldCardProps) {
   const id = useId();
   const property = schema.properties?.[field.name] ?? {};
   const shape = propertyShape(field.name, property);
@@ -86,6 +97,7 @@ export function FieldCard({ field, schema, fields, issues, onChange, handle, var
   const canBeFile = canTakeFiles(shape.kind);
   const required = schema.required?.includes(field.name) ?? false;
   const set = (change: Partial<FieldConfig>) => onChange(withoutUndefined({ ...field, ...change }));
+  const isFed = filledBy.length > 0;
 
   const setMode = (mode: FieldMode) => {
     const value = mode === 'fixed' && field.value === undefined ? shape.default : field.value;
@@ -96,28 +108,36 @@ export function FieldCard({ field, schema, fields, issues, onChange, handle, var
     <section
       aria-label={`Field ${field.name}`}
       className={styles.card}
-      data-mode={field.mode}
+      data-mode={isFed ? 'default' : field.mode}
     >
       <div className={styles.head}>
         {handle}
         <span className={styles.name}>{field.name}</span>
         <span className={styles.kind}>{KIND_LABELS[kind]}</span>
         {required && <Badge variant="outline">required</Badge>}
-        <Segmented
-          className={styles.mode}
-          label={`Mode of ${field.name}`}
-          value={field.mode}
-          onValueChange={setMode}
-          items={MODES.map((mode) => ({
-            ...mode,
-            disabled: (mode.value === 'fixed' && isFile) || (mode.value === 'shown' && DISPLAYS[kind].length === 0),
-          }))}
-        />
+        {!isFed && (
+          <Segmented
+            className={styles.mode}
+            label={`Mode of ${field.name}`}
+            value={field.mode}
+            onValueChange={setMode}
+            items={MODES.map(({ value, label }) => ({
+              value,
+              label,
+              disabled: (value === 'fixed' && isFile) || (value === 'shown' && DISPLAYS[kind].length === 0),
+            }))}
+          />
+        )}
       </div>
 
-      {note && <p className={styles.note}>{note}</p>}
+      <p className={styles.note}>
+        {isFed
+          ? `Users fill this in through the file input ${filledBy.map((name) => `{${name}}`).join(', ')}.`
+          : MODES.find((mode) => mode.value === field.mode)?.help}
+        {!isFed && isFile && ' A file input cannot have a fixed value.'}
+      </p>
 
-      {field.mode !== 'default' && (
+      {field.mode !== 'default' && !isFed && (
         <div className={styles.body}>
           {field.mode === 'shown' && (
             <div className={styles.grid}>

@@ -116,7 +116,7 @@ test('a Model added from the catalog is configured with Field cards, previewed a
 
   // Sensible defaults: prompt, aspect ratio and the image count shown; the seed left to fal.
   for (const shown of ['prompt', 'aspect_ratio', 'num_images']) {
-    await expect(field(shown).getByRole('button', { name: 'Shown' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(field(shown).getByRole('button', { name: 'User input' })).toHaveAttribute('aria-pressed', 'true');
   }
   await expect(field('seed').getByRole('button', { name: 'fal default' })).toHaveAttribute('aria-pressed', 'true');
   await expect(adminPage.getByText('fal charges $0.03 / image.')).toBeVisible();

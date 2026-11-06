@@ -52,7 +52,11 @@ export type StudioFormValues = Record<string, StudioFormValue>;
 
 const CHIPS_MAX_OPTIONS = 5;
 
-/** A Template's Variables come first, in their order, then the Fields it releases to Users. */
+/**
+ * A Template's Variables come first, in their order, then the Fields it
+ * releases to Users. A Field a file Variable feeds belongs to that Variable,
+ * so it gets no item of its own, whatever its mode.
+ */
 export function buildStudioForm({
   fields,
   schema,
@@ -66,10 +70,11 @@ export function buildStudioForm({
   const required = new Set(schema.required ?? []);
   const items: FormItem[] = [...variables].sort((a, b) => a.order - b.order).map(variableItem);
   const context: Record<string, JsonValue> = {};
+  const fed = new Set(variables.flatMap((variable) => (variable.kind === 'file' && variable.file ? [variable.file.field] : [])));
 
   for (const field of [...fields].sort((a, b) => a.order - b.order)) {
     const property = properties[field.name];
-    if (!property) continue;
+    if (!property || fed.has(field.name)) continue;
     const shape = propertyShape(field.name, property);
     if (field.mode !== 'shown') {
       const value = field.mode === 'fixed' ? field.value : shape.default;

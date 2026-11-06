@@ -61,6 +61,7 @@ function variableValues(variable: VariableConfig): JsonValue[] | null {
  * Variable whose card shows it. Covers the Model checks for its Fields, the
  * texts and cards agreeing, each kind's settings, `visibleIf` references and
  * that every required file input is shown or fed by a required file Variable.
+ * A Field a file Variable feeds is the Variable's, so its own mode is not checked.
  */
 export function validateTemplateConfig({
   fields,
@@ -117,8 +118,6 @@ export function validateTemplateConfig({
     fed.set(field, [...others, variable]);
   }
   for (const [name, feeders] of fed) {
-    const field = fieldsByName.get(name);
-    if (field?.mode === 'shown') add(name, `The file Variable ${feeders[0]?.name} feeds this input, so it cannot also be shown.`);
     if (input.required?.includes(name) && !feeders.some((variable) => variable.required)) {
       for (const variable of feeders) add(variable.name, `The model requires ${name}, so this file input must be required.`);
     }

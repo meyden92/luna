@@ -51,7 +51,7 @@ async function buildTemplate(
 
   // The prompt is fixed by default and takes Variables; each name gets a card, and loses it with the text.
   const prompt = region(page, 'Field prompt');
-  await expect(prompt.getByRole('button', { name: 'Fixed' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(prompt.getByRole('button', { name: 'Fixed value' })).toHaveAttribute('aria-pressed', 'true');
   const text = prompt.getByLabel('Value', { exact: true });
   await text.fill(`${prefix} Turn the person into {style: Anime | *Comic} {extra}, {mood}`);
   for (const variable of ['style', 'extra', 'mood']) await expect(region(page, `Variable ${variable}`)).toBeVisible();
@@ -66,7 +66,7 @@ async function buildTemplate(
   await style.getByLabel('Label for anime style, cel shaded').fill('Anime');
   await expect(text).toHaveValue(`${prefix} Turn the person into {style: anime style, cel shaded | *Comic} {extra}`);
 
-  // Two file inputs feed fake/edit's image list, at positions 1 and 2.
+  // Two file inputs feed fake/edit's image list, at positions 1 and 2. They own it: its card offers no mode any more.
   await page.getByRole('button', { name: 'Add file input' }).click();
   await page.getByRole('button', { name: 'Add file input' }).click();
   const person = region(page, 'Variable file');
@@ -77,11 +77,12 @@ async function buildTemplate(
   await expect(person.getByLabel('Position')).toHaveValue('1');
   await expect(outfit.getByLabel('Position')).toHaveValue('2');
   const images = region(page, 'Field image_urls');
-  await expect(images.getByText('Fed by the file Variable file, file_2.')).toBeVisible();
-  await expect(images.getByRole('button', { name: 'fal default' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(images.getByText('Users fill this in through the file input {file}, {file_2}.')).toBeVisible();
+  await expect(images.getByRole('group', { name: 'Mode of image_urls' })).toHaveCount(0);
 
-  // The preview is the Users' form: the choice shows labels, the default picked.
+  // The preview is the Users' form: the choice shows labels, the default picked, and the image list is asked for once, through the file inputs.
   const preview = page.getByTestId('studio-preview');
+  await expect(preview.getByLabel('Image Urls')).toHaveCount(0);
   const choice = preview.getByRole('group', { name: 'Style' });
   await expect(choice.getByRole('button')).toHaveText(['Anime', 'Comic book']);
   await expect(choice.getByRole('button', { name: 'Comic book' })).toHaveAttribute('aria-pressed', 'true');
@@ -103,6 +104,9 @@ async function buildTemplate(
   // The test's Output becomes the preview image; saving creates the Template.
   await result.getByRole('button', { name: 'Use as preview' }).click();
   await expect(page.getByRole('list', { name: 'Preview images' }).getByRole('img')).toHaveCount(1);
+  // Save sits in the action bar at the bottom of the window, wherever the page is scrolled.
+  await page.getByRole('heading', { name: 'New template' }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeInViewport();
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.getByText('Template saved')).toBeVisible();
   await expect(page).toHaveURL(/\/admin\/studio\/templates\/[0-9a-f-]+$/);
@@ -133,12 +137,13 @@ test('a Template with inline Variables is built, test-run and run in the Studio 
   await adminPage.goto('/admin/studio/templates');
   await expect(adminPage.getByRole('row').filter({ hasText: name })).toContainText(model.name);
 
-  // A User runs it: the card shows the preview, the form only the Variables.
+  // A User runs it: Templates have their own section apart from the Model dropdown, the card shows the preview, the form only the Variables.
   await workerPage.goto(`/studio?category=${model.categoryId}&template=${id}`);
   await expect(workerPage.getByRole('heading', { name })).toBeVisible();
-  await expect(
-    workerPage.getByRole('toolbar', { name: 'Models and Templates' }).getByRole('button', { name }).locator('img'),
-  ).toBeVisible();
+  const templates = workerPage.getByRole('toolbar', { name: 'Templates' });
+  await expect(templates.getByRole('button', { name }).locator('img')).toBeVisible();
+  await expect(templates.getByRole('button', { name: model.name })).toHaveCount(0);
+  await expect(workerPage.getByLabel('Model', { exact: true })).toContainText('Choose a model…');
   const form = workerPage.getByRole('region', { name: 'Generate' });
   await untilHydrated(form.getByRole('button', { name: 'Generate' }));
   await expect(form.getByRole('textbox', { name: 'Prompt' })).toHaveCount(0);
@@ -149,6 +154,7 @@ test('a Template with inline Variables is built, test-run and run in the Studio 
   await form.getByLabel('Extra', { exact: true }).fill('with a hat');
   await form.getByLabel('Photo of the person').setInputFiles(personFile.path);
   await form.getByLabel('Photo of the outfit').setInputFiles(outfitFile.path);
+  await expect(form.getByLabel('Image Urls')).toHaveCount(0);
   await form.getByRole('button', { name: 'Generate' }).click();
 
   const sent = await falRequestContaining(stackEnv, `${prefix} Turn the person into Comic`);

@@ -215,6 +215,17 @@ test('a [fail] Generation shows fal’s error and is retried', async ({ workerPa
   await expect.poll(async () => (await falRequests(stack)).filter((request) => request.input.prompt === prompt).length).toBe(2);
 });
 
+// fal reports a content-checker rejection only on the result URL; its status says COMPLETED without an error (#248).
+test('a Generation fal’s content checker rejected shows as Failed with fal’s message', async ({ workerPage, db, stack }) => {
+  const model = await seedStudioModel(db, stack, { label: 'Flagged', endpointId: 'fake/image' });
+
+  await openStudio(workerPage, model);
+  await generate(workerPage, `${uniquePrefix('flagged')} [flagged]`);
+  const entry = historyEntry(workerPage, model);
+  await expect(entry.getByText('Failed', { exact: true })).toBeVisible({ timeout: FINISH_TIMEOUT_MS });
+  await expect(entry).toContainText('flagged by a content checker');
+});
+
 /** The model's only Output row, as stored. */
 async function onlyOutput(db: TestDb, model: SeededModel) {
   const [row] = await db

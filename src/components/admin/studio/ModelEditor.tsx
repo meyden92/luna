@@ -198,8 +198,8 @@ export function ModelEditor({ model, categories }: { model: Model; categories: C
             <CardHeader>
               <CardTitle>Fields</CardTitle>
               <CardDescription>
-                One card per input of the model. Shown Fields are what Users fill in; fixed ones are always sent as set here; the rest keep
-                fal's default. Drag a card by its handle to reorder.
+                One card per input of the model. User input is what Users fill in; a fixed value is always sent as set here; fal default
+                leaves it to fal. Drag a card by its handle to reorder.
               </CardDescription>
             </CardHeader>
             <CardContent>

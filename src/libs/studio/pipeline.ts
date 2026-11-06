@@ -441,13 +441,21 @@ export async function finishGeneration(generationId: string): Promise<void> {
 
 /**
  * Whether a failed result fetch is the request's own outcome, which no later
- * fetch changes: fal no longer has it (404), or its status says it failed.
+ * fetch changes: fal no longer has it (404), or the request is completed and
+ * either its status names an error or its result URL refused it with a 4xx no
+ * retry changes. fal reports some failures, such as its content checker's
+ * rejection, only on the result URL, with no error in the status (#248).
  */
 async function isRequestFailure(row: Generation, error: FalError): Promise<boolean> {
   if (error.status === 404) return true;
   if (!row.statusUrl) return false;
   const status = await falClient().queue.status(row.statusUrl);
-  return status.status === 'COMPLETED' && status.error !== null;
+  return status.status === 'COMPLETED' && (status.error !== null || isPermanentClientError(error.status));
+}
+
+/** A 4xx a retry cannot change: not a timeout (408) or rate limit (429). */
+function isPermanentClientError(status: number): boolean {
+  return status >= 400 && status < 500 && status !== 408 && status !== 429;
 }
 
 async function failGeneration(generationId: string, error: GenerationError): Promise<void> {
@@ -485,8 +493,7 @@ async function storeOutput(row: Generation, output: ExtractedOutput, index: numb
   const response = await fetch(output.url, { signal: AbortSignal.timeout(OUTPUT_DOWNLOAD_TIMEOUT_MS) });
   if (!response.ok) {
     const message = `Downloading Output ${index} failed with ${response.status}`;
-    const gone = response.status >= 400 && response.status < 500 && response.status !== 408 && response.status !== 429;
-    throw gone ? new MediaGoneError(message) : new Error(message);
+    throw isPermanentClientError(response.status) ? new MediaGoneError(message) : new Error(message);
   }
   const body = new Uint8Array(await response.arrayBuffer());
   const s3Key = outputKey(row, output, index);

@@ -25,4 +25,24 @@
     top: var(--space-1);
     right: var(--space-1);
   }
+
+  /* Delete and Save stay in reach at the bottom of the window, however long the cards get. */
+  .actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    padding-block: var(--space-3);
+    border-top: 1px solid var(--border);
+    background-color: color-mix(in oklab, var(--background) 90%, transparent);
+    backdrop-filter: blur(10px);
+
+    & > p {
+      margin: 0 auto 0 0;
+    }
+  }
 }

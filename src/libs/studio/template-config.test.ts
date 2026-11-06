@@ -72,9 +72,10 @@ describe('validateTemplateConfig', () => {
     expect(messages([prompt('{style}'), images, strength], [style, { ...photo, required: false }])).toEqual([
       'photo: The model requires image_urls, so this file input must be required.',
     ]);
-    expect(messages([prompt('{style}'), { ...images, mode: 'shown' }, strength], [style, photo])).toEqual([
-      'image_urls: The file Variable photo feeds this input, so it cannot also be shown.',
-    ]);
+  });
+
+  test('a file input a file Variable feeds needs no mode of its own: shown or fal default, it is valid', () => {
+    expect(messages([prompt('{style}'), { ...images, mode: 'shown' }, strength], [style, photo])).toEqual([]);
   });
 
   test("two file Variables cannot feed the same place, nor a position past the input's limit", () => {

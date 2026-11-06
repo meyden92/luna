@@ -62,10 +62,11 @@ function withTexts(fields: FieldConfig[], texts: string[]): FieldConfig[] {
 }
 
 /**
- * Creates or edits a Template: its Model, Category and details, preview
- * images, the Field cards (fixed by default, text with `{variables}`), and
- * the Variable sidebar whose cards follow the texts, next to the same live
- * preview and *Test* as the Model editor.
+ * Creates or edits a Template: its Model, Category and details, the Field
+ * cards (fixed by default, text with `{variables}`), preview images, and the
+ * Variable sidebar whose cards follow the texts, next to the same live
+ * preview and *Test* as the Model editor. Delete and Save sit in an action
+ * bar that sticks to the bottom of the window.
  */
 export function TemplateEditor({ draft, models, categories }: { draft: TemplateDraft; models: Model[]; categories: Category[] }) {
   const id = useId();
@@ -93,6 +94,15 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
   const cardNames = new Set([...fields.map((field) => field.name), ...variables.map((variable) => variable.name)]);
   const looseIssues = issues.filter((issue) => !cardNames.has(issue.field));
   const textNames = variables.filter((variable) => variable.kind !== 'file').map((variable) => variable.name);
+  const blocker = !model
+    ? 'Choose a model to start.'
+    : !categoryId
+      ? 'Choose a category.'
+      : !name.trim()
+        ? 'Give the Template a name.'
+        : issues.length > 0
+          ? `Fix ${issues.length === 1 ? 'the issue' : `the ${issues.length} issues`} on the cards to save.`
+          : null;
 
   const save = useAppMutation(saveStudioTemplate, {
     invalidates: [queryKeys.adminStudio.templates, queryKeys.adminStudio.categories, queryKeys.studio.catalog],
@@ -127,7 +137,7 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
     setConfig({ fields: templateFieldDefaults(next.fields, next.schemaSnapshot.input), variables: [] });
   };
 
-  /** *Add file input*: a required file Variable on the first file input, at its next free position. */
+  /** *Add file input*: a required file Variable on the first file input, at its next free position. The Variable owns that input from then on. */
   const addFileVariable = () => {
     if (!schema) return;
     const [target] = fileInputs(schema);
@@ -136,7 +146,7 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
     let index = 1;
     while (taken.has(index === 1 ? 'file' : `file_${index}`)) index++;
     const used = variables.filter((variable) => variable.file?.field === target.name).map((variable) => variable.file?.position ?? 0);
-    const field = fields.find((candidate) => candidate.name === target.name);
+    const accept = fields.find((candidate) => candidate.name === target.name)?.accept;
     const variable: VariableConfig = {
       name: index === 1 ? 'file' : `file_${index}`,
       kind: 'file',
@@ -144,15 +154,11 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
       order: Math.max(-1, ...variables.map((other) => other.order)) + 1,
       file: {
         field: target.name,
-        accept: field?.accept ?? suggestAccept(target.name),
+        accept: accept ?? suggestAccept(target.name),
         ...(target.list ? { position: used.length === 0 ? 0 : Math.max(...used) + 1 } : {}),
       },
     };
-    setConfig((current) => ({
-      // The input is the Variable's now, so Users no longer fill it in directly.
-      fields: current.fields.map((candidate) => (candidate.name === target.name ? { ...candidate, mode: 'default' } : candidate)),
-      variables: [...current.variables, variable],
-    }));
+    setConfig((current) => ({ ...current, variables: [...current.variables, variable] }));
   };
 
   const submit = () => {
@@ -188,31 +194,6 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
               {model.name} · <span className="type-mono">{model.endpointId}</span>
             </p>
           )}
-        </div>
-        <div className="cluster space-2">
-          {draft.id && (
-            <Button
-              variant="outline"
-              onClick={() =>
-                confirm({
-                  title: `Delete ${draft.name}?`,
-                  description: 'Users can no longer run it. Their Generations stay in their history.',
-                  data: null,
-                  onConfirm: () => remove.mutate({ id: draft.id as string }),
-                })
-              }
-            >
-              <Trash2 />
-              Delete
-            </Button>
-          )}
-          <Button
-            disabled={!model || !categoryId || issues.length > 0 || !name.trim() || save.isPending}
-            onClick={submit}
-          >
-            <Save />
-            Save
-          </Button>
         </div>
       </div>
 
@@ -299,18 +280,14 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
             </CardContent>
           </Card>
 
-          <PreviewImages
-            previews={previews}
-            onChange={setPreviews}
-          />
-
           {model && schema && (
             <Card>
               <CardHeader>
                 <CardTitle>Fields</CardTitle>
                 <CardDescription>
-                  The model's inputs, fixed at these values unless you show one to Users. Write {'{name}'} or {'{name: A | *B}'} in a fixed
-                  text to add a Variable; its card appears on the right.
+                  One card per input of the model. Pick for each: User input (Users fill it in), Fixed value (always sent as set here) or
+                  fal default (left to fal). To ask Users for just a part of a fixed text, write {'{name}'} or {'{name: A | *B}'} in it: the
+                  Variable's card appears on the right.
                 </CardDescription>
               </CardHeader>
               <CardContent className="stack space-4">
@@ -338,7 +315,7 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
                         onChange={setField}
                         handle={handle}
                         variableCandidates={variableCandidates(variables)}
-                        note={feeders.length > 0 ? `Fed by the file Variable ${feeders.join(', ')}.` : undefined}
+                        filledBy={feeders}
                         valueEditor={
                           isText ? (
                             <TemplateTextEditor
@@ -357,6 +334,11 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
               </CardContent>
             </Card>
           )}
+
+          <PreviewImages
+            previews={previews}
+            onChange={setPreviews}
+          />
         </div>
 
         {model && schema && (
@@ -364,7 +346,10 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
             <Card>
               <CardHeader>
                 <CardTitle>Variables</CardTitle>
-                <CardDescription>What Users fill in. Text Variables follow the texts; file inputs feed a model input.</CardDescription>
+                <CardDescription>
+                  The blanks Users fill in on top of the User input Fields. Text Variables come and go with the {'{names}'} in the fixed
+                  texts. A file input asks Users for a file and sends it to one of the model's file inputs, which it then fills on its own.
+                </CardDescription>
               </CardHeader>
               <CardContent className="stack space-4">
                 {variables.length === 0 && <p className={styles.muted}>No Variables yet.</p>}
@@ -418,6 +403,38 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
             />
           </div>
         )}
+      </div>
+      <div
+        className={previewStyles.actions}
+        role="toolbar"
+        aria-label="Template actions"
+      >
+        <p className={styles.muted}>{blocker}</p>
+        <div className="cluster space-2">
+          {draft.id && (
+            <Button
+              variant="outline"
+              onClick={() =>
+                confirm({
+                  title: `Delete ${draft.name}?`,
+                  description: 'Users can no longer run it. Their Generations stay in their history.',
+                  data: null,
+                  onConfirm: () => remove.mutate({ id: draft.id as string }),
+                })
+              }
+            >
+              <Trash2 />
+              Delete
+            </Button>
+          )}
+          <Button
+            disabled={blocker !== null || save.isPending}
+            onClick={submit}
+          >
+            <Save />
+            Save
+          </Button>
+        </div>
       </div>
       <ConfirmationDialog />
     </div>

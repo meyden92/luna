@@ -7,9 +7,13 @@ declare const styles: {
   readonly "entryDescription": string;
   readonly "entryName": string;
   readonly "main": string;
+  readonly "model": string;
   readonly "page": string;
   readonly "preview": string;
   readonly "price": string;
+  readonly "sectionHelp": string;
+  readonly "sectionTitle": string;
+  readonly "templates": string;
   readonly "withPreview": string;
 };
 export = styles;

@@ -1,6 +1,8 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { type StudioEntry, type StudioSelection, selectionOf } from '@/libs/studio/catalog';
 import type { StudioFormValues } from '@/libs/studio/form';
 import { formatPrice } from '@/libs/studio/format';
@@ -14,11 +16,13 @@ import styles from './StudioScreen.module.css';
 const entryKey = (entry: StudioEntry) => `${entry.kind}:${entry.id}`;
 
 /**
- * The Studio: the Category bar on top, the selected Category's Models and
- * Templates with the form below them on the left, the history on the right
- * (below the form on phones). The selection lives in the URL.
+ * The Studio: the Category bar on top; on the left the selected Category's
+ * Models in one dropdown, its Templates as picture cards in their own
+ * section, and the form below them; the history on the right (below the form
+ * on phones). The selection lives in the URL.
  */
 export function StudioScreen({ selection, onSelect }: { selection: StudioSelection; onSelect: (selection: StudioSelection) => void }) {
+  const id = useId();
   const { data: catalog } = useSuspenseQuery(studioCatalogQueryOptions);
   // The form's values, for the entry they were entered for; any other entry starts from its defaults.
   const [draft, setDraft] = useState<{ key: string; values: StudioFormValues } | null>(null);
@@ -30,6 +34,8 @@ export function StudioScreen({ selection, onSelect }: { selection: StudioSelecti
         ? candidate.kind === 'template' && candidate.id === selection.template
         : candidate.kind === 'model' && candidate.id === selection.model,
     ) ?? category?.entries[0];
+  const models = category?.entries.filter((candidate) => candidate.kind === 'model') ?? [];
+  const templates = category?.entries.filter((candidate) => candidate.kind === 'template') ?? [];
 
   /** Selects an entry with its form filled in: *Use settings* and *Continue with …*. */
   const open = (target: StudioEntry, values: StudioFormValues) => {
@@ -79,32 +85,68 @@ export function StudioScreen({ selection, onSelect }: { selection: StudioSelecti
           className={styles.main}
           aria-label="Generate"
         >
-          <div
-            className={styles.entries}
-            role="toolbar"
-            aria-label="Models and Templates"
-          >
-            {category.entries.map((candidate) => (
-              <button
-                key={entryKey(candidate)}
-                type="button"
-                className={cn(styles.entry, candidate.previewUrls.length > 0 && styles.withPreview)}
-                aria-pressed={entryKey(candidate) === entryKey(entry)}
-                onClick={() => onSelect(selectionOf(candidate))}
+          {models.length > 0 && (
+            <div className={styles.model}>
+              <Label htmlFor={`${id}-model`}>Model</Label>
+              <Select
+                items={models.map((candidate) => ({ value: candidate.id, label: candidate.name }))}
+                value={entry.kind === 'model' ? entry.id : null}
+                onValueChange={(modelId) => {
+                  const next = models.find((candidate) => candidate.id === modelId);
+                  if (next) onSelect(selectionOf(next));
+                }}
               >
-                {candidate.previewUrls[0] && (
-                  <img
-                    src={candidate.previewUrls[0]}
-                    alt=""
-                    className={styles.preview}
-                  />
-                )}
-                <span className={styles.entryName}>{candidate.name}</span>
-                {candidate.description && <span className={styles.entryDescription}>{candidate.description}</span>}
-                {candidate.kind === 'model' && candidate.pricing && <span className={styles.price}>{formatPrice(candidate.pricing)}</span>}
-              </button>
-            ))}
-          </div>
+                <SelectTrigger id={`${id}-model`}>
+                  <SelectValue placeholder="Choose a model…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {models.map((candidate) => (
+                    <SelectItem
+                      key={candidate.id}
+                      value={candidate.id}
+                    >
+                      {candidate.name}
+                      {candidate.pricing && <span className={styles.price}> · {formatPrice(candidate.pricing)}</span>}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {templates.length > 0 && (
+            <div className={styles.templates}>
+              <div>
+                <h2 className={styles.sectionTitle}>Templates</h2>
+                <p className={styles.sectionHelp}>Ready-made setups: fill in a few blanks instead of writing the whole prompt.</p>
+              </div>
+              <div
+                className={styles.entries}
+                role="toolbar"
+                aria-label="Templates"
+              >
+                {templates.map((candidate) => (
+                  <button
+                    key={candidate.id}
+                    type="button"
+                    className={cn(styles.entry, candidate.previewUrls.length > 0 && styles.withPreview)}
+                    aria-pressed={entryKey(candidate) === entryKey(entry)}
+                    onClick={() => onSelect(selectionOf(candidate))}
+                  >
+                    {candidate.previewUrls[0] && (
+                      <img
+                        src={candidate.previewUrls[0]}
+                        alt=""
+                        className={styles.preview}
+                      />
+                    )}
+                    <span className={styles.entryName}>{candidate.name}</span>
+                    {candidate.description && <span className={styles.entryDescription}>{candidate.description}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <GeneratePanel
             key={entryKey(entry)}

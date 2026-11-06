@@ -1,10 +1,14 @@
 @layer components {
-  /* Desktop sidebar; narrow screens place the same navigation above the content. */
+  /*
+   * Desktop sidebar; narrow screens place the same navigation above the content.
+   * `overflow-x: clip`, not `hidden`, throughout: `hidden` makes each box a scroll
+   * container, which pins `position: sticky` children (the Template editor's action bar) to it, not the window.
+   */
   .root {
     display: flex;
     min-height: 100%;
     max-width: 100%;
-    overflow-x: hidden;
+    overflow-x: clip;
     background: var(--background);
   }
 
@@ -27,7 +31,7 @@
     flex-direction: column;
     min-width: 0;
     min-height: 0;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   .breadcrumbs {
@@ -37,7 +41,7 @@
   .main {
     flex: 1;
     padding: 0 var(--space-8) var(--space-8);
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   @media (width < 64rem) {

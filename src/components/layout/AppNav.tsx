@@ -21,6 +21,7 @@ import { useIsomorphicLayoutEffect } from '@/hooks/use-isomorphic-layout-effect'
 import { authClient } from '@/libs/auth/auth-client';
 import { queryKeys } from '@/libs/query-keys';
 import { cn, getAvatarUrl } from '@/libs/utils';
+import { checkCurrentUserIsAdmin } from '@/server/fns/rbac';
 import styles from './AppNav.module.css';
 
 /** A destination, or a label whose destinations live in a dropdown. `studio` entries show only while the Studio is enabled. */
@@ -182,7 +183,7 @@ function NavLinks({ showAdmin }: { showAdmin: boolean }) {
  * underneath it crossfades. The marketing nav is a separate component
  * (`src/components/landing/Navigation.tsx`); this one never renders logged out.
  */
-function AppNav({ canAccessAdmin = false }: { canAccessAdmin?: boolean }) {
+function AppNav() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { resolvedTheme, setTheme } = useTheme();
@@ -196,7 +197,12 @@ function AppNav({ canAccessAdmin = false }: { canAccessAdmin?: boolean }) {
   const isDark = resolvedTheme === 'dark';
 
   const user = session?.user;
-  const showAdmin = canAccessAdmin || user?.role === 'admin';
+  // Same rule and cache entry as the `/admin` guard: super admins and admin-group members, whatever their role.
+  const { data: showAdmin = false } = useQuery({
+    queryKey: queryKeys.adminRbac.currentUserIsAdmin,
+    queryFn: () => checkCurrentUserIsAdmin(),
+    staleTime: 30_000,
+  });
 
   const handleSignOut = async () => {
     await authClient.signOut({

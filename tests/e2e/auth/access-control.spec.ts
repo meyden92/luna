@@ -49,12 +49,28 @@ test('a signed-out visitor opening /admin is sent to the login page', async ({ p
   await expect(page).toHaveURL(/\/login$/);
 });
 
-test('the account menu offers no Admin link to a worker user', async ({ workerPage }) => {
+test('the nav offers a worker user neither the Admin link nor the Downloader', async ({ workerPage }) => {
   await workerPage.goto('/dashboard');
   await workerPage.getByRole('button', { name: 'Account' }).click();
 
   await expect(workerPage.getByRole('menuitem', { name: 'Settings' })).toBeVisible();
   await expect(workerPage.getByRole('menuitem', { name: 'Admin' })).toHaveCount(0);
+
+  await workerPage.keyboard.press('Escape');
+  await workerPage.getByRole('button', { name: 'Tools' }).click();
+  await expect(workerPage.getByRole('menuitem', { name: 'Converter' })).toBeVisible();
+  await expect(workerPage.getByRole('menuitem', { name: 'Downloader' })).toHaveCount(0);
+});
+
+// The bootstrap admin is a super admin without the `admin` role, like the operator account of a first run.
+test('the nav offers the bootstrap super admin the Admin link and the Downloader', async ({ adminPage }) => {
+  await adminPage.goto('/dashboard');
+  await adminPage.getByRole('button', { name: 'Account' }).click();
+  await expect(adminPage.getByRole('menuitem', { name: 'Admin' })).toBeVisible();
+
+  await adminPage.keyboard.press('Escape');
+  await adminPage.getByRole('button', { name: 'Tools' }).click();
+  await expect(adminPage.getByRole('menuitem', { name: 'Downloader' })).toBeVisible();
 });
 
 test('registration is closed: sign-up is refused over the API and the UI offers none', async ({ page, request }) => {

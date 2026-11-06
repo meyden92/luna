@@ -107,7 +107,7 @@ test('changing the quota shows on the user list and on the storage page of the u
   await expect(adminPage.getByRole('row', { name: new RegExp(account.email) })).toContainText(`0 B / ${formatSize(quotaBytes)}`);
 });
 
-test('adding a user to the Admin group opens /admin for it, removing it closes /admin again', async ({ adminPage, browser, db }) => {
+test('the Admin group opens /admin and its nav link for a user, removing it closes /admin', async ({ adminPage, browser, db }) => {
   const { account } = await createAndOpen(adminPage, db, 'rbac');
   const device = await signedInDevice(browser, account);
 
@@ -125,6 +125,12 @@ test('adding a user to the Admin group opens /admin for it, removing it closes /
   await device.goto('/admin');
   await expect(device).toHaveURL(/\/admin$/);
   await expect(device.getByRole('heading', { name: 'Admin Panel' })).toBeVisible();
+
+  // The nav follows the same rule as the guard, though the user has no `admin` role.
+  await device.goto('/dashboard');
+  await device.getByRole('button', { name: 'Account' }).click();
+  await expect(device.getByRole('menuitem', { name: 'Admin' })).toBeVisible();
+  await device.keyboard.press('Escape');
 
   await adminGroup.uncheck();
   // The first save's toast can still be on screen, so it proves nothing here.

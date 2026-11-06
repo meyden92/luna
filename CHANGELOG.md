@@ -2,6 +2,38 @@
 
 Every LunaShare release, newest first. Entries up to v4.7.0 were rewritten from their GitHub releases, or from the tag message where no release exists.
 
+## v4.8.3 (2026-11-06)
+
+**The One Where the Content Checker Said No and We Finally Listened**
+
+fal has been rejecting some of your Generations for minutes while Studio kept showing "Queued" like nothing happened. That's fixed. Also, the operator account can find the Admin panel without typing the URL from memory, and the Studio stops putting Templates and Models in one pile.
+
+### 🔧 Improved
+
+🗂️ **Models in one place, Templates in another.** In **Studio**, each Category's Models now sit in one **Model** dropdown with their price. Templates get their own **Templates** section with their picture cards. Ten models in a Category is now one dropdown, not ten cards.
+
+✍️ **A Template editor you can read.** The three options per Field are now called **User input**, **Fixed value** and **fal default**, each with one line saying what it does. Save and Delete moved into a bar at the bottom of the window, so you stop scrolling back to the top after every change. The bar also tells you why Save is greyed out.
+
+### 🐛 Fixed
+
+🚫 **Rejected means Failed.** When fal's content checker rejected a request, Studio showed the Generation as **Queued** forever, and Cancel only produced an error toast. fal reports this rejection only on the result URL, and we didn't count that as a final answer. Now the Generation turns **Failed** with fal's message ("…flagged by a content checker") within one poll, and Cancel ends the same way, without the toast.
+
+📎 **One file input, asked for once.** A Template file field set to **User input** showed its file input twice in the Studio form unless you also set it to "fal default". The file input that feeds a Field now owns it, so the form asks for the file once and the editor says "Users fill this in through the file input …".
+
+🔑 **The operator can see the Admin link.** A super admin without the `admin` role, like the account created on first run, could open `/admin` but had no **Admin** entry in the account menu and no **Downloader** under **Tools**. The nav now uses the same check as `/admin`, so super admins and Admin-group members see both.
+
+### 🧪 Under the hood
+
+The fake fal service learned a `[flagged]` prompt that fails the way the content checker does, and a spec now checks it ends in Failed. New nav specs cover the bootstrap super admin and an Admin-group member. The admin layout switched from `overflow-x: hidden` to `clip`, which is what lets the sticky Save bar stick.
+
+### ⬆️ Upgrade
+
+No migrations and no new environment variables.
+
+The v4.8.3 tag triggers the GHCR image build and publishes the versioned and latest tags. Deployment is still manual.
+
+Implemented in #249 (for #238, #247, #248).
+
 ## v4.8.2 (2026-11-05)
 
 **The One Where Showing Our ID Got Us Thrown Out**

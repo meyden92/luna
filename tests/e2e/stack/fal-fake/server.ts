@@ -33,6 +33,11 @@ interface QueuedRequest {
   submittedAt: number;
   /** `[fail]` in the input: completes with a model error. */
   fail: boolean;
+  /**
+   * `[flagged]` in the input: completes like a content-checker rejection, which
+   * fal reports only on the result URL, with no error in the status.
+   */
+  flagged: boolean;
   /** `[slow]` in the input: stays `IN_PROGRESS` until released or cancelled. */
   held: boolean;
   /** `[cost=<usd>]` in the input: billed at this instead of the list price. */
@@ -75,7 +80,7 @@ function completedAt(entry: QueuedRequest): number | null {
 }
 
 function succeeded(entry: QueuedRequest): boolean {
-  return completedAt(entry) !== null && entry.cancelledAt === null && !entry.fail;
+  return completedAt(entry) !== null && entry.cancelledAt === null && !entry.fail && !entry.flagged;
 }
 
 function queueUrls(entry: QueuedRequest) {
@@ -90,6 +95,7 @@ function billedCost(entry: QueuedRequest): number {
 }
 
 const FAILURE_TYPE = 'fake_failure';
+const CONTENT_CHECKER_MESSAGE = 'The content could not be processed because it contained material flagged by a content checker.';
 
 // ---------------------------------------------------------------------------
 // Queue: POST /<endpoint>, then the URLs submit returned
@@ -106,6 +112,7 @@ async function submit(request: Request, endpointId: string): Promise<Response> {
     input,
     submittedAt: Date.now(),
     fail: text.includes('[fail]'),
+    flagged: text.includes('[flagged]'),
     held: text.includes('[slow]'),
     cost: cost ? Number(cost[1]) : null,
     releasedAt: null,
@@ -132,6 +139,10 @@ function result(entry: QueuedRequest): Response {
   if (entry.fail) {
     const failure = { loc: ['body'], msg: 'The fake failed this request: its input contains [fail].', type: FAILURE_TYPE };
     return json({ detail: [failure] }, 422, { 'x-fal-error-type': FAILURE_TYPE });
+  }
+  if (entry.flagged) {
+    const failure = { loc: ['body'], msg: CONTENT_CHECKER_MESSAGE, type: 'content_policy_violation' };
+    return json({ detail: [failure] }, 422, { 'x-fal-error-type': 'content_policy_violation' });
   }
   return json(fakeModel(entry.endpointId)!.result(entry.input, mediaUrls));
 }

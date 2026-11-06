@@ -172,6 +172,7 @@ itself. Billing events exist for succeeded requests, at the list price times the
 Control hooks, written anywhere in a request's input (usually the prompt):
 
 - `[fail]`: the request completes with a fal-style model error (422, `detail[0].type` and `error_type` `fake_failure`).
+- `[flagged]`: the request completes like a content-checker rejection: the status is `COMPLETED` with no `error`, and only the result URL answers 422 (`detail[0].type` `content_policy_violation`).
 - `[slow]`: the request stays `IN_PROGRESS` until it is cancelled (cancel answers 202, then it completes as cancelled) or
   released with `POST /__control/release` `{ request_id }`.
 - `[cost=<usd>]`: billing events report this amount instead of the list price, so a spec can tell a settled cost from the estimate.

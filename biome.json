@@ -20,7 +20,8 @@
       "!!**/playwright-report",
       "!!**/test-results",
       "!!**/tests/e2e/.auth",
-      "!!**/tests/e2e/fixtures/files"
+      "!!**/tests/e2e/fixtures/files",
+      "!!video"
     ]
   },
   "formatter": {

@@ -107,3 +107,5 @@ docs/
 .prettierrc*
 .editorconfig
 biome.json
+# Remotion video project (separate package)
+video

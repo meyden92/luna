@@ -59,6 +59,7 @@
     "./.storybook/**/*",
     ".claude/**/*",
     "./test-results/**/*",
-    "./playwright-report/**/*"
+    "./playwright-report/**/*",
+    "./video/**/*"
   ]
 }

@@ -8,6 +8,9 @@ findings
 /.pnp
 .pnp.js
 
+#videos
+/video
+
 # testing
 /coverage
 /test-results/

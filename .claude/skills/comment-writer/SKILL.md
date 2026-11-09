@@ -21,7 +21,9 @@ Well-named code speaks for itself. A function whose name says what it does, a lo
 
 ## When a comment earns its place
 
-A comment exists to answer one real question the next reader will have that the code cannot answer: a hidden unit, a side effect, a gotcha, an invariant, the why behind a surprising choice.
+A comment exists to answer one real question the next reader will have that the code cannot answer: a hidden unit, a side effect, a gotcha, an invariant, a usage contract the signature cannot express (call order, preconditions), or a constraint from outside the code (`// the proxy drops websockets, so we poll`).
+
+The test is whether the comment has its own reason to change. A comment that restates the implementation changes only when the code does, so it adds nothing — even phrased as a why (`// sort first so the binary search works`). A comment about something outside the code changes when that thing does, which the code cannot show, so it stays. A comment explaining a workaround lives exactly as long as the workaround: removing the workaround removes the comment.
 
 - One sentence is the norm. A second sentence must answer a second, distinct question.
 - Doc comments follow the language's native convention, and one line is the usual size. Skip param-by-param listings that restate names and types.
@@ -44,6 +46,7 @@ When editing code, re-read every comment adjacent to the change and update any t
 
 ## Before finishing any code change
 
-- [ ] Every comment answers a question the code cannot; each sentence beyond the first was re-justified on its own
+- [ ] Every comment answers a question the code cannot and has its own reason to change; each sentence beyond the first was re-justified on its own
+- [ ] Every workaround this change removed took its comment with it
 - [ ] Zero issue numbers, history, rationale essays, or plans in any comment
 - [ ] Every comment adjacent to the changed code is still true

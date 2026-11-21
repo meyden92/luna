@@ -117,8 +117,6 @@ The v4.6.0 tag triggers the GHCR image build and publishes the versioned and lat
 Implemented in #200 (for #58), #196 (for #101) and #213 (for #123, #192).
 ```
 
-Run the `unslop` skill over the draft before showing it.
-
 **Done when** every change from step 2 appears in exactly one item and the Upgrade section lists every migration and env change you found.
 
 ## 5. Get the go-ahead

@@ -221,7 +221,6 @@ export type TokenSettings = {
   convertToJpeg: boolean;
   jpegQuality: number;
   folderId: string | null;
-  stripMetadata: boolean;
   flowId: string | null;
 };
 

@@ -24,7 +24,6 @@ export interface SettingsOverview {
     convertToJpeg: boolean;
     jpegQuality: number;
     folderId: string | null;
-    stripMetadata: boolean;
     flowId: string | null;
     createdAt: Date;
   }[];
@@ -103,7 +102,6 @@ export const getSettingsOverview = createServerFn({ method: 'GET' })
         convertToJpeg: token.convertToJpeg,
         jpegQuality: token.jpegQuality,
         folderId: token.folderId,
-        stripMetadata: token.stripMetadata,
         flowId: token.flowId,
         createdAt: token.createdAt,
       })),

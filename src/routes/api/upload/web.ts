@@ -9,7 +9,7 @@ import type { JsonValue } from '@/db/schema/json';
 import { checkScopedRateLimit, retryAfterSeconds } from '@/libs/api/rate-limit';
 import { env } from '@/libs/env';
 import { dispatchFlowTrigger } from '@/libs/flows/run-flow';
-import { scrubMetadataIfNeeded } from '@/libs/metadata-scrubber';
+import { inspectMetadata } from '@/libs/metadata-scrubber';
 import { checkModerationGate, createModerationCase } from '@/libs/moderation/hash-gate';
 import { requireAuthenticatedUser } from '@/libs/rbac/guards';
 import { s3Client } from '@/libs/S3Helper';
@@ -116,11 +116,9 @@ async function handle(request: Request): Promise<Response> {
     return json({ error: `Unsupported file type: ${declaredContentType}`, code: 'UNSUPPORTED_FILE_TYPE' }, 415);
   }
 
-  const rawBuffer = Buffer.from(await file.arrayBuffer());
-  const contentType = resolveUploadContentType(declaredContentType, fileName, rawBuffer);
-  const shouldStripMetadata = formData.get('stripMetadata')?.toString() === 'true';
-  const scrubbed = await scrubMetadataIfNeeded(rawBuffer, contentType, shouldStripMetadata);
-  const uploadBuffer = scrubbed.buffer;
+  const uploadBuffer = Buffer.from(await file.arrayBuffer());
+  const contentType = resolveUploadContentType(declaredContentType, fileName, uploadBuffer);
+  const scrubReport = await inspectMetadata(uploadBuffer, contentType);
   const moderationGate = await checkModerationGate(uploadBuffer, contentType);
   const storedFileName = `${randomUUID()}-${fileName}`;
   const key = `${userId}/${storedFileName}`;
@@ -154,7 +152,7 @@ async function handle(request: Request): Promise<Response> {
         folderId: requestedFolderId,
         privateUpload: isPrivate,
         hashes: moderationGate.hashes,
-        scrubReport: scrubbed.report as unknown as JsonValue,
+        scrubReport: scrubReport as unknown as JsonValue,
         dimensions: width && height ? { width, height } : null,
       },
       userId,

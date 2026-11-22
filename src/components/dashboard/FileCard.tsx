@@ -152,6 +152,7 @@ const FileCard = React.memo(function FileCard({
         ) : (
           <div className={styles.placeholder}>
             <TypeIcon size={22} />
+            {file.title && <p className={styles.placeholderName}>{file.title}</p>}
             <span>{extensionOf(file)}</span>
             {duration !== null && <small>{formatDuration(duration)}</small>}
           </div>

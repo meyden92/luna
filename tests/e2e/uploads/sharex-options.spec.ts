@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 import { expect } from '@playwright/test';
-import exifr from 'exifr';
 import sharp from 'sharp';
 import { test } from '../fixtures/test';
 import { createFolderThroughSidebar, folderIdOf, uniquePrefix } from '../utils/own-files';
@@ -82,36 +81,6 @@ test('without compression the image is stored as sent', async ({ workerPage, pla
     expect(status).toBe(200);
     expect((await storedFile(db, bucket, name)).bytes.equals(readFileSync(entry.path))).toBe(true);
   });
-});
-
-test('"Remove photo location" strips the stored photo, and leaving it off keeps the location', async ({
-  workerPage,
-  playwright,
-  stack,
-  corpus,
-  db,
-  bucket,
-}) => {
-  const entry = corpus.edgeCase('gps-exif');
-  const upload = (name: string) => ({ name, mimeType: entry.mimeType, buffer: readFileSync(entry.path) });
-  const kept = `${uniquePrefix('sx-keep')} ${entry.name}`;
-  const stripped = `${uniquePrefix('sx-strip')} ${entry.name}`;
-
-  await withToken(workerPage, 'sx-strip-token', async (key) => {
-    await workerPage.goto('/settings');
-    const toggle = workerPage.getByRole('switch', { name: 'Remove photo location' });
-    await expect(toggle).not.toBeChecked();
-    expect((await sharexPost(playwright, stack.E2E_BASE_URL, upload(kept), { bearer: key })).status).toBe(200);
-
-    await toggle.click();
-    await expect(toggle).toBeChecked();
-    expect((await sharexPost(playwright, stack.E2E_BASE_URL, upload(stripped), { bearer: key })).status).toBe(200);
-  });
-
-  expect(await exifr.gps((await storedFile(db, bucket, kept)).bytes)).toBeDefined();
-  const scrubbed = await storedFile(db, bucket, stripped);
-  expect(await exifr.gps(scrubbed.bytes)).toBeUndefined();
-  expect((scrubbed.scrubReport as { stripped: boolean }).stripped).toBe(true);
 });
 
 test('the default folder receives ShareX uploads', async ({ workerPage, playwright, stack, corpus, db, bucket }) => {

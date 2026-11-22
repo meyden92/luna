@@ -91,7 +91,14 @@
     display: flex;
   }
 
-  /* A file with nothing to show: the icon and its extension on a raised slab. */
+  .video {
+    max-width: 100%;
+    max-height: calc(100vh - var(--space-12) * 2);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 30px 80px -20px var(--scrim-strong);
+  }
+
+  /* A file with no picture: the icon and its extension on a raised slab, plus a player for audio. */
   .placeholder {
     display: flex;
     flex-direction: column;
@@ -105,6 +112,11 @@
     color: color-mix(in oklab, var(--on-scrim) 80%, transparent);
     font-family: var(--font-mono);
     font-size: var(--text-sm);
+  }
+
+  .audio {
+    width: calc(100% - var(--space-8));
+    margin-top: var(--space-4);
   }
 
   .nav {

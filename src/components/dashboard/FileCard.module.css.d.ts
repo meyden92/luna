@@ -11,6 +11,7 @@ declare const styles: {
   readonly "media": string;
   readonly "menuChip": string;
   readonly "placeholder": string;
+  readonly "placeholderName": string;
   readonly "root": string;
   readonly "shade": string;
 };

@@ -145,7 +145,7 @@ export async function withToken(page: Page, label: string, body: (key: string) =
   }
 }
 
-/** The Token options the settings page has no controls for (it only offers the folder and "Remove photo location"). */
+/** The Token options the settings page has no controls for (it only offers the folder). */
 export interface TokenOptions {
   compressImage: boolean;
   convertToJpeg: boolean;
@@ -159,25 +159,25 @@ const seroval = {
 
 /**
  * Sets a Token's compress, convert-to-JPEG and quality options through `updateTokenSettings`.
- * The settings page has no controls for them, so this takes the request the page makes when the
- * "Remove photo location" switch is flipped (which carries every field), rewrites those fields and
- * replays it; strip metadata and the folder are written back off and empty. Applies to all of the
- * user's Tokens, like the page's own controls. Leaves the page reloaded on /settings.
+ * The settings page has no controls for them, so this takes the request the page makes when
+ * "Not in a folder" is picked as the default folder (which carries every field), rewrites those
+ * fields and replays it; the folder is written back empty. Applies to all of the user's Tokens,
+ * like the page's own controls. Leaves the page reloaded on /settings.
  */
 export async function setTokenOptions(page: Page, options: TokenOptions): Promise<void> {
   await page.goto('/settings');
-  const toggle = page.getByRole('switch');
-  await expect(toggle).toBeEnabled();
+  const folderSelect = page.getByRole('combobox');
+  await expect(folderSelect).toBeEnabled();
   const captured = page.waitForRequest((request) => request.url().includes('/_serverFn/') && request.method() === 'POST');
-  await toggle.click();
+  await folderSelect.click();
+  await page.getByRole('option', { name: 'Not in a folder' }).click();
   const request = await captured;
   // The click's own save must land before the replay, or it can finish last and put the page's defaults back.
   await request.response();
 
   const body = JSON.parse(request.postData() ?? '') as { t: { p: { v: { p: { k: string[]; v: unknown[] } }[] } } };
   const { k, v } = body.t.p.v[0]!.p;
-  const fields: Record<string, boolean | number> = { ...options, stripMetadata: false };
-  for (const [name, value] of Object.entries(fields)) v[k.indexOf(name)] = seroval.value(value);
+  for (const [name, value] of Object.entries(options)) v[k.indexOf(name)] = seroval.value(value);
 
   const response = await page.request.post(request.url(), {
     headers: { 'x-tsr-serverFn': 'true', origin: new URL(page.url()).origin, 'content-type': 'application/json' },

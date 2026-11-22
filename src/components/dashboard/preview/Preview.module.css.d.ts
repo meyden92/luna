@@ -1,4 +1,5 @@
 declare const styles: {
+  readonly "audio": string;
   readonly "counter": string;
   readonly "fallback": string;
   readonly "image": string;
@@ -9,6 +10,7 @@ declare const styles: {
   readonly "root": string;
   readonly "spinner": string;
   readonly "stage": string;
+  readonly "video": string;
 };
 export = styles;
 

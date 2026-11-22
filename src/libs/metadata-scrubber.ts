@@ -1,13 +1,11 @@
 import * as exifr from 'exifr';
-import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
-import { PDFDocument } from 'pdf-lib';
 import sharp from 'sharp';
 
 export type MetadataFinding = {
   category: 'gps' | 'device' | 'author' | 'software' | 'timestamp' | 'thumbnail' | 'provenance' | 'format' | 'unknown';
   label: string;
   severity: 'low' | 'medium' | 'high';
-  action: 'keep' | 'strip' | 'unsupported';
+  action: 'keep' | 'unsupported';
   detail?: string;
 };
 
@@ -16,10 +14,7 @@ export type MetadataScrubReport = {
   inspectedAt: string;
   contentType: string;
   findings: MetadataFinding[];
-  stripped: boolean;
-  parser: 'sharp' | 'marker-scan' | 'pdf-lib' | 'office-zip';
-  before?: MetadataFinding[];
-  after?: MetadataFinding[];
+  parser: 'sharp' | 'marker-scan';
   errors?: string[];
 };
 
@@ -43,60 +38,8 @@ export async function inspectMetadata(buffer: Buffer, contentType: string): Prom
             action: 'unsupported',
           },
         ],
-    stripped: false,
     parser: 'marker-scan',
-    before: markers,
-    after: markers,
   };
-}
-
-export async function scrubMetadataIfNeeded(
-  buffer: Buffer,
-  contentType: string,
-  shouldStrip: boolean,
-): Promise<{ buffer: Buffer; report: MetadataScrubReport }> {
-  const report = await inspectMetadata(buffer, contentType);
-  if (!shouldStrip) return { buffer, report };
-  if (contentType === 'application/pdf') {
-    return scrubPdfMetadata(buffer, contentType, report);
-  }
-  if (isOfficeOpenXml(contentType)) {
-    return scrubOfficeMetadata(buffer, contentType, report);
-  }
-  if (!contentType.startsWith('image/')) {
-    return {
-      buffer,
-      report: {
-        ...report,
-        findings: report.findings.map((finding) => ({ ...finding, action: 'unsupported' })),
-        errors: [...(report.errors ?? []), 'Metadata stripping is not supported for this file type yet.'],
-      },
-    };
-  }
-
-  try {
-    const scrubbed = await sharp(buffer).rotate().toBuffer();
-    const after = await inspectImageMetadata(scrubbed, contentType);
-    const reportAfterStrip: MetadataScrubReport = {
-      ...report,
-      stripped: true,
-      findings: report.findings.map(
-        (finding): MetadataFinding => ({
-          ...finding,
-          action: finding.action === 'unsupported' ? finding.action : 'strip',
-        }),
-      ),
-      before: report.findings,
-      after: after.findings,
-      errors: after.errors,
-    };
-    return {
-      buffer: scrubbed,
-      report: reportAfterStrip,
-    };
-  } catch {
-    return { buffer, report };
-  }
 }
 
 async function inspectImageMetadata(buffer: Buffer, contentType: string): Promise<MetadataScrubReport> {
@@ -129,10 +72,7 @@ async function inspectImageMetadata(buffer: Buffer, contentType: string): Promis
     findings: findings.length
       ? findings
       : [{ category: 'format', label: 'No common image metadata blocks detected.', severity: 'low', action: 'keep' }],
-    stripped: false,
     parser: 'sharp',
-    before: findings,
-    after: findings,
     errors,
   };
 }
@@ -166,96 +106,6 @@ async function inspectExifTags(buffer: Buffer): Promise<MetadataFinding[]> {
   }
 
   return findings;
-}
-
-async function scrubPdfMetadata(
-  buffer: Buffer,
-  contentType: string,
-  report: MetadataScrubReport,
-): Promise<{ buffer: Buffer; report: MetadataScrubReport }> {
-  try {
-    const pdf = await PDFDocument.load(buffer, { updateMetadata: false });
-    pdf.setTitle('');
-    pdf.setAuthor('');
-    pdf.setSubject('');
-    pdf.setKeywords([]);
-    pdf.setProducer('LunaShare');
-    pdf.setCreator('LunaShare');
-    pdf.setCreationDate(new Date(0));
-    pdf.setModificationDate(new Date(0));
-    const saved = Buffer.from(await pdf.save({ useObjectStreams: false }));
-    const after = await inspectMetadata(saved, contentType);
-    return {
-      buffer: saved,
-      report: {
-        ...report,
-        parser: 'pdf-lib',
-        stripped: true,
-        findings: report.findings.map((finding) => ({ ...finding, action: 'strip' })),
-        before: report.findings,
-        after: after.findings,
-        errors: after.errors,
-      },
-    };
-  } catch (error) {
-    return {
-      buffer,
-      report: {
-        ...report,
-        parser: 'pdf-lib',
-        errors: [...(report.errors ?? []), error instanceof Error ? error.message : 'PDF metadata scrub failed.'],
-      },
-    };
-  }
-}
-
-async function scrubOfficeMetadata(
-  buffer: Buffer,
-  contentType: string,
-  report: MetadataScrubReport,
-): Promise<{ buffer: Buffer; report: MetadataScrubReport }> {
-  try {
-    const archive = unzipSync(buffer);
-    delete archive['docProps/core.xml'];
-    delete archive['docProps/app.xml'];
-    delete archive['docProps/custom.xml'];
-
-    const rels = archive['_rels/.rels'];
-    if (rels) {
-      archive['_rels/.rels'] = strToU8(strFromU8(rels).replace(/<Relationship\b[^>]*Target="docProps\/[^"]+"[^>]*\/>/g, ''));
-    }
-
-    const contentTypes = archive['[Content_Types].xml'];
-    if (contentTypes) {
-      archive['[Content_Types].xml'] = strToU8(
-        strFromU8(contentTypes).replace(/<Override\b[^>]*PartName="\/docProps\/[^"]+"[^>]*\/>/g, ''),
-      );
-    }
-
-    const saved = Buffer.from(zipSync(archive));
-    const after = await inspectMetadata(saved, contentType);
-    return {
-      buffer: saved,
-      report: {
-        ...report,
-        parser: 'office-zip',
-        stripped: true,
-        findings: report.findings.map((finding) => ({ ...finding, action: 'strip' })),
-        before: report.findings,
-        after: after.findings,
-        errors: after.errors,
-      },
-    };
-  } catch (error) {
-    return {
-      buffer,
-      report: {
-        ...report,
-        parser: 'office-zip',
-        errors: [...(report.errors ?? []), error instanceof Error ? error.message : 'Office metadata scrub failed.'],
-      },
-    };
-  }
 }
 
 function isOfficeOpenXml(contentType: string): boolean {

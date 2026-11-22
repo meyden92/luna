@@ -43,7 +43,7 @@ export function previewShareUrl(file: PreviewFile): string {
   return buildViewUrl(window.location.origin, { id: file.id, contentType: file.mimeType ?? '' });
 }
 
-/** Only an image can go on the stage, or onto the clipboard as an image. */
+/** Only an image can be preloaded, or go onto the clipboard as an image. */
 export function isPreviewImage(mimeType: string | null): boolean {
   return Boolean(mimeType?.startsWith('image/'));
 }

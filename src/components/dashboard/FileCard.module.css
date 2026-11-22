@@ -100,7 +100,7 @@
     scale: 1.035;
   }
 
-  /* Anything that is not an image or a video: a hatch, the type, the extension. */
+  /* Anything that is not an image: a hatch, the type, the name, the extension. */
   .placeholder {
     display: flex;
     flex-direction: column;
@@ -124,6 +124,20 @@
       font-size: var(--text-label);
       color: var(--foreground-subtle);
     }
+  }
+
+  .placeholderName {
+    display: -webkit-box;
+    max-width: 100%;
+    margin: 0;
+    padding-inline: var(--space-3);
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: var(--text-sm);
+    text-align: center;
+    overflow-wrap: anywhere;
+    color: var(--foreground);
   }
 
   /* Darkens the foot of the card so the action chips stay legible on any image. */

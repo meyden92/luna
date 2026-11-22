@@ -39,12 +39,12 @@ const LOAD_MORE_THRESHOLD = 5;
 /** Horizontal travel a touch needs before it counts as a swipe. */
 const SWIPE_THRESHOLD_PX = 60;
 
-/** A keystroke aimed at a field is the field's, not the Preview's. */
+/** A keystroke aimed at a field or a media player is its own — ← → seek there — not the Preview's. */
 function isTypingTarget(target: EventTarget | null): boolean {
   return (
     target instanceof HTMLElement &&
     (target.isContentEditable ||
-      ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) ||
+      ['INPUT', 'TEXTAREA', 'SELECT', 'AUDIO', 'VIDEO'].includes(target.tagName) ||
       Boolean(target.closest('[data-slot="dialog-content"], [data-slot="alert-dialog-content"]')))
   );
 }
@@ -229,6 +229,8 @@ export function Preview({
   if (!file || typeof document === 'undefined') return null;
 
   const isImage = isPreviewImage(file.mimeType);
+  const isVideo = Boolean(file.mimeType?.startsWith('video/'));
+  const isAudio = Boolean(file.mimeType?.startsWith('audio/'));
   const PlaceholderIcon = getFileIcon(file.mimeType ?? '');
   // A click anywhere on the backdrop closes; a click on the file itself must not.
   const keepOpen = (event: React.MouseEvent) => event.stopPropagation();
@@ -303,6 +305,19 @@ export function Preview({
               <p>Failed to load image</p>
             </div>
           </>
+        ) : isVideo ? (
+          <video
+            key={file.id}
+            src={previewFileUrl(file)}
+            aria-label={file.name}
+            className={styles.video}
+            controls
+            autoPlay
+            muted
+            loop
+            playsInline
+            onClick={keepOpen}
+          />
         ) : (
           <div
             className={styles.placeholder}
@@ -310,6 +325,15 @@ export function Preview({
           >
             <PlaceholderIcon size={40} />
             <span>{previewExtensionLabel(file)}</span>
+            {isAudio && (
+              <audio
+                key={file.id}
+                src={previewFileUrl(file)}
+                aria-label={file.name}
+                className={styles.audio}
+                controls
+              />
+            )}
           </div>
         )}
 

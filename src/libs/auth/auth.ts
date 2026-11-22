@@ -109,7 +109,16 @@ export function handleAuthRequest(request: Request, socketIp: string | undefined
   headers.delete(CLIENT_IP_HEADER);
   const ip = clientIp(request.headers, env.TRUSTED_PROXY_HOPS, socketIp);
   if (ip) headers.set(CLIENT_IP_HEADER, ip);
-  return auth.handler(new Request(request, { headers }));
+  // Built from parts: on Node the dev server's Request is srvx's own class, which undici's copy constructor rejects.
+  // Node requires `duplex` for a streamed body; the DOM typings do not know it yet.
+  const init: RequestInit & { duplex: 'half' } = {
+    method: request.method,
+    headers,
+    body: request.body,
+    signal: request.signal,
+    duplex: 'half',
+  };
+  return auth.handler(new Request(request.url, init));
 }
 
 export type Session = typeof auth.$Infer.Session;

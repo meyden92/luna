@@ -206,7 +206,8 @@ describe.skipIf(!hasDatabase)('Budgets', () => {
       contentType: 'image/png',
       s3Key: `studio/${spender}/delete/${index}.png`,
       sizeBytes: 1,
-      expiresAt: new Date('2026-11-20T00:00:00Z'),
+      // Ahead of the wall clock, which deleteOwnedGeneration stamps due Outputs with.
+      expiresAt: new Date(Date.now() + 86_400_000),
       expiredAt,
     });
     await m.db.insert(m.generationOutput).values([output(0, null), output(1, now)]);

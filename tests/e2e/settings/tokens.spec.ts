@@ -110,25 +110,10 @@ test('without a Token the config cannot be downloaded and the defaults wait', as
   await expect(emptyPage.getByText('No upload tokens yet.')).toBeVisible();
   await expect(emptyPage.getByRole('button', { name: 'Download config' })).toBeDisabled();
   await expect(emptyPage.getByText('Create an upload token below first.')).toBeVisible();
-  await expect(emptyPage.getByRole('switch', { name: 'Remove photo location' })).toBeDisabled();
   await expect(emptyPage.getByText('Create an upload token above to set defaults.')).toBeVisible();
 });
 
-test('"Remove photo location" is remembered after a reload, and visibility is not configurable yet', async ({ workerPage }) => {
-  await withToken(workerPage, 'tok-defaults', async () => {
-    await workerPage.goto('/settings');
-    const strip = workerPage.getByRole('switch', { name: 'Remove photo location' });
-    await expect(strip).not.toBeChecked();
-    await expect(workerPage.getByText('Not configurable yet — new uploads keep their current visibility.')).toBeVisible();
-
-    await strip.click();
-    await expect(strip).toBeChecked();
-    await workerPage.reload();
-    await expect(strip).toBeChecked();
-
-    await strip.click();
-    await expect(strip).not.toBeChecked();
-    await workerPage.reload();
-    await expect(strip).not.toBeChecked();
-  });
+test('visibility for new uploads is not configurable yet', async ({ workerPage }) => {
+  await workerPage.goto('/settings');
+  await expect(workerPage.getByText('Not configurable yet — new uploads keep their current visibility.')).toBeVisible();
 });

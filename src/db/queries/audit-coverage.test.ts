@@ -298,7 +298,7 @@ describe.skipIf(!hasDatabase)('audited models: content', () => {
         contentType: 'image/png',
         privateUpload: false,
         hashes: { sha256: hex(runId, 64), md5: hex(runId, 32), phash: null },
-        scrubReport: { version: 2, stripped: false },
+        scrubReport: { version: 2 },
         dimensions: { width: 12, height: 12 },
       },
       ownerId,
@@ -431,7 +431,7 @@ describe.skipIf(!hasDatabase)('audited models: account, credentials and administ
       {
         id: created.id,
         userId: ownerId,
-        settings: { compressImage: true, convertToJpeg: false, jpegQuality: 80, folderId: null, stripMetadata: false, flowId: null },
+        settings: { compressImage: true, convertToJpeg: false, jpegQuality: 80, folderId: null, flowId: null },
       },
       ownerId,
     );

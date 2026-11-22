@@ -127,7 +127,6 @@ export const token = pgTable(
     folderId: text('folder_id'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-    stripMetadata: boolean('strip_metadata').default(false).notNull(),
     flowId: text('flow_id'),
   },
   // folderId has no index in the source dump, unlike flowId — reproduced as-is.

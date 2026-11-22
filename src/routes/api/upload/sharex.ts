@@ -8,7 +8,7 @@ import { checkScopedRateLimit, retryAfterSeconds } from '@/libs/api/rate-limit';
 import { validateTokenKey } from '@/libs/auth/token-auth';
 import { env } from '@/libs/env';
 import { dispatchFlowTrigger } from '@/libs/flows/run-flow';
-import { scrubMetadataIfNeeded } from '@/libs/metadata-scrubber';
+import { inspectMetadata } from '@/libs/metadata-scrubber';
 import { checkModerationGate, createModerationCase } from '@/libs/moderation/hash-gate';
 import { UnauthorizedError } from '@/libs/rbac/guards';
 import { getCdnUrl } from '@/libs/runtime-config';
@@ -160,9 +160,7 @@ async function handleWithUploadSlot(request: Request): Promise<Response> {
     }
   }
 
-  const scrubbed = await scrubMetadataIfNeeded(Buffer.from(uploadBuffer), uploadContentType, tokenRecord.stripMetadata);
-  uploadBuffer = scrubbed.buffer;
-  const scrubReport = scrubbed.report;
+  const scrubReport = await inspectMetadata(Buffer.from(uploadBuffer), uploadContentType);
 
   const moderationGate = await checkModerationGate(uploadBuffer, uploadContentType);
 

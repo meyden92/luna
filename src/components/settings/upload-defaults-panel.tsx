@@ -2,7 +2,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import { settingsOverviewQuery } from '@/routes/_dashboard/_settings';
@@ -21,8 +20,8 @@ interface UploadDefaultsPanelProps {
 
 /**
  * "Defaults for new uploads" applies to every one of the owner's upload
- * tokens at once — the folder and metadata-scrub choice ShareX and the
- * Upload button should default to, not a setting per token. It reads its
+ * tokens at once — the folder ShareX and the Upload button should default
+ * to, not a setting per token. It reads its
  * current values from the first token and writes to all of them.
  */
 export function UploadDefaultsPanel({ tokens, folders }: UploadDefaultsPanelProps) {
@@ -32,7 +31,7 @@ export function UploadDefaultsPanel({ tokens, folders }: UploadDefaultsPanelProp
 
   const { mutateAsync: saveTokenSettings } = useAppMutation(updateTokenSettings, { errorMessage: false });
 
-  const applyToAllTokens = async (partial: { folderId?: string | null; stripMetadata?: boolean }) => {
+  const applyToAllTokens = async (partial: { folderId?: string | null }) => {
     setIsSaving(true);
     try {
       await Promise.all(
@@ -44,7 +43,6 @@ export function UploadDefaultsPanel({ tokens, folders }: UploadDefaultsPanelProp
             jpegQuality: token.jpegQuality,
             flowId: token.flowId,
             folderId: partial.folderId !== undefined ? partial.folderId : token.folderId,
-            stripMetadata: partial.stripMetadata !== undefined ? partial.stripMetadata : token.stripMetadata,
           }),
         ),
       );
@@ -106,17 +104,6 @@ export function UploadDefaultsPanel({ tokens, folders }: UploadDefaultsPanelProp
           <ToggleGroupItem value="public">Anyone with the link</ToggleGroupItem>
           <ToggleGroupItem value="private">Only me</ToggleGroupItem>
         </ToggleGroup>
-      </SettingsRow>
-      <SettingsRow
-        label="Remove photo location"
-        hint="Strips GPS and camera details before saving."
-      >
-        <Switch
-          aria-label="Remove photo location"
-          checked={primary?.stripMetadata ?? false}
-          disabled={!primary || isSaving}
-          onCheckedChange={(checked) => void applyToAllTokens({ stripMetadata: Boolean(checked) })}
-        />
       </SettingsRow>
       {!primary && <p className={styles.hint}>Create an upload token above to set defaults.</p>}
     </SettingsPanel>

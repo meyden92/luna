@@ -134,7 +134,6 @@ export const updateTokenSettings = createServerFn({ method: 'POST' })
           convertToJpeg: data.convertToJpeg,
           jpegQuality: data.jpegQuality,
           folderId: data.folderId,
-          stripMetadata: data.stripMetadata,
           flowId: data.flowId,
         },
       },

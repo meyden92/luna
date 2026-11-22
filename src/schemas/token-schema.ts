@@ -29,7 +29,6 @@ export const updateTokenSettingsSchema = z.object({
       const normalized = value.trim();
       return normalized.length === 0 ? null : normalized;
     }),
-  stripMetadata: z.boolean().default(false),
   flowId: z
     .string()
     .nullable()

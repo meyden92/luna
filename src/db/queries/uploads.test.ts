@@ -79,7 +79,7 @@ function uploadInput(overrides: Partial<Parameters<typeof createUploadedFile>[0]
     contentType: 'image/png',
     privateUpload: false,
     hashes: { sha256: SHA256, md5: MD5, phash: null },
-    scrubReport: { version: 2, stripped: false },
+    scrubReport: { version: 2 },
     ...overrides,
   };
 }

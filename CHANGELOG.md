@@ -2,6 +2,28 @@
 
 Every LunaShare release, newest first. Entries up to v4.7.0 were rewritten from their GitHub releases, or from the tag message where no release exists.
 
+## v4.8.6 (2026-11-25)
+
+**The One Where 3000 Cards Stopped Holding the Browser Hostage**
+
+You scroll all the way down a big library, pick a few files, move them, pick a few more, and a click on a checkbox used to take its sweet time (up to half a minute on a few thousand files). Your browser was busy keeping every loaded card ready to animate, including the ones a mile above your head. We told it to relax about the cards nobody can see.
+
+### 🐛 Fixed
+
+🐌 **Clicks that click.** With thousands of files loaded in Files, selecting a card, opening **Move to**, moving files and hovering no longer stall. The browser now skips drawing cards that are off screen, so the work stays the size of one screenful however far you scroll: about 300 layers instead of 22,000 at 3125 files, and a checkbox click is back to roughly a tenth of a second. Cards look exactly as before, hover lift and shadow included. Small catch: in Safari the top 2 px of a hovered card's lift are clipped.
+
+### 🧪 Under the hood
+
+`content-visibility: auto` on the card wrappers in `FileGroups.module.css`, and the gallery view transition no longer measures cards the browser skipped, since measuring one would draw it.
+
+### ⬆️ Upgrade
+
+No migrations and no new environment variables.
+
+The v4.8.6 tag triggers the GHCR image build and publishes the versioned and latest tags. Deployment is still manual.
+
+Implemented in #274 (for #273).
+
 ## v4.8.5 (2026-11-25)
 
 **The One Where the Preview Stopped Falling Apart Mid-Goodbye**

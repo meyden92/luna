@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, File, Loader2 } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, File, Loader2 } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
@@ -19,6 +19,9 @@ export type PreviewProps = {
   onClose: () => void;
   onNavigate: (fileId: string) => void;
   onDelete: (fileId: string) => void;
+  /** The gallery's selection, which the Preview shows and changes for the file on the stage. */
+  selectedIds: ReadonlySet<string>;
+  onToggleSelect: (fileId: string) => void;
   onMoveToFolder: (fileId: string, folderId: string | null) => void;
   onVisibilityChange: (fileId: string, isPrivate: boolean) => void;
   onRename: (fileId: string, title: string) => void;
@@ -98,6 +101,8 @@ export function Preview({
   onClose,
   onNavigate,
   onDelete,
+  selectedIds,
+  onToggleSelect,
   onMoveToFolder,
   onVisibilityChange,
   onRename,
@@ -136,6 +141,10 @@ export function Preview({
         if (event.repeat) return;
         event.preventDefault();
         onDelete(file.id);
+      } else if (event.key.toLowerCase() === 'x' && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        if (event.repeat) return;
+        event.preventDefault();
+        onToggleSelect(file.id);
       } else if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'c') {
         event.preventDefault();
         // ⇧⌘C is always the link; so is plain ⌘C when there is no image to copy.
@@ -149,7 +158,7 @@ export function Preview({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [file, previous, next, onClose, onNavigate, onDelete]);
+  }, [file, previous, next, onClose, onNavigate, onDelete, onToggleSelect]);
 
   // The wheel over the stage steps through files; the strip and panel scroll natively.
   useEffect(() => {
@@ -232,6 +241,7 @@ export function Preview({
   const isVideo = Boolean(file.mimeType?.startsWith('video/'));
   const isAudio = Boolean(file.mimeType?.startsWith('audio/'));
   const PlaceholderIcon = getFileIcon(file.mimeType ?? '');
+  const isSelected = selectedIds.has(file.id);
   // A click anywhere on the backdrop closes; a click on the file itself must not.
   const keepOpen = (event: React.MouseEvent) => event.stopPropagation();
 
@@ -366,15 +376,31 @@ export function Preview({
           </button>
         )}
 
+        <button
+          type="button"
+          className={styles.select}
+          aria-label="Select file"
+          aria-pressed={isSelected}
+          title="Select (X)"
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleSelect(file.id);
+          }}
+        >
+          <Check size={18} />
+        </button>
+
         <p className={styles.counter}>
           {index + 1} / {files.length}
           {loadingMore ? '…' : ''}
+          {selectedIds.size > 0 && ` · ${selectedIds.size} selected`}
         </p>
       </div>
 
       <PreviewStrip
         files={files}
         index={index}
+        selectedIds={selectedIds}
         onNavigate={onNavigate}
       />
 

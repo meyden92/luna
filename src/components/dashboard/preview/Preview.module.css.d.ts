@@ -8,6 +8,7 @@ declare const styles: {
   readonly "preview-in": string;
   readonly "preview-spin": string;
   readonly "root": string;
+  readonly "select": string;
   readonly "spinner": string;
   readonly "stage": string;
   readonly "video": string;

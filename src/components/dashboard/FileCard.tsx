@@ -1,4 +1,4 @@
-import { Check, Copy, Link2, Lock, MoreHorizontal, Play } from 'lucide-react';
+import { Check, Copy, Link2, Lock, Maximize2, MoreHorizontal, Play } from 'lucide-react';
 import * as React from 'react';
 import { FILE_DRAG_TYPE } from '@/components/dashboard/file-drag';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -173,6 +173,19 @@ const FileCard = React.memo(function FileCard({
         }}
       >
         <Check size={13} />
+      </button>
+
+      {/* A click on the card selects while a selection is in progress; this opens the Preview either way. */}
+      <button
+        type="button"
+        className={styles.open}
+        aria-label="Open preview"
+        onClick={(event) => {
+          event.stopPropagation();
+          onOpen(file.id);
+        }}
+      >
+        <Maximize2 size={12} />
       </button>
 
       {file.private && (

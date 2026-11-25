@@ -166,19 +166,22 @@ function FilesPage() {
     return () => window.removeEventListener('keydown', clearOnEscape);
   }, [layerOpen, selectedFiles.size, clearSelection]);
 
-  // Optimistic: the cards go when the dialog closes, and come back selected as they were if the server refuses.
+  /*
+   * Optimistic: the cards go when the dialog closes, and come back selected as they were if the server refuses.
+   * They glide only when nothing covers them: a card's view-transition group paints above the Preview.
+   */
   const { mutate: removeFiles } = useMutation({
-    mutationFn: (fileIds: string[]) => deleteFiles({ data: { fileIds } }),
-    onMutate: (fileIds) => {
+    mutationFn: ({ fileIds }: { fileIds: string[]; glide: boolean }) => deleteFiles({ data: { fileIds } }),
+    onMutate: ({ fileIds, glide }) => {
       const restoreGalleries = snapshotGalleryCaches(queryClient);
       const wereSelected = fileIds.filter((id) => selectedFiles.has(id));
-      startViewTransition(() => {
-        deleteGalleryFiles(queryClient, new Set(fileIds));
-      }, 'gallery');
+      const remove = () => deleteGalleryFiles(queryClient, new Set(fileIds));
+      if (glide) startViewTransition(remove, 'gallery');
+      else remove();
       deselectFiles(fileIds);
       return { restoreGalleries, wereSelected };
     },
-    onSuccess: (_result, fileIds) => {
+    onSuccess: (_result, { fileIds }) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.folders.all });
       refreshGalleryTotals(queryClient);
       toast.success(fileIds.length === 1 ? 'File deleted' : `${fileIds.length} files deleted`);
@@ -439,7 +442,7 @@ function FilesPage() {
               setRenameId(null);
               setPreviewId(survivorNear(previewFiles, previewId, confirmDeleteIds));
             }
-            removeFiles(confirmDeleteIds);
+            removeFiles({ fileIds: confirmDeleteIds, glide: previewId === null });
           }
           setConfirmDeleteIds(null);
         }}

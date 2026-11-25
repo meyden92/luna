@@ -38,8 +38,11 @@ export function startViewTransition(update: () => void, kind: ViewTransitionKind
   const root = document.documentElement;
   root.dataset.vt = kind;
 
+  const token = String(nextToken++);
+  markOnScreen(token);
   const transition = document.startViewTransition(() => {
     flushSync(update);
+    markOnScreen(token);
   });
 
   // A second transition may already have claimed the attribute by the time this
@@ -50,5 +53,24 @@ export function startViewTransition(update: () => void, kind: ViewTransitionKind
     })
     .finally(() => {
       if (root.dataset.vt === kind) delete root.dataset.vt;
+      for (const element of document.querySelectorAll(`[${LIVE_ATTR}="${token}"]`)) element.removeAttribute(LIVE_ATTR);
     });
+}
+
+/** Set on an opted-in `[data-vt-name]` element for one transition; motion.css names only these. */
+const LIVE_ATTR = 'data-vt-live';
+let nextToken = 0;
+
+/**
+ * Marks the opted-in elements inside the viewport. The browser captures every
+ * named element as its own group, at a cost that grows faster than their number
+ * and freezes the page while it lasts, so a gallery with thousands of cards
+ * loaded must cost no more than the screenful anyone can see move.
+ */
+function markOnScreen(token: string): void {
+  const { innerWidth, innerHeight } = window;
+  for (const element of document.querySelectorAll<HTMLElement>('[data-vt-name]')) {
+    const box = element.getBoundingClientRect();
+    if (box.bottom > 0 && box.top < innerHeight && box.right > 0 && box.left < innerWidth) element.setAttribute(LIVE_ATTR, token);
+  }
 }

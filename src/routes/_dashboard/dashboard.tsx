@@ -24,7 +24,7 @@ import { toGalleryFilters, useGalleryFilters } from '@/hooks/stores/use-gallery-
 import { sizeMetrics, useGalleryView } from '@/hooks/stores/use-gallery-view';
 import { galleryQueryOptions, useGallery } from '@/hooks/use-gallery';
 import { useMoveFiles } from '@/hooks/use-move-files';
-import { deleteGalleryFiles, patchGalleryFiles } from '@/libs/gallery-cache';
+import { deleteGalleryFiles, patchGalleryFiles, snapshotGalleryCaches } from '@/libs/gallery-cache';
 import { copyImageToClipboard } from '@/libs/image-clipboard';
 import { morphIntoPreview, morphOutOfPreview } from '@/libs/preview-morph';
 import { queryKeys } from '@/libs/query-keys';
@@ -155,17 +155,29 @@ function FilesPage() {
     return () => window.removeEventListener('keydown', clearOnEscape);
   }, [selectedFiles.size, clearSelection]);
 
+  // Optimistic: the cards go when the dialog closes, and come back selected as they were if the server refuses.
   const { mutate: removeFiles } = useMutation({
     mutationFn: (fileIds: string[]) => deleteFiles({ data: { fileIds } }),
-    onSuccess: (_result, fileIds) => {
+    onMutate: (fileIds) => {
+      const restoreGalleries = snapshotGalleryCaches(queryClient);
+      const wereSelected = fileIds.filter((id) => selectedFiles.has(id));
       startViewTransition(() => {
         deleteGalleryFiles(queryClient, new Set(fileIds));
       }, 'gallery');
-      queryClient.invalidateQueries({ queryKey: queryKeys.folders.all, refetchType: 'none' });
       deselectFiles(fileIds);
+      return { restoreGalleries, wereSelected };
+    },
+    onSuccess: (_result, fileIds) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.folders.all, refetchType: 'none' });
       toast.success(fileIds.length === 1 ? 'File deleted' : `${fileIds.length} files deleted`);
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error, _fileIds, context) => {
+      if (context) {
+        context.restoreGalleries();
+        selectFiles(context.wereSelected);
+      }
+      toast.error(error.message);
+    },
   });
 
   const { mutate: setVisibility } = useMutation({

@@ -209,6 +209,14 @@ export function insertGalleryFile(queryClient: QueryClient, newFile: GalleryFile
   });
 }
 
+/** Captures every cached gallery query and returns what puts them back, for an optimistic update's rollback. */
+export function snapshotGalleryCaches(queryClient: QueryClient): () => void {
+  const snapshot = queryClient.getQueriesData({ queryKey: queryKeys.gallery.all });
+  return () => {
+    for (const [queryKey, data] of snapshot) queryClient.setQueryData(queryKey, data);
+  };
+}
+
 export function deleteGalleryFiles(queryClient: QueryClient, fileIds: ReadonlySet<string>) {
   queryClient.setQueriesData<InfiniteData<GalleryPage>>({ queryKey: queryKeys.gallery.all }, (oldData) => {
     if (!oldData?.pages) return oldData;

@@ -26,10 +26,10 @@
   /*
    * Opt an element into gliding to its new position during a `gallery`
    * transition by giving it `data-vt-name` and a `--vt-name`. The name is only
-   * live for the duration, because two elements may not share one and the
-   * gallery holds hundreds of them.
+   * live while the transition has marked the element `data-vt-live`, which it
+   * does for the ones on screen (see src/libs/view-transition.ts).
    */
-  html[data-vt="gallery"] [data-vt-name] {
+  html[data-vt="gallery"] [data-vt-name][data-vt-live] {
     view-transition-name: var(--vt-name);
   }
 

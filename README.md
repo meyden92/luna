@@ -30,7 +30,10 @@ cp .env.sample .env   # then fill in the values
 # 4. apply migrations
 bun run db:migrate
 
-# 5. start the dev server on http://localhost:3000
+# 5. create the dev accounts admin/admin and user/user, each with demo files
+bun run db:seed
+
+# 6. start the dev server on http://localhost:3000
 bun run dev
 ```
 
@@ -52,6 +55,7 @@ or malformed variable fails loudly with the offending key named.
 | `bun run db:generate` | Generate a migration from the Drizzle schema |
 | `bun run db:migrate` | Apply pending migrations |
 | `bun run db:push` | Push the schema straight to the database (dev only) |
+| `bun run db:seed` | Create `admin`/`admin` (super admin) and `user`/`user` with the e2e gallery files; skips accounts that exist, refuses a non-local database |
 | `bun run db:audit-coverage` | Static audit-coverage report — see [`docs/db-verification.md`](docs/db-verification.md) |
 | `bun test` | Unit tests (scoped to `src/` — see `bunfig.toml`) |
 | `bun run test:e2e` | Playwright end-to-end suite in a disposable stack |

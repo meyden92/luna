@@ -2,6 +2,49 @@
 
 Every LunaShare release, newest first. Entries up to v4.7.0 were rewritten from their GitHub releases, or from the tag message where no release exists.
 
+## v4.8.4 (2026-11-25)
+
+**The One Where Deleting a Screenshot Stopped Taking a Coffee Break**
+
+You scroll through a few hundred files, delete one, and the whole page used to freeze for seconds while the browser filmed every card goodbye. Not anymore. You can now also sort out a batch of images right in the Preview, and the numbers in the sidebar finally keep up with you.
+
+### ✨ New
+
+🔍 **Cull from the Preview.** Every card has an **Open preview** button in its top-right corner (on hover), and it works while files are selected, so you can look at a picture full size before you pick it. In the Preview, the round button at the top left of the stage or the **X** key adds or removes the open file from the selection. The counter shows "· N selected" and the filmstrip marks selected files with a check. **Esc** closes the Preview and keeps your selection, so the selection bar can delete the whole batch.
+
+⚙️ **Admin → Settings.** A new **Settings** entry in the admin menu groups the adjustable bits as tiles. **Sync excluded paths** lets you choose which S3 keys the sync analysis ignores (`*` matches anything: `templates/*`, `*.tmp`, `*/edit-image/*`). The three paths that used to be hard-coded are pre-filled and can be removed. Adding and removing a pattern is audited. The Studio settings moved here too: `/admin/settings/studio`, and the old `/admin/studio/settings` is gone.
+
+### 🔧 Improved
+
+🗑️ **Delete, then keep going.** Deleting the file on the Preview stage shows the next one (or the previous one at the end of the list) instead of closing the Preview. Deleted cards disappear as soon as you confirm, without waiting for the server. If the server refuses, they come back, still selected, with an error toast.
+
+🧹 **"Remove photo location" is gone.** The switch under **Settings → Uploads & ShareX** and the stripping on ShareX and web uploads are removed. Uploads keep their metadata as uploaded. The metadata inspection report on each upload stays.
+
+### 🐛 Fixed
+
+🧊 **No more freeze on delete.** Deleting files, sorting, switching the layout or uploading froze Files for seconds once a lot of cards were loaded (about 5 s at 900 cards, over 30 s at 2000), because the animation captured every loaded card. Only the cards on screen animate now, so the cost stays the same however far you scroll.
+
+🔢 **Totals that keep up.** After a delete, a move or an upload, the head count ("N files"), **All files**, **Not in a folder**, the folder counts and the storage meter stayed at their old values until a reload. They update right away now.
+
+🎬 **Videos play, sounds sound.** The Files Preview plays video (muted, looping) and audio (with controls) again instead of showing an icon. Cards without a picture show the file name. ← → on a focused player seeks instead of switching files.
+
+### 🧪 Under the hood
+
+`bun run db:seed` gives a local dev database an `admin`/`admin` and a `user`/`user` account, each with the 125-file e2e gallery, and refuses anything that is not localhost. Sign-in works under the Node dev server again (`/api/auth/*` answered 500 there). Bulk file changes (delete, move, folder delete, admin restore and delete) write their audit rows in one insert under one `changeSet`, so they show as one action in the admin trail. A Studio test stopped believing it was forever November 20. New specs cover the bounded animation, the optimistic delete, culling in the Preview, the totals and sync excluded paths. The separate `video/` Remotion project is ignored by git, Docker, Biome and tsc, and some outdated agent docs were cleared out.
+
+### ⬆️ Upgrade
+
+**This release needs database migrations.** The image's entrypoint applies them on start. Elsewhere, run `bun run db:migrate` when you deploy:
+
+- `20261122011202_token_drop_strip_metadata` drops the `token.strip_metadata` column. It only held the removed "Remove photo location" setting.
+- `20261125092429_sync_excluded_path` creates the `sync_excluded_path` table and seeds `cache/*`, `templates/*` and `*/edit-image/*`, so the sync analysis ignores the same paths as before.
+
+No new environment variables. Bookmarks to `/admin/studio/settings` now land on the 404 page; the page lives at `/admin/settings/studio`.
+
+The v4.8.4 tag triggers the GHCR image build and publishes the versioned and latest tags. Deployment is still manual.
+
+Implemented in #255 (for #251, #252, #253, #254), #258 (for #257), #262 (for #261), #259 (for #256) and #268 (for #260, #264).
+
 ## v4.8.3 (2026-11-06)
 
 **The One Where the Content Checker Said No and We Finally Listened**

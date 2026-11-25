@@ -2,6 +2,28 @@
 
 Every LunaShare release, newest first. Entries up to v4.7.0 were rewritten from their GitHub releases, or from the tag message where no release exists.
 
+## v4.8.5 (2026-11-25)
+
+**The One Where the Preview Stopped Falling Apart Mid-Goodbye**
+
+You open a file in the Preview, hit **Delete file**, and for half a second the cards behind it climbed right over the Preview like it owed them money. We told them to stay in the back. One fix, one release, zero drama.
+
+### 🐛 Fixed
+
+🫥 **Cards stay behind the curtain.** Deleting a file from the open Preview no longer lets the gallery cards behind it paint over the backdrop, the info panel and the filmstrip until the delete has gone through. The Preview stays intact and moves straight on to the next file. Deleting from a card's ⋯ menu or the selection bar still glides the remaining cards into place.
+
+### 🧪 Under the hood
+
+Two new specs in `tests/e2e/files/gallery-transition.spec.ts` check that a delete from the gallery runs the gallery transition and a delete from the Preview does not.
+
+### ⬆️ Upgrade
+
+No migrations and no new environment variables.
+
+The v4.8.5 tag triggers the GHCR image build and publishes the versioned and latest tags. Deployment is still manual.
+
+Implemented in #271 (for #270).
+
 ## v4.8.4 (2026-11-25)
 
 **The One Where Deleting a Screenshot Stopped Taking a Coffee Break**

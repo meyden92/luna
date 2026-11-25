@@ -1,9 +1,18 @@
 import { ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
-import { listFilesForSync, softDeleteFilesAnyOwner } from '@/db/queries/tasks';
+import {
+  createSyncExcludedPath,
+  deleteSyncExcludedPath,
+  listFilesForSync,
+  listSyncExcludedPaths,
+  softDeleteFilesAnyOwner,
+} from '@/db/queries/tasks';
 import { env } from '@/libs/env';
 import { fileS3Key, s3Client } from '@/libs/S3Helper';
+import { syncExcludeMatcher } from '@/libs/sync-exclude';
+import { UserFacingError } from '@/libs/user-facing-error';
+import { addSyncExcludedPathSchema, removeSyncExcludedPathSchema } from '@/schemas/sync-schema';
 import { userIdFromCtx as adminIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
 
@@ -16,6 +25,7 @@ const DB_COMPARE_PAGE_SIZE = 1000;
 export const compareAdminSync = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .handler(async () => {
+    const isExcluded = syncExcludeMatcher((await listSyncExcludedPaths()).map((row) => row.pattern));
     const s3FileMap = new Map<string, S3Entry>();
     let totalS3Size = 0;
     let token: string | undefined;
@@ -31,7 +41,7 @@ export const compareAdminSync = createServerFn({ method: 'GET' })
       );
       for (const f of (resp.Contents || []) as S3Object[]) {
         const fileName = f.Key.split('/').slice(1).join('/');
-        if (!fileName || fileName.startsWith('edit-image/') || f.Key.startsWith('cache/') || f.Key.startsWith('templates/')) continue;
+        if (!fileName || isExcluded(f.Key)) continue;
         s3FileMap.set(f.Key, {
           key: f.Key,
           fileName,
@@ -105,4 +115,25 @@ export const deleteAdminDbOnlyFiles = createServerFn({ method: 'POST' })
   .handler(async ({ data, context }) => {
     const deletedCount = await softDeleteFilesAnyOwner(data.fileIds, adminIdFromCtx(context));
     return { deletedCount };
+  });
+
+export const listAdminSyncExcludedPaths = createServerFn({ method: 'GET' })
+  .middleware(appMiddleware({ auth: 'admin' }))
+  .handler(async () => listSyncExcludedPaths());
+
+export const addAdminSyncExcludedPath = createServerFn({ method: 'POST' })
+  .middleware(appMiddleware({ auth: 'admin' }))
+  .validator(addSyncExcludedPathSchema)
+  .handler(async ({ data, context }) => {
+    const created = await createSyncExcludedPath(data.pattern, adminIdFromCtx(context));
+    if (!created) throw new UserFacingError(`${data.pattern} is already excluded.`);
+    return created;
+  });
+
+export const removeAdminSyncExcludedPath = createServerFn({ method: 'POST' })
+  .middleware(appMiddleware({ auth: 'admin' }))
+  .validator(removeSyncExcludedPathSchema)
+  .handler(async ({ data, context }) => {
+    await deleteSyncExcludedPath(data.id, adminIdFromCtx(context));
+    return { success: true };
   });

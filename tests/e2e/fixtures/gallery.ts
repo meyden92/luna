@@ -1,6 +1,7 @@
 /**
  * The gallery user's seeded dataset, as data. `gallery.setup.ts` seeds exactly
  * this; specs assert against it instead of hard-coded counts, titles or dates.
+ * `scripts/dev/seed.ts` seeds the same into the dev accounts.
  *
  * Two halves:
  * - `GALLERY_UPLOADS` is fixed: what is uploaded, under which title, into which

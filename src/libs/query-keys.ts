@@ -39,6 +39,7 @@ export const queryKeys = {
     user: (id: string) => ['admin', 'user', id] as const,
     userFiles: (id: string, search: Record<string, unknown>) => ['admin', 'user', id, 'files', search] as const,
     deletedFiles: ['admin', 'deleted-files'] as const,
+    syncExcludedPaths: ['admin', 'sync-excluded-paths'] as const,
   },
   adminAudit: {
     models: ['admin', 'audit', 'models'] as const,

@@ -1,6 +1,7 @@
 import {
   Activity,
   BarChart3,
+  FolderX,
   Gauge,
   Globe,
   LayoutTemplate,
@@ -87,9 +88,25 @@ export const adminDestinations = [
     studio: true,
   },
   {
-    name: 'Studio settings',
-    to: '/admin/studio/settings',
+    name: 'Settings',
+    to: '/admin/settings',
     Icon: Settings2,
+    description: 'Everything adjustable, grouped by area',
+  },
+] as const;
+
+/** `studio` entries show only while the Studio is enabled. */
+export const settingsSections = [
+  {
+    name: 'Sync excluded paths',
+    to: '/admin/settings/sync',
+    Icon: FolderX,
+    description: 'S3 paths the Sync Files check leaves out',
+  },
+  {
+    name: 'Studio',
+    to: '/admin/settings/studio',
+    Icon: Sparkles,
     description: 'The default monthly Budget and the active Generation limit',
     studio: true,
   },

@@ -143,6 +143,7 @@ const DELIBERATE_GAPS: Partial<Record<AuditedModel, Partial<Record<AuditAction, 
   },
   ModerationCase: { delete: 'cases are resolved, never removed — resolveModerationCase is an UPDATE' },
   StudioSettings: { delete: 'a single row that is created on first write and only ever updated' },
+  SyncExcludedPath: { update: 'patterns are added or removed, never edited' },
 };
 
 /** Unaudited models with no writer in any query module, so there is nothing to drive. */
@@ -511,6 +512,14 @@ describe.skipIf(!hasDatabase)('audited models: account, credentials and administ
     );
     createdDenylistIds.push(entry.id);
     await expectAudited('DenylistEntry', 'create', entry.id);
+  });
+
+  test('SyncExcludedPath is audited on create and delete', async () => {
+    const created = await M.tasks.createSyncExcludedPath(`audit-${runId}/*`, ownerId);
+    if (!created) throw new Error('sync excluded path not created');
+    await expectAudited('SyncExcludedPath', 'create', created.id);
+    await M.tasks.deleteSyncExcludedPath(created.id, ownerId);
+    await expectAudited('SyncExcludedPath', 'delete', created.id);
   });
 
   test('ModerationCase is audited on create and update', async () => {

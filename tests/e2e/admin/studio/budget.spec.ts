@@ -27,7 +27,7 @@ async function expectDone(page: Page, model: SeededModel, prompt: string) {
 }
 
 async function setDefaultBudget(adminPage: Page, value: string) {
-  await adminPage.goto('/admin/studio/settings');
+  await adminPage.goto('/admin/settings/studio');
   await expect(adminPage).toHaveTitle('Studio settings | LunaShare');
   const field = adminPage.getByLabel('Default monthly Budget (USD)');
   await field.fill(value);

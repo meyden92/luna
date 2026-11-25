@@ -20,7 +20,7 @@ import type { JsonValue } from './schema/json';
  */
 
 /**
- * The 20 models that record deliberate user or admin action. Session
+ * The 21 models that record deliberate user or admin action. Session
  * churn, derived artifacts, analytics and execution records are deliberately
  * absent; the implicit extension covered everything, so an over-eager port is
  * as wrong as a missing one.
@@ -50,6 +50,7 @@ export const AUDITED_MODELS = [
   'DenylistEntry',
   'ModerationCase',
   'SourceSession',
+  'SyncExcludedPath',
   // Studio configuration
   'StudioCategory',
   'StudioModel',

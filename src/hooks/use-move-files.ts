@@ -2,7 +2,7 @@ import type { InfiniteData } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useFolders } from '@/contexts/FoldersContext';
-import { type GalleryPage, snapshotGalleryCaches } from '@/libs/gallery-cache';
+import { type GalleryPage, refreshGalleryTotals, snapshotGalleryCaches } from '@/libs/gallery-cache';
 import { queryKeys } from '@/libs/query-keys';
 import { moveFiles } from '@/server/fns/files';
 import type { GalleryFile } from '@/types/project';
@@ -122,6 +122,7 @@ export function useMoveFiles() {
       // Mark caches as stale without immediate refetch (rely on optimistic update)
       queryClient.invalidateQueries({ queryKey: queryKeys.gallery.all, refetchType: 'none' });
       queryClient.invalidateQueries({ queryKey: queryKeys.folders.all, refetchType: 'none' });
+      refreshGalleryTotals(queryClient);
 
       const count = variables.fileIds.length;
       const label = count === 1 ? 'File' : `${count} files`;

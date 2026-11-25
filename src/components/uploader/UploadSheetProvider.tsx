@@ -9,7 +9,7 @@ import { useFolders } from '@/contexts/FoldersContext';
 import { type UploadSheetApi, UploadSheetContext } from '@/contexts/upload-sheet';
 import { useCallbackRef } from '@/hooks/use-callback-ref';
 import { useEventListener } from '@/hooks/use-event-listener';
-import { insertGalleryFile } from '@/libs/gallery-cache';
+import { insertGalleryFile, refreshGalleryTotals } from '@/libs/gallery-cache';
 import { queryKeys } from '@/libs/query-keys';
 import { buildViewUrl } from '@/libs/view-link';
 import { startViewTransition } from '@/libs/view-transition';
@@ -169,6 +169,7 @@ export function UploadSheetProvider({ children }: { children: React.ReactNode })
       for (const file of uploaded) insertGalleryFile(queryClient, file);
       queryClient.invalidateQueries({ queryKey: queryKeys.gallery.all, refetchType: 'none' });
     }, 'gallery');
+    refreshGalleryTotals(queryClient);
   };
 
   /** True only when the link really reached the clipboard, so the toast can't lie. */

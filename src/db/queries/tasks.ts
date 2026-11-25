@@ -1,6 +1,6 @@
 import type { SQL } from 'drizzle-orm';
 import { and, avg, count, desc, eq, gt, gte, ilike, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
-import { type AuditHandle, writeAuditLog } from '../audit';
+import { type AuditHandle, updatedPairs, writeAuditLog, writeAuditLogs } from '../audit';
 import { db } from '../client';
 import { session, user } from '../schema/auth';
 import { task, taskExecution } from '../schema/automation';
@@ -545,11 +545,7 @@ export async function softDeleteFilesAnyOwner(ids: string[], userId?: string | n
     )
     .returning();
 
-  const afterById = new Map(after.map((row) => [row.id, row]));
-  for (const row of before) {
-    const updated = afterById.get(row.id);
-    if (updated) await writeAuditLog(handle, { model: 'File', action: 'update', before: row, after: updated, userId });
-  }
+  await writeAuditLogs(handle, 'File', 'update', updatedPairs(before, after), userId);
   return after.length;
 }
 

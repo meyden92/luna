@@ -70,6 +70,8 @@ let nextToken = 0;
 function markOnScreen(token: string): void {
   const { innerWidth, innerHeight } = window;
   for (const element of document.querySelectorAll<HTMLElement>('[data-vt-name]')) {
+    // A card that `content-visibility` skips is off screen, and measuring it would render it.
+    if (!element.checkVisibility({ contentVisibilityAuto: true })) continue;
     const box = element.getBoundingClientRect();
     if (box.bottom > 0 && box.top < innerHeight && box.right > 0 && box.left < innerWidth) element.setAttribute(LIVE_ATTR, token);
   }

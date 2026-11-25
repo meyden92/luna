@@ -1,4 +1,5 @@
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { Check } from 'lucide-react';
 import { memo, useEffect, useRef } from 'react';
 import { getFileIcon } from '@/libs/utils';
 import styles from './PreviewStrip.module.css';
@@ -7,6 +8,7 @@ import { isPreviewImage, type PreviewFile, previewFileUrl } from './preview-file
 type PreviewStripProps = {
   files: readonly PreviewFile[];
   index: number;
+  selectedIds: ReadonlySet<string>;
   onNavigate: (fileId: string) => void;
 };
 
@@ -18,10 +20,12 @@ const EDGE_THRESHOLD = 90;
 const Thumbnail = memo(function Thumbnail({
   file,
   isActive,
+  isSelected,
   onNavigate,
 }: {
   file: PreviewFile;
   isActive: boolean;
+  isSelected: boolean;
   onNavigate: (fileId: string) => void;
 }) {
   const Icon = getFileIcon(file.mimeType ?? '');
@@ -31,8 +35,9 @@ const Thumbnail = memo(function Thumbnail({
       type="button"
       className={styles.thumb}
       data-active={isActive}
+      data-selected={isSelected || undefined}
       aria-current={isActive}
-      aria-label={`View ${file.name}`}
+      aria-label={isSelected ? `View ${file.name}, selected` : `View ${file.name}`}
       onClick={() => onNavigate(file.id)}
     >
       <div className={styles.frame}>
@@ -52,6 +57,14 @@ const Thumbnail = memo(function Thumbnail({
             />
           </div>
         )}
+        {isSelected && (
+          <span
+            className={styles.selected}
+            aria-hidden
+          >
+            <Check size={11} />
+          </span>
+        )}
       </div>
     </button>
   );
@@ -62,7 +75,7 @@ const Thumbnail = memo(function Thumbnail({
  * on the stage highlighted. It centres the opening file, then only scrolls when
  * the active thumbnail nears the edge it is travelling towards.
  */
-export function PreviewStrip({ files, index, onNavigate }: PreviewStripProps) {
+export function PreviewStrip({ files, index, selectedIds, onNavigate }: PreviewStripProps) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const isInitialRenderRef = useRef(true);
   const prevIndexRef = useRef(index);
@@ -125,6 +138,7 @@ export function PreviewStrip({ files, index, onNavigate }: PreviewStripProps) {
               <Thumbnail
                 file={file}
                 isActive={item.index === index}
+                isSelected={selectedIds.has(file.id)}
                 onNavigate={onNavigate}
               />
             </div>

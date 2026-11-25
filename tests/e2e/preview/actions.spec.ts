@@ -73,12 +73,37 @@ test('Delete file confirms, removes the file and moves the Preview to its neighb
   await workerPage.getByRole('button', { name: 'Delete', exact: true }).click();
 
   await expect(workerPage.getByText('File deleted')).toBeVisible();
-  // The deleted file is gone from the stage and from the list; the neighbour is what is left to step to.
+  // The deleted file is gone from the stage and from the list; the stage shows the next file.
   await expect(previewOf(workerPage, second!)).toBeHidden();
+  await expect(previewOf(workerPage, third!)).toBeVisible();
+  await workerPage.keyboard.press('Escape');
   await expect(cardOf(workerPage, second!)).toHaveCount(0);
   await expect(fileCards(workerPage)).toHaveCount(2);
   await expect(cardOf(workerPage, first!)).toBeVisible();
   await expect(cardOf(workerPage, third!)).toBeVisible();
+});
+
+test('deleting the last file of the list shows the one before it, and the only file closes the Preview', async ({
+  workerPage,
+  workerRequest,
+  corpus,
+}) => {
+  const prefix = uniquePrefix('pv-delete-end');
+  await uploadOwnFiles(workerRequest, prefix, [corpus.file('notes.txt'), corpus.file('readme.md')]);
+  await openOwnFiles(workerPage, prefix, 2);
+  const [first, last] = await fileCards(workerPage).evaluateAll((cards) => cards.map((card) => card.getAttribute('aria-label') ?? ''));
+  const deleteOnStage = async (title: string) => {
+    await previewOf(workerPage, title).getByRole('button', { name: 'Delete file' }).click();
+    await workerPage.getByRole('button', { name: 'Delete', exact: true }).click();
+  };
+
+  await clickUntil(cardOf(workerPage, last!), previewOf(workerPage, last!));
+  await deleteOnStage(last!);
+  await expect(previewOf(workerPage, first!)).toBeVisible();
+
+  await deleteOnStage(first!);
+  await expect(workerPage.getByRole('dialog')).toBeHidden();
+  await expect(fileCards(workerPage)).toHaveCount(0);
 });
 
 test('the Delete key opens the same confirmation, and Cancel keeps the file', async ({ workerPage, workerRequest, corpus }) => {

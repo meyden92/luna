@@ -6,6 +6,7 @@ declare const styles: {
   readonly "placeholderIcon": string;
   readonly "row": string;
   readonly "scroller": string;
+  readonly "selected": string;
   readonly "spacer": string;
   readonly "thumb": string;
 };

@@ -1,6 +1,6 @@
 import type { SQL } from 'drizzle-orm';
 import { and, asc, count, desc, eq, gte, ilike, inArray, isNull, lte, not, or, sql, sum } from 'drizzle-orm';
-import { type AuditHandle, writeAuditLog } from '../audit';
+import { type AuditHandle, updatedPairs, writeAuditLog, writeAuditLogs } from '../audit';
 import { db, type Tx } from '../client';
 import { file, fileMetadata, folder } from '../schema/files';
 import { generation, generationOutput } from '../schema/studio';
@@ -322,11 +322,7 @@ export async function softDeleteFiles(ids: string[], ownerId: string, userId: st
     )
     .returning();
 
-  const afterById = new Map(after.map((row) => [row.id, row]));
-  for (const row of before) {
-    const updated = afterById.get(row.id);
-    if (updated) await writeAuditLog(handle, { model: 'File', action: 'update', before: row, after: updated, userId });
-  }
+  await writeAuditLogs(handle, 'File', 'update', updatedPairs(before, after), userId);
   return before;
 }
 
@@ -353,11 +349,7 @@ export async function moveFilesToFolder(
     )
     .returning();
 
-  const afterById = new Map(after.map((row) => [row.id, row]));
-  for (const row of before) {
-    const updated = afterById.get(row.id);
-    if (updated) await writeAuditLog(handle, { model: 'File', action: 'update', before: row, after: updated, userId });
-  }
+  await writeAuditLogs(handle, 'File', 'update', updatedPairs(before, after), userId);
   return { updated: after.length, folderId };
 }
 
@@ -375,11 +367,7 @@ export async function detachFilesFromFolder(folderId: string, ownerId: string, u
     .where(and(eq(file.folderId, folderId), eq(file.ownerId, ownerId)))
     .returning();
 
-  const afterById = new Map(after.map((row) => [row.id, row]));
-  for (const row of before) {
-    const updated = afterById.get(row.id);
-    if (updated) await writeAuditLog(handle, { model: 'File', action: 'update', before: row, after: updated, userId });
-  }
+  await writeAuditLogs(handle, 'File', 'update', updatedPairs(before, after), userId);
   return after.length;
 }
 

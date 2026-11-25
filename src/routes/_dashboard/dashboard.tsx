@@ -24,7 +24,7 @@ import { toGalleryFilters, useGalleryFilters } from '@/hooks/stores/use-gallery-
 import { sizeMetrics, useGalleryView } from '@/hooks/stores/use-gallery-view';
 import { galleryQueryOptions, useGallery } from '@/hooks/use-gallery';
 import { useMoveFiles } from '@/hooks/use-move-files';
-import { deleteGalleryFiles, patchGalleryFiles, snapshotGalleryCaches } from '@/libs/gallery-cache';
+import { deleteGalleryFiles, patchGalleryFiles, refreshGalleryTotals, snapshotGalleryCaches } from '@/libs/gallery-cache';
 import { copyImageToClipboard } from '@/libs/image-clipboard';
 import { morphIntoPreview, morphOutOfPreview } from '@/libs/preview-morph';
 import { queryKeys } from '@/libs/query-keys';
@@ -55,6 +55,15 @@ function scopeTitle(scope: string | null, folders: readonly { id: string; name: 
   if (scope === '*') return 'All files';
   if (scope === null) return 'Not in a folder';
   return folders.find((folder) => folder.id === scope)?.name ?? 'Folder';
+}
+
+/** Where the Preview goes when its file is deleted: the next file that stays, else the previous one, else nowhere. */
+function survivorNear(files: readonly { id: string }[], fileId: string, deleted: readonly string[]): string | null {
+  const gone = new Set(deleted);
+  const index = files.findIndex((file) => file.id === fileId);
+  const next = files.slice(index + 1).find((file) => !gone.has(file.id));
+  const previous = files.slice(0, Math.max(index, 0)).findLast((file) => !gone.has(file.id));
+  return (next ?? previous)?.id ?? null;
 }
 
 /** The file's page in the app, which is what "Copy link" copies. */
@@ -147,13 +156,15 @@ function FilesPage() {
     clearSelection();
   }, [scope, clearSelection]);
 
+  // Escape belongs to the Preview or the delete dialog while either is open: it closes that, not the selection.
+  const layerOpen = previewId !== null || confirmDeleteIds !== null;
   React.useEffect(() => {
     const clearOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && selectedFiles.size > 0) clearSelection();
+      if (event.key === 'Escape' && !layerOpen && selectedFiles.size > 0) clearSelection();
     };
     window.addEventListener('keydown', clearOnEscape);
     return () => window.removeEventListener('keydown', clearOnEscape);
-  }, [selectedFiles.size, clearSelection]);
+  }, [layerOpen, selectedFiles.size, clearSelection]);
 
   // Optimistic: the cards go when the dialog closes, and come back selected as they were if the server refuses.
   const { mutate: removeFiles } = useMutation({
@@ -168,7 +179,8 @@ function FilesPage() {
       return { restoreGalleries, wereSelected };
     },
     onSuccess: (_result, fileIds) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.folders.all, refetchType: 'none' });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.folders.all });
+      refreshGalleryTotals(queryClient);
       toast.success(fileIds.length === 1 ? 'File deleted' : `${fileIds.length} files deleted`);
     },
     onError: (error, _fileIds, context) => {
@@ -405,6 +417,8 @@ function FilesPage() {
           setPreviewId(fileId);
         }}
         onDelete={(fileId) => setConfirmDeleteIds([fileId])}
+        selectedIds={selectedFiles}
+        onToggleSelect={toggleFile}
         onMoveToFolder={(fileId, folderId) => moveFilesTo([fileId], folderId)}
         onVisibilityChange={(fileId, isPrivate) => setVisibility({ fileId, isPrivate })}
         onRename={(fileId, title) => editFile({ id: fileId, title })}
@@ -421,8 +435,10 @@ function FilesPage() {
         description="Anyone with the link will lose access. This can’t be undone."
         onConfirm={() => {
           if (confirmDeleteIds) {
-            // A deleted file cannot stay on the stage behind the dialog.
-            if (previewId && confirmDeleteIds.includes(previewId)) setPreviewId(null);
+            if (previewId && confirmDeleteIds.includes(previewId)) {
+              setRenameId(null);
+              setPreviewId(survivorNear(previewFiles, previewId, confirmDeleteIds));
+            }
             removeFiles(confirmDeleteIds);
           }
           setConfirmDeleteIds(null);

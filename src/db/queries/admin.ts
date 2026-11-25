@@ -1,6 +1,6 @@
 import type { Column, SQL } from 'drizzle-orm';
 import { and, asc, count, desc, eq, getTableColumns, gt, gte, ilike, inArray, lt, lte, or, sql, sum } from 'drizzle-orm';
-import { type AuditHandle, writeAuditLog, writeAuditLogs } from '../audit';
+import { type AuditHandle, updatedPairs, writeAuditLog, writeAuditLogs } from '../audit';
 import { db } from '../client';
 import { auditLog, rbacGroup, userGroupAssignment } from '../schema/admin';
 import { session, user } from '../schema/auth';
@@ -196,11 +196,7 @@ export async function restoreDeletedFiles(ids: string[], userId: string | null, 
     )
     .returning();
 
-  const afterById = new Map(after.map((row) => [row.id, row]));
-  for (const row of before) {
-    const updated = afterById.get(row.id);
-    if (updated) await writeAuditLog(handle, { model: 'File', action: 'update', before: row, after: updated, userId });
-  }
+  await writeAuditLogs(handle, 'File', 'update', updatedPairs(before, after), userId);
   return after;
 }
 

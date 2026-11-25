@@ -313,6 +313,22 @@ describe.skipIf(!hasDatabase)('audited models: content', () => {
     await expectAudited('File', 'delete', created.id);
   });
 
+  test('a bulk file change writes one row per file under one changeSet', async () => {
+    const ids = ['a', 'b', 'c'].map((suffix) => `${runId}-bulk-${suffix}`);
+    await db
+      .insert(M.file)
+      .values(ids.map((id) => ({ id, url: `${runId}/${id}.png`, title: id, size: 1, contentType: 'image/png', ownerId })));
+
+    await M.files.softDeleteFiles(ids, ownerId, ownerId);
+
+    const rows = await db
+      .select({ recordId: auditLog.recordId, changeSet: auditLog.changeSet })
+      .from(auditLog)
+      .where(and(inArray(auditLog.recordId, ids), eq(auditLog.model, 'File'), eq(auditLog.action, 'update')));
+    expect(rows.map((row) => row.recordId).sort()).toEqual([...ids].sort());
+    expect(new Set(rows.map((row) => row.changeSet)).size).toBe(1);
+  });
+
   test('Folder is audited on create, update and delete', async () => {
     const created = await M.folders.createFolder({ name: `audit folder ${runId}`, ownerId }, ownerId);
     await expectAudited('Folder', 'create', created.id);

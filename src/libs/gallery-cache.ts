@@ -209,6 +209,16 @@ export function insertGalleryFile(queryClient: QueryClient, newFile: GalleryFile
   });
 }
 
+/**
+ * Refetches the totals a change to the set of files leaves wrong: every gallery
+ * count on screen and the storage meter. The optimistic list updates cannot
+ * correct them, because a count covers files that were never loaded.
+ */
+export function refreshGalleryTotals(queryClient: QueryClient): void {
+  void queryClient.invalidateQueries({ queryKey: queryKeys.gallery.counts });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.storage.usage });
+}
+
 /** Captures every cached gallery query and returns what puts them back, for an optimistic update's rollback. */
 export function snapshotGalleryCaches(queryClient: QueryClient): () => void {
   const snapshot = queryClient.getQueriesData({ queryKey: queryKeys.gallery.all });

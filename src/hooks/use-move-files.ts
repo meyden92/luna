@@ -2,7 +2,7 @@ import type { InfiniteData } from '@tanstack/react-query';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useFolders } from '@/contexts/FoldersContext';
-import type { GalleryPage } from '@/libs/gallery-cache';
+import { type GalleryPage, snapshotGalleryCaches } from '@/libs/gallery-cache';
 import { queryKeys } from '@/libs/query-keys';
 import { moveFiles } from '@/server/fns/files';
 import type { GalleryFile } from '@/types/project';
@@ -15,8 +15,6 @@ interface FolderData {
 }
 
 type GalleryInfiniteData = InfiniteData<GalleryPage>;
-
-type GallerySnapshot = readonly [readonly unknown[], unknown];
 
 interface MoveOptions {
   /** When the file(s) already live in the target folder, move them to root instead (menu behavior). */
@@ -61,7 +59,7 @@ export function useMoveFiles() {
 
       // Snapshot affected caches for rollback on error
       const previousFolders = queryClient.getQueryData(queryKeys.folders.all);
-      const previousGalleries: GallerySnapshot[] = allGalleryCaches.map(([queryKey, data]) => [queryKey, data] as const);
+      const restoreGalleries = snapshotGalleryCaches(queryClient);
 
       const currentFiles = collectCachedFiles(input.fileIds);
 
@@ -118,7 +116,7 @@ export function useMoveFiles() {
         });
       });
 
-      return { previousFolders, previousGalleries };
+      return { previousFolders, restoreGalleries };
     },
     onSuccess: (data, variables) => {
       // Mark caches as stale without immediate refetch (rely on optimistic update)
@@ -133,9 +131,7 @@ export function useMoveFiles() {
     onError: (_error, variables, context) => {
       if (context) {
         queryClient.setQueryData(queryKeys.folders.all, context.previousFolders);
-        context.previousGalleries.forEach(([key, data]) => {
-          queryClient.setQueryData(key, data);
-        });
+        context.restoreGalleries();
       }
       toast.error(variables.fileIds.length === 1 ? 'Could not move the file' : 'Could not move the files');
     },

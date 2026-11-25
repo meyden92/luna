@@ -1,7 +1,9 @@
 import { expect, type Page, type Route } from '@playwright/test';
 import { test } from '../fixtures/test';
 import { fileCards, loadAll } from '../utils/files-screen';
+import { clickUntil } from '../utils/hydration';
 import { cardOf, openOwnFiles, uniquePrefix, uploadOwnFiles } from '../utils/own-files';
+import { previewOf } from '../utils/preview';
 
 // What a gallery change costs once many cards are loaded, and how a delete behaves before and after the server answers.
 
@@ -19,6 +21,19 @@ async function holdDelete(page: Page, fileId: string): Promise<(settle: (route: 
     else await route.continue();
   });
   return async (settle) => settle(await arrived);
+}
+
+/** Records the kind of every view transition the page starts from now on, as the `data-vt` it puts on <html>. */
+async function watchTransitions(page: Page): Promise<() => Promise<string[]>> {
+  await page.evaluate(() => {
+    const kinds: string[] = [];
+    (window as unknown as { transitionKinds: string[] }).transitionKinds = kinds;
+    new MutationObserver(() => {
+      const kind = document.documentElement.dataset.vt;
+      if (kind) kinds.push(kind);
+    }).observe(document.documentElement, { attributeFilter: ['data-vt'] });
+  });
+  return () => page.evaluate(() => (window as unknown as { transitionKinds: string[] }).transitionKinds);
 }
 
 async function confirmBulkDelete(page: Page, count: number): Promise<void> {
@@ -104,4 +119,39 @@ test('a delete the server refuses brings the files back, still selected', async 
 
   // Nothing was deleted on the server.
   await openOwnFiles(workerPage, prefix, 2);
+});
+
+test('a delete from the gallery runs a gallery transition', async ({ workerPage, workerRequest, corpus }) => {
+  const prefix = uniquePrefix('delete-glide');
+  const [a, b] = await uploadOwnFiles(workerRequest, prefix, [
+    corpus.file('notes.txt'),
+    corpus.file('data.json'),
+    corpus.file('readme.md'),
+  ]);
+  await openOwnFiles(workerPage, prefix, 3);
+
+  for (const { title } of [a!, b!]) await cardOf(workerPage, title).getByRole('button', { name: 'Select', exact: true }).click();
+  const transitions = await watchTransitions(workerPage);
+  await confirmBulkDelete(workerPage, 2);
+
+  await expect(workerPage.getByText('2 files deleted')).toBeVisible();
+  await expect(fileCards(workerPage)).toHaveCount(1);
+  expect(await transitions()).toContain('gallery');
+});
+
+// A card's transition group paints above the whole document, so a gallery transition under the Preview covers it.
+test('a delete from the Preview runs no gallery transition', async ({ workerPage, workerRequest, corpus }) => {
+  const prefix = uniquePrefix('delete-preview-still');
+  await uploadOwnFiles(workerRequest, prefix, [corpus.file('notes.txt'), corpus.file('data.json'), corpus.file('readme.md')]);
+  await openOwnFiles(workerPage, prefix, 3);
+  const [, second, third] = await fileCards(workerPage).evaluateAll((cards) => cards.map((card) => card.getAttribute('aria-label') ?? ''));
+
+  await clickUntil(cardOf(workerPage, second!), previewOf(workerPage, second!));
+  await previewOf(workerPage, second!).getByRole('button', { name: 'Delete file' }).click();
+  const transitions = await watchTransitions(workerPage);
+  await workerPage.getByRole('alertdialog', { name: 'Delete this file?' }).getByRole('button', { name: 'Delete' }).click();
+
+  await expect(workerPage.getByText('File deleted')).toBeVisible();
+  await expect(previewOf(workerPage, third!)).toBeVisible();
+  expect(await transitions()).not.toContain('gallery');
 });

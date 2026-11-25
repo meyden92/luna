@@ -94,6 +94,18 @@
     aspect-ratio: 4 / 3;
   }
 
+  /*
+   * A card is several compositing layers (its blurred chips and badges, its
+   * scroll-driven reveal), and every loaded card's layers are composited on
+   * every frame unless off-screen cards are skipped. Paint containment comes
+   * with it, so the clip margin keeps the hover lift and its shadow whole.
+   */
+  .rowItem,
+  .gridItem {
+    content-visibility: auto;
+    overflow-clip-margin: var(--space-2);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .selectAll {
       transition: none;

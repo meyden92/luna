@@ -36,6 +36,7 @@ type FileGroupsProps = {
  * Nothing is virtualised. The infinite query only holds what has been scrolled
  * to, and the scroll-driven reveal and the gallery view transition both need the
  * real elements to exist, so windowing would buy less than it costs here.
+ * Off-screen cards skip rendering through `content-visibility` instead.
  */
 function FileGroups({
   files,

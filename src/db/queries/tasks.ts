@@ -1,7 +1,8 @@
 import type { SQL } from 'drizzle-orm';
-import { and, avg, count, desc, eq, gt, gte, ilike, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, asc, avg, count, desc, eq, gt, gte, ilike, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
 import { type AuditHandle, writeAuditLog } from '../audit';
 import { db } from '../client';
+import { syncExcludedPath } from '../schema/admin';
 import { session, user } from '../schema/auth';
 import { task, taskExecution } from '../schema/automation';
 import { file, fileMetadata, fileRendition } from '../schema/files';
@@ -582,4 +583,28 @@ export async function createSyncedFile(
     await writeAuditLog(tx, { model: 'File', action: 'create', after: created, userId });
     return created;
   });
+}
+
+export function listSyncExcludedPaths() {
+  return db.select().from(syncExcludedPath).orderBy(asc(syncExcludedPath.pattern));
+}
+
+/** Audited. Returns null when the pattern is already excluded. */
+export async function createSyncExcludedPath(pattern: string, userId: string | null, handle: AuditHandle = db) {
+  const [row] = await handle
+    .insert(syncExcludedPath)
+    .values({ id: crypto.randomUUID(), pattern, createdBy: userId })
+    .onConflictDoNothing({ target: syncExcludedPath.pattern })
+    .returning();
+  if (!row) return null;
+  await writeAuditLog(handle, { model: 'SyncExcludedPath', action: 'create', after: row, userId });
+  return row;
+}
+
+/** Audited. */
+export async function deleteSyncExcludedPath(id: string, userId: string | null, handle: AuditHandle = db) {
+  const [before] = await handle.delete(syncExcludedPath).where(eq(syncExcludedPath.id, id)).returning();
+  if (!before) return null;
+  await writeAuditLog(handle, { model: 'SyncExcludedPath', action: 'delete', before, userId });
+  return before;
 }

@@ -1,5 +1,5 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { Database, FileIcon, FileX, HardDrive, InfoIcon, Plus, RefreshCw, TrashIcon } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -178,7 +178,14 @@ function SyncFilesPage() {
             <AlertDescription>
               This tool performs comprehensive synchronization analysis between database records and S3 storage.
               <strong className={styles.danger}> Use with extreme caution as actions can permanently delete data.</strong>
-              Always verify sync results before taking any destructive actions.
+              Always verify sync results before taking any destructive actions. Paths left out of the analysis are managed under{' '}
+              <Link
+                to="/admin/settings/sync"
+                className={styles.link}
+              >
+                Settings
+              </Link>
+              .
             </AlertDescription>
           </Alert>
 

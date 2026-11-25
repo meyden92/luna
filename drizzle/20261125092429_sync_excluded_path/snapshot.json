@@ -1,0 +1,176 @@
+{
+  "type": "diff",
+  "version": "9",
+  "dialect": "postgres",
+  "id": "084e3daf-e6f8-40c5-af78-75040966093b",
+  "prevIds": [
+    "95429fd0-015f-47a4-8ecb-369ff35580b3"
+  ],
+  "footprints": [
+    {
+      "statementType": "create_table",
+      "statementTarget": [
+        "table",
+        "public",
+        "sync_excluded_path"
+      ],
+      "writes": [
+        "s|tbl|public.sync_excluded_path",
+        "n|tbl|public.sync_excluded_path",
+        "e|tbl|public.sync_excluded_path",
+        "n|rel|public.sync_excluded_path",
+        "n|type|public.sync_excluded_path",
+        "n|rel|public.sync_excluded_path_pkey",
+        "n|rel|public.sync_excluded_path_pattern_key"
+      ],
+      "reads": [
+        "n|sch|public"
+      ]
+    },
+    {
+      "statementType": "create_fk",
+      "statementTarget": [
+        "table",
+        "public",
+        "sync_excluded_path"
+      ],
+      "writes": [
+        "s|fk|public.sync_excluded_path.sync_excluded_path_created_by_user_id_fkey",
+        "n|fk|public.sync_excluded_path.sync_excluded_path_created_by_user_id_fkey",
+        "e|fk|public.sync_excluded_path.sync_excluded_path_created_by_user_id_fkey",
+        "n|con|public.sync_excluded_path.sync_excluded_path_created_by_user_id_fkey"
+      ],
+      "reads": [
+        "n|tbl|public.sync_excluded_path",
+        "n|sch|public",
+        "n|tbl|public.user",
+        "n|sch|public",
+        "n|col|public.sync_excluded_path.created_by",
+        "n|col|public.user.id",
+        "e|uniqueness|public.user.id"
+      ]
+    }
+  ],
+  "deltas": [
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "name": "sync_excluded_path",
+        "isRlsEnabled": false,
+        "entityType": "tables"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "sync_excluded_path",
+        "name": "id",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "sync_excluded_path",
+        "name": "pattern",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "sync_excluded_path",
+        "name": "created_by",
+        "type": "text",
+        "typeSchema": null,
+        "notNull": false,
+        "dimensions": 0,
+        "default": null,
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "sync_excluded_path",
+        "name": "created_at",
+        "type": "timestamp with time zone",
+        "typeSchema": null,
+        "notNull": true,
+        "dimensions": 0,
+        "default": "now()",
+        "generated": null,
+        "identity": null,
+        "entityType": "columns"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "sync_excluded_path",
+        "name": "sync_excluded_path_created_by_user_id_fkey",
+        "nameExplicit": false,
+        "columns": [
+          "created_by"
+        ],
+        "schemaTo": "public",
+        "tableTo": "user",
+        "columnsTo": [
+          "id"
+        ],
+        "onUpdate": "CASCADE",
+        "onDelete": "SET NULL",
+        "entityType": "fks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "sync_excluded_path",
+        "name": "sync_excluded_path_pkey",
+        "columns": [
+          "id"
+        ],
+        "nameExplicit": false,
+        "entityType": "pks"
+      }
+    },
+    {
+      "op": "create",
+      "row": {
+        "schema": "public",
+        "table": "sync_excluded_path",
+        "name": "sync_excluded_path_pattern_key",
+        "nameExplicit": false,
+        "columns": [
+          "pattern"
+        ],
+        "nullsNotDistinct": false,
+        "entityType": "uniques"
+      }
+    }
+  ]
+}

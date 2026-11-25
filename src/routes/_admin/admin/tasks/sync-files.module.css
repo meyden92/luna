@@ -204,4 +204,9 @@
   .destructiveAction:hover {
     background: color-mix(in oklab, var(--destructive) 85%, black);
   }
+
+  .link {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
 }

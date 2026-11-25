@@ -20,6 +20,14 @@ export const deleteDbOnlyFilesSchema = z.object({
   fileIds: z.array(z.string()),
 });
 
+export const addSyncExcludedPathSchema = z.object({
+  pattern: z.string().trim().min(1).max(512),
+});
+
+export const removeSyncExcludedPathSchema = z.object({
+  id: z.string().min(1),
+});
+
 export type DeleteS3OnlyFilesInput = z.infer<typeof deleteS3OnlyFilesSchema>;
 export type InsertS3OnlyFilesToDbInput = z.infer<typeof insertS3OnlyFilesToDbSchema>;
 export type DeleteDbOnlyFilesInput = z.infer<typeof deleteDbOnlyFilesSchema>;

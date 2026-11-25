@@ -13,6 +13,7 @@ declare const styles: {
   readonly "icon": string;
   readonly "iconLg": string;
   readonly "idleIcon": string;
+  readonly "link": string;
   readonly "muted": string;
   readonly "progress": string;
   readonly "rateRow": string;

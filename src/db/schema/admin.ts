@@ -6,8 +6,9 @@ import type { JsonValue } from './json';
  * Admin, audit, and moderation domain (issue #30).
  *
  * Covers the audit trail (`audit_log`), the RBAC group model (`rbac_group`,
- * `user_group_assignment`), and the upload moderation pipeline
- * (`denylist_entry`, `moderation_case`).
+ * `user_group_assignment`), the upload moderation pipeline
+ * (`denylist_entry`, `moderation_case`), and the sync check's excluded paths
+ * (`sync_excluded_path`).
  *
  * Physical column names are snake_case; TypeScript properties stay camelCase
  * (issue #28), following the same transform as the reference slice.
@@ -133,3 +134,11 @@ export const moderationCase = pgTable(
     index('moderation_case_reviewerId_idx').on(t.reviewerId),
   ],
 );
+
+/** S3 key patterns the admin sync check leaves out; `*` matches any run of characters. */
+export const syncExcludedPath = pgTable('sync_excluded_path', {
+  id: text('id').primaryKey(),
+  pattern: text('pattern').notNull().unique(),
+  createdBy: text('created_by').references(() => user.id, { onDelete: 'set null', onUpdate: 'cascade' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});

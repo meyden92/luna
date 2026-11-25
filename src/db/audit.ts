@@ -158,28 +158,13 @@ export async function writeAuditLog(
   },
 ): Promise<void> {
   try {
-    const beforeSnapshot = snapshot(model, before);
-    const afterSnapshot = snapshot(model, after);
-    const recordId = after?.id ?? before?.id;
-    if (!recordId) throw new Error('neither snapshot carries an id');
-
-    const diff = DiffEngine.generateDiffResult(beforeSnapshot, afterSnapshot);
     const metadata = await MetadataCollector.collectFromRequest();
-
-    const row = {
-      id: crypto.randomUUID(),
-      model,
-      action,
-      recordId,
-      userId: userId === undefined ? await currentUserId() : userId,
-      before: beforeSnapshot,
-      after: afterSnapshot,
-      metadata: metadata ? (JSON.parse(JSON.stringify(metadata)) as JsonValue) : null,
+    const actor = userId === undefined ? await currentUserId() : userId;
+    const row = auditRow(model, action, before, after, {
+      actor,
+      metadata,
       changeSet: changeSet ?? MetadataCollector.generateChangeSetId(),
-      summary: Summarizer.generateActionSummary(model, action, diff.changes, recordId),
-      fieldChanges: diff.hasChanges ? (JSON.parse(JSON.stringify(diff.changes)) as JsonValue) : null,
-    };
-
+    });
     await handle.transaction(async (savepoint) => {
       await savepoint.insert(auditLog).values(row);
     });
@@ -193,22 +178,67 @@ export async function writeAuditLog(
   }
 }
 
+/** One `audit_log` row; the request-wide parts are resolved once by the caller. */
+function auditRow(
+  model: AuditedModel,
+  action: AuditAction,
+  before: AuditRecord | null,
+  after: AuditRecord | null,
+  { actor, metadata, changeSet }: { actor: string | null; metadata: unknown; changeSet: string },
+) {
+  const beforeSnapshot = snapshot(model, before);
+  const afterSnapshot = snapshot(model, after);
+  const recordId = after?.id ?? before?.id;
+  if (!recordId) throw new Error('neither snapshot carries an id');
+
+  const diff = DiffEngine.generateDiffResult(beforeSnapshot, afterSnapshot);
+  return {
+    id: crypto.randomUUID(),
+    model,
+    action,
+    recordId,
+    userId: actor,
+    before: beforeSnapshot,
+    after: afterSnapshot,
+    metadata: metadata ? (JSON.parse(JSON.stringify(metadata)) as JsonValue) : null,
+    changeSet,
+    summary: Summarizer.generateActionSummary(model, action, diff.changes, recordId),
+    fieldChanges: diff.hasChanges ? (JSON.parse(JSON.stringify(diff.changes)) as JsonValue) : null,
+  };
+}
+
 /**
  * Audits several rows changed together — a bulk update or delete — under one
  * changeSet, mirroring what the implicit extension did for `updateMany` and
- * `deleteMany`.
+ * `deleteMany`. One insert on one savepoint, with the same failure invariant as
+ * `writeAuditLog`: the whole batch is lost rather than the business write.
  */
 export async function writeAuditLogs(
   handle: AuditHandle,
   model: AuditedModel,
   action: AuditAction,
-  records: { before?: AuditRecord | null; after?: AuditRecord | null }[],
+  records: readonly { before?: AuditRecord | null; after?: AuditRecord | null }[],
   userId?: string | null,
 ): Promise<void> {
-  // One changeSet for the whole batch, which is what made a bulk update legible
-  // as a single action in the admin trail under the Prisma extension.
-  const changeSet = MetadataCollector.generateChangeSetId();
-  for (const record of records) {
-    await writeAuditLog(handle, { model, action, ...record, userId, changeSet });
+  if (records.length === 0) return;
+  try {
+    const metadata = await MetadataCollector.collectFromRequest();
+    const actor = userId === undefined ? await currentUserId() : userId;
+    const changeSet = MetadataCollector.generateChangeSetId();
+    const rows = records.map(({ before = null, after = null }) => auditRow(model, action, before, after, { actor, metadata, changeSet }));
+    await handle.transaction(async (savepoint) => {
+      await savepoint.insert(auditLog).values(rows);
+    });
+  } catch (error) {
+    console.error(`[audit] failed to record ${action} of ${records.length} ${model} rows`, error);
   }
+}
+
+/** Pairs each row with its updated version for `writeAuditLogs`, dropping rows the update did not reach. */
+export function updatedPairs<T extends AuditRecord>(before: readonly T[], after: readonly T[]): { before: T; after: T }[] {
+  const afterById = new Map(after.map((row) => [row.id, row]));
+  return before.flatMap((row) => {
+    const updated = afterById.get(row.id);
+    return updated ? [{ before: row, after: updated }] : [];
+  });
 }

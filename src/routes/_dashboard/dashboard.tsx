@@ -24,7 +24,7 @@ import { toGalleryFilters, useGalleryFilters } from '@/hooks/stores/use-gallery-
 import { sizeMetrics, useGalleryView } from '@/hooks/stores/use-gallery-view';
 import { galleryQueryOptions, useGallery } from '@/hooks/use-gallery';
 import { useMoveFiles } from '@/hooks/use-move-files';
-import { deleteGalleryFiles, patchGalleryFiles, snapshotGalleryCaches } from '@/libs/gallery-cache';
+import { deleteGalleryFiles, patchGalleryFiles, refreshGalleryTotals, snapshotGalleryCaches } from '@/libs/gallery-cache';
 import { copyImageToClipboard } from '@/libs/image-clipboard';
 import { morphIntoPreview, morphOutOfPreview } from '@/libs/preview-morph';
 import { queryKeys } from '@/libs/query-keys';
@@ -179,7 +179,8 @@ function FilesPage() {
       return { restoreGalleries, wereSelected };
     },
     onSuccess: (_result, fileIds) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.folders.all, refetchType: 'none' });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.folders.all });
+      refreshGalleryTotals(queryClient);
       toast.success(fileIds.length === 1 ? 'File deleted' : `${fileIds.length} files deleted`);
     },
     onError: (error, _fileIds, context) => {

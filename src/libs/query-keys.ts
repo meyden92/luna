@@ -24,6 +24,7 @@ export const queryKeys = {
   gallery: {
     all: ['gallery'] as const,
     list: (filters?: GalleryFilters) => ['gallery', filters] as const,
+    counts: ['gallery', 'count'] as const,
     count: (filters?: GalleryFilters) => ['gallery', 'count', filters] as const,
   },
   folders: {

@@ -10,6 +10,7 @@ declare const styles: {
   readonly "lockBadge": string;
   readonly "media": string;
   readonly "menuChip": string;
+  readonly "open": string;
   readonly "placeholder": string;
   readonly "placeholderName": string;
   readonly "root": string;

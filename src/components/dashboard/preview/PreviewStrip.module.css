@@ -56,6 +56,25 @@
     background: color-mix(in oklab, var(--on-scrim) 5%, transparent);
   }
 
+  .selected {
+    position: absolute;
+    top: var(--space-1);
+    left: var(--space-1);
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    border-radius: var(--radius-full);
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  /* A selected file stays legible among the dimmed ones. */
+  .thumb[data-selected] {
+    opacity: 0.85;
+  }
+
   .image {
     position: absolute;
     inset: 0;

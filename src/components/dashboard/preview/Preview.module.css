@@ -156,6 +156,44 @@
     }
   }
 
+  .select {
+    position: absolute;
+    top: var(--space-4);
+    left: var(--space-4);
+    display: grid;
+    place-items: center;
+    width: var(--stage-nav-size);
+    height: var(--stage-nav-size);
+    border: 1.5px solid color-mix(in oklab, var(--on-scrim) 70%, transparent);
+    border-radius: var(--radius-full);
+    background: color-mix(in oklab, var(--on-scrim) 8%, transparent);
+    color: color-mix(in oklab, var(--on-scrim) 50%, transparent);
+    transition:
+      background-color var(--duration-fast) ease,
+      border-color var(--duration-fast) ease,
+      color var(--duration-fast) ease,
+      scale 350ms var(--spring);
+
+    &:hover {
+      background: color-mix(in oklab, var(--on-scrim) 16%, transparent);
+    }
+
+    &:active {
+      scale: 0.96;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--on-scrim);
+      outline-offset: 2px;
+    }
+
+    &[aria-pressed="true"] {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: var(--primary-foreground);
+    }
+  }
+
   /* Position within the list the arrow keys walk: "3 / 20". */
   .counter {
     position: absolute;
@@ -179,7 +217,8 @@
       animation-iteration-count: 1;
     }
 
-    .nav {
+    .nav,
+    .select {
       transition-duration: 0.01ms;
 
       &:active {

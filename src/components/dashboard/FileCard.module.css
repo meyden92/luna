@@ -210,6 +210,42 @@
     }
   }
 
+  .open {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 3;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border: 0;
+    border-radius: var(--radius-full);
+    background-color: oklch(0 0 0 / 0.35);
+    color: var(--on-scrim);
+    opacity: 0;
+    backdrop-filter: blur(4px);
+    transition:
+      opacity var(--duration-fast) ease,
+      background-color var(--duration-fast) ease;
+
+    &:hover {
+      background-color: oklch(0 0 0 / 0.55);
+    }
+
+    &:focus-visible {
+      opacity: 1;
+      outline: 2px solid var(--on-scrim);
+      outline-offset: 1px;
+    }
+  }
+
+  /* Takes the lock badge's corner, which empties on hover and focus. */
+  .root:hover .open,
+  .root:focus-within .open {
+    opacity: 1;
+  }
+
   /* Both badges are information; on hover the actions take their place. */
   .lockBadge,
   .durationBadge {
@@ -239,6 +275,7 @@
   }
 
   .root:hover .lockBadge,
+  .root:focus-within .lockBadge,
   .root:hover .durationBadge {
     opacity: 0;
   }

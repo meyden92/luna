@@ -8,8 +8,8 @@ import { fixtureUser } from '../fixtures/users';
 /** The Preview overlay of the file with this title (its dialog is named by the file). */
 export const previewOf = (page: Page, title: string): Locator => page.getByRole('dialog', { name: title, exact: true });
 
-/** The Preview's "N / total" counter. */
-export const previewCounter = (page: Page): Locator => page.getByText(/^\d+ \/ \d+…?$/);
+/** The Preview's "N / total" counter, followed by "· K selected" while anything is selected. */
+export const previewCounter = (page: Page): Locator => page.getByText(/^\d+ \/ \d+…?( · \d+ selected)?$/);
 
 /** Title -> id for every file the seeded gallery user holds. */
 export async function galleryFileIds(db: TestDb): Promise<Map<string, string>> {

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { CopyObjectCommand, DeleteObjectsCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { CopyObjectCommand, DeleteObjectsCommand, GetObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { getOwnedFile } from '@/db/queries/files';
 import {
@@ -26,7 +26,14 @@ import {
   setOutputKey,
   updateGenerationProgress,
 } from '@/db/queries/generations';
-import { getActiveStudioModel, getActiveStudioTemplate, getStudioModel, type StudioModel, type StudioTemplate } from '@/db/queries/studio';
+import {
+  getActiveStudioModel,
+  getActiveStudioTemplate,
+  getStudioModel,
+  getStudioTemplate,
+  type StudioModel,
+  type StudioTemplate,
+} from '@/db/queries/studio';
 import type { JsonValue } from '@/db/schema/json';
 import { throwIfAborted } from '@/libs/abort';
 import { env } from '@/libs/env';
@@ -39,6 +46,7 @@ import { hasStudioListeners, publishStudioEvent } from './events';
 import { reseedValues, reusableValues, uploadsExpireAt } from './history-actions';
 import { type ExtractedOutput, extractOutputs, mediaKindOf, outputExtension } from './outputs';
 import { buildRequestInput, isFileField, isFileRef, type RequestInput, RequestValidationError } from './request';
+import { templateReferenceKeys } from './template-config';
 import { ACTIVE_GENERATION_STATUSES, type FieldConfig, type FileRef, type GenerationError, type VariableConfig } from './types';
 import { fileVariableTargets } from './variables';
 import { type GenerationView, toGenerationView } from './views';
@@ -88,12 +96,13 @@ interface PipelineState {
 /**
  * What a Generation runs: an active Model or Template, or, for an admin's
  * test run from the Model or Template editor, any Model with the editor's
- * unsaved Fields and Variables.
+ * unsaved Fields and Variables. A draft's `templateId` names the saved
+ * Template whose reference images it may send.
  */
 export type SubmitTarget =
   | { modelId: string }
   | { templateId: string }
-  | { draft: { modelId: string; fields: FieldConfig[]; variables?: VariableConfig[] } };
+  | { draft: { modelId: string; templateId?: string; fields: FieldConfig[]; variables?: VariableConfig[] } };
 
 // ---------------------------------------------------------------------------
 // Submit
@@ -119,7 +128,7 @@ export async function submitGeneration(options: {
 }): Promise<GenerationView> {
   const fal = falClient();
   const { userId, values } = options;
-  const { model, template, fields, variables, fromTemplate } = await resolveTarget(options.target);
+  const { model, template, fields, variables, fromTemplate, referenceKeys } = await resolveTarget(options.target);
   const schema = model.schemaSnapshot.input;
 
   const draft = buildRequestInput({ fields, schema, values, variables });
@@ -129,6 +138,7 @@ export async function submitGeneration(options: {
     userId,
     options.uploads ?? new Map(),
     options.allowUrlRefs ?? false,
+    referenceKeys,
   );
 
   const row = await admitGeneration({
@@ -164,28 +174,36 @@ export async function submitGeneration(options: {
   return publishGeneration(finished, true);
 }
 
-/** What a target runs. `fromTemplate`: the form is a Template's, also for a Template editor draft (it has `variables`). */
+/**
+ * What a target runs. `fromTemplate`: the form is a Template's, also for a
+ * Template editor draft (it has `variables`). `referenceKeys`: the reference
+ * images it may send, always read from the stored Template.
+ */
 async function resolveTarget(target: SubmitTarget): Promise<{
   model: StudioModel;
   template: StudioTemplate | null;
   fields: FieldConfig[];
   variables: VariableConfig[];
   fromTemplate: boolean;
+  referenceKeys: Set<string>;
 }> {
   if ('templateId' in target) {
     const found = await getActiveStudioTemplate(target.templateId);
     if (!found) throw new UserFacingError('This Template is not available.');
-    return { ...found, fields: found.template.fields, variables: found.template.variables, fromTemplate: true };
+    const { fields, variables } = found.template;
+    return { ...found, fields, variables, fromTemplate: true, referenceKeys: new Set(templateReferenceKeys(fields)) };
   }
   if ('draft' in target) {
     const model = await getStudioModel(target.draft.modelId);
     if (!model) throw new UserFacingError('This Model no longer exists.');
-    const { fields, variables } = target.draft;
-    return { model, template: null, fields, variables: variables ?? [], fromTemplate: variables !== undefined };
+    const { fields, variables, templateId } = target.draft;
+    const saved = templateId ? await getStudioTemplate(templateId) : undefined;
+    const referenceKeys = new Set(saved ? templateReferenceKeys(saved.template.fields) : []);
+    return { model, template: null, fields, variables: variables ?? [], fromTemplate: variables !== undefined, referenceKeys };
   }
   const model = await getActiveStudioModel(target.modelId);
   if (!model) throw new UserFacingError('This Model is not available.');
-  return { model, template: null, fields: model.fields, variables: [], fromTemplate: false };
+  return { model, template: null, fields: model.fields, variables: [], fromTemplate: false, referenceKeys: new Set() };
 }
 
 /** One file input of a draft request: where it goes and how to read it. */
@@ -197,13 +215,14 @@ interface FileInput {
   load: (() => Promise<{ blob: Blob; fileName: string }>) | null;
 }
 
-/** Checks every file input is the User's, still exists and is a media kind the Field accepts. */
+/** Checks every file input is the User's or the Template's, still exists and is a media kind the Field accepts. */
 async function checkFileInputs(
   draft: RequestInput,
   fields: FieldConfig[],
   userId: string,
   uploads: Map<string, File>,
   allowUrlRefs: boolean,
+  referenceKeys: Set<string>,
 ): Promise<FileInput[]> {
   const inputs: FileInput[] = [];
   const problems: { field: string; message: string }[] = [];
@@ -215,7 +234,7 @@ async function checkFileInputs(
     for (const [position, ref] of refs.entries()) {
       if (!isFileRef(ref)) continue;
       const label = field.label ?? field.name;
-      const checked = await checkFileRef(ref, userId, uploads, allowUrlRefs);
+      const checked = await checkFileRef(ref, userId, uploads, allowUrlRefs, referenceKeys);
       if (typeof checked === 'string') {
         problems.push({ field: field.name, message: `${label}: ${checked}` });
         continue;
@@ -238,6 +257,7 @@ async function checkFileRef(
   userId: string,
   uploads: Map<string, File>,
   allowUrlRefs: boolean,
+  referenceKeys: Set<string>,
 ): Promise<string | { contentType: string | null; load: FileInput['load'] }> {
   switch (ref.source) {
     case 'upload': {
@@ -267,6 +287,12 @@ async function checkFileRef(
     }
     case 'url':
       return allowUrlRefs ? { contentType: null, load: null } : 'files must be uploaded or picked.';
+    case 'template': {
+      if (!referenceKeys.has(ref.key)) return 'files must be uploaded or picked.';
+      const head = await s3Client.send(new HeadObjectCommand({ Bucket: env.AWS_BUCKET_NAME, Key: ref.key }));
+      const contentType = head.ContentType ?? 'application/octet-stream';
+      return { contentType, load: () => readObject(ref.key, contentType, ref.key.slice(ref.key.lastIndexOf('/') + 1)) };
+    }
   }
 }
 

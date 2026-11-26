@@ -1,0 +1,41 @@
+@layer components {
+  .slot {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  .number {
+    min-width: 1.5ch;
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .thumb,
+  .upload {
+    flex-shrink: 0;
+    width: 3rem;
+    height: 3rem;
+    border-radius: var(--radius-md);
+  }
+
+  .thumb {
+    object-fit: cover;
+  }
+
+  .upload {
+    display: grid;
+    place-items: center;
+    background-color: var(--muted);
+    color: var(--muted-foreground);
+  }
+
+  .label {
+    flex: 1;
+    font-size: var(--text-sm);
+  }
+}

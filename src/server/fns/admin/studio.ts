@@ -363,6 +363,8 @@ const testPayloadSchema = z.object({
   fields: z.array(fieldConfigSchema),
   /** Set by the Template editor, even when empty: the draft is a Template's. */
   variables: z.array(variableConfigSchema).max(50).optional(),
+  /** The saved Template being edited, whose reference images the draft may send. */
+  templateId: z.string().min(1).optional(),
   values: z.record(z.string(), z.json()),
 });
 
@@ -385,7 +387,7 @@ export const testStudioModel = createServerFn({ method: 'POST' })
     assertValidConfig(variables ? validateTemplateConfig({ fields, variables, input }) : validateModelConfig(fields, input));
     return submitGeneration({
       userId: adminIdFromCtx(context),
-      target: { draft: { modelId: model.id, fields, variables } },
+      target: { draft: { modelId: model.id, templateId: data.templateId, fields, variables } },
       values: data.values as Record<string, JsonValue>,
       uploads: data.uploads,
     });

@@ -14,13 +14,14 @@ import { useConfirmation } from '@/hooks/use-confirmation';
 import { queryKeys } from '@/libs/query-keys';
 import { fieldKind, suggestAccept } from '@/libs/studio/model-config';
 import { fileInputs, templateFieldDefaults, validateTemplateConfig } from '@/libs/studio/template-config';
-import type { FieldConfig, VariableConfig } from '@/libs/studio/types';
-import { reconcileVariables, writeVariableTokens } from '@/libs/studio/variables';
+import type { FieldConfig, FileRef, VariableConfig } from '@/libs/studio/types';
+import { type FileSlot, fileSlots, reconcileVariables, referencesOf, writeVariableTokens } from '@/libs/studio/variables';
 import type { listStudioCategories, listStudioModels } from '@/server/fns/admin/studio';
 import { deleteStudioTemplate, saveStudioTemplate } from '@/server/fns/admin/studio-templates';
 import { FieldCard } from './FieldCard';
 import styles from './ModelEditor.module.css';
 import { ModelPreview } from './ModelPreview';
+import { ReferenceSlots } from './ReferenceSlots';
 import previewStyles from './TemplateEditor.module.css';
 import { TemplateTextEditor } from './TemplateTextEditor';
 import { VariableCard, variableCandidates } from './VariableCard';
@@ -45,6 +46,8 @@ export interface TemplateDraft {
   fields: FieldConfig[];
   variables: VariableConfig[];
   previews: EditorPreview[];
+  /** The stored reference images in `fields`, signed. */
+  references: { key: string; url: string }[];
 }
 
 const MAX_PREVIEWS = 6;
@@ -80,6 +83,17 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
   const previewsRef = useRef(previews);
   previewsRef.current = previews;
   useEffect(() => () => revokeUploads(previewsRef.current), []);
+  /** Reference images added since the last save, by the `upload` key their ref in `fields` carries. */
+  const [referenceUploads, setReferenceUploads] = useState(() => new Map<string, { file: File; url: string }>());
+  const referenceUploadsRef = useRef(referenceUploads);
+  referenceUploadsRef.current = referenceUploads;
+  useEffect(
+    () => () => {
+      for (const { url } of referenceUploadsRef.current.values()) URL.revokeObjectURL(url);
+    },
+    [],
+  );
+  const storedReferences = useMemo(() => new Map(draft.references.map(({ key, url }) => [key, url])), [draft.references]);
   const [config, setConfig] = useState(() => ({
     fields: [...draft.fields].sort((a, b) => a.order - b.order),
     variables: reconcileVariables(textsOf(draft.fields), draft.variables),
@@ -137,16 +151,22 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
     setConfig({ fields: templateFieldDefaults(next.fields, next.schemaSnapshot.input), variables: [] });
   };
 
-  /** *Add file input*: a required file Variable on the first file input, at its next free position. The Variable owns that input from then on. */
-  const addFileVariable = () => {
+  /**
+   * *Add file input* or *Add user upload*: a required file Variable on the
+   * given file input, else the first, in its last slot. The Variable owns
+   * that input from then on.
+   */
+  const addFileVariable = (inputName?: string) => {
     if (!schema) return;
-    const [target] = fileInputs(schema);
+    const target = fileInputs(schema).find((candidate) => inputName === undefined || candidate.name === inputName);
     if (!target) return;
     const taken = new Set(variables.map((variable) => variable.name));
     let index = 1;
     while (taken.has(index === 1 ? 'file' : `file_${index}`)) index++;
+    const field = fields.find((candidate) => candidate.name === target.name);
     const used = variables.filter((variable) => variable.file?.field === target.name).map((variable) => variable.file?.position ?? 0);
-    const accept = fields.find((candidate) => candidate.name === target.name)?.accept;
+    const next = Math.max(field ? fileSlots(field, variables).length : 0, used.length === 0 ? 0 : Math.max(...used) + 1);
+    const accept = field?.accept;
     const variable: VariableConfig = {
       name: index === 1 ? 'file' : `file_${index}`,
       kind: 'file',
@@ -155,11 +175,74 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
       file: {
         field: target.name,
         accept: accept ?? suggestAccept(target.name),
-        ...(target.list ? { position: used.length === 0 ? 0 : Math.max(...used) + 1 } : {}),
+        ...(target.list ? { position: next } : {}),
       },
     };
     setConfig((current) => ({ ...current, variables: [...current.variables, variable] }));
   };
+
+  const referenceUrl = (ref: FileRef) =>
+    ref.source === 'template' ? storedReferences.get(ref.key) : ref.source === 'upload' ? referenceUploads.get(ref.key)?.url : undefined;
+
+  /** A file input's reference images: fixed while it has any, shown again once the last one goes and no file Variable feeds it. */
+  const setReferences = (field: FieldConfig, refs: FileRef[], list: boolean) => {
+    if (refs.length === 0 && !variables.some((variable) => variable.file?.field === field.name)) {
+      const { value: _value, ...rest } = field;
+      setField({ ...rest, mode: 'shown' });
+      return;
+    }
+    const accept = field.accept?.includes('image') ? field.accept : [...(field.accept ?? []), 'image' as const];
+    const { value: _value, ...rest } = field;
+    const value = list ? refs : refs[0];
+    setField({ ...rest, mode: 'fixed', display: 'file', accept, ...(value === undefined ? {} : { value }) });
+  };
+
+  const addReferences = (field: FieldConfig, files: File[], list: boolean) => {
+    const added = files.map((file) => ({ key: `reference.${crypto.randomUUID()}`, file, url: URL.createObjectURL(file) }));
+    setReferenceUploads((current) => new Map([...current, ...added.map(({ key, ...upload }) => [key, upload] as const)]));
+    setReferences(field, [...referencesOf(field), ...added.map(({ key }) => ({ source: 'upload' as const, key }))], list);
+  };
+
+  const removeReference = (field: FieldConfig, ref: FileRef, list: boolean) => {
+    if (ref.source === 'upload') {
+      const upload = referenceUploads.get(ref.key);
+      if (upload) URL.revokeObjectURL(upload.url);
+      setReferenceUploads((current) => new Map([...current].filter(([key]) => key !== ref.key)));
+    }
+    setReferences(
+      field,
+      referencesOf(field).filter((candidate) => candidate !== ref),
+      list,
+    );
+  };
+
+  /** A new slot order: reference images in their new order, each file Variable at its slot. */
+  const reorderSlots = (field: FieldConfig, slots: FileSlot[]) => {
+    const refs = slots.flatMap((slot) => (slot.kind === 'reference' ? [slot.ref] : []));
+    const positions = new Map(
+      slots.flatMap((slot, position) => (slot.kind === 'variable' ? [[slot.variable.name, position] as const] : [])),
+    );
+    setConfig((current) => ({
+      fields: current.fields.map((candidate) =>
+        candidate.name === field.name && refs.length > 0 ? { ...candidate, value: refs } : candidate,
+      ),
+      variables: current.variables.map((variable) => {
+        const position = positions.get(variable.name);
+        return position === undefined || !variable.file ? variable : { ...variable, file: { ...variable.file, position } };
+      }),
+    }));
+  };
+
+  /** The reference images added since the last save that the Fields still send. */
+  const pendingReferences = new Map(
+    fields.flatMap((field) =>
+      referencesOf(field).flatMap((ref) => {
+        if (ref.source !== 'upload') return [];
+        const upload = referenceUploads.get(ref.key);
+        return upload ? [[ref.key, upload.file] as const] : [];
+      }),
+    ),
+  );
 
   const submit = () => {
     if (!modelId || !categoryId) return;
@@ -181,6 +264,7 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
       }),
     );
     for (const preview of previews) if (preview.source === 'upload') data.append(preview.key, preview.file, preview.file.name);
+    for (const [key, file] of pendingReferences) data.append(key, file, file.name);
     save.mutate(data);
   };
 
@@ -306,6 +390,7 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
                     const property = schema.properties?.[field.name] ?? {};
                     const isText = field.mode === 'fixed' && fieldKind(field, property) === 'string';
                     const feeders = variables.filter((variable) => variable.file?.field === field.name).map((variable) => variable.name);
+                    const fileTarget = fileInputs(schema).find((candidate) => candidate.name === field.name);
                     return (
                       <FieldCard
                         field={field}
@@ -324,6 +409,17 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
                               value={typeof field.value === 'string' ? field.value : ''}
                               names={textNames}
                               onChange={(value) => setField({ ...field, value })}
+                            />
+                          ) : fileTarget ? (
+                            <ReferenceSlots
+                              field={field}
+                              variables={variables}
+                              list={fileTarget.list}
+                              urlOf={referenceUrl}
+                              onAddImages={(files) => addReferences(field, files, fileTarget.list)}
+                              onAddUpload={() => addFileVariable(field.name)}
+                              onRemove={(ref) => removeReference(field, ref, fileTarget.list)}
+                              onReorder={(slots) => reorderSlots(field, slots)}
                             />
                           ) : undefined
                         }
@@ -377,7 +473,7 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
                 <Button
                   variant="outline"
                   disabled={fileInputs(schema).length === 0}
-                  onClick={addFileVariable}
+                  onClick={() => addFileVariable()}
                 >
                   <FileInput />
                   Add file input
@@ -392,6 +488,8 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
               schema={schema}
               pricing={model.pricing}
               disabledReason={issues.length > 0 ? 'Fix the issues on the cards to test.' : null}
+              templateId={draft.id}
+              referenceUploads={pendingReferences}
               onUseOutput={(output) =>
                 output.url &&
                 setPreviews((current) =>

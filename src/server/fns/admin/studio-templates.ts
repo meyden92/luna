@@ -15,8 +15,14 @@ import { getPrivateSignedUrl } from '@/libs/S3Helper';
 import { assertStudioEnabled } from '@/libs/studio/config';
 import { readStudioFormData } from '@/libs/studio/form';
 import { RequestValidationError } from '@/libs/studio/request';
-import { templateFieldDefaults, validateTemplateConfig } from '@/libs/studio/template-config';
-import { deleteTemplatePreviews, signTemplatePreviews, storeTemplatePreviews } from '@/libs/studio/template-previews';
+import { templateFieldDefaults, templateReferenceKeys, validateTemplateConfig } from '@/libs/studio/template-config';
+import {
+  deleteTemplatePreviews,
+  signTemplatePreviews,
+  signTemplateReferences,
+  storeTemplatePreviews,
+  storeTemplateReferences,
+} from '@/libs/studio/template-previews';
 import type { FieldConfig, VariableConfig } from '@/libs/studio/types';
 import { UserFacingError } from '@/libs/user-facing-error';
 import { saveStudioTemplateSchema } from '@/schemas/studio-schema';
@@ -37,7 +43,7 @@ export const listStudioTemplates = createServerFn({ method: 'GET' })
     return listTemplateRows();
   });
 
-/** A Template for its editor, with its preview images signed. */
+/** A Template for its editor, with its preview and reference images signed. */
 export const getStudioTemplate = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(idSchema)
@@ -45,7 +51,11 @@ export const getStudioTemplate = createServerFn({ method: 'GET' })
     assertStudioEnabled();
     const row = await getTemplateRow(data.id);
     if (!row) throw new UserFacingError('Template not found.');
-    return { ...row.template, previews: await signTemplatePreviews(row.template.previewKeys) };
+    const [previews, references] = await Promise.all([
+      signTemplatePreviews(row.template.previewKeys),
+      signTemplateReferences(row.template.fields),
+    ]);
+    return { ...row.template, previews, references };
   });
 
 /**
@@ -76,8 +86,8 @@ export const getTemplateDraftFromGeneration = createServerFn({ method: 'GET' })
 
 /**
  * Creates or saves a Template. FormData: `payload` is the JSON of
- * `saveStudioTemplateSchema`, and every other part a preview image named by
- * an `upload` preview's key. Refuses configs `validateTemplateConfig`
+ * `saveStudioTemplateSchema`, and every other part a preview or reference
+ * image named by its `upload` key. Refuses configs `validateTemplateConfig`
  * rejects, naming each card.
  */
 export const saveStudioTemplate = createServerFn({ method: 'POST' })
@@ -93,15 +103,28 @@ export const saveStudioTemplate = createServerFn({ method: 'POST' })
     if (data.id && !existing) throw new UserFacingError('Template not found.');
     if (existing && existing.template.modelId !== model.id) throw new UserFacingError('The Model of a Template cannot change.');
 
-    const fields = data.fields as FieldConfig[];
     const variables = data.variables as VariableConfig[];
-    const issues = validateTemplateConfig({ fields, variables, input: model.schemaSnapshot.input });
+    const issues = validateTemplateConfig({ fields: data.fields as FieldConfig[], variables, input: model.schemaSnapshot.input });
     if (issues.length > 0) {
       throw new RequestValidationError(issues.map((issue) => ({ ...issue, message: `${issue.field}: ${issue.message}` })));
     }
 
     const currentKeys = existing?.template.previewKeys ?? [];
-    const { keys, created } = await storeTemplatePreviews(data.previews, { uploads: data.uploads, adminId, currentKeys });
+    const currentReferenceKeys = templateReferenceKeys(existing?.template.fields ?? []);
+    const references = await storeTemplateReferences(data.fields as FieldConfig[], {
+      uploads: data.uploads,
+      currentKeys: currentReferenceKeys,
+    });
+    const fields = references.fields;
+    let previews: Awaited<ReturnType<typeof storeTemplatePreviews>>;
+    try {
+      previews = await storeTemplatePreviews(data.previews, { uploads: data.uploads, adminId, currentKeys });
+    } catch (error) {
+      await deleteTemplatePreviews(references.created);
+      throw error;
+    }
+    const { keys } = previews;
+    const created = [...previews.created, ...references.created];
     const values = {
       categoryId: data.categoryId,
       name: data.name,
@@ -125,11 +148,15 @@ export const saveStudioTemplate = createServerFn({ method: 'POST' })
       throw error;
     }
     if (!saved) throw new UserFacingError('Template not found.');
-    await deleteTemplatePreviews(currentKeys.filter((key) => !keys.includes(key)));
+    const referenceKeys = templateReferenceKeys(fields);
+    await deleteTemplatePreviews([
+      ...currentKeys.filter((key) => !keys.includes(key)),
+      ...currentReferenceKeys.filter((key) => !referenceKeys.includes(key)),
+    ]);
     return saved;
   });
 
-/** Deletes a Template and its preview images. Its Generations stay in their Users' history. */
+/** Deletes a Template and its preview and reference images. Its Generations stay in their Users' history. */
 export const deleteStudioTemplate = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .validator(idSchema)
@@ -137,5 +164,5 @@ export const deleteStudioTemplate = createServerFn({ method: 'POST' })
     assertStudioEnabled();
     const deleted = await deleteTemplateRow(data.id, adminIdFromCtx(context));
     if (!deleted) throw new UserFacingError('Template not found.');
-    await deleteTemplatePreviews(deleted.previewKeys);
+    await deleteTemplatePreviews([...deleted.previewKeys, ...templateReferenceKeys(deleted.fields)]);
   });

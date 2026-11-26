@@ -117,14 +117,20 @@ _Avoid_: Endpoint, Engine
 
 **Field**:
 One input a Model accepts, as the admin set it up: shown to the User, fixed to
-a value, or left to fal's default. A file input can never be fixed, so no
-Template carries a reference image and *Save as Template* drops the files
-entered. Distinct from a Variable, which only a Template has.
+a value, or left to fal's default. A Model cannot fix a file input; a Template
+can, to its reference images. *Save as Template* drops the files entered.
+Distinct from a Variable, which only a Template has.
 _Avoid_: Parameter, input, option, setting
 
 **Template**:
 A Model with its Fields fixed and its prompt written by an admin, so the User
 only answers a few Variables. Sits in a Category beside the Models.
+
+**Reference image**:
+An image a Template sends with every Generation, uploaded by the admin. A file
+input's slots hold reference images and file Variables in the order the admin
+set, since a prompt names images by position.
+_Avoid_: Fixed file, preset image
 _Avoid_: Recipe, Preset
 
 **Variable**:

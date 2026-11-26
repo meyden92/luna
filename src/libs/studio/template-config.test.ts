@@ -87,6 +87,24 @@ describe('validateTemplateConfig', () => {
     ]);
   });
 
+  test('reference images fill a required file input, alone or beside file Variables, within its limit', () => {
+    const reference = { source: 'template', key: 'studio-templates/style.png' } as const;
+    const withReferences = (count: number): FieldConfig => ({ ...images, mode: 'fixed', value: Array(count).fill(reference) });
+    expect(messages([prompt('{style}'), withReferences(1), strength], [style])).toEqual([]);
+    expect(messages([prompt('{style}'), withReferences(1), strength], [style, { ...photo, required: false }])).toEqual([]);
+    expect(messages([prompt('{style}'), withReferences(4), strength], [style, photo])).toEqual([
+      'image_urls: image_urls takes at most 4 files.',
+    ]);
+  });
+
+  test('a fixed file input needs a reference image, and only uploads become one', () => {
+    expect(messages([prompt('{style}'), { ...images, mode: 'fixed', value: [] }, strength], [style])).toEqual([
+      'image_urls: A fixed file input needs a reference image.',
+    ]);
+    const picked = { ...images, mode: 'fixed' as const, value: [{ source: 'file', fileId: 'f1' }] };
+    expect(messages([prompt('{style}'), picked, strength], [style])).toEqual(['image_urls: A reference image must be uploaded.']);
+  });
+
   test('a Variable cannot share its name with an input of the model', () => {
     expect(
       messages([prompt('{strength}'), images, strength], [{ name: 'strength', kind: 'text', required: false, order: 0 }, photo]),

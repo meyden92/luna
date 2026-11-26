@@ -38,6 +38,7 @@ function TemplateEditorPage() {
         fields: template.fields,
         variables: template.variables,
         previews: template.previews.map((preview) => ({ source: 'key', ...preview })),
+        references: template.references,
       }}
       models={models}
       categories={categories}

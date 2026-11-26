@@ -172,6 +172,29 @@ describe('substituteVariables', () => {
     expect(result.fields.find((field) => field.name === 'image_url')).toMatchObject({ mode: 'fixed', value: person, display: 'file' });
   });
 
+  test("reference images and the User's files share a list input in slot order; an empty optional slot closes up", () => {
+    const style = { source: 'template', key: 'studio-templates/style.png' } as const;
+    const pose = { source: 'template', key: 'studio-templates/pose.png' } as const;
+    const person = { source: 'upload', key: 'person' } as const;
+    const fileVariable = (name: string, position: number): VariableConfig => ({
+      name,
+      kind: 'file',
+      required: false,
+      order: 0,
+      file: { field: 'image_urls', position, accept: ['image'] },
+    });
+    const send = (values: Record<string, unknown>) =>
+      substituteVariables({
+        fields: [promptField('Image 1 is the style'), { name: 'image_urls', mode: 'fixed', order: 1, value: [style, pose] }],
+        variables: [fileVariable('person', 1), fileVariable('extra', 3)],
+        values,
+        schema,
+      }).fields.find((field) => field.name === 'image_urls')?.value;
+
+    expect(send({ person, extra: person })).toEqual([style, person, pose, person]);
+    expect(send({ extra: person })).toEqual([style, pose, person]);
+  });
+
   test('reports a required Variable left empty and a value outside its choices, by label', () => {
     const result = substituteVariables({
       fields: [promptField('{who} as {style}')],

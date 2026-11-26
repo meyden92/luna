@@ -54,6 +54,8 @@ export function isFileRef(value: unknown): value is FileRef {
       return typeof ref.outputId === 'string' && ref.outputId.length > 0;
     case 'url':
       return typeof ref.url === 'string' && URL.canParse(ref.url) && typeof ref.expiresAt === 'string';
+    case 'template':
+      return typeof ref.key === 'string' && ref.key.length > 0;
     default:
       return false;
   }

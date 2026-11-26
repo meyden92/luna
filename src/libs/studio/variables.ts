@@ -144,8 +144,9 @@ export function writeVariableTokens(texts: string[], variable: VariableConfig): 
  *   choice's option value, multi-choice values joined with ", ", a switch's
  *   on or off text, a number, or the text typed; empty values leave no
  *   doubled spaces or dangling commas behind
- * - a file Variable fixes its target input to the file, or to one position
- *   of a list input, which keeps the filled positions in order
+ * - a file Variable fixes its target input to the file, or to its slot of
+ *   a list input among the other file Variables and the reference images
+ *   (`fileSlots`); empty slots close up
  * - a Variable hidden by `visibleIf` inserts its default or nothing, and is
  *   not validated
  *
@@ -184,11 +185,13 @@ export function substituteVariables(options: {
     if (field.mode === 'fixed' && typeof field.value === 'string' && hasVariables(field.value)) {
       return { ...field, value: tidy(field.value.replace(TOKEN, (_token, name: string) => inserts.get(name) ?? '')) };
     }
-    const fed = variables.filter((variable) => variable.kind === 'file' && variable.file?.field === field.name);
-    if (fed.length === 0) return field;
-    const refs = [...fed]
-      .sort((a, b) => (a.file?.position ?? 0) - (b.file?.position ?? 0))
-      .flatMap((variable) => (visible(variable.name) && isFileRef(values[variable.name]) ? [values[variable.name] as FileRef] : []));
+    const slots = fileSlots(field, variables);
+    if (!slots.some((slot) => slot.kind === 'variable')) return field;
+    const refs = slots.flatMap((slot) => {
+      if (slot.kind === 'reference') return [slot.ref];
+      const value = values[slot.variable.name];
+      return visible(slot.variable.name) && isFileRef(value) ? [value] : [];
+    });
     if (refs.length === 0) return field;
     const list = isListInput(schema.properties?.[field.name]);
     return { ...field, mode: 'fixed' as const, value: list ? refs : (refs[0] as FileRef) };
@@ -197,16 +200,56 @@ export function substituteVariables(options: {
   return { fields: substituted, variableValues, issues };
 }
 
+/** A Template's reference images on a file input: its value while fixed. */
+export function referencesOf(field: FieldConfig): FileRef[] {
+  if (field.mode !== 'fixed') return [];
+  const { value } = field;
+  if (Array.isArray(value)) return value.filter(isFileRef);
+  return isFileRef(value) ? [value] : [];
+}
+
+export type FileSlot = { kind: 'reference'; ref: FileRef } | { kind: 'variable'; variable: VariableConfig };
+
+/**
+ * The files a Template sends to one input, in order: each file Variable sits
+ * at its `position` (one without sits last), and the reference images fill
+ * the remaining slots in their stored order.
+ */
+export function fileSlots(field: FieldConfig, variables: VariableConfig[]): FileSlot[] {
+  const references = referencesOf(field);
+  const fed = variables
+    .filter((variable) => variable.kind === 'file' && variable.file?.field === field.name)
+    .sort((a, b) => (a.file?.position ?? Number.POSITIVE_INFINITY) - (b.file?.position ?? Number.POSITIVE_INFINITY));
+  const slots: FileSlot[] = [];
+  let reference = 0;
+  let variable = 0;
+  while (reference < references.length || variable < fed.length) {
+    const next = fed[variable];
+    const position = next?.file?.position ?? Number.POSITIVE_INFINITY;
+    if (next && (position <= slots.length || reference >= references.length)) {
+      slots.push({ kind: 'variable', variable: next });
+      variable++;
+    } else {
+      slots.push({ kind: 'reference', ref: references[reference] as FileRef });
+      reference++;
+    }
+  }
+  return slots;
+}
+
 /**
  * The Field configs with every input a file Variable feeds marked as a file
- * input that accepts what those Variables accept, as the pipeline checks and
- * uploads files.
+ * input that accepts what those Variables accept, and images too when it has
+ * reference images, as the pipeline checks and uploads files.
  */
 export function fileVariableTargets(fields: FieldConfig[], variables: VariableConfig[]): FieldConfig[] {
   return fields.map((field) => {
     const fed = variables.filter((variable) => variable.kind === 'file' && variable.file?.field === field.name);
     if (fed.length === 0) return field;
-    const accept = MEDIA_KINDS.filter((kind) => fed.some((variable) => variable.file?.accept.includes(kind)));
+    const references = referencesOf(field).length > 0;
+    const accept = MEDIA_KINDS.filter(
+      (kind) => (references && kind === 'image') || fed.some((variable) => variable.file?.accept.includes(kind)),
+    );
     return { ...field, display: 'file' as const, accept };
   });
 }

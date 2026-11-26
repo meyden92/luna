@@ -6,17 +6,37 @@ import { env } from '@/libs/env';
 import { getPrivateSignedUrl, s3Client } from '@/libs/S3Helper';
 import { UserFacingError } from '@/libs/user-facing-error';
 import type { TemplatePreview } from '@/schemas/studio-schema';
-import { outputExtension } from './outputs';
+import { mediaKindOf, outputExtension } from './outputs';
+import { templateReferenceKeys } from './template-config';
+import type { FieldConfig, FileRef } from './types';
+import { referencesOf } from './variables';
 
 /**
- * A Template's preview images: private objects under `studio-templates/`,
- * owned by the Template and counted against no quota. Server-only.
+ * A Template's preview and reference images: private objects under
+ * `studio-templates/`, owned by the Template and counted against no quota.
+ * Server-only.
  */
 
 const MAX_PREVIEW_BYTES = 10 * 1024 * 1024;
+const MAX_REFERENCE_BYTES = 100 * 1024 * 1024;
 const PREVIEW_URL_TTL_SECONDS = 3600;
 
 const previewKey = (contentType: string, name: string) => `studio-templates/${randomUUID()}.${outputExtension(contentType, name)}`;
+
+async function putObject(file: File): Promise<string> {
+  const key = previewKey(file.type, file.name);
+  await new Upload({
+    client: s3Client,
+    params: {
+      Bucket: env.AWS_BUCKET_NAME,
+      Key: key,
+      Body: new Uint8Array(await file.arrayBuffer()),
+      ContentType: file.type,
+      ACL: 'private',
+    },
+  }).done();
+  return key;
+}
 
 /**
  * Stores the previews the editor saved, in order, and returns their keys:
@@ -42,11 +62,7 @@ export async function storeTemplatePreviews(
         const file = uploads.get(preview.key);
         if (!file?.type.startsWith('image/')) throw new UserFacingError('A preview must be an image.');
         if (file.size > MAX_PREVIEW_BYTES) throw new UserFacingError('A preview image may be at most 10 MB.');
-        const key = previewKey(file.type, file.name);
-        await new Upload({
-          client: s3Client,
-          params: { Bucket: bucket, Key: key, Body: new Uint8Array(await file.arrayBuffer()), ContentType: file.type, ACL: 'private' },
-        }).done();
+        const key = await putObject(file);
         created.push(key);
         keys.push(key);
         continue;
@@ -74,7 +90,50 @@ export async function storeTemplatePreviews(
   return { keys, created };
 }
 
-/** Removes preview objects; a failure is logged, never thrown, because the Template write already happened. */
+/**
+ * Stores the reference images the editor saved and returns the Fields with
+ * each upload swapped for its stored `template` ref: kept ones must be the
+ * Template's already, uploads must be images.
+ * Returns the keys this call created too, so a failed save can remove them.
+ */
+export async function storeTemplateReferences(
+  fields: FieldConfig[],
+  { uploads, currentKeys }: { uploads: Map<string, File>; currentKeys: string[] },
+): Promise<{ fields: FieldConfig[]; created: string[] }> {
+  const created: string[] = [];
+  const store = async (field: FieldConfig, ref: FileRef): Promise<FileRef> => {
+    if (ref.source === 'template') {
+      if (!currentKeys.includes(ref.key)) throw new UserFacingError('A reference image is not this Template’s.');
+      return ref;
+    }
+    const file = ref.source === 'upload' ? uploads.get(ref.key) : undefined;
+    if (!file) throw new UserFacingError(`A reference image of ${field.name} is missing.`);
+    if (mediaKindOf(file.type) !== 'image') throw new UserFacingError('A reference image must be an image.');
+    if (file.size > MAX_REFERENCE_BYTES) throw new UserFacingError('A reference image may be at most 100 MB.');
+    const key = await putObject(file);
+    created.push(key);
+    return { source: 'template', key };
+  };
+  try {
+    const stored: FieldConfig[] = [];
+    for (const field of fields) {
+      const refs: FileRef[] = [];
+      for (const ref of referencesOf(field)) refs.push(await store(field, ref));
+      stored.push(refs.length === 0 ? field : { ...field, value: Array.isArray(field.value) ? refs : (refs[0] as FileRef) });
+    }
+    return { fields: stored, created };
+  } catch (error) {
+    await deleteTemplatePreviews(created);
+    throw error;
+  }
+}
+
+/** The reference images of a Template's Fields with URLs signed for the editor. */
+export function signTemplateReferences(fields: FieldConfig[]): Promise<{ key: string; url: string }[]> {
+  return signTemplatePreviews(templateReferenceKeys(fields));
+}
+
+/** Removes preview and reference objects; a failure is logged, never thrown, because the Template write already happened. */
 export async function deleteTemplatePreviews(keys: string[]): Promise<void> {
   if (keys.length === 0) return;
   await s3Client

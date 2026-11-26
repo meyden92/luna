@@ -1,6 +1,6 @@
 import { queryOptions } from '@tanstack/react-query';
 import { queryKeys } from '@/libs/query-keys';
-import { getStudioModel, listStudioCategories, listStudioModels } from '@/server/fns/admin/studio';
+import { getStudioHubStats, getStudioModel, listStudioCategories, listStudioModels } from '@/server/fns/admin/studio';
 import { getStudioOverview, getStudioSettingsForAdmin, getUserStudioBudget } from '@/server/fns/admin/studio-budgets';
 import { getStudioTemplate, getTemplateDraftFromGeneration, listStudioTemplates } from '@/server/fns/admin/studio-templates';
 
@@ -42,6 +42,11 @@ export const templateDraftQueryOptions = (generationId: string) =>
 export const studioOverviewQueryOptions = queryOptions({
   queryKey: queryKeys.adminStudio.overview,
   queryFn: () => getStudioOverview(),
+});
+
+export const studioHubStatsQueryOptions = queryOptions({
+  queryKey: queryKeys.adminStudio.hub,
+  queryFn: () => getStudioHubStats(),
 });
 
 export const studioSettingsQueryOptions = queryOptions({

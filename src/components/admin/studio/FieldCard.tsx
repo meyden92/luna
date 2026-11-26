@@ -47,9 +47,9 @@ export interface FieldCardProps {
   handle: ReactNode;
   /** A Template's Variables, which `visibleIf` may name too. */
   variableCandidates?: VisibleIfCandidate[];
-  /** Replaces the value editor, e.g. the Template editor's text editor. */
+  /** Replaces the value editor, e.g. the Template editor's text editor; on a file input, it is what lets the input be fixed. */
   valueEditor?: ReactNode;
-  /** The Template's file Variables that feed this input: they own it, so the card offers no mode or settings. */
+  /** The Template's file Variables that feed this input: they own it, so the card offers no mode or settings beside the value editor. */
   filledBy?: string[];
 }
 
@@ -124,7 +124,7 @@ export function FieldCard({
             items={MODES.map(({ value, label }) => ({
               value,
               label,
-              disabled: (value === 'fixed' && isFile) || (value === 'shown' && DISPLAYS[kind].length === 0),
+              disabled: (value === 'fixed' && isFile && !valueEditor) || (value === 'shown' && DISPLAYS[kind].length === 0),
             }))}
           />
         )}
@@ -133,9 +133,13 @@ export function FieldCard({
       <p className={styles.note}>
         {isFed
           ? `Users fill this in through the file input ${filledBy.map((name) => `{${name}}`).join(', ')}.`
-          : MODES.find((mode) => mode.value === field.mode)?.help}
-        {!isFed && isFile && ' A file input cannot have a fixed value.'}
+          : isFile && field.mode === 'fixed'
+            ? 'Sent in the order below: reference images, and the files Users upload.'
+            : MODES.find((mode) => mode.value === field.mode)?.help}
+        {!isFed && isFile && !valueEditor && ' A file input cannot have a fixed value.'}
       </p>
+
+      {isFed && valueEditor}
 
       {field.mode !== 'default' && !isFed && (
         <div className={styles.body}>
@@ -181,7 +185,7 @@ export function FieldCard({
             </fieldset>
           )}
 
-          {!isFile && valueEditor}
+          {(!isFile || field.mode === 'fixed') && valueEditor}
           {!isFile && !valueEditor && (
             <ValueSetting
               field={field}

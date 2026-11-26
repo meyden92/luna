@@ -10,6 +10,8 @@ declare const styles: {
   readonly "groupBody": string;
   readonly "groupTrigger": string;
   readonly "help": string;
+  readonly "list": string;
+  readonly "listOption": string;
   readonly "select": string;
   readonly "slider": string;
   readonly "sliderValue": string;

@@ -102,12 +102,15 @@ export interface StudioPricing {
  * User's own Files and Outputs. `url` is a file already on fal storage: the
  * pipeline stores uploads this way, so *Again* and *Retry* can resend them
  * until fal deletes them at `expiresAt` (ISO). Clients never send `url`.
+ * `template` is a Template's reference image, valid only where that
+ * Template's stored config holds it.
  */
 export type FileRef =
   | { source: 'upload'; key: string }
   | { source: 'file'; fileId: string }
   | { source: 'output'; outputId: string }
-  | { source: 'url'; url: string; expiresAt: string };
+  | { source: 'url'; url: string; expiresAt: string }
+  | { source: 'template'; key: string };
 
 export type GenerationStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
 export const ACTIVE_GENERATION_STATUSES: readonly GenerationStatus[] = ['queued', 'running'];

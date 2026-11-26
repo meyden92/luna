@@ -2,7 +2,7 @@ import type { JsonValue } from '@/db/schema/json';
 import { canTakeFiles, enumerableValues, fieldKind, propertyShape, validateModelConfig, visibleIfProblems } from './model-config';
 import { isEmpty, isFileField, type RequestIssue } from './request';
 import type { FieldConfig, JsonSchema, VariableConfig } from './types';
-import { parseVariables } from './variables';
+import { fileSlots, parseVariables, referencesOf } from './variables';
 
 /**
  * How a Template's Field cards start out and what makes a Template valid.
@@ -15,7 +15,7 @@ const NAME = /^[a-z0-9_]+$/;
 /**
  * A new Template's Field cards from its Model's: what Users fill in becomes
  * fixed at the Model's value, or at the Generation's when `values` come from
- * one (*Save as Template*). File inputs cannot be fixed, so they stay shown.
+ * one (*Save as Template*). File inputs stay shown: reference images are added by hand.
  */
 export function templateFieldDefaults(modelFields: FieldConfig[], input: JsonSchema, values: Record<string, unknown> = {}): FieldConfig[] {
   const properties = input.properties ?? {};
@@ -29,6 +29,11 @@ export function templateFieldDefaults(modelFields: FieldConfig[], input: JsonSch
       const { value: _value, ...rest } = field;
       return { ...rest, mode: 'fixed' as const, ...(value === undefined ? {} : { value }) };
     });
+}
+
+/** The keys of the stored reference images a Template's Fields send. */
+export function templateReferenceKeys(fields: FieldConfig[]): string[] {
+  return fields.flatMap((field) => referencesOf(field).flatMap((ref) => (ref.source === 'template' ? [ref.key] : [])));
 }
 
 /** The Model inputs a file Variable can feed: those detected as file inputs, and whether each takes a list. */
@@ -59,9 +64,10 @@ function variableValues(variable: VariableConfig): JsonValue[] | null {
 /**
  * Every reason a Template cannot be saved or tested, keyed by the Field or
  * Variable whose card shows it. Covers the Model checks for its Fields, the
- * texts and cards agreeing, each kind's settings, `visibleIf` references and
- * that every required file input is shown or fed by a required file Variable.
- * A Field a file Variable feeds is the Variable's, so its own mode is not checked.
+ * texts and cards agreeing, each kind's settings, `visibleIf` references,
+ * the reference images, and that every required file input is shown, has a
+ * reference image or is fed by a required file Variable. A Field with file
+ * slots is filled by them, so the Model checks skip it.
  */
 export function validateTemplateConfig({
   fields,
@@ -118,9 +124,35 @@ export function validateTemplateConfig({
     fed.set(field, [...others, variable]);
   }
   for (const [name, feeders] of fed) {
+    const field = fieldsByName.get(name);
+    if (field && referencesOf(field).length > 0) continue;
     if (input.required?.includes(name) && !feeders.some((variable) => variable.required)) {
       for (const variable of feeders) add(variable.name, `The model requires ${name}, so this file input must be required.`);
     }
+  }
+
+  // Reference images: on file inputs only, and with the file Variables within what the input takes.
+  const filled = new Set(fed.keys());
+  for (const field of fields) {
+    const references = referencesOf(field);
+    if (references.length === 0 && !(field.mode === 'fixed' && isFileField(field))) continue;
+    filled.add(field.name);
+    const property = properties[field.name];
+    if (!property) {
+      add(field.name, `${field.name} is not an input of the model.`);
+      continue;
+    }
+    if (references.some((ref) => ref.source !== 'template' && ref.source !== 'upload')) {
+      add(field.name, 'A reference image must be uploaded.');
+    }
+    const shape = propertyShape(field.name, property);
+    const kind = fieldKind({ ...field, display: 'file' }, property);
+    const slots = fileSlots(field, variables).length;
+    if (slots === 0) add(field.name, 'A fixed file input needs a reference image.');
+    else if (!canTakeFiles(shape.kind)) add(field.name, `${field.name} cannot take files.`);
+    else if (kind === 'file' && slots > 1) add(field.name, `${field.name} takes one file: a reference image or a file Variable, not both.`);
+    else if (shape.maxItems !== undefined && slots > shape.maxItems)
+      add(field.name, `${field.name} takes at most ${shape.maxItems} files.`);
   }
 
   // Visibility: a Variable may depend on a Field or Variable, and so may a Field.
@@ -146,8 +178,8 @@ export function validateTemplateConfig({
   const dependencies = Object.fromEntries(variables.map((variable) => [variable.name, variableValues(variable)]));
   issues.push(
     ...validateModelConfig(
-      fields.filter((field) => !fed.has(field.name)),
-      { ...input, required: (input.required ?? []).filter((name) => !fed.has(name)) },
+      fields.filter((field) => !filled.has(field.name)),
+      { ...input, required: (input.required ?? []).filter((name) => !filled.has(name)) },
       null,
       dependencies,
     ),

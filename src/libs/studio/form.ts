@@ -11,7 +11,7 @@ import { visibilityResolver } from './visibility';
  * `components/studio/form`. Pure.
  */
 
-export type FormControl = 'text' | 'textarea' | 'number' | 'slider' | 'select' | 'chips' | 'multi' | 'switch' | 'file';
+export type FormControl = 'text' | 'textarea' | 'number' | 'slider' | 'select' | 'chips' | 'multi' | 'list' | 'switch' | 'file';
 
 /** One input of the form, keyed by `name` in the form values. */
 export interface FormItem {
@@ -20,13 +20,13 @@ export interface FormItem {
   label: string;
   help?: string;
   required: boolean;
-  /** For `select`, `chips` and `multi`. */
+  /** For `select`, `chips`, `multi` and `list`. */
   options?: { value: JsonValue; label: string }[];
   /** For `number` and `slider`. */
   min?: number;
   max?: number;
   step?: number;
-  /** A `file` control taking a list; `maxItems` caps it. */
+  /** A `file` control taking a list, `maxItems` capping it; a `list` taking several choices. */
   multiple?: boolean;
   maxItems?: number;
   accept?: MediaKind[];
@@ -51,6 +51,12 @@ export type StudioFormValue = JsonValue | StudioFile | StudioFile[];
 export type StudioFormValues = Record<string, StudioFormValue>;
 
 const CHIPS_MAX_OPTIONS = 5;
+/** Longer option labels neither fit a chip nor a select's single line, so the choice renders as a `list`. */
+const SHORT_LABEL_MAX = 40;
+
+function hasLongLabel(options: { label: string }[]): boolean {
+  return options.some((option) => option.label.length > SHORT_LABEL_MAX);
+}
 
 /**
  * A Template's Variables come first, in their order, then the Fields it
@@ -104,8 +110,13 @@ function fieldItem(field: FieldConfig, property: JsonSchema, required: boolean):
     case 'enum': {
       const options = field.options ?? (shape.enum ?? []).map((value) => ({ value, label: value }));
       item.options = options.map((option) => ({ value: option.value, label: option.label || option.value }));
-      item.control =
-        field.display === 'select' || field.display === 'chips' ? field.display : options.length > CHIPS_MAX_OPTIONS ? 'select' : 'chips';
+      item.control = hasLongLabel(item.options)
+        ? 'list'
+        : field.display === 'select' || field.display === 'chips'
+          ? field.display
+          : options.length > CHIPS_MAX_OPTIONS
+            ? 'select'
+            : 'chips';
       break;
     }
     case 'integer':
@@ -154,7 +165,12 @@ function variableItem(variable: VariableConfig): FormItem {
     case 'choice':
     case 'multi': {
       item.options = (variable.options ?? []).map((option) => ({ value: option.value, label: option.label || option.value }));
-      item.control = variable.kind === 'multi' ? 'multi' : item.options.length > CHIPS_MAX_OPTIONS ? 'select' : 'chips';
+      if (hasLongLabel(item.options)) {
+        item.control = 'list';
+        item.multiple = variable.kind === 'multi';
+      } else {
+        item.control = variable.kind === 'multi' ? 'multi' : item.options.length > CHIPS_MAX_OPTIONS ? 'select' : 'chips';
+      }
       break;
     }
     case 'number':

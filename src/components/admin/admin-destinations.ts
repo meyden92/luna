@@ -60,31 +60,10 @@ export const adminDestinations = [
     description: 'Inspect recent task execution history',
   },
   {
-    name: 'Studio categories',
-    to: '/admin/studio/categories',
-    Icon: Shapes,
-    description: 'Define the tasks Users start from in the Studio',
-    studio: true,
-  },
-  {
-    name: 'Studio models',
-    to: '/admin/studio/models',
+    name: 'Studio',
+    to: '/admin/studio',
     Icon: Sparkles,
-    description: 'Add fal Models and choose which inputs Users see',
-    studio: true,
-  },
-  {
-    name: 'Studio templates',
-    to: '/admin/studio/templates',
-    Icon: LayoutTemplate,
-    description: 'Write prompts with Variables Users fill in',
-    studio: true,
-  },
-  {
-    name: 'Studio overview',
-    to: '/admin/studio/overview',
-    Icon: BarChart3,
-    description: 'Spend, Budgets, failures and running Generations',
+    description: 'Categories, Models, Templates and what the Studio spends',
     studio: true,
   },
   {
@@ -109,5 +88,32 @@ export const settingsSections = [
     Icon: Sparkles,
     description: 'The default monthly Budget and the active Generation limit',
     studio: true,
+  },
+] as const;
+
+export const studioSections = [
+  {
+    name: 'Categories',
+    to: '/admin/studio/categories',
+    Icon: Shapes,
+    description: 'Define the tasks Users start from in the Studio',
+  },
+  {
+    name: 'Models',
+    to: '/admin/studio/models',
+    Icon: Sparkles,
+    description: 'Add fal Models and choose which inputs Users see',
+  },
+  {
+    name: 'Templates',
+    to: '/admin/studio/templates',
+    Icon: LayoutTemplate,
+    description: 'Write prompts with Variables Users fill in',
+  },
+  {
+    name: 'Overview',
+    to: '/admin/studio/overview',
+    Icon: BarChart3,
+    description: 'Spend, Budgets, failures and running Generations',
   },
 ] as const;

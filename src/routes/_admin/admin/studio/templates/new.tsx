@@ -18,7 +18,7 @@ export const Route = createFileRoute('/_admin/admin/studio/templates/new')({
   component: NewTemplatePage,
 });
 
-const EMPTY = { name: '', description: '', isActive: true, fields: [], variables: [], previews: [] };
+const EMPTY = { name: '', description: '', isActive: true, fields: [], variables: [], previews: [], references: [] };
 
 function NewTemplatePage() {
   const { from } = Route.useSearch();

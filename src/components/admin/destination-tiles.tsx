@@ -4,7 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import { studioStatusQueryOptions } from '@/components/studio/studio-status';
 import styles from './destination-tiles.module.css';
 
-type Destination = { name: string; to: LinkProps['to']; Icon: LucideIcon; description: string; studio?: boolean };
+type Destination = { name: string; to: LinkProps['to']; Icon: LucideIcon; description: string; studio?: boolean; stat?: string };
 
 export function DestinationTiles({ destinations }: { destinations: readonly Destination[] }) {
   const { data: studio } = useSuspenseQuery(studioStatusQueryOptions);
@@ -12,7 +12,7 @@ export function DestinationTiles({ destinations }: { destinations: readonly Dest
     <div className={styles.grid}>
       {destinations
         .filter((entry) => !entry.studio || studio.enabled)
-        .map(({ name, to, Icon, description }) => (
+        .map(({ name, to, Icon, description, stat }) => (
           <Link
             key={name}
             to={to}
@@ -20,7 +20,10 @@ export function DestinationTiles({ destinations }: { destinations: readonly Dest
           >
             <Icon className={styles.icon} />
             <span className={styles.tileTitle}>{name}</span>
-            <p className={styles.description}>{description}</p>
+            <div>
+              <p className={styles.description}>{description}</p>
+              {stat && <p className={styles.stat}>{stat}</p>}
+            </div>
           </Link>
         ))}
     </div>

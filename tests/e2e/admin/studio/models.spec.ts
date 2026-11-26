@@ -171,6 +171,25 @@ test('a Model added from the catalog is configured with Field cards, previewed a
   expect(row).toMatchObject({ userId: await userIdOf(db, stack.E2E_ADMIN_EMAIL), name, status: 'succeeded', estimatedCostUsd: 0.06 });
 });
 
+test('the admin index leads to the Studio hub, whose tiles lead on to the pages', async ({ adminPage }) => {
+  await adminPage.goto('/admin');
+  await adminPage
+    .getByRole('main')
+    .getByRole('link', { name: /^Studio .+/ })
+    .click();
+  await expect(adminPage).toHaveURL(/\/admin\/studio$/);
+  for (const name of ['Categories', 'Models', 'Templates', 'Overview'])
+    await expect(adminPage.getByRole('main').getByRole('link', { name: new RegExp(`^${name}`) })).toBeVisible();
+
+  await adminPage
+    .getByRole('main')
+    .getByRole('link', { name: /^Models/ })
+    .click();
+  await expect(adminPage).toHaveURL(/\/admin\/studio\/models$/);
+  await adminPage.getByRole('listitem').getByRole('link', { name: 'Studio' }).click();
+  await expect(adminPage).toHaveURL(/\/admin\/studio$/);
+});
+
 test('the Studio admin pages are for admins only', async ({ workerPage }) => {
   for (const path of ['/admin/studio/categories', '/admin/studio/models']) {
     await workerPage.goto(path);

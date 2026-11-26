@@ -12,13 +12,13 @@ const visibleIfSchema = z.object({ field: z.string().min(1), in: z.array(z.json(
 export const fieldConfigSchema = z.object({
   name: z.string().min(1),
   mode: z.enum(['shown', 'fixed', 'default']),
-  label: z.string().max(120).optional(),
+  label: z.string().max(500).optional(),
   help: z.string().max(500).optional(),
   value: z.json().optional(),
   min: z.number().optional(),
   max: z.number().optional(),
   step: z.number().optional(),
-  options: z.array(z.object({ value: z.string(), label: z.string().max(120) })).optional(),
+  options: z.array(z.object({ value: z.string(), label: z.string().max(500) })).optional(),
   display: z.enum(['slider', 'number', 'chips', 'select', 'text', 'textarea', 'switch', 'file']).optional(),
   accept: z.array(z.enum(MEDIA_KINDS as [MediaKind, ...MediaKind[]])).optional(),
   group: z.string().max(60).optional(),
@@ -47,7 +47,7 @@ export type UpdateStudioModelInput = z.infer<typeof updateStudioModelSchema>;
 export const variableConfigSchema = z.object({
   name: z.string().min(1).max(60),
   kind: z.enum(['text', 'choice', 'multi', 'number', 'switch', 'file']),
-  label: z.string().max(120).optional(),
+  label: z.string().max(500).optional(),
   help: z.string().max(500).optional(),
   required: z.boolean(),
   default: z.json().optional(),
@@ -58,7 +58,7 @@ export const variableConfigSchema = z.object({
     .object({ multiline: z.boolean(), placeholder: z.string().max(200).optional(), maxLength: z.number().int().optional() })
     .optional(),
   options: z
-    .array(z.object({ label: z.string().max(120), value: z.string().max(2000) }))
+    .array(z.object({ label: z.string().max(500), value: z.string().max(2000) }))
     .max(50)
     .optional(),
   number: z.object({ min: z.number(), max: z.number(), step: z.number(), display: z.enum(['slider', 'number']) }).optional(),

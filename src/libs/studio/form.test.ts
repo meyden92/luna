@@ -62,6 +62,43 @@ describe('buildStudioForm', () => {
   });
 });
 
+describe('buildStudioForm with long option labels', () => {
+  const long = 'a soft watercolour wash with visible paper grain and bleeding edges';
+
+  test('renders a choice whose labels would overflow a chip or a select as a list, even if the admin picked chips', () => {
+    const shown: FieldConfig[] = [
+      {
+        name: 'aspect_ratio',
+        mode: 'shown',
+        order: 0,
+        display: 'chips',
+        options: [
+          { value: '1:1', label: 'Square' },
+          { value: '16:9', label: long },
+        ],
+      },
+    ];
+    expect(buildStudioForm({ fields: shown, schema: input }).items[0]).toMatchObject({ control: 'list' });
+  });
+
+  test('renders choice and multi-choice Variables with a long option value and no label as single and multiple lists', () => {
+    const options = [
+      { label: 'Short', value: 'short' },
+      { label: '', value: long },
+    ];
+    const variables: VariableConfig[] = [
+      { name: 'one', kind: 'choice', required: false, order: 0, options },
+      { name: 'many', kind: 'multi', required: false, order: 1, options },
+    ];
+    const prompt: FieldConfig[] = [{ name: 'prompt', mode: 'fixed', order: 0, value: '{one} {many}' }];
+    const { items } = buildStudioForm({ fields: prompt, schema: input, variables });
+    expect(items.map((item) => [item.name, item.control, item.multiple])).toEqual([
+      ['one', 'list', false],
+      ['many', 'list', true],
+    ]);
+  });
+});
+
 describe('buildStudioForm with Variables', () => {
   const variables: VariableConfig[] = [
     { name: 'extra', kind: 'text', required: false, order: 2, text: { multiline: true, placeholder: 'e.g. a hat', maxLength: 80 } },

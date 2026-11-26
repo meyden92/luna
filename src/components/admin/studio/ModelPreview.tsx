@@ -38,6 +38,8 @@ export function ModelPreview({
   pricing,
   disabledReason,
   onUseOutput,
+  templateId,
+  referenceUploads,
 }: {
   modelId: string;
   fields: FieldConfig[];
@@ -49,6 +51,10 @@ export function ModelPreview({
   disabledReason: string | null;
   /** Offers *Use as preview* on image Outputs. */
   onUseOutput?: (output: OutputView) => void;
+  /** The saved Template being edited, whose stored reference images the test may send. */
+  templateId?: string;
+  /** The reference images added since the last save, by their `upload` key in `fields`. */
+  referenceUploads?: ReadonlyMap<string, File>;
 }) {
   const form = useMemo(() => buildStudioForm({ fields, schema, variables }), [fields, schema, variables]);
   const initial = useMemo(() => initialFormValues(form), [form]);
@@ -94,7 +100,14 @@ export function ModelPreview({
           <Button
             disabled={disabledReason !== null || test.isPending}
             title={disabledReason ?? undefined}
-            onClick={() => test.mutate(studioFormData({ modelId, fields, ...(variables ? { variables } : {}) }, values))}
+            onClick={() => {
+              const data = studioFormData(
+                { modelId, fields, ...(variables ? { variables } : {}), ...(templateId ? { templateId } : {}) },
+                values,
+              );
+              for (const [key, file] of referenceUploads ?? []) data.append(key, file, file.name);
+              test.mutate(data);
+            }}
           >
             <FlaskConical />
             Test

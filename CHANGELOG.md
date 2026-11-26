@@ -2,6 +2,36 @@
 
 Every LunaShare release, newest first. Entries up to v4.7.0 were rewritten from their GitHub releases, or from the tag message where no release exists.
 
+## v4.8.7 (2026-11-26)
+
+**The One Where Templates Bring Their Own Photos**
+
+Some Templates need a picture to work from: a style, a pose, a layout. Until now your Users had to bring that picture themselves, every single time. Now the Template brings it along, your Users add their own photo next to it, and you decide who goes first. Your option labels also got room to breathe, and the Studio admin pages finally share one roof.
+
+### ✨ New
+
+🖼️ **Templates with a picture in their pocket.** In the Template editor, switch a file input such as `image_urls` to **Fixed value** and it turns into numbered slots. **Add reference image** uploads an image the Template sends with every Generation, and **Add user upload** adds a slot your Users fill in the Studio. Drag the slots (or use the keyboard) into the order your prompt expects, because "image 1" means slot 1. Reference images must be images, they stay private to the Template, and they are deleted when you remove them or delete the Template.
+
+🏠 **One Studio door instead of four.** The admin area shows a single **Studio** entry. It leads to `/admin/studio`, where Categories, Models, Templates and Overview sit as tiles with live numbers: how many there are, how many are inactive, this month's spend and the Generations running right now. Studio settings stay under **Settings → Studio**.
+
+### 🔧 Improved
+
+📏 **Say it in more than 120 characters.** Labels of Variables, choice options and Fields can now be up to 500 characters long, so descriptive options no longer bounce off the save button.
+
+📜 **Long options, no squeeze.** When an option label runs longer than 40 characters, the Studio form shows that choice as a vertical list that wraps the text, instead of chips or a dropdown that cut it off. Short options keep their chips.
+
+### 🧪 Under the hood
+
+A new e2e spec, `admin/studio/template-references.spec.ts`, builds a Template with a reference image and a User slot, reorders them and checks the order fal receives. The hub got its own test, and unit tests cover slot order, the reference image rules and the long-label list.
+
+### ⬆️ Upgrade
+
+No migrations and no new environment variables.
+
+The v4.8.7 tag triggers the GHCR image build and publishes the versioned and latest tags. Deployment is still manual.
+
+Implemented in #281 (for #276, #277, #278, #279).
+
 ## v4.8.6 (2026-11-25)
 
 **The One Where 3000 Cards Stopped Holding the Browser Hostage**

@@ -52,8 +52,10 @@ test('a Template sends its reference image and the User upload in the order the 
   await choose(page, 'Model', model.name);
   await region(page, 'Field prompt').getByLabel('Value', { exact: true }).fill(`${prefix} Paint image 1 in the style of image 2 {note}`);
 
-  // A reference image fixes the input; a User upload slot goes after it.
+  // A fixed file input takes reference images; a User upload slot goes after it.
   const images = region(page, 'Field image_urls');
+  await images.getByRole('button', { name: 'Fixed value' }).click();
+  await expect(images.getByText('A fixed file input needs a reference image.')).toBeVisible();
   await images.getByLabel('Reference image for image_urls').setInputFiles(styleFile.path);
   await images.getByRole('button', { name: 'Add user upload' }).click();
   await region(page, 'Variable file').getByLabel('Label', { exact: true }).fill('Your photo');
@@ -61,12 +63,15 @@ test('a Template sends its reference image and the User upload in the order the 
   await expect(slots(images).nth(0).getByRole('img', { name: 'Reference image 1' })).toBeVisible();
   await expect(slots(images).nth(1)).toContainText('User upload {file}');
 
-  // The User's slot moves to the front, by keyboard.
+  // The User's slot moves to the front by keyboard; the handle and the drag announcements show each step landed.
   const handle = slots(images).nth(1).getByRole('button', { name: 'Drag to reorder' });
   await handle.focus();
   await page.keyboard.press('Space');
+  await expect(handle).toHaveAttribute('aria-pressed', 'true');
   await page.keyboard.press('ArrowUp');
+  await expect(page.getByText(/^Draggable item variable:file was moved over droppable area reference:/)).toBeAttached();
   await page.keyboard.press('Space');
+  await expect(page.getByText(/^Draggable item variable:file was dropped/)).toBeAttached();
   await expect(slots(images).nth(0)).toContainText('User upload {file}');
   await expect(slots(images).nth(1).getByRole('img', { name: 'Reference image 2' })).toBeVisible();
 

@@ -133,7 +133,9 @@ export function FieldCard({
       <p className={styles.note}>
         {isFed
           ? `Users fill this in through the file input ${filledBy.map((name) => `{${name}}`).join(', ')}.`
-          : MODES.find((mode) => mode.value === field.mode)?.help}
+          : isFile && field.mode === 'fixed'
+            ? 'Sent in the order below: reference images, and the files Users upload.'
+            : MODES.find((mode) => mode.value === field.mode)?.help}
         {!isFed && isFile && !valueEditor && ' A file input cannot have a fixed value.'}
       </p>
 

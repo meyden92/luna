@@ -175,7 +175,7 @@ test('the admin index leads to the Studio hub, whose tiles lead on to the pages'
   await adminPage.goto('/admin');
   await adminPage
     .getByRole('main')
-    .getByRole('link', { name: /^Studio/ })
+    .getByRole('link', { name: /^Studio .+/ })
     .click();
   await expect(adminPage).toHaveURL(/\/admin\/studio$/);
   for (const name of ['Categories', 'Models', 'Templates', 'Overview'])

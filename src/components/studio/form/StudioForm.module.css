@@ -80,6 +80,19 @@
     width: 100%;
   }
 
+  .list {
+    width: 100%;
+  }
+
+  /* Lifts the Toggle's fixed one-line height so long labels wrap. */
+  .list .listOption[data-size] {
+    height: auto;
+    justify-content: flex-start;
+    padding-block: var(--space-2);
+    text-align: start;
+    white-space: normal;
+  }
+
   .files {
     display: flex;
     flex-direction: column;

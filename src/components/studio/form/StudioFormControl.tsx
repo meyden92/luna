@@ -130,6 +130,37 @@ export function StudioFormControl({ item, value, onChange, id, disabled }: Studi
         </ToggleGroup>
       );
     }
+    case 'list': {
+      const selected = item.multiple ? (Array.isArray(value) ? value : []) : value === undefined ? [] : [value];
+      return (
+        <ToggleGroup
+          id={id}
+          aria-label={item.label}
+          multiple={item.multiple}
+          orientation="vertical"
+          disabled={disabled}
+          variant="outline"
+          className={styles.list}
+          value={options.flatMap((option, index) => (selected.some((entry) => sameValue(entry, option.value)) ? [String(index)] : []))}
+          onValueChange={(indices: string[]) => {
+            const chosen = indices.map((index) => options[Number(index)]?.value ?? null);
+            if (item.multiple) onChange(chosen);
+            // A single choice stays chosen, as with chips.
+            else if (chosen.length > 0) onChange(chosen[0]);
+          }}
+        >
+          {options.map((option, index) => (
+            <ToggleGroupItem
+              key={option.label}
+              value={String(index)}
+              className={styles.listOption}
+            >
+              {option.label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+      );
+    }
     case 'switch':
       return (
         <Switch

@@ -12,13 +12,16 @@ import {
   getStudioCategory,
   listStudioCategories as listCategoryRows,
   listStudioModels as listModelRows,
+  listStudioTemplates as listTemplateRows,
   listStudioTemplatesOfModel as listTemplatesOfModel,
   reorderStudioCategories as reorderCategoryRows,
   type StudioModel,
   updateStudioCategory as updateCategoryRow,
   updateStudioModel as updateModelRow,
 } from '@/db/queries/studio';
+import { runningGenerations, spendByMonth } from '@/db/queries/studio-overview';
 import type { JsonValue } from '@/db/schema/json';
+import { utcMonthStart } from '@/libs/studio/budget';
 import { assertStudioEnabled, falClient } from '@/libs/studio/config';
 import { readStudioFormData } from '@/libs/studio/form';
 import { countOf } from '@/libs/studio/format';
@@ -59,6 +62,32 @@ function assertValidConfig(issues: RequestIssue[]): void {
   if (issues.length > 0)
     throw new RequestValidationError(issues.map((issue) => ({ ...issue, message: `${issue.field}: ${issue.message}` })));
 }
+
+// ---------------------------------------------------------------------------
+// The hub
+// ---------------------------------------------------------------------------
+
+/** The numbers on the Studio hub's tiles. */
+export const getStudioHubStats = createServerFn({ method: 'GET' })
+  .middleware(appMiddleware({ auth: 'admin' }))
+  .handler(async () => {
+    assertStudioEnabled();
+    const now = new Date();
+    const [categories, models, templates, monthSpend, running] = await Promise.all([
+      listCategoryRows(),
+      listModelRows(),
+      listTemplateRows(),
+      spendByMonth(utcMonthStart(now), utcMonthStart(now, 1)),
+      runningGenerations(),
+    ]);
+    return {
+      categories: categories.length,
+      models: { total: models.length, inactive: models.filter((model) => !model.isActive).length },
+      templates: { total: templates.length, inactive: templates.filter((template) => !template.isActive).length },
+      monthSpendUsd: monthSpend[0]?.spentUsd ?? 0,
+      running: running.length,
+    };
+  });
 
 // ---------------------------------------------------------------------------
 // Categories

@@ -105,7 +105,7 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
 | `db` | Drizzle on the stack's Postgres. Reads, backdating `file.created_at`, seeding/backdating form shares (`utils/form-shares.ts`), seeding Generations (`admin/studio/templates.spec.ts`), seeding Studio Categories and Models (`utils/studio.ts`), and Templates (`admin/studio/schema-drift.spec.ts`) |
 | `stack` | The `E2E_*` values (base URL, CDN URL, admin credentials, …) |
 
-- A spec that changes a setting every other spec runs under (the Studio's default Budget, Settings → Storage or Limits) goes into the `instance-wide`
+- A spec that changes a setting every other spec runs under (the Studio's default Budget, Settings → Storage, Limits or Vault) goes into the `instance-wide`
   project in `playwright.config.ts` (`INSTANCE_WIDE_SPECS`): it runs after the rest of the suite, and puts the setting back.
 - Specs that change data use the worker user and only assert on items they created,
   found by a title unique to the test. Specs that assert totals use the gallery, quota
@@ -202,6 +202,9 @@ the browser maps to `127.0.0.1` (catalog thumbnails, uploaded inputs).
   Assert privacy at the app's surfaces (`/view`, `/cdn`, `/api/d`, `/api/download`), never at the bucket.
 - The bucket allows cross-origin GETs (`createBucket` in `scripts/e2e/run.ts`), as production's CDN does: the beautifier draws
   bucket images on a canvas ("source image could not be loaded" without it) and the player's `<audio>` is a CORS request.
+- The stack sets the S3 connection, `CDN_URL`, the fal keys, the signing secrets and `TRUSTED_PROXY_HOPS` in the app's
+  environment, which wins over the Vault, so Settings → Vault shows them as "From environment". `PROXY_ALLOWED_DOMAINS`
+  is the one Vault entry the stack leaves unset.
 - The stack's platform settings lower the ShareX upload limit to 10 MiB (seeded by `scripts/e2e/run.ts` from
   `SHAREX_MAX_UPLOAD_BYTES` in `stack-env.ts`), so the ShareX oversize refusal is tested with a small buffer instead of 90 MiB.
   A spec that saves Settings → Limits must keep that value.

@@ -6,7 +6,7 @@ import { stackEnv } from './tests/e2e/stack-env';
 const { E2E_BASE_URL } = stackEnv();
 
 // The Studio Budget spec sets a small default Budget, which would refuse other specs' Generations.
-const INSTANCE_WIDE_SPECS = /admin\/(studio\/budget|platform-settings)\.spec\.ts/;
+const INSTANCE_WIDE_SPECS = /admin\/(studio\/budget|platform-settings|vault)\.spec\.ts/;
 
 const browser = {
   ...devices['Desktop Chrome'],

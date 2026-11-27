@@ -76,7 +76,7 @@ export function fieldCandidates(fields: FieldConfig[], schema: JsonSchema, exclu
 /**
  * Configures one schema property of a Model: mode, label, help, value,
  * range, options, display, accepted media, group and conditional visibility.
- * A Field left at fal's default, or fed by a file Variable, collapses to one line.
+ * A Field left at fal's default, or fed by a file Variable, shows no settings.
  */
 export function FieldCard({
   field,
@@ -129,6 +129,8 @@ export function FieldCard({
           />
         )}
       </div>
+
+      {shape.description && <p className={styles.description}>{shape.description}</p>}
 
       <p className={styles.note}>
         {isFed

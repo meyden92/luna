@@ -2,6 +2,7 @@ declare const styles: {
   readonly "body": string;
   readonly "card": string;
   readonly "checkbox": string;
+  readonly "description": string;
   readonly "grid": string;
   readonly "head": string;
   readonly "inline": string;

@@ -4,12 +4,11 @@ import sharp from 'sharp';
 import { createUploadedFile, findOwnedActiveFolderId, releaseUploadedFile } from '@/db/queries/uploads';
 import type { token } from '@/db/schema/auth';
 import type { JsonValue } from '@/db/schema/json';
-import { env } from '@/libs/env';
 import { dispatchFlowTrigger } from '@/libs/flows/run-flow';
 import { inspectMetadata } from '@/libs/metadata-scrubber';
 import { checkModerationGate, createModerationCase } from '@/libs/moderation/hash-gate';
 import { getCdnUrl } from '@/libs/runtime-config';
-import { s3Client } from '@/libs/S3Helper';
+import { getS3 } from '@/libs/S3Helper';
 import { StorageQuotaExceededError, storageQuotaExceededPayload } from '@/libs/storage-quota';
 import { resolveUploadContentType } from '@/libs/upload-content-type';
 
@@ -33,8 +32,9 @@ function json(data: unknown, status = 200): Response {
 }
 
 async function deleteUploadedObject(key: string): Promise<void> {
+  const { client, bucket } = getS3();
   try {
-    await s3Client.send(new DeleteObjectCommand({ Bucket: env.AWS_BUCKET_NAME, Key: key }));
+    await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
   } catch {
     // Best-effort cleanup after a failed upload attempt.
   }
@@ -124,10 +124,11 @@ export async function storeSharexUpload(userId: string, settings: SharexUploadSe
   }
 
   const key = `${userId}/${fileName}`;
+  const { client, bucket } = getS3();
   const upload = new Upload({
-    client: s3Client,
+    client,
     params: {
-      Bucket: env.AWS_BUCKET_NAME,
+      Bucket: bucket,
       Key: key,
       Body: uploadBuffer,
       ContentType: uploadContentType,

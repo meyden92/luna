@@ -3,9 +3,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { getDeliverableFile } from '@/db/queries/delivery';
 import { deliverySessionAllowsFile, verifyDeliverySession } from '@/libs/delivery-session';
 import { recordEgress } from '@/libs/egress/record';
-import { env } from '@/libs/env';
 import { getOptionalAuthenticatedUser } from '@/libs/rbac/guards';
-import { fileS3Key, s3Client } from '@/libs/S3Helper';
+import { fileS3Key, getS3 } from '@/libs/S3Helper';
 
 async function handle(request: Request, fileId: string): Promise<Response> {
   const file = await getDeliverableFile(fileId);
@@ -20,9 +19,10 @@ async function handle(request: Request, fileId: string): Promise<Response> {
   }
 
   const range = request.headers.get('range') ?? undefined;
-  const object = await s3Client.send(
+  const { client, bucket } = getS3();
+  const object = await client.send(
     new GetObjectCommand({
-      Bucket: env.AWS_BUCKET_NAME,
+      Bucket: bucket,
       Key: fileS3Key(file.ownerId, file.url),
       Range: range,
     }),

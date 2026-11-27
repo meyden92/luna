@@ -5,6 +5,7 @@ import {
   Gauge,
   Globe,
   HardDrive,
+  KeyRound,
   LayoutTemplate,
   MapIcon,
   Settings2,
@@ -89,6 +90,12 @@ export const settingsSections = [
     to: '/admin/settings/limits',
     Icon: SlidersHorizontal,
     description: 'Default storage quota, upload sizes, Downloader and moderation limits',
+  },
+  {
+    name: 'Vault',
+    to: '/admin/settings/vault',
+    Icon: KeyRound,
+    description: 'S3 credentials, CDN URL, fal keys, signing secrets and proxy settings, stored encrypted',
   },
   {
     name: 'Sync excluded paths',

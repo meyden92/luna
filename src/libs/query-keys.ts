@@ -41,6 +41,8 @@ export const queryKeys = {
     deletedFiles: ['admin', 'deleted-files'] as const,
     syncExcludedPaths: ['admin', 'sync-excluded-paths'] as const,
     platformSettings: ['admin', 'platform-settings'] as const,
+    vault: ['admin', 'vault'] as const,
+    storageStatus: ['admin', 'storage-status'] as const,
   },
   adminAudit: {
     models: ['admin', 'audit', 'models'] as const,

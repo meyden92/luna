@@ -2,9 +2,8 @@ import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { listOwnedActiveFiles } from '@/db/queries/files';
-import { env } from '@/libs/env';
 import { ForbiddenError, requireAuthenticatedUser } from '@/libs/rbac/guards';
-import { fileS3Key, s3Client } from '@/libs/S3Helper';
+import { fileS3Key, getS3 } from '@/libs/S3Helper';
 
 const ZIP_FLAG_DATA_DESCRIPTOR = 0x0008;
 const ZIP_FLAG_UTF8 = 0x0800;
@@ -222,6 +221,7 @@ function createZipStream(files: DownloadFile[], userId: string, signal: AbortSig
         offset += chunk.length;
       };
 
+      const { client, bucket } = getS3();
       try {
         for (const file of files) {
           const fileName = encoder.encode(uniqueZipName(file, usedNames));
@@ -230,7 +230,7 @@ function createZipStream(files: DownloadFile[], userId: string, signal: AbortSig
           const localHeaderOffset = offset;
           enqueue(localFileHeader(fileName, file.updatedAt));
 
-          const object = await s3Client.send(new GetObjectCommand({ Bucket: env.AWS_BUCKET_NAME, Key: fileS3Key(userId, file.url) }), {
+          const object = await client.send(new GetObjectCommand({ Bucket: bucket, Key: fileS3Key(userId, file.url) }), {
             abortSignal: signal,
           });
           if (!object.Body) throw new Error('Empty S3 response body');

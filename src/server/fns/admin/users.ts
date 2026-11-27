@@ -19,10 +19,9 @@ import {
   updateUserStorageQuota,
 } from '@/db/queries/admin';
 import { storageUsage } from '@/db/queries/files';
-import { env } from '@/libs/env';
 import { ensureBaseGroups, ensureUserHasDefaultGroup, includeDefaultGroup } from '@/libs/rbac/default-group';
 import { ADMIN_GROUP_KEY, invalidateAuthorizationContext, USER_GROUP_KEY } from '@/libs/rbac/service';
-import { fileS3Key, s3Client } from '@/libs/S3Helper';
+import { fileS3Key, getS3 } from '@/libs/S3Helper';
 import { MAX_STORAGE_QUOTA_MIB } from '@/libs/storage-quota';
 import { createUserSchema, resetUserPasswordSchema } from '@/schemas/credentials-schema';
 import { userIdFromCtx as adminIdFromCtx } from '@/server/middleware/context-helpers';
@@ -135,13 +134,14 @@ export const deleteAdminUser = createServerFn({ method: 'POST' })
       // DeleteObjects accepts max 1000 keys per request and reports per-key
       // failures in Errors instead of throwing — only drop DB records whose
       // S3 object is actually gone, so failures stay visible for retry.
+      const { client, bucket } = getS3();
       const failedKeys = new Set<string>();
       const batchSize = 1000;
       for (let i = 0; i < files.length; i += batchSize) {
         const batch = files.slice(i, i + batchSize);
-        const result = await s3Client.send(
+        const result = await client.send(
           new DeleteObjectsCommand({
-            Bucket: env.AWS_BUCKET_NAME,
+            Bucket: bucket,
             Delete: { Objects: batch.map((f) => ({ Key: fileS3Key(data.id, f.url) })), Quiet: false },
           }),
         );
@@ -187,7 +187,8 @@ export const deleteAdminUserFile = createServerFn({ method: 'POST' })
     if (!file) throw new Error('File not found');
     if (file.ownerId !== data.userId) throw new Error('File does not belong to the specified user');
 
-    await s3Client.send(new DeleteObjectCommand({ Bucket: env.AWS_BUCKET_NAME, Key: fileS3Key(file.ownerId, file.url) }));
+    const { client, bucket } = getS3();
+    await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: fileS3Key(file.ownerId, file.url) }));
     await hardDeleteFiles([data.fileId], adminIdFromCtx(context));
     return { success: true };
   });

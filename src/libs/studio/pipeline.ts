@@ -37,9 +37,8 @@ import {
 } from '@/db/queries/studio';
 import type { JsonValue } from '@/db/schema/json';
 import { throwIfAborted } from '@/libs/abort';
-import { env } from '@/libs/env';
 import { FalError, type FalQueueStatus } from '@/libs/fal/client';
-import { fileS3Key, getDownloadSignedUrl, s3Client } from '@/libs/S3Helper';
+import { fileS3Key, getDownloadSignedUrl, getS3 } from '@/libs/S3Helper';
 import { renderStoragePath } from '@/libs/storage-paths';
 import { UserFacingError } from '@/libs/user-facing-error';
 import { assertStudioEnabled, falClient, isStudioEnabled, studioWebhookTarget } from './config';
@@ -292,7 +291,8 @@ async function checkFileRef(
       return allowUrlRefs ? { contentType: null, load: null } : 'files must be uploaded or picked.';
     case 'template': {
       if (!referenceKeys.has(ref.key)) return 'files must be uploaded or picked.';
-      const head = await s3Client.send(new HeadObjectCommand({ Bucket: env.AWS_BUCKET_NAME, Key: ref.key }));
+      const { client, bucket } = getS3();
+      const head = await client.send(new HeadObjectCommand({ Bucket: bucket, Key: ref.key }));
       const contentType = head.ContentType ?? 'application/octet-stream';
       return { contentType, load: () => readObject(ref.key, contentType, ref.key.slice(ref.key.lastIndexOf('/') + 1)) };
     }
@@ -300,7 +300,8 @@ async function checkFileRef(
 }
 
 async function readObject(key: string, contentType: string, fileName: string): Promise<{ blob: Blob; fileName: string }> {
-  const object = await s3Client.send(new GetObjectCommand({ Bucket: env.AWS_BUCKET_NAME, Key: key }));
+  const { client, bucket } = getS3();
+  const object = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
   if (!object.Body) throw new Error(`S3 object ${key} has no body`);
   return { blob: new Blob([new Uint8Array(await object.Body.transformToByteArray())], { type: contentType }), fileName };
 }
@@ -375,12 +376,13 @@ function generationError(error: unknown): GenerationError {
  * with them, as a safety net for lost deliveries. Open Generations are read
  * from the database, so a restart resumes them.
  */
+/** Runs for the life of the process; each pass skips while the Studio is off, since the Vault can turn it on at any time. */
 export function startGenerationPoller(): void {
-  if (!isStudioEnabled() || state.poller) return;
+  if (state.poller) return;
   const webhooks = studioWebhookTarget() !== null;
   state.poller = setInterval(
     () => {
-      if (state.polling) return;
+      if (state.polling || !isStudioEnabled()) return;
       state.polling = true;
       pollGenerations(webhooks)
         .catch((error) => console.error('[studio] Poll failed:', error))
@@ -534,9 +536,10 @@ async function storeOutput(output: ExtractedOutput, index: number, s3Key: string
     throw isPermanentClientError(response.status) ? new MediaGoneError(message) : new Error(message);
   }
   const body = new Uint8Array(await response.arrayBuffer());
+  const { client, bucket } = getS3();
   await new Upload({
-    client: s3Client,
-    params: { Bucket: env.AWS_BUCKET_NAME, Key: s3Key, Body: body, ContentType: output.contentType, ACL: 'private' },
+    client,
+    params: { Bucket: bucket, Key: s3Key, Body: body, ContentType: output.contentType, ACL: 'private' },
   }).done();
   return {
     index,
@@ -683,11 +686,12 @@ export async function saveOutputToFiles(userId: string, outputId: string): Promi
   const title = outputTitle(generationName, output);
   const storedName = `${randomUUID()}-${title}`;
   const key = `${userId}/${storedName}`;
-  await s3Client.send(
+  const { client, bucket } = getS3();
+  await client.send(
     new CopyObjectCommand({
-      Bucket: env.AWS_BUCKET_NAME,
+      Bucket: bucket,
       Key: key,
-      CopySource: `${env.AWS_BUCKET_NAME}/${encodeURIComponent(output.s3Key).replace(/%2F/g, '/')}`,
+      CopySource: `${bucket}/${encodeURIComponent(output.s3Key).replace(/%2F/g, '/')}`,
       ContentType: output.contentType,
       ACL: 'private',
     }),
@@ -799,8 +803,9 @@ class ObjectDeletionError extends Error {
  */
 async function deleteObjects(keys: string[], signal?: AbortSignal): Promise<void> {
   if (keys.length === 0) return;
-  const response = await s3Client.send(
-    new DeleteObjectsCommand({ Bucket: env.AWS_BUCKET_NAME, Delete: { Objects: keys.map((Key) => ({ Key })), Quiet: true } }),
+  const { client, bucket } = getS3();
+  const response = await client.send(
+    new DeleteObjectsCommand({ Bucket: bucket, Delete: { Objects: keys.map((Key) => ({ Key })), Quiet: true } }),
     { abortSignal: signal },
   );
   const errors = response.Errors ?? [];

@@ -1,0 +1,5 @@
+@layer components {
+  .banner {
+    margin-bottom: var(--space-6);
+  }
+}

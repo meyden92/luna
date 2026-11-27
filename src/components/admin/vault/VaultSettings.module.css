@@ -1,0 +1,55 @@
+@layer components {
+  .titleIcon {
+    width: var(--space-6);
+    height: var(--space-6);
+  }
+
+  .muted {
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+  }
+
+  .list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .row {
+    display: flex;
+    gap: var(--space-4);
+    align-items: flex-start;
+    justify-content: space-between;
+    padding-block: var(--space-4);
+  }
+
+  .row + .row {
+    border-top: 1px solid var(--border);
+  }
+
+  .name,
+  .value,
+  .input {
+    font-family: var(--font-mono);
+  }
+
+  .name {
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+  }
+
+  .value {
+    font-size: var(--text-sm);
+    overflow-wrap: anywhere;
+  }
+
+  .problem {
+    color: var(--destructive);
+    font-size: var(--text-sm);
+  }
+
+  .actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: var(--space-2);
+  }
+}

@@ -2,6 +2,7 @@ import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import { deriveSigningKey } from '@/libs/crypto/signing-keys';
 import { env } from '@/libs/env';
+import { getConfig } from '@/libs/vault/vault';
 
 const DELIVERY_SESSION_MS = 15 * 60_000;
 
@@ -55,5 +56,7 @@ export function deliverySessionCookie(token: string): string {
 }
 
 function signDeliveryPayload(payload: string): string {
-  return createHmac('sha256', deriveSigningKey('delivery-session', env.DELIVERY_COOKIE_SECRET)).update(payload).digest('base64url');
+  return createHmac('sha256', deriveSigningKey('delivery-session', getConfig('DELIVERY_COOKIE_SECRET')))
+    .update(payload)
+    .digest('base64url');
 }

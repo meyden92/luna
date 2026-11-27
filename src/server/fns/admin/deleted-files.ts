@@ -6,8 +6,7 @@ import {
   listSoftDeletedFiles,
   restoreDeletedFiles as queryRestoreDeletedFiles,
 } from '@/db/queries/admin';
-import { env } from '@/libs/env';
-import { fileS3Key, s3Client } from '@/libs/S3Helper';
+import { fileS3Key, getS3 } from '@/libs/S3Helper';
 import { permanentlyDeleteFilesSchema, restoreFilesSchema } from '@/schemas/admin/deleted-files-schema';
 import { userIdFromCtx as adminIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
@@ -41,10 +40,11 @@ export const permanentlyDeleteFiles = createServerFn({ method: 'POST' })
     // of orphaning the storage object.
     const failedKeys = new Set<string>();
 
+    const { client, bucket } = getS3();
     try {
-      const result = await s3Client.send(
+      const result = await client.send(
         new DeleteObjectsCommand({
-          Bucket: env.AWS_BUCKET_NAME,
+          Bucket: bucket,
           Delete: {
             Objects: filesToDelete.map((file) => ({ Key: fileS3Key(file.ownerId, file.url) })),
             Quiet: false,

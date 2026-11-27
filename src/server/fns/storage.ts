@@ -2,8 +2,8 @@ import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { storageByKind, storageUsage } from '@/db/queries/files';
 import { userStorageQuotaMiB } from '@/db/queries/storage';
-import { env } from '@/libs/env';
 import { storageQuotaMiBToBytes } from '@/libs/storage-quota';
+import { getConfig, vaultVersion } from '@/libs/vault/vault';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
 
@@ -11,20 +11,20 @@ const proxyImageSchema = z.object({ imageUrl: z.string().min(1) });
 
 // Hosts the image proxy is allowed to fetch from: the deployment's own CDN,
 // derived from CDN_URL, plus any extras in PROXY_ALLOWED_DOMAINS
-// (comma-separated). Resolved lazily so importing this module never touches the
-// environment.
-let allowedProxyHosts: Set<string> | undefined;
+// (comma-separated).
+let allowedProxyHosts: { version: number; hosts: Set<string> } | undefined;
 
 function getAllowedProxyHosts(): Set<string> {
-  if (allowedProxyHosts) return allowedProxyHosts;
+  const version = vaultVersion();
+  if (allowedProxyHosts?.version === version) return allowedProxyHosts.hosts;
   const hosts = new Set<string>();
-  // CDN_URL is validated as a URL by the env schema.
-  hosts.add(new URL(env.CDN_URL).hostname);
-  for (const entry of env.PROXY_ALLOWED_DOMAINS?.split(',') ?? []) {
+  const cdnUrl = getConfig('CDN_URL');
+  if (cdnUrl) hosts.add(new URL(cdnUrl).hostname);
+  for (const entry of getConfig('PROXY_ALLOWED_DOMAINS')?.split(',') ?? []) {
     const host = entry.trim();
     if (host) hosts.add(host);
   }
-  allowedProxyHosts = hosts;
+  allowedProxyHosts = { version, hosts };
   return hosts;
 }
 

@@ -2,6 +2,7 @@ import { env } from '@/libs/env';
 import { createFalClient, type FalClient } from '@/libs/fal/client';
 import { publicKeysFromJwks } from '@/libs/fal/webhook';
 import { UserFacingError } from '@/libs/user-facing-error';
+import { getConfig, vaultVersion } from '@/libs/vault/vault';
 import { studioWebhookUrl } from './webhook-url';
 
 /**
@@ -12,7 +13,7 @@ import { studioWebhookUrl } from './webhook-url';
  */
 
 export function isStudioEnabled(): boolean {
-  return Boolean(env.FAL_KEY);
+  return Boolean(getConfig('FAL_KEY'));
 }
 
 export class StudioDisabledError extends UserFacingError {
@@ -28,21 +29,24 @@ export function assertStudioEnabled(): void {
 
 /** Whether a `FAL_BILLING_KEY` lets settlement read billed costs and the overview the balance. */
 export function hasFalBillingKey(): boolean {
-  return Boolean(env.FAL_BILLING_KEY);
+  return Boolean(getConfig('FAL_BILLING_KEY'));
 }
 
-let client: FalClient | undefined;
+let cached: { version: number; client: FalClient } | undefined;
 
-/** The fal client for this instance's key and hosts. Throws while the Studio is off. */
+/** The fal client for this instance's current keys and hosts. Throws while the Studio is off. */
 export function falClient(): FalClient {
   assertStudioEnabled();
-  client ??= createFalClient({
-    key: env.FAL_KEY as string,
-    billingKey: env.FAL_BILLING_KEY || undefined,
+  const version = vaultVersion();
+  if (cached?.version === version) return cached.client;
+  const client = createFalClient({
+    key: getConfig('FAL_KEY') as string,
+    billingKey: getConfig('FAL_BILLING_KEY'),
     queueBaseUrl: env.FAL_QUEUE_BASE_URL,
     restBaseUrl: env.FAL_REST_BASE_URL,
     apiBaseUrl: env.FAL_API_BASE_URL,
   });
+  cached = { version, client };
   return client;
 }
 

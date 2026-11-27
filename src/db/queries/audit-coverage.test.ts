@@ -59,6 +59,7 @@ async function loadModules() {
     studio,
     generations,
     platformSettingsQueries,
+    vaultQueries,
   ] = await Promise.all([
     import('./admin'),
     import('./auth'),
@@ -76,6 +77,7 @@ async function loadModules() {
     import('./studio'),
     import('./generations'),
     import('./platform-settings'),
+    import('./vault'),
   ]);
   return {
     db: client.db,
@@ -104,6 +106,7 @@ async function loadModules() {
     studio,
     generations,
     platformSettingsQueries,
+    vaultQueries,
   };
 }
 
@@ -614,6 +617,22 @@ describe.skipIf(!hasDatabase)('audited models: Studio configuration', () => {
     await expectAudited('PlatformSettings', 'update', 'default');
 
     if (!savedPlatformSettings) await db.delete(M.platformSettings).where(eq(M.platformSettings.id, 'default'));
+  });
+
+  test('VaultEntry is audited on create, update and delete, keyed by its name and without its ciphertext', async () => {
+    const name = `audit-test-${runId}`;
+    await M.vaultQueries.upsertVaultRow(name, 'ciphertext-one', ownerId);
+    await expectAudited('VaultEntry', 'create', name);
+    await M.vaultQueries.upsertVaultRow(name, 'ciphertext-two', ownerId);
+    await expectAudited('VaultEntry', 'update', name);
+    await M.vaultQueries.deleteVaultRow(name, ownerId);
+    await expectAudited('VaultEntry', 'delete', name);
+
+    const rows = await db
+      .select()
+      .from(auditLog)
+      .where(and(eq(auditLog.model, 'VaultEntry'), eq(auditLog.recordId, name)));
+    expect(JSON.stringify(rows)).not.toContain('ciphertext-');
   });
 
   test('StudioBudgetOverride is audited on create, update and delete, keyed by the User', async () => {

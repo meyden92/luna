@@ -9,18 +9,8 @@ function isBase64Encoded32ByteKey(value: string): boolean {
 // Server-only module. Do NOT import from client components.
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
-  // Public base URL of the CDN. Read at runtime and handed to the browser via
-  // the snapshot in libs/runtime-config, so one image serves any domain.
-  CDN_URL: z.url(),
-  AWS_REGION: z.string().min(1),
-  AWS_ENDPOINT: z.string().min(1),
-  AWS_ACCESS_KEY_ID: z.string().min(1),
-  AWS_SECRET_ACCESS_KEY: z.string().min(1),
-  AWS_BUCKET_NAME: z.string().min(1),
-  // fal.ai. Without FAL_KEY (unset or empty) the Studio is off. FAL_BILLING_KEY
-  // (a BILLING or FULL scope key) lets cost settlement read fal's billed amounts.
-  FAL_KEY: z.string().optional(),
-  FAL_BILLING_KEY: z.string().optional(),
+  // Deployment config and secrets that the Vault also accepts are read through
+  // `getConfig` (src/libs/vault/vault.ts), never from here.
   // fal hosts, overridden only by the E2E stack to reach its fake fal service.
   FAL_QUEUE_BASE_URL: z.url().default('https://queue.fal.run'),
   FAL_REST_BASE_URL: z.url().default('https://rest.fal.ai'),
@@ -28,17 +18,11 @@ const envSchema = z.object({
   FORM_FIELD_ENCRYPTION_KEY: z.string().refine(isBase64Encoded32ByteKey, {
     message: 'must be a 32-byte base64-encoded key',
   }),
-  RENDITION_SIGNING_SECRET: z.string().min(16).optional(),
-  DELIVERY_COOKIE_SECRET: z.string().min(16).optional(),
-  TRUSTED_PROXY_HOPS: z.coerce.number().int().min(0).default(0),
   // The release tag (e.g. v4.6.0) the image was built from; unset or empty in dev.
   BUILD_VERSION: z.string().optional(),
   BUILD_COMMIT: z.string().optional(),
   BUILD_TIME: z.string().optional(),
   PUBLIC_BASE_URL: z.url().optional(),
-  // Extra hosts the image proxy may fetch from, comma-separated. The CDN_URL
-  // host is always allowed.
-  PROXY_ALLOWED_DOMAINS: z.string().optional(),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
 

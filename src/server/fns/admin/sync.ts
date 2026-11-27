@@ -9,8 +9,7 @@ import {
   listSystemObjectKeys,
   softDeleteFilesAnyOwner,
 } from '@/db/queries/tasks';
-import { env } from '@/libs/env';
-import { fileS3Key, s3Client } from '@/libs/S3Helper';
+import { fileS3Key, getS3 } from '@/libs/S3Helper';
 import { syncExcludeMatcher } from '@/libs/sync-exclude';
 import { UserFacingError } from '@/libs/user-facing-error';
 import { addSyncExcludedPathSchema, removeSyncExcludedPathSchema } from '@/schemas/sync-schema';
@@ -32,11 +31,12 @@ export const compareAdminSync = createServerFn({ method: 'GET' })
     let totalS3Size = 0;
     let token: string | undefined;
     let calls = 0;
+    const { client, bucket } = getS3();
     do {
       calls++;
-      const resp = await s3Client.send(
+      const resp = await client.send(
         new ListObjectsV2Command({
-          Bucket: env.AWS_BUCKET_NAME,
+          Bucket: bucket,
           ContinuationToken: token,
           MaxKeys: 1000,
         }),

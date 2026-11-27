@@ -4,8 +4,7 @@ import { Upload } from '@aws-sdk/lib-storage';
 import { getOwnedOutput } from '@/db/queries/generations';
 import { getPlatformSettings } from '@/db/queries/platform-settings';
 import { getStudioSettings } from '@/db/queries/studio';
-import { env } from '@/libs/env';
-import { getPrivateSignedUrl, s3Client } from '@/libs/S3Helper';
+import { getPrivateSignedUrl, getS3 } from '@/libs/S3Helper';
 import { renderStoragePath } from '@/libs/storage-paths';
 import { UserFacingError } from '@/libs/user-facing-error';
 import type { TemplatePreview } from '@/schemas/studio-schema';
@@ -29,10 +28,11 @@ const objectKey = (template: string, contentType: string, name: string) =>
 
 async function putObject(file: File, template: string): Promise<string> {
   const key = objectKey(template, file.type, file.name);
+  const { client, bucket } = getS3();
   await new Upload({
-    client: s3Client,
+    client,
     params: {
-      Bucket: env.AWS_BUCKET_NAME,
+      Bucket: bucket,
       Key: key,
       Body: new Uint8Array(await file.arrayBuffer()),
       ContentType: file.type,
@@ -54,7 +54,7 @@ export async function storeTemplatePreviews(
 ): Promise<{ keys: string[]; created: string[] }> {
   const keys: string[] = [];
   const created: string[] = [];
-  const bucket = env.AWS_BUCKET_NAME;
+  const { client, bucket } = getS3();
   const [{ templatePreviewPath }, { templatePreviewMaxMib }] = await Promise.all([getPlatformSettings(), getStudioSettings()]);
   try {
     for (const preview of previews) {
@@ -77,7 +77,7 @@ export async function storeTemplatePreviews(
       if (!owned || owned.output.expiredAt) throw new UserFacingError('This Output no longer exists.');
       if (owned.output.mediaKind !== 'image') throw new UserFacingError('A preview must be an image.');
       const key = objectKey(templatePreviewPath, owned.output.contentType, owned.output.s3Key);
-      await s3Client.send(
+      await client.send(
         new CopyObjectCommand({
           Bucket: bucket,
           Key: key,
@@ -145,8 +145,9 @@ export function signTemplateReferences(fields: FieldConfig[]): Promise<{ key: st
 /** Removes preview and reference objects; a failure is logged, never thrown, because the Template write already happened. */
 export async function deleteTemplatePreviews(keys: string[]): Promise<void> {
   if (keys.length === 0) return;
-  await s3Client
-    .send(new DeleteObjectsCommand({ Bucket: env.AWS_BUCKET_NAME, Delete: { Objects: keys.map((Key) => ({ Key })), Quiet: true } }))
+  const { client, bucket } = getS3();
+  await client
+    .send(new DeleteObjectsCommand({ Bucket: bucket, Delete: { Objects: keys.map((Key) => ({ Key })), Quiet: true } }))
     .catch((error) => console.error('[studio] Removing Template previews failed:', error));
 }
 

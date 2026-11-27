@@ -10,13 +10,13 @@ import { env } from '@/libs/env';
  * the same raw key even when they fall back to the same base secret — a leak in
  * one domain no longer forges the others.
  */
-const cache = new Map<string, Buffer>();
+const cache = new Map<string, { ikm: string; key: Buffer }>();
 
 export function deriveSigningKey(purpose: string, dedicatedSecret?: string | null): Buffer {
-  const cached = cache.get(purpose);
-  if (cached) return cached;
   const ikm = dedicatedSecret ?? env.FORM_FIELD_ENCRYPTION_KEY;
+  const cached = cache.get(purpose);
+  if (cached?.ikm === ikm) return cached.key;
   const key = Buffer.from(hkdfSync('sha256', ikm, 'lunashare/signing/v1', purpose, 32));
-  cache.set(purpose, key);
+  cache.set(purpose, { ikm, key });
   return key;
 }

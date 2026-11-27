@@ -62,7 +62,7 @@ export const Route = createRootRouteWithContext<RootRouteContext>()({
 function RootComponent() {
   const { queryClient, initialTheme, session } = Route.useRouteContext();
 
-  // Resolves from process.env during SSR and from the injected snapshot in the
+  // Resolves on the server during SSR and from the injected snapshot in the
   // browser, so both renders produce identical markup.
   const runtimeConfig = getRuntimeConfig();
 

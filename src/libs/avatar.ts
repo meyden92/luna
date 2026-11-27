@@ -3,6 +3,7 @@ import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import sharp from 'sharp';
 
 import { avatarTooLargeMessage } from '@/schemas/credentials-schema';
+import { getS3 } from './S3Helper';
 import { matchesStoragePath, renderStoragePath } from './storage-paths';
 import { UserFacingError } from './user-facing-error';
 
@@ -10,17 +11,6 @@ import { UserFacingError } from './user-facing-error';
  * An Avatar is a plain bucket object, never a `file` row: it stays out of the
  * file manager and off the owner's storage quota.
  */
-
-/**
- * The bucket and its client are reached through this rather than imported,
- * because importing them validates the whole environment at module load — which
- * `normalizeAvatar`, a pure bytes-to-bytes function, has no need of and which
- * would make its tests require a full set of secrets.
- */
-async function storage() {
-  const [{ env }, { s3Client }] = await Promise.all([import('./env'), import('./S3Helper')]);
-  return { bucket: env.AWS_BUCKET_NAME, client: s3Client };
-}
 
 export const AVATAR_SIZE = 512;
 /** Rejected input the User can fix by choosing a different file. */
@@ -54,7 +44,7 @@ export async function normalizeAvatar(input: Buffer, maxUploadMib: number): Prom
 export async function uploadAvatar(normalized: Buffer, pathTemplate: string): Promise<string> {
   const key = renderStoragePath<'avatarPath'>(pathTemplate, { uuid: randomUUID().replaceAll('-', '') });
 
-  const { bucket, client } = await storage();
+  const { bucket, client } = getS3();
 
   try {
     await client.send(
@@ -89,7 +79,7 @@ export async function deleteAvatar(previous: string | null | undefined, pathTemp
   if (!matchesStoragePath(pathTemplate, key)) return;
 
   try {
-    const { bucket, client } = await storage();
+    const { bucket, client } = getS3();
     await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
   } catch (error) {
     console.error(`[Avatar] Failed to delete replaced avatar ${key}:`, error);

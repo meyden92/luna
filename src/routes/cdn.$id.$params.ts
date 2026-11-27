@@ -2,9 +2,8 @@ import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { createFileRoute } from '@tanstack/react-router';
 import { getDeliverableImage } from '@/db/queries/delivery';
 import { recordEgress } from '@/libs/egress/record';
-import { env } from '@/libs/env';
 import { canonicalRenditionParams, getOrCreateRendition, parseRenditionParamSegment, verifyRenditionSignature } from '@/libs/renditions';
-import { s3Client } from '@/libs/S3Helper';
+import { getS3 } from '@/libs/S3Helper';
 
 async function handle(request: Request, id: string, params: string): Promise<Response> {
   const parsed = parseRenditionParamSegment(decodeURIComponent(params), request.headers.get('accept'));
@@ -20,7 +19,8 @@ async function handle(request: Request, id: string, params: string): Promise<Res
   const rendition = await getOrCreateRendition({ file, params: parsed });
   await recordEgress({ ownerId: file.ownerId, bytes: rendition.size });
 
-  const object = await s3Client.send(new GetObjectCommand({ Bucket: env.AWS_BUCKET_NAME, Key: rendition.s3Key }));
+  const { client, bucket } = getS3();
+  const object = await client.send(new GetObjectCommand({ Bucket: bucket, Key: rendition.s3Key }));
   const body = Buffer.from(await object.Body!.transformToByteArray());
 
   return new Response(body, {

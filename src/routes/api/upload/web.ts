@@ -7,12 +7,11 @@ import { getOwnedFolder } from '@/db/queries/folders';
 import { createUploadedFile, releaseUploadedFile } from '@/db/queries/uploads';
 import type { JsonValue } from '@/db/schema/json';
 import { checkScopedRateLimit, retryAfterSeconds } from '@/libs/api/rate-limit';
-import { env } from '@/libs/env';
 import { dispatchFlowTrigger } from '@/libs/flows/run-flow';
 import { inspectMetadata } from '@/libs/metadata-scrubber';
 import { checkModerationGate, createModerationCase } from '@/libs/moderation/hash-gate';
 import { requireAuthenticatedUser } from '@/libs/rbac/guards';
-import { s3Client } from '@/libs/S3Helper';
+import { getS3 } from '@/libs/S3Helper';
 import { StorageQuotaExceededError, storageQuotaExceededPayload } from '@/libs/storage-quota';
 import { resolveUploadContentType } from '@/libs/upload-content-type';
 
@@ -63,8 +62,9 @@ function parsePositiveInteger(value: FormDataEntryValue | null): number | undefi
 }
 
 async function deleteUploadedObject(key: string): Promise<void> {
+  const { client, bucket } = getS3();
   try {
-    await s3Client.send(new DeleteObjectCommand({ Bucket: env.AWS_BUCKET_NAME, Key: key }));
+    await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
   } catch {
     // Best-effort cleanup. The upload error should remain the surfaced failure.
   }
@@ -164,11 +164,12 @@ async function handle(request: Request): Promise<Response> {
     throw error;
   }
 
+  const { client, bucket } = getS3();
   try {
     await new Upload({
-      client: s3Client,
+      client,
       params: {
-        Bucket: env.AWS_BUCKET_NAME,
+        Bucket: bucket,
         Key: key,
         Body: uploadBuffer,
         ContentType: contentType,

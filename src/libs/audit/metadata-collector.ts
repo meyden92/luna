@@ -3,7 +3,7 @@ import { getSessionCookie } from 'better-auth/cookies';
 import { createHash, randomUUID } from 'crypto';
 import { AUTH_COOKIE_PREFIX } from '@/libs/auth/cookie-prefix';
 import { clientIp } from '@/libs/client-ip';
-import { env } from '@/libs/env';
+import { getConfig } from '@/libs/vault/vault';
 import type { AuditMetadata } from '@/types/audit';
 
 /**
@@ -31,7 +31,7 @@ export class MetadataCollector {
 
     return {
       // The same address the rate limiters key on, never one the client chose (#234).
-      ipAddress: clientIp(headers, env.TRUSTED_PROXY_HOPS, socketIp),
+      ipAddress: clientIp(headers, getConfig('TRUSTED_PROXY_HOPS'), socketIp),
       userAgent: headers.get('user-agent') || undefined,
       requestId: headers.get('x-request-id') || undefined,
       endpoint: headers.get('x-invoke-path') || undefined,

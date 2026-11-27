@@ -79,35 +79,56 @@ bun run test:e2e -- --ui   # extra arguments go to Playwright
 
 ## Self-hosting
 
-The published image is **not** tied to any domain. Deployment URLs are resolved
-at runtime, not compiled into the bundle, so you can pull the image and point it
-at your own infrastructure with environment variables alone — no rebuild:
+The published image is **not** tied to any domain. Pull it and point it at your
+own infrastructure, no rebuild. The environment holds only what the app needs
+before it can reach its database:
 
 ```bash
 docker run -p 3000:3000 \
   -e DATABASE_URL="postgresql://user:pass@db:5432/lunashare" \
-  -e CDN_URL="https://cdn.yourdomain.com" \
-  -e BETTER_AUTH_SECRET="..." \
+  -e FORM_FIELD_ENCRYPTION_KEY="$(openssl rand -base64 32)" \
+  -e BETTER_AUTH_SECRET="$(openssl rand -base64 32)" \
+  -e BETTER_AUTH_URL="https://yourdomain.com" \
   ghcr.io/meyden92/luna:latest
 ```
-
-`CDN_URL` is read from the process environment on the server and handed to the
-browser as a snapshot injected into the document during SSR (see
-`src/libs/runtime-config.ts`). Anything reached through `import.meta.env` would
-instead be inlined as a string literal at build time and freeze one deployment's
-domains into the image — which is why deployment URLs must not be added there.
 
 `PUBLIC_BASE_URL` is optional: leave it unset and the auth client targets the
 document's own origin. Set it only when the app is served from a different
 origin than its auth API.
 
+### Vault
+
+Everything else is set in the admin area under **Settings → Vault**: the S3
+connection (`AWS_ENDPOINT`, `AWS_REGION`, `AWS_BUCKET_NAME`, `AWS_ACCESS_KEY_ID`,
+`AWS_SECRET_ACCESS_KEY`), `CDN_URL`, the fal keys, the signing secrets,
+`TRUSTED_PROXY_HOPS` and `PROXY_ALLOWED_DOMAINS`. On a fresh install the app
+starts without storage; sign in as an admin, fill the Storage entries, and
+uploads work at once. Every change applies immediately, without a restart.
+
+Values are stored encrypted (AES-256-GCM) with a key derived from
+`FORM_FIELD_ENCRYPTION_KEY`, and a secret is never shown again once saved.
+Setting or clearing an entry asks for the admin's password. This protects the
+secrets in a leaked database dump or backup and from anyone who can only use an
+admin account; it does not protect them from someone who has both the
+environment and the database, or who runs code on the server.
+
+**Back up `FORM_FIELD_ENCRYPTION_KEY` outside the server.** Without it the Vault
+cannot be decrypted, and every entry has to be set again.
+
+Any Vault entry may also be set in the environment under the same name, and the
+environment then wins. That is the way out when a wrong Vault value locks the
+instance out, and how the E2E stack configures itself.
+
+`CDN_URL` is resolved on the server and handed to the browser as a snapshot
+injected into the document during SSR (see `src/libs/runtime-config.ts`).
+Anything reached through `import.meta.env` would instead be inlined as a string
+literal at build time and freeze one deployment's domains into the image, which
+is why deployment URLs must not be added there.
+
 The image proxy's allowlist is derived from `CDN_URL`, so it needs no
 configuration in a normal setup. Set `PROXY_ALLOWED_DOMAINS` to a
-comma-separated host list only if you proxy images from somewhere else:
-
-```bash
-PROXY_ALLOWED_DOMAINS=images.example.com,static.example.org
-```
+comma-separated host list only if you proxy images from somewhere else, e.g.
+`images.example.com,static.example.org`.
 
 Rate limits, sign-in included, are keyed on the client's IP address. Set
 `TRUSTED_PROXY_HOPS` to the number of reverse proxies in front of the app that
@@ -122,9 +143,9 @@ value looks wrong.
 
 ### Studio
 
-The Studio runs on [fal.ai](https://fal.ai) and stays off until `FAL_KEY` holds
-a fal API key. Without it the Studio, its nav entry and its admin pages are
-hidden, and its routes answer 404.
+The Studio runs on [fal.ai](https://fal.ai) and stays off until the Vault's
+`FAL_KEY` holds a fal API key. Without it the Studio, its nav entry and its admin
+pages are hidden, and its routes answer 404.
 
 `FAL_BILLING_KEY` is optional and must be a fal key with `BILLING` (or `FULL`)
 scope. With it, a task every 10 minutes replaces each Generation's estimated
@@ -136,11 +157,6 @@ only when the public base URL (`PUBLIC_BASE_URL`, or `BETTER_AUTH_URL` when that
 is unset) is `https` on a public host. Otherwise the server polls fal every 3
 seconds, which also works behind NAT and in development. With webhooks on, it
 still polls once a minute for Generations whose webhook never came.
-
-```bash
-FAL_KEY=your-fal-key
-FAL_BILLING_KEY=your-billing-scope-key
-```
 
 `FAL_QUEUE_BASE_URL`, `FAL_REST_BASE_URL` and `FAL_API_BASE_URL` point the app
 at the E2E stack's fake fal service. Leave them unset in a deployment.
@@ -155,8 +171,9 @@ NITRO_PRESET=node-server bun run build
 ```
 
 The image is built and published to GHCR by `.github/workflows/ci.yml` on tag
-pushes. `docker-compose.yml` reads the image from `LUNASHARE_IMAGE` and takes all
-secrets from the environment.
+pushes. `docker-compose.yml` reads the image from `LUNASHARE_IMAGE` and passes
+the environment described under [Self-hosting](#self-hosting); the rest lives in
+the Vault.
 
 ```bash
 docker compose up -d

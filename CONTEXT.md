@@ -158,3 +158,12 @@ The most a User may spend on Generations in one calendar month, in US dollars.
 An admin sets a default for everyone and exceptions per User, unlimited
 included. Unrelated to the storage quota.
 _Avoid_: Credits, quota, allowance, limit
+
+## Operations
+
+**Vault**:
+Deployment settings and secrets an admin keeps in the admin area instead of the
+environment: the S3 connection, the CDN URL, fal keys, signing secrets and proxy
+settings. Stored encrypted with the master key; a secret is never shown again
+once saved. A value set in the environment under the same name wins.
+_Avoid_: Secrets store, config, settings

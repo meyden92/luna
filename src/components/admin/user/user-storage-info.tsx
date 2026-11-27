@@ -1,6 +1,5 @@
 import { FileText, FolderUp, Save } from 'lucide-react';
 import type { FormEvent } from 'react';
-import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -36,20 +35,15 @@ export default function UserStorageInfo({
   percentageUsed,
   fileCount,
 }: UserStorageInfoProps) {
-  const [quotaGiB, setQuotaGiB] = useState(quotaMiBToGiBInput(storageQuotaMiB));
   const { mutate: updateQuota, isPending } = useAppMutation(updateAdminUserStorageQuota, {
     successMessage: 'Storage quota updated',
     errorMessage: 'Failed to update storage quota',
     invalidates: [queryKeys.admin.user(userId), queryKeys.admin.users],
   });
 
-  useEffect(() => {
-    setQuotaGiB(quotaMiBToGiBInput(storageQuotaMiB));
-  }, [storageQuotaMiB]);
-
   const handleQuotaSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const parsedQuotaGiB = Number(quotaGiB);
+    const parsedQuotaGiB = Number(new FormData(event.currentTarget).get('quotaGiB'));
     if (!Number.isFinite(parsedQuotaGiB) || parsedQuotaGiB < 0) {
       toast.error('Quota must be a non-negative number');
       return;
@@ -90,13 +84,15 @@ export default function UserStorageInfo({
             </Label>
             <div className={styles.quotaRow}>
               {/* `step="any"`: quotas are stored in whole MiB, so any fraction of a GiB is valid. */}
+              {/* Uncontrolled: a value typed before hydration stays in the DOM but never reaches React state, so submit reads the field. */}
               <Input
+                key={storageQuotaMiB}
                 id="storage-quota-gib"
+                name="quotaGiB"
                 type="number"
                 min="0"
                 step="any"
-                value={quotaGiB}
-                onChange={(event) => setQuotaGiB(event.target.value)}
+                defaultValue={quotaMiBToGiBInput(storageQuotaMiB)}
                 disabled={isPending}
               />
               <Button

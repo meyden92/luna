@@ -4,7 +4,7 @@ import { formatSize } from '../../../src/libs/utils';
 import { test } from '../fixtures/test';
 import { clientIpHeader, type FixtureUser } from '../fixtures/users';
 import { createUserThroughAdmin, signedInDevice, throwawayUser, userIdOf } from '../utils/admin-users';
-import { clickUntil } from '../utils/hydration';
+import { clickUntil, untilHydrated } from '../utils/hydration';
 import { uniquePrefix, uploadOwnFiles } from '../utils/own-files';
 import { bucketKeysContaining } from '../utils/uploads';
 
@@ -105,6 +105,31 @@ test('changing the quota shows on the user list and on the storage page of the u
   await adminPage.getByPlaceholder('Search users').fill(account.email);
   await adminPage.getByRole('button', { name: 'Search' }).click();
   await expect(adminPage.getByRole('row', { name: new RegExp(account.email) })).toContainText(`0 B / ${formatSize(quotaBytes)}`);
+});
+
+test('a quota typed before the page hydrates is the quota that gets saved', async ({ adminPage, db }) => {
+  await createAndOpen(adminPage, db, 'early-quota');
+
+  // Holding the client scripts back keeps the page as server HTML while the field is filled.
+  let releaseScripts!: () => void;
+  const scriptsHeld = new Promise<void>((resolve) => {
+    releaseScripts = resolve;
+  });
+  await adminPage.route('**/assets/*.js', async (route) => {
+    await scriptsHeld;
+    await route.continue();
+  });
+  await adminPage.reload({ waitUntil: 'commit' });
+
+  const input = adminPage.getByLabel('Storage Quota');
+  await input.fill('0.5');
+  releaseScripts();
+  await untilHydrated(input);
+  await adminPage.getByRole('button', { name: 'Save storage quota' }).click();
+  await expect(adminPage.getByText('Storage quota updated')).toBeVisible();
+
+  await adminPage.reload();
+  await expect(input).toHaveValue('0.5');
 });
 
 test('the Admin group opens /admin and its nav link for a user, removing it closes /admin', async ({ adminPage, browser, db }) => {

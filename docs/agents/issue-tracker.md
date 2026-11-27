@@ -25,8 +25,8 @@ Every piece of work references an issue, so it stays traceable. The flow, as def
 1. **Pick up an issue** — read it in full (`gh issue view <n> --comments`), including the parent epic if it has one.
 2. **Mark it in progress** — `gh issue edit <n> --add-label "Doing" --remove-label "todo"`.
 3. **Branch** — work on a separate branch, never directly on the default branch.
-4. **Open a PR when done** — `gh pr create --title "..." --body-file <file>`, referencing the issue so it links (`Closes #<n>`).
-5. **Hand over for testing** — `gh issue edit <n> --add-label "testing" --remove-label "Doing"`, then tell the user how to test the change.
+4. **Open a PR when done** — `gh pr create --title "..." --body-file <file>`, referencing the issue as `Part of #<n>`. Never a closing keyword (`Closes`, `Fixes`, `Resolves`): it would close the issue on merge, before the user has tested it.
+5. **Hand over for testing** — opening the PR sets `testing` on every open issue named as `Part of #<n>` and removes `Doing` (`.github/workflows/issue-lifecycle.yml`); then tell the user how to test the change.
 
 The issue is closed after the user has verified it, not when the PR opens.
 
@@ -34,7 +34,7 @@ The issue is closed after the user has verified it, not when the PR opens.
 
 ### Labels
 
-Lifecycle: `todo` → `Doing` → `testing`, then close. Alongside those: `bug`, `documentation`, `duplicate`, `enhancement`, `wontfix`.
+Lifecycle: `todo` → `Doing` → `testing`, then close. Closing an issue as completed removes its status labels (`todo`, `Doing`, `testing`, `ready-for-agent`) automatically. Alongside those: `bug`, `documentation`, `duplicate`, `enhancement`, `wontfix`.
 
 ## When a skill says "publish to the issue tracker"
 

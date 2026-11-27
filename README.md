@@ -117,7 +117,10 @@ cannot be decrypted, and every entry has to be set again.
 
 Any Vault entry may also be set in the environment under the same name, and the
 environment then wins. That is the way out when a wrong Vault value locks the
-instance out, and how the E2E stack configures itself.
+instance out, and how the E2E stack configures itself. A value can be stored in
+the Vault while the environment still sets it, so a running instance moves over
+without losing storage: store each value, then remove the variable from the
+environment and restart.
 
 `CDN_URL` is resolved on the server and handed to the browser as a snapshot
 injected into the document during SSR (see `src/libs/runtime-config.ts`).

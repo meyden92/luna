@@ -18,7 +18,9 @@ human present, so its key has to be somewhere it can reach.
 
 A value set in the environment under the same name wins over the Vault. That is
 the way out when a wrong Vault value locks the instance out, and lets the E2E
-stack keep configuring itself through env.
+stack keep configuring itself through env. The Vault still accepts a value the
+environment overrides, so an instance can fill the Vault first and drop the
+variables afterwards, never running without storage.
 
 Values are served from an in-memory snapshot that every entry point loads
 before anything reads it, and that a write replaces, so a change applies

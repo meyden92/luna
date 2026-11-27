@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { getRequestHeaders } from '@tanstack/react-start/server';
 import { RATE_LIMITS } from '@/libs/api/rate-limit';
 import { UserFacingError } from '@/libs/user-facing-error';
-import { clearVaultEntrySchema, setVaultEntrySchema, VAULT_ENTRIES, type VaultName } from '@/libs/vault/registry';
+import { clearVaultEntrySchema, setVaultEntrySchema } from '@/libs/vault/registry';
 import { clearVaultEntry, describeVault, isStorageConfigured, setVaultEntry } from '@/libs/vault/vault';
 import { userIdFromCtx as adminIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
@@ -30,18 +30,11 @@ async function assertPassword(password: string): Promise<void> {
   }
 }
 
-function assertNotFromEnv(name: VaultName): void {
-  if (describeVault().find((entry) => entry.name === name)?.source === 'env') {
-    throw new UserFacingError(`${VAULT_ENTRIES[name].label} is set in the environment, which takes precedence. Remove it there first.`);
-  }
-}
-
 export const saveVaultEntry = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'admin', rateLimit: RATE_LIMITS.vaultWrite }))
   .validator(setVaultEntrySchema)
   .handler(async ({ data, context }) => {
     await assertPassword(data.password);
-    assertNotFromEnv(data.name);
     await setVaultEntry(data.name, data.value, adminIdFromCtx(context));
     return { name: data.name };
   });

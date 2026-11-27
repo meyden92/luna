@@ -22,7 +22,7 @@ const SOURCE_BADGES: Record<VaultSource, { label: string; variant: 'default' | '
   unset: { label: 'Not set', variant: 'outline' },
 };
 
-type Action = { kind: 'set' | 'clear'; name: VaultName };
+type Action = { kind: 'set' | 'clear'; name: VaultName; fromEnv: boolean };
 
 /** The Vault's entries by group; values are set and cleared in a dialog that asks for the admin's password. */
 export function VaultSettings() {
@@ -66,6 +66,7 @@ export function VaultSettings() {
       {action?.kind === 'set' && (
         <SetEntryDialog
           name={action.name}
+          fromEnv={action.fromEnv}
           onClose={() => setAction(null)}
         />
       )}
@@ -105,9 +106,7 @@ function VaultEntryRow({ entry, onAction }: { entry: VaultEntryState; onAction: 
         <Button
           variant="outline"
           size="sm"
-          disabled={fromEnv}
-          title={fromEnv ? 'Set in the environment, which takes precedence' : undefined}
-          onClick={() => onAction({ kind: 'set', name: entry.name })}
+          onClick={() => onAction({ kind: 'set', name: entry.name, fromEnv })}
         >
           {entry.stored ? 'Replace' : 'Set'}
         </Button>
@@ -115,7 +114,7 @@ function VaultEntryRow({ entry, onAction }: { entry: VaultEntryState; onAction: 
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onAction({ kind: 'clear', name: entry.name })}
+            onClick={() => onAction({ kind: 'clear', name: entry.name, fromEnv })}
           >
             Clear
           </Button>
@@ -142,7 +141,7 @@ function PasswordField({ value, onChange, disabled }: { value: string; onChange:
   );
 }
 
-function SetEntryDialog({ name, onClose }: { name: VaultName; onClose: () => void }) {
+function SetEntryDialog({ name, fromEnv, onClose }: { name: VaultName; fromEnv: boolean; onClose: () => void }) {
   const definition = VAULT_ENTRIES[name];
   const [value, setValue] = useState('');
   const [password, setPassword] = useState('');
@@ -173,6 +172,12 @@ function SetEntryDialog({ name, onClose }: { name: VaultName; onClose: () => voi
           className="stack space-4"
           onSubmit={onSubmit}
         >
+          {fromEnv && (
+            <p className={styles.muted}>
+              The environment sets this entry and keeps winning. The value you store here takes effect once you remove it from the
+              environment.
+            </p>
+          )}
           <div className="stack space-2">
             <Label htmlFor="vault-value">{definition.secret ? 'New value' : 'Value'}</Label>
             <Input

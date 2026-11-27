@@ -2,7 +2,7 @@
 
 Issues and specs for this repo live as GitHub issues, in [`meyden92/luna`](https://github.com/meyden92/luna).
 
-**If the `ncon-tools:github` skill is available, invoke it before any tracker operation and follow its rules** — it carries the organisation's issue lifecycle, pull-request conventions, and non-interactive `gh` usage, and it overrides the conventions below wherever they disagree. The conventions below are the fallback for when that skill is not installed.
+**If the `github-flow:github` skill is available, invoke it before any tracker operation and follow its rules** — it carries the organisation's issue lifecycle, pull-request conventions, and non-interactive `gh` usage, and it overrides the conventions below wherever they disagree. The conventions below are the fallback for when that skill is not installed.
 
 Use the [`gh`](https://cli.github.com/) CLI (2.94+ for sub-issue and dependency flags) for all operations.
 
@@ -54,7 +54,7 @@ Blocking is a separate relation from membership — a native dependency, written
 
 ## Wayfinding operations
 
-Used by `/ncon-engineering:wayfinder`. The **map** is a single issue with **child** issues as tickets.
+The **map** is a single issue with **child** issues as tickets.
 
 - **Map**: a single issue labelled `wayfinder:map`, holding the Notes / Decisions-so-far / Fog body. `gh issue create --label wayfinder:map ...`. Its tickets are its native sub-issues (`gh issue create --parent <map>`).
 - **Child ticket**: a sub-issue of the map, labelled `wayfinder:<type>` (`research`/`prototype`/`interview`/`task`). Once claimed, the ticket is assigned to the driving dev.

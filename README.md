@@ -162,8 +162,9 @@ secrets from the environment.
 docker compose up -d
 ```
 
-Deployment is triggered by a webhook stored in the `DEPLOY_WEBHOOK_URL` and
-`DEPLOY_TOKEN` repository secrets; the deploy step is skipped when they are unset.
+After the image is pushed, the `deploy` job calls Coolify's deploy webhook. Its
+URL and an API token with the `deploy` permission live in the `DEPLOY_WEBHOOK_URL`
+and `DEPLOY_TOKEN` repository secrets; the job fails when either is missing.
 
 ## Commit convention
 

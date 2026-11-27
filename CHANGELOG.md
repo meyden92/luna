@@ -2,6 +2,54 @@
 
 Every LunaShare release, newest first. Entries up to v4.7.0 were rewritten from their GitHub releases, or from the tag message where no release exists.
 
+## v4.9.0 (2026-11-27)
+
+**The One Where the Secrets Move Out of the .env and Into a Safe**
+
+Your `.env` used to be a junk drawer: S3 keys, fal keys, signing secrets, proxy settings, all loose next to each other. Now they live in the Vault, encrypted in the database and changed from the admin area without a restart. While we were tidying up, storage paths and upload limits stopped being hardcoded constants and became settings you can actually click.
+
+### ✨ New
+
+🔐 **A Vault for the stuff you'd rather not paste around.** **Settings → Vault** holds the S3 connection (`AWS_ENDPOINT`, `AWS_REGION`, `AWS_BUCKET_NAME`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`), `CDN_URL`, `FAL_KEY`, `FAL_BILLING_KEY`, `RENDITION_SIGNING_SECRET`, `DELIVERY_COOKIE_SECRET`, `TRUSTED_PROXY_HOPS` and `PROXY_ALLOWED_DOMAINS`. Entries are encrypted with a key derived from `FORM_FIELD_ENCRYPTION_KEY` and apply at once: set `FAL_KEY` and the Studio switches on, no restart. Secrets are write-only, so once saved you never see them again, and setting or clearing an entry asks for your password (10 tries per 15 minutes). An environment variable with the same name still wins, so you can fill the Vault first and drop the env variables one at a time. Lose `FORM_FIELD_ENCRYPTION_KEY` and every Vault entry has to be set again, so back it up somewhere that isn't the server.
+
+🚧 **Boots without storage, and tells you so.** The app now starts even before S3 is configured. A banner across the admin area points at the Vault until every Storage entry is set; uploads answer with a 503 meanwhile instead of crashing the place.
+
+🗂️ **Your bucket, your folder structure.** **Settings → Storage** sets where Renditions, Studio Outputs, Template previews, Template reference images and Avatars land, as key templates with variables like `{userId}` or `{uuid}` and a live example key under each field. A changed path applies to new objects only; existing ones keep their key and keep working.
+
+📏 **Limits you can turn without a deploy.** **Settings → Limits** holds the default storage quota for new Users, the Avatar and ShareX upload limits, ShareX upload concurrency, the download proxy and Downloader size limits, how many downloads a User may prepare at once, when prepared downloads expire, and the duplicate-detection threshold. **Settings → Studio** gained how long Outputs live, and the size limits for inputs, Template previews and Template reference images. Without any changes every value equals what was hardcoded before.
+
+### 🔧 Improved
+
+💬 **Field cards that explain themselves.** Every Field card in the Template editor shows fal's description of the input under its name, in every mode, so a fixed `safety_tolerance: 1` no longer leaves you guessing what that 1 means.
+
+📐 **Aspect ratios you can see.** Options like `16:9`, `9:16`, `2.39:1`, `square_hd` or `portrait_4_3` get a little frame in their actual shape, in the Studio form and the admin value editors. Rename the option to "Breit" and the frame stays 16:9.
+
+🏷️ **Call it what it is.** "Add file input" on the Variables card is now **Add user upload**, with a hint that images every run should send belong on the Field card as reference images.
+
+### 🧪 Under the hood
+
+A `v*` tag now deploys `latest` to Coolify through its webhook once the image is built. Yes, this is the first release where that happens; fingers crossed.
+Issue labels move by themselves: a PR with `Part of #N` sets the issue to `testing`, and closing it as completed clears the status labels.
+The agent docs only point at skills that actually exist.
+New unit tests for the Vault, field encryption and storage paths, plus E2E specs `admin/vault.spec.ts` and `admin/platform-settings.spec.ts`.
+
+### ⬆️ Upgrade
+
+**This release needs database migrations.** The image's entrypoint applies them on start. Elsewhere, run `bun run db:migrate` when you deploy:
+
+- `20261127141712_platform_settings` creates the `platform_settings` table and adds `output_lifetime_days`, `input_max_mib`, `template_preview_max_mib` and `template_reference_max_mib` to `studio_settings`, with defaults equal to the previous constants.
+- `20261127145728_vault_entry` creates the `vault_entry` table.
+
+Environment:
+- Required in env from now on: `DATABASE_URL`, `FORM_FIELD_ENCRYPTION_KEY`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`; `PUBLIC_BASE_URL` stays optional.
+- `AWS_ENDPOINT`, `AWS_REGION`, `AWS_BUCKET_NAME`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `CDN_URL`, `FAL_KEY`, `FAL_BILLING_KEY`, `RENDITION_SIGNING_SECRET`, `DELIVERY_COOKIE_SECRET`, `TRUSTED_PROXY_HOPS` and `PROXY_ALLOWED_DOMAINS` move to Settings → Vault. If they stay in env, env wins and nothing changes. To move them, store each one in the Vault, then remove it from env.
+- The bundled `docker-compose.yml` no longer passes the moved variables. A deployment that uses it as-is starts without storage until the Vault is filled.
+- Remove `MAX_SHAREX_UPLOAD_BYTES` and `SHAREX_UPLOAD_CONCURRENCY`; they are no longer read. Set them under Settings → Limits; until then the defaults apply (90 MiB, 2).
+
+The v4.9.0 tag triggers the GHCR image build, publishes the versioned and latest tags and deploys to Coolify.
+
+Implemented in #307 (for #292, #293, #294, #295, #296), #300 (for #284, #285, #286, #287), #291 (for #278, #288, #289, #290), #298 (for #297), #304 (for #303) and #302 (for #301).
+
 ## v4.8.7 (2026-11-26)
 
 **The One Where Templates Bring Their Own Photos**

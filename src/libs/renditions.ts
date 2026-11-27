@@ -7,9 +7,9 @@ import { createRendition, findRenditionByParamHash, touchRendition } from '@/db/
 import { getPlatformSettings } from '@/db/queries/platform-settings';
 import type { JsonValue } from '@/db/schema/json';
 import { deriveSigningKey } from '@/libs/crypto/signing-keys';
-import { env } from '@/libs/env';
-import { fileS3Key, s3Client } from '@/libs/S3Helper';
+import { fileS3Key, getS3 } from '@/libs/S3Helper';
 import { renderStoragePath } from '@/libs/storage-paths';
+import { getConfig } from '@/libs/vault/vault';
 
 const formatSchema = z.enum(['avif', 'webp', 'jpeg', 'png']);
 const fitSchema = z.enum(['cover', 'contain', 'inside', 'fill', 'outside']);
@@ -109,9 +109,10 @@ export async function getOrCreateRendition({
     return existing;
   }
 
-  const original = await s3Client.send(
+  const { client, bucket } = getS3();
+  const original = await client.send(
     new GetObjectCommand({
-      Bucket: env.AWS_BUCKET_NAME,
+      Bucket: bucket,
       Key: fileS3Key(file.ownerId, file.url),
     }),
   );
@@ -126,9 +127,9 @@ export async function getOrCreateRendition({
   });
 
   await new Upload({
-    client: s3Client,
+    client,
     params: {
-      Bucket: env.AWS_BUCKET_NAME,
+      Bucket: bucket,
       Key: s3Key,
       Body: transformed.buffer,
       ContentType: transformed.contentType,
@@ -186,5 +187,5 @@ function negotiateFormat(acceptHeader?: string | null): RenditionParams['fmt'] {
 }
 
 function renditionSecret(): Buffer {
-  return deriveSigningKey('rendition-url', env.RENDITION_SIGNING_SECRET);
+  return deriveSigningKey('rendition-url', getConfig('RENDITION_SIGNING_SECRET'));
 }

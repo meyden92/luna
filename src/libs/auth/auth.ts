@@ -6,6 +6,7 @@ import { isValidUsername, PASSWORD_MIN_LENGTH, USERNAME_MAX_LENGTH, USERNAME_MIN
 import { clientIp } from '../client-ip';
 import { env } from '../env';
 import { ensureUserHasDefaultGroup } from '../rbac/default-group';
+import { getConfig } from '../vault/vault';
 import { AUTH_COOKIE_PREFIX } from './cookie-prefix';
 import { creationActor } from './creation-actor';
 
@@ -108,7 +109,7 @@ export const auth = betterAuth({
 export function handleAuthRequest(request: Request, socketIp: string | undefined): Promise<Response> {
   const headers = new Headers(request.headers);
   headers.delete(CLIENT_IP_HEADER);
-  const ip = clientIp(request.headers, env.TRUSTED_PROXY_HOPS, socketIp);
+  const ip = clientIp(request.headers, getConfig('TRUSTED_PROXY_HOPS'), socketIp);
   if (ip) headers.set(CLIENT_IP_HEADER, ip);
   // Built from parts: on Node the dev server's Request is srvx's own class, which undici's copy constructor rejects.
   // Node requires `duplex` for a streamed body; the DOM typings do not know it yet.

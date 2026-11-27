@@ -15,9 +15,9 @@ function rateLimitClientKey(request: Request, trustedProxyHops: number, fallback
 export const rateLimitedMiddleware = (cfg: RateLimitConfig) =>
   createMiddleware({ type: 'function' }).server(async ({ next }) => {
     const { getRequest, getRequestIP } = await import('@tanstack/react-start/server');
-    const { env } = await import('@/libs/env');
+    const { getConfig } = await import('@/libs/vault/vault');
     const request = getRequest();
-    const key = rateLimitClientKey(request, env.TRUSTED_PROXY_HOPS, getRequestIP());
+    const key = rateLimitClientKey(request, getConfig('TRUSTED_PROXY_HOPS'), getRequestIP());
     const result = checkRateLimit(`${cfg.scope}:${key}`, cfg.windowMs, cfg.max);
     if (!result.allowed) throw new RateLimitError(result.retryAfterMs);
     return next();

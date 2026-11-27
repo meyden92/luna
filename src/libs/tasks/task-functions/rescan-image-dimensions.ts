@@ -2,9 +2,8 @@ import { GetObjectCommand } from '@aws-sdk/client-s3';
 import sharp from 'sharp';
 import { listImagesMissingDimensions, upsertFileDimensions } from '@/db/queries/tasks';
 import { isAbortError, throwIfAborted } from '@/libs/abort';
-import { s3Client } from '@/libs/S3Helper';
+import { getS3 } from '@/libs/S3Helper';
 import type { TaskFunction } from '@/types/tasks';
-import { env } from '../../env';
 
 const BATCH_SIZE = 25;
 
@@ -13,6 +12,7 @@ export const rescanImageDimensionsExecutor: TaskFunction = async (...args) => {
   throwIfAborted(signal);
   const files = await listImagesMissingDimensions();
 
+  const { client, bucket } = getS3();
   const results = { scanned: 0, updated: 0, failed: 0 };
 
   for (let i = 0; i < files.length; i += BATCH_SIZE) {
@@ -26,7 +26,7 @@ export const rescanImageDimensionsExecutor: TaskFunction = async (...args) => {
           throwIfAborted(signal);
           // file.url is stored URI-encoded; the S3 object key uses the raw filename.
           const key = `${file.ownerId}/${decodeURIComponent(file.url)}`;
-          const object = await s3Client.send(new GetObjectCommand({ Bucket: env.AWS_BUCKET_NAME, Key: key }), { abortSignal: signal });
+          const object = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }), { abortSignal: signal });
           if (!object.Body) throw new Error('Empty S3 response body');
 
           const buffer = Buffer.from(await object.Body.transformToByteArray());

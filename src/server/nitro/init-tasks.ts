@@ -4,21 +4,25 @@ import { sweepDownloadTemp } from '@/libs/downloads/runner';
 import { startGenerationPoller } from '@/libs/studio/pipeline';
 import { initializeTasks, UPDATE_YT_DLP_TASK_NAME } from '@/libs/tasks/init';
 import { TaskManager } from '@/libs/tasks/task-manager';
+import { ensureVaultLoaded } from '@/libs/vault/vault';
 
 // Nitro startup plugin: runs once when the server boots. Replaces the old Next.js
 // `instrumentation.ts` (`register()` + `NEXT_RUNTIME`), which TanStack Start never
 // invokes. First deletes the Download temp files a previous run left behind,
-// before any Download can start. Then kicks off the cron TaskManager without
-// blocking server startup, and runs the yt-dlp update once so a recreated
-// container leaves its pinned baseline right away (ADR 0007). Last, it starts
-// the Studio's Generation poller, which resumes any Generation still open.
+// before any Download can start. Then, once the Vault is loaded, kicks off the
+// cron TaskManager without blocking server startup, and runs the yt-dlp update
+// once so a recreated container leaves its pinned baseline right away (ADR 0007).
+// Last, it starts the Studio's Generation poller, which resumes any Generation
+// still open.
 export default definePlugin(() => {
   try {
     sweepDownloadTemp();
   } catch (error) {
     console.error('✗ Failed to sweep Download temp files:', error);
   }
-  initializeTasks()
+  const vaultLoaded = ensureVaultLoaded();
+  vaultLoaded
+    .then(() => initializeTasks())
     .then(async () => {
       const task = await getTaskByName(UPDATE_YT_DLP_TASK_NAME);
       if (!task) return;
@@ -31,5 +35,7 @@ export default definePlugin(() => {
     .catch((error) => {
       console.error('✗ Failed to initialize cron jobs:', error);
     });
-  startGenerationPoller();
+  vaultLoaded.then(startGenerationPoller).catch((error) => {
+    console.error('✗ Failed to start the Generation poller:', error);
+  });
 });

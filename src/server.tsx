@@ -1,5 +1,6 @@
 import { createStartHandler, defaultStreamHandler } from '@tanstack/react-start/server';
 import './start';
+import { ensureVaultLoaded } from '@/libs/vault/vault';
 
 const handler = createStartHandler(defaultStreamHandler);
 
@@ -14,6 +15,7 @@ const SHARE_PATH = /^\/view\//;
 
 export default {
   fetch: async (request: Request) => {
+    await ensureVaultLoaded();
     const response = await handler(request);
     const isHtml = response.headers.get('content-type')?.includes('text/html');
 

@@ -2,8 +2,7 @@ import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { createServerFn } from '@tanstack/react-start';
 import { createGeneratedFile, getOwnedImageFile } from '@/db/queries/files';
-import { env } from '@/libs/env';
-import { fileS3Key, getPrivateSignedUrl, publicUploadAcl, s3Client } from '@/libs/S3Helper';
+import { fileS3Key, getPrivateSignedUrl, getS3, publicUploadAcl } from '@/libs/S3Helper';
 import { getCDNImage } from '@/libs/utils';
 import { type BeautifierSourceFile, beautifierSourceFileQuerySchema, saveBeautifiedImageSchema } from '@/schemas/beautifier-schema';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
@@ -47,8 +46,9 @@ function beautifiedFilename(sourceFileId: string): string {
 }
 
 async function deleteUploadedObject(key: string): Promise<void> {
+  const { client, bucket } = getS3();
   try {
-    await s3Client.send(new DeleteObjectCommand({ Bucket: env.AWS_BUCKET_NAME, Key: key }));
+    await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
   } catch (error) {
     console.error('Failed to delete beautifier upload after database error', error);
   }
@@ -69,10 +69,11 @@ export const saveBeautifiedImage = createServerFn({ method: 'POST' })
     const filename = beautifiedFilename(source.id);
     const key = `${userId}/${filename}`;
 
+    const { client, bucket } = getS3();
     await new Upload({
-      client: s3Client,
+      client,
       params: {
-        Bucket: env.AWS_BUCKET_NAME,
+        Bucket: bucket,
         Key: key,
         Body: buffer,
         ContentType: 'image/png',

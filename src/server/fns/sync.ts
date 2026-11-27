@@ -2,8 +2,7 @@ import { DeleteObjectsCommand, HeadObjectCommand, ListObjectsV2Command } from '@
 import { createServerFn } from '@tanstack/react-start';
 import { softDeleteFiles } from '@/db/queries/files';
 import { createSyncedFile, listFilesForSync } from '@/db/queries/tasks';
-import { env } from '@/libs/env';
-import { fileS3Key, s3Client } from '@/libs/S3Helper';
+import { fileS3Key, getS3 } from '@/libs/S3Helper';
 import { deleteDbOnlyFilesSchema, deleteS3OnlyFilesSchema, insertS3OnlyFilesToDbSchema } from '@/schemas/sync-schema';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
 import { appMiddleware } from '@/server/server-fn';
@@ -26,15 +25,16 @@ export const compareSync = createServerFn({ method: 'GET' })
     // Cap the listing at 50 pages (~50k objects) to bound runtime/memory on huge
     // buckets; when hit, the comparison result is partial (truncated).
     let truncated = false;
+    const { client, bucket } = getS3();
     do {
       calls++;
       const cmd = new ListObjectsV2Command({
-        Bucket: env.AWS_BUCKET_NAME,
+        Bucket: bucket,
         Prefix: `${userId}/`,
         ContinuationToken: token,
         MaxKeys: 1000,
       });
-      const resp = await s3Client.send(cmd);
+      const resp = await client.send(cmd);
       for (const f of (resp.Contents || []) as S3File[]) {
         const fileName = f.Key.slice(`${userId}/`.length);
         if (!fileName || fileName.startsWith('edit-image/')) continue;
@@ -124,9 +124,10 @@ export const deleteS3OnlyFiles = createServerFn({ method: 'POST' })
   .validator(deleteS3OnlyFilesSchema)
   .handler(async ({ data }) => {
     if (data.fileKeys.length === 0) return { deletedCount: 0, errors: [] };
-    const result = await s3Client.send(
+    const { client, bucket } = getS3();
+    const result = await client.send(
       new DeleteObjectsCommand({
-        Bucket: env.AWS_BUCKET_NAME,
+        Bucket: bucket,
         Delete: { Objects: data.fileKeys.map((Key) => ({ Key })) },
       }),
     );
@@ -142,9 +143,10 @@ export const insertS3OnlyFilesToDb = createServerFn({ method: 'POST' })
     let insertedCount = 0;
     const adminId = userIdFromCtx(context);
 
+    const { client, bucket } = getS3();
     for (const file of data.files) {
       try {
-        const head = await s3Client.send(new HeadObjectCommand({ Bucket: env.AWS_BUCKET_NAME, Key: file.key }));
+        const head = await client.send(new HeadObjectCommand({ Bucket: bucket, Key: file.key }));
         // Admission control and the insert it guards share one Drizzle
         // transaction inside the query module, so the quota row lock is still
         // held when the file row lands.

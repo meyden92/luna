@@ -13,13 +13,13 @@ import { UserFacingError } from './user-facing-error';
 
 /**
  * The bucket and its client are reached through this rather than imported,
- * because importing them validates the whole environment at module load — which
- * `normalizeAvatar`, a pure bytes-to-bytes function, has no need of and which
- * would make its tests require a full set of secrets.
+ * because importing them pulls in the Vault, the database client and the
+ * environment at module load — which `normalizeAvatar`, a pure bytes-to-bytes
+ * function, has no need of and which would make its tests require a database.
  */
 async function storage() {
-  const [{ env }, { s3Client }] = await Promise.all([import('./env'), import('./S3Helper')]);
-  return { bucket: env.AWS_BUCKET_NAME, client: s3Client };
+  const { getS3 } = await import('./S3Helper');
+  return getS3();
 }
 
 export const AVATAR_SIZE = 512;

@@ -45,6 +45,8 @@ const { file } = await import('../../src/db/schema/files');
 const { createUserWithCredentials } = await import('../../src/libs/auth/credentials');
 const { fileS3Key, setObjectPrivacy } = await import('../../src/libs/S3Helper');
 const { storeSharexUpload } = await import('../../src/libs/sharex-upload');
+const { ensureVaultLoaded } = await import('../../src/libs/vault/vault');
+await ensureVaultLoaded();
 
 async function seedGallery(ownerId: string): Promise<void> {
   const folderIds = new Map<GalleryFolder, string>();

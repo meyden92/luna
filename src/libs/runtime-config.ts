@@ -3,12 +3,13 @@
  *
  * Values read through `import.meta.env` are inlined as string literals by Vite,
  * which bakes one deployment's domains into the built image and makes it
- * unusable for anyone else. Everything here is read from the process
- * environment on the server and handed to the browser as a snapshot the
- * document injects during SSR, so a single image runs on any domain.
+ * unusable for anyone else. Everything here is resolved on the server and
+ * handed to the browser as a snapshot the document injects during SSR, so a
+ * single image runs on any domain.
  *
- * Imported by both server and browser code, so it must NOT import the
- * server-only `env` module.
+ * Imported by both server and browser code, so it must NOT import server-only
+ * modules: the server's CDN URL comes from the Vault, which registers itself
+ * through `setServerCdnUrlSource`.
  */
 
 export interface RuntimeConfig {
@@ -26,17 +27,23 @@ declare global {
 
 const EMPTY: RuntimeConfig = { cdnUrl: '' };
 
+let serverCdnUrl: () => string | undefined = () => undefined;
+
+export function setServerCdnUrlSource(source: () => string | undefined): void {
+  serverCdnUrl = source;
+}
+
 // Reached through globalThis rather than the bare `process` global: this module
 // is bundled for the browser too, where `process` neither exists nor is typed.
-function readFromProcessEnv(): RuntimeConfig {
+function readOnServer(): RuntimeConfig {
   const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
-  const cdnUrl = env?.CDN_URL ?? '';
+  const cdnUrl = serverCdnUrl() ?? '';
   const serverUrl = env?.PUBLIC_BASE_URL;
   return serverUrl ? { cdnUrl, serverUrl } : { cdnUrl };
 }
 
 export function getRuntimeConfig(): RuntimeConfig {
-  if (typeof window === 'undefined') return readFromProcessEnv();
+  if (typeof window === 'undefined') return readOnServer();
   return window.__LUNASHARE_RUNTIME_CONFIG__ ?? EMPTY;
 }
 

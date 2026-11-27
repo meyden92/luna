@@ -18,6 +18,8 @@ export const RATE_LIMITS = {
   publicProfileView: { scope: 'publicProfileView', windowMs: 60_000, max: 60 },
   uploadWeb: { scope: 'uploadWeb', windowMs: 60_000, max: 60 },
   uploadSharex: { scope: 'uploadSharex', windowMs: 60_000, max: 60 },
+  // Each Vault write checks the admin's password, so this also bounds password guessing.
+  vaultWrite: { scope: 'vaultWrite', windowMs: 15 * 60_000, max: 10 },
 } as const satisfies Record<string, RateLimitConfig>;
 
 export type RateLimitScope = keyof typeof RATE_LIMITS;

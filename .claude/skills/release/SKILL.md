@@ -8,7 +8,7 @@ allowed-tools: Bash(git fetch *) Bash(git describe *) Bash(git log *) Bash(git d
 
 # Release
 
-A release is a `v*` tag on `main`. The tag makes CI build the GHCR image and publish the versioned and `latest` tags, so pushing it is the point of no return. Deployment stays manual.
+A release is a `v*` tag on `main`. The tag makes CI build the GHCR image, publish the versioned and `latest` tags and deploy `latest` to Coolify, so pushing it is the point of no return.
 
 `CHANGELOG.md` at the repo root holds every release, newest first. The GitHub release body is the same entry without its heading, so the two never drift.
 
@@ -81,7 +81,7 @@ The voice is a Discord changelog: written by a friend who is having fun, not by 
 - **Every item still carries its facts:** what changed, where it lives (path, menu, button name) and any limit a user will hit. A joke that hides the fact has failed. Specific beats generic: "Esc means never mind" beats "improved keyboard handling".
 - **Under the hood** is the one place for tests, CI, refactors and dependencies, a line each, still allowed a wink.
 
-**Upgrade is deadpan.** Someone deploys from it, so it is plain instructions: each migration by folder name with what it does and `bun run db:migrate`, each env variable to add, rename or remove, or "No migrations and no new environment variables." End it with the standing line: "The vX.Y.Z tag triggers the GHCR image build and publishes the versioned and latest tags. Deployment is still manual."
+**Upgrade is deadpan.** Someone deploys from it, so it is plain instructions: each migration by folder name with what it does and `bun run db:migrate`, each env variable to add, rename or remove, or "No migrations and no new environment variables." End it with the standing line: "The vX.Y.Z tag triggers the GHCR image build, publishes the versioned and latest tags and deploys to Coolify."
 
 The closing line credits the PRs and the issues they closed, as the older entries do: "Implemented in #200 (for #58) and #213 (for #123, #192)." Reference only this repo's numbers.
 
@@ -112,7 +112,7 @@ Parallel e2e runs stopped tearing down each other's stacks, and three flaky spec
 
 No migrations and no new environment variables.
 
-The v4.6.0 tag triggers the GHCR image build and publishes the versioned and latest tags. Deployment is still manual.
+The v4.6.0 tag triggers the GHCR image build, publishes the versioned and latest tags and deploys to Coolify.
 
 Implemented in #200 (for #58), #196 (for #101) and #213 (for #123, #192).
 ```
@@ -146,6 +146,6 @@ git push origin vX.Y.Z
 gh release create vX.Y.Z --title vX.Y.Z --notes-file <file>
 ```
 
-The notes file is the entry from `CHANGELOG.md` without its `## vX.Y.Z (date)` heading. Confirm the tag points at the release commit (`git log -1 vX.Y.Z`) before pushing it.
+The notes file is the entry from `CHANGELOG.md` without its `## vX.Y.Z (date)` heading. Confirm the tag points at the release commit (`git log -1 vX.Y.Z`) before pushing it. When the Upgrade section adds or renames an environment variable, have the user set it in Coolify first: the tag deploys without waiting.
 
 **Done when** `gh release view vX.Y.Z` shows the release as Latest, and you have told the user that CI is now building the image.

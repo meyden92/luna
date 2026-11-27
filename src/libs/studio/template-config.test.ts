@@ -70,7 +70,7 @@ describe('validateTemplateConfig', () => {
       'image_urls: The model requires this input, so it must be shown or fixed.',
     ]);
     expect(messages([prompt('{style}'), images, strength], [style, { ...photo, required: false }])).toEqual([
-      'photo: The model requires image_urls, so this file input must be required.',
+      'photo: The model requires image_urls, so this user upload must be required.',
     ]);
   });
 

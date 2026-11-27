@@ -145,6 +145,14 @@ test('a Model added from the catalog is configured with Field cards, previewed a
   // The preview renders the form as Users get it.
   const ratio = preview.getByRole('group', { name: 'Seitenverhältnis' });
   await expect(ratio.getByRole('button')).toHaveText(['Quadrat', 'Breit']);
+  // Each choice is framed in the shape its value names, whatever its label says.
+  const frame = async (name: string) => {
+    const box = await ratio.getByRole('button', { name }).locator('[aria-hidden="true"] > span').boundingBox();
+    if (!box) throw new Error(`${name} has no aspect ratio frame.`);
+    return box.width / box.height;
+  };
+  expect(await frame('Quadrat')).toBeCloseTo(1, 1);
+  expect(await frame('Breit')).toBeCloseTo(16 / 9, 1);
   await expect(preview.getByLabel('Num Images')).toHaveCount(0);
   await ratio.getByRole('button', { name: 'Breit' }).click();
   await expect(preview.getByLabel('Num Images')).toBeVisible();

@@ -125,13 +125,13 @@ _Avoid_: Parameter, input, option, setting
 **Template**:
 A Model with its Fields fixed and its prompt written by an admin, so the User
 only answers a few Variables. Sits in a Category beside the Models.
+_Avoid_: Recipe, Preset
 
 **Reference image**:
 An image a Template sends with every Generation, uploaded by the admin. A file
 input's slots hold reference images and file Variables in the order the admin
 set, since a prompt names images by position.
 _Avoid_: Fixed file, preset image
-_Avoid_: Recipe, Preset
 
 **Variable**:
 A blank in a Template's fixed text that the User fills in, such as a style

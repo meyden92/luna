@@ -12,6 +12,8 @@ declare const styles: {
   readonly "help": string;
   readonly "list": string;
   readonly "listOption": string;
+  readonly "ratio": string;
+  readonly "ratioOption": string;
   readonly "select": string;
   readonly "slider": string;
   readonly "sliderValue": string;

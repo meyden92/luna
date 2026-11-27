@@ -127,7 +127,7 @@ export function validateTemplateConfig({
     const field = fieldsByName.get(name);
     if (field && referencesOf(field).length > 0) continue;
     if (input.required?.includes(name) && !feeders.some((variable) => variable.required)) {
-      for (const variable of feeders) add(variable.name, `The model requires ${name}, so this file input must be required.`);
+      for (const variable of feeders) add(variable.name, `The model requires ${name}, so this user upload must be required.`);
     }
   }
 

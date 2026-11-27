@@ -49,9 +49,10 @@ async function buildTemplate(
   await page.getByLabel('Name', { exact: true }).fill(name);
   await choose(page, page, 'Model', model.name);
 
-  // The prompt is fixed by default and takes Variables; each name gets a card, and loses it with the text.
+  // The prompt is fixed by default, still explained by fal's description, and takes Variables; each name gets a card, and loses it with the text.
   const prompt = region(page, 'Field prompt');
   await expect(prompt.getByRole('button', { name: 'Fixed value' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(prompt.getByText('What to generate.', { exact: true })).toBeVisible();
   const text = prompt.getByLabel('Value', { exact: true });
   await text.fill(`${prefix} Turn the person into {style: Anime | *Comic} {extra}, {mood}`);
   for (const variable of ['style', 'extra', 'mood']) await expect(region(page, `Variable ${variable}`)).toBeVisible();
@@ -66,9 +67,10 @@ async function buildTemplate(
   await style.getByLabel('Label for anime style, cel shaded').fill('Anime');
   await expect(text).toHaveValue(`${prefix} Turn the person into {style: anime style, cel shaded | *Comic} {extra}`);
 
-  // Two file inputs feed fake/edit's image list, at positions 1 and 2. They own it: its card offers no mode any more.
-  await page.getByRole('button', { name: 'Add file input' }).click();
-  await page.getByRole('button', { name: 'Add file input' }).click();
+  // Two user uploads feed fake/edit's image list, at positions 1 and 2, added from the Variables card and then the image list's card. They own it: its card offers no mode any more.
+  const images = region(page, 'Field image_urls');
+  await page.getByRole('button', { name: 'Add user upload' }).click();
+  await images.getByRole('button', { name: 'Add user upload' }).click();
   const person = region(page, 'Variable file');
   const outfit = region(page, 'Variable file_2');
   await person.getByLabel('Label', { exact: true }).fill('Photo of the person');
@@ -76,11 +78,10 @@ async function buildTemplate(
   await expect(person.getByLabel('Feeds input')).toContainText('image_urls');
   await expect(person.getByLabel('Position')).toHaveValue('1');
   await expect(outfit.getByLabel('Position')).toHaveValue('2');
-  const images = region(page, 'Field image_urls');
-  await expect(images.getByText('Users fill this in through the file input {file}, {file_2}.')).toBeVisible();
+  await expect(images.getByText('Users fill this in through the user upload {file}, {file_2}.')).toBeVisible();
   await expect(images.getByRole('group', { name: 'Mode of image_urls' })).toHaveCount(0);
 
-  // The preview is the Users' form: the choice shows labels, the default picked, and the image list is asked for once, through the file inputs.
+  // The preview is the Users' form: the choice shows labels, the default picked, and the image list is asked for once, through the user uploads.
   const preview = page.getByTestId('studio-preview');
   await expect(preview.getByLabel('Image Urls')).toHaveCount(0);
   const choice = preview.getByRole('group', { name: 'Style' });

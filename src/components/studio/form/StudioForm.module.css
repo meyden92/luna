@@ -126,4 +126,26 @@
     flex-wrap: wrap;
     gap: var(--space-2);
   }
+
+  .ratioOption {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .ratio {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 1.25em;
+    height: 1.25em;
+
+    & > span {
+      width: calc(100% * min(1, var(--ratio)));
+      height: calc(100% * min(1, 1 / var(--ratio)));
+      border: 1.5px solid currentColor;
+      border-radius: 2px;
+    }
+  }
 }

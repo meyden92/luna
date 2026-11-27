@@ -1,0 +1,39 @@
+name: Issue lifecycle
+
+on:
+  pull_request:
+    types: [opened]
+  issues:
+    types: [closed]
+
+permissions:
+  issues: write
+
+jobs:
+  hand-over:
+    name: Mark linked issues as testing
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      # The PR body is untrusted input, so it reaches the script only through the environment.
+      BODY: ${{ github.event.pull_request.body }}
+    steps:
+      - run: |
+          for n in $(grep -oiE 'part of #[0-9]+' <<<"$BODY" | grep -oE '[0-9]+' | sort -u); do
+            if [ "$(gh issue view "$n" --json state --jq .state)" = OPEN ]; then
+              gh issue edit "$n" --add-label testing --remove-label Doing,todo
+            fi
+          done
+
+  clear-status:
+    name: Clear status labels
+    if: github.event_name == 'issues' && github.event.issue.state_reason == 'completed'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      NUMBER: ${{ github.event.issue.number }}
+    steps:
+      - run: gh issue edit "$NUMBER" --remove-label todo,Doing,testing,ready-for-agent

@@ -109,5 +109,6 @@ jobs:
           DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
         run: |
           curl --fail-with-body --silent --show-error \
+            --request POST \
             --header "Authorization: Bearer $DEPLOY_TOKEN" \
             "$DEPLOY_WEBHOOK_URL"

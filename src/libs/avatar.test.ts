@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'bun:test';
 import exifr from 'exifr';
 import sharp from 'sharp';
-import { AVATAR_MAX_UPLOAD_BYTES, AVATAR_SIZE, AvatarRejectedError, normalizeAvatar } from './avatar';
+import { AVATAR_SIZE, AvatarRejectedError, normalizeAvatar } from './avatar';
+
+const MAX_UPLOAD_MIB = 8;
 
 /**
  * What the end-to-end suite cannot assert: Playwright sees that a picture
@@ -25,7 +27,7 @@ async function photoWithGps(width = 1200, height = 800): Promise<Buffer> {
 
 describe('normalizeAvatar', () => {
   test('re-encodes any input to a square WebP of the fixed Avatar size', async () => {
-    const normalized = await normalizeAvatar(await photoWithGps(1200, 800));
+    const normalized = await normalizeAvatar(await photoWithGps(1200, 800), MAX_UPLOAD_MIB);
 
     const meta = await sharp(normalized).metadata();
     expect(meta.format).toBe('webp');
@@ -40,18 +42,18 @@ describe('normalizeAvatar', () => {
     // asserted on the EXIF block itself.
     expect(await exifr.gps(original)).toBeTruthy();
 
-    const normalized = await normalizeAvatar(original);
+    const normalized = await normalizeAvatar(original, MAX_UPLOAD_MIB);
     expect((await sharp(normalized).metadata()).exif).toBeUndefined();
   });
 
   test('rejects input above the upload ceiling before decoding it', async () => {
     // Not a real image: reaching the decoder at all would be the bug.
-    const oversized = Buffer.alloc(AVATAR_MAX_UPLOAD_BYTES + 1);
+    const oversized = Buffer.alloc(MAX_UPLOAD_MIB * 1024 * 1024 + 1);
 
-    expect(normalizeAvatar(oversized)).rejects.toThrow(AvatarRejectedError);
+    expect(normalizeAvatar(oversized, MAX_UPLOAD_MIB)).rejects.toThrow(AvatarRejectedError);
   });
 
   test('rejects bytes that are not an image', async () => {
-    expect(normalizeAvatar(Buffer.from('<?php echo "not an avatar"; ?>'))).rejects.toThrow(AvatarRejectedError);
+    expect(normalizeAvatar(Buffer.from('<?php echo "not an avatar"; ?>'), MAX_UPLOAD_MIB)).rejects.toThrow(AvatarRejectedError);
   });
 });

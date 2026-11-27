@@ -1,5 +1,6 @@
 import type { SQL } from 'drizzle-orm';
 import { and, asc, avg, count, desc, eq, gt, gte, ilike, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
+import { templateReferenceKeys } from '@/libs/studio/template-config';
 import { type AuditHandle, updatedPairs, writeAuditLog, writeAuditLogs } from '../audit';
 import { db } from '../client';
 import { syncExcludedPath } from '../schema/admin';
@@ -7,6 +8,7 @@ import { session, user } from '../schema/auth';
 import { task, taskExecution } from '../schema/automation';
 import { file, fileMetadata, fileRendition } from '../schema/files';
 import type { JsonValue } from '../schema/json';
+import { generationOutput, studioTemplate } from '../schema/studio';
 import { containsInsensitive, equalsInsensitive } from './like';
 import { ensureStorageQuotaAvailable } from './storage';
 
@@ -579,6 +581,26 @@ export async function createSyncedFile(
     await writeAuditLog(tx, { model: 'File', action: 'create', after: created, userId });
     return created;
   });
+}
+
+/**
+ * Keys of the objects stored outside the Files area: Renditions, Studio
+ * Outputs, Template previews and reference images, and Avatars. Each row keeps
+ * its own key, so this holds whatever path they were stored under.
+ */
+export async function listSystemObjectKeys(handle: AuditHandle = db): Promise<Set<string>> {
+  const [renditions, outputs, templates, avatars] = await Promise.all([
+    handle.select({ key: fileRendition.s3Key }).from(fileRendition),
+    handle.select({ key: generationOutput.s3Key }).from(generationOutput),
+    handle.select({ previewKeys: studioTemplate.previewKeys, fields: studioTemplate.fields }).from(studioTemplate),
+    handle.select({ key: user.image }).from(user).where(isNotNull(user.image)),
+  ]);
+  return new Set([
+    ...renditions.map((row) => row.key),
+    ...outputs.map((row) => row.key),
+    ...templates.flatMap((row) => [...row.previewKeys, ...templateReferenceKeys(row.fields)]),
+    ...avatars.flatMap((row) => (row.key ? [row.key.replace(/^\//, '')] : [])),
+  ]);
 }
 
 export function listSyncExcludedPaths() {

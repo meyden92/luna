@@ -5,6 +5,7 @@ import { db } from '../client';
 import * as schema from '../schema';
 import { account, token, user } from '../schema/auth';
 import { file } from '../schema/files';
+import { getPlatformSettings } from './platform-settings';
 
 /**
  * Query module for authentication, user profiles and API tokens (issue #36).
@@ -290,6 +291,13 @@ export async function validateTokenKey(key: string, handle: AuditHandle = db): P
  * `actorId` is the admin creating the account, when there is one. Without it
  * the new user is their own actor: there is no one else to attribute it to.
  */
+/** Gives a new account the instance's default storage quota and returns it, so the creation's audit row shows it. */
+export async function applyDefaultStorageQuota(userId: string, handle: AuditHandle = db): Promise<number> {
+  const { defaultStorageQuotaMib } = await getPlatformSettings(handle);
+  await handle.update(user).set({ storageQuotaMiB: defaultStorageQuotaMib }).where(eq(user.id, userId));
+  return defaultStorageQuotaMib;
+}
+
 export async function auditUserCreated(created: { id: string } & Record<string, unknown>, actorId?: string | null): Promise<void> {
   await writeAuditLog(db, { model: 'User', action: 'create', after: created, userId: actorId ?? created.id });
 }

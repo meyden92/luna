@@ -10,6 +10,7 @@ import {
   updateOwnedFile,
 } from '@/db/queries/files';
 import { getOwnedFolder } from '@/db/queries/folders';
+import { getPlatformSettings } from '@/db/queries/platform-settings';
 import { getCdnUrl } from '@/libs/runtime-config';
 import { deleteFilesSchema, editFileSchema, moveFilesToFolderSchema } from '@/schemas/file-schema';
 import { userIdFromCtx } from '@/server/middleware/context-helpers';
@@ -125,8 +126,6 @@ export const getGalleryCount = createServerFn({ method: 'GET' })
 
 const downloadSchema = z.object({ url: z.string().min(1) });
 
-const MAX_DOWNLOAD_BYTES = 200 * 1024 * 1024;
-
 function getAllowedDownloadHosts(): Set<string> {
   const hosts = new Set<string>();
   const cdn = getCdnUrl();
@@ -158,11 +157,12 @@ export const downloadProxy = createServerFn({ method: 'GET' })
     const response = await fetch(target.toString());
     if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
 
+    const maxBytes = (await getPlatformSettings()).downloadProxyMaxMib * 1024 * 1024;
     const cl = Number(response.headers.get('content-length') ?? '0');
-    if (cl > MAX_DOWNLOAD_BYTES) throw new Error('File too large');
+    if (cl > maxBytes) throw new Error('File too large');
 
     const blob = await response.blob();
-    if (blob.size > MAX_DOWNLOAD_BYTES) throw new Error('File too large');
+    if (blob.size > maxBytes) throw new Error('File too large');
 
     return new Response(blob, {
       headers: { 'Content-Type': response.headers.get('content-type') ?? 'application/octet-stream' },

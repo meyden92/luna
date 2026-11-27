@@ -82,7 +82,8 @@ _Avoid_: Flow, workflow, rule engine
 A short-lived job, belonging to one User, that turns a link to a post on a Source
 into the one or more videos in that post, which the User saves to their device.
 A Download never includes a post's photos. It is never stored as one of
-their files and expires an hour after it is ready. Saving one of a User's own files
+their files and expires a set time after it is ready (an hour unless an admin
+changes it under Settings → Limits). Saving one of a User's own files
 is "downloading a file", a verb, never "a Download".
 _Avoid_: Grab, fetch, import, rip
 
@@ -147,7 +148,8 @@ _Avoid_: Job, Prediction, Run, request
 
 **Output**:
 One file a Generation produced: an image, a video, an audio clip or a 3D model.
-It expires after seven days unless the User saves it to Files, where it becomes
+It expires after the Output lifetime (seven days unless an admin changes it under
+Settings → Studio) unless the User saves it to Files, where it becomes
 one of their files.
 _Avoid_: Result, Asset
 

@@ -16,8 +16,10 @@ import { resolve } from 'node:path';
 import { CreateBucketCommand, PutBucketCorsCommand, PutBucketPolicyCommand, S3Client } from '@aws-sdk/client-s3';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
+import { platformSettings } from '../../src/db/schema/admin';
 import { user } from '../../src/db/schema/auth';
-import { S3_REGION, type StackEnv } from '../../tests/e2e/stack-env';
+import { DEFAULT_PLATFORM_SETTINGS } from '../../src/schemas/platform-settings-schema';
+import { S3_REGION, SHAREX_MAX_UPLOAD_BYTES, type StackEnv } from '../../tests/e2e/stack-env';
 
 const ROOT = resolve(import.meta.dirname, '../..');
 const COMPOSE_FILE = resolve(ROOT, 'docker-compose.e2e.yml');
@@ -256,6 +258,15 @@ async function bootstrapAdmin(): Promise<void> {
   });
 }
 
+/** Lowers the ShareX limit so the oversize specs need only a small buffer; every other setting keeps its default. */
+async function seedPlatformSettings(): Promise<void> {
+  const pool = new Pool({ connectionString: databaseUrl });
+  await drizzle({ client: pool })
+    .insert(platformSettings)
+    .values({ id: 'default', ...DEFAULT_PLATFORM_SETTINGS, sharexMaxUploadMib: SHAREX_MAX_UPLOAD_BYTES / (1024 * 1024) });
+  await pool.end();
+}
+
 let teardown: Promise<void> | undefined;
 
 /** Idempotent: the main flow and a signal handler may both ask for it. */
@@ -297,6 +308,7 @@ try {
 
   log('seed: bootstrapping the admin through auth:set-credentials');
   await bootstrapAdmin();
+  await seedPlatformSettings();
 
   log(
     `stack up\n  app       ${baseUrl}\n  postgres  ${databaseUrl}\n  rustfs    ${s3Endpoint} (bucket ${BUCKET})\n  fal-fake  http://127.0.0.1:${falPort}`,

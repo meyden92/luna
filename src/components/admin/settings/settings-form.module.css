@@ -1,0 +1,27 @@
+@layer components {
+  .titleIcon {
+    width: var(--space-6);
+    height: var(--space-6);
+  }
+
+  .muted {
+    color: var(--muted-foreground);
+    font-size: var(--text-sm);
+  }
+
+  .path {
+    font-family: var(--font-mono);
+  }
+
+  .example {
+    color: var(--muted-foreground);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    overflow-wrap: anywhere;
+  }
+
+  .problem {
+    color: var(--destructive);
+    font-size: var(--text-sm);
+  }
+}

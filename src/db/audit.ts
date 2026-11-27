@@ -51,6 +51,7 @@ export const AUDITED_MODELS = [
   'ModerationCase',
   'SourceSession',
   'SyncExcludedPath',
+  'PlatformSettings',
   // Studio configuration
   'StudioCategory',
   'StudioModel',

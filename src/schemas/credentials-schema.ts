@@ -9,14 +9,12 @@ export const USERNAME_MAX_LENGTH = 30;
 export const PASSWORD_MIN_LENGTH = 8;
 
 /**
- * Checked in the browser before the file is read, and again on the server
- * before it is decoded. Lives here rather than beside the image pipeline, which
- * pulls in `sharp` and the S3 client and so cannot reach a client bundle.
+ * One wording for the refusal, wherever the ceiling is checked: in the browser
+ * before the file is read, and on the server before it is decoded. Lives here
+ * rather than beside the image pipeline, which pulls in `sharp` and the S3
+ * client and so cannot reach a client bundle.
  */
-export const AVATAR_MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
-
-/** One wording for the refusal, wherever the ceiling is checked. */
-export const avatarTooLargeMessage = () => `Image is larger than ${Math.floor(AVATAR_MAX_UPLOAD_BYTES / 1024 / 1024)} MiB`;
+export const avatarTooLargeMessage = (maxMib: number) => `Image is larger than ${maxMib} MiB`;
 
 const USERNAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
 

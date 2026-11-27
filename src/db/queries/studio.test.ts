@@ -10,15 +10,16 @@ import { eq, inArray, sql } from 'drizzle-orm';
 const hasDatabase = Boolean(process.env.DATABASE_URL);
 
 async function loadModules() {
-  const [client, adminSchema, authSchema, studioSchema, queries, generations] = await Promise.all([
+  const [client, adminSchema, authSchema, filesSchema, studioSchema, queries, generations] = await Promise.all([
     import('../client'),
     import('../schema/admin'),
     import('../schema/auth'),
+    import('../schema/files'),
     import('../schema/studio'),
     import('./studio'),
     import('./generations'),
   ]);
-  return { db: client.db, ...adminSchema, ...authSchema, ...studioSchema, ...queries, ...generations };
+  return { db: client.db, ...adminSchema, ...authSchema, ...filesSchema, ...studioSchema, ...queries, ...generations };
 }
 
 type Modules = Awaited<ReturnType<typeof loadModules>>;
@@ -286,5 +287,40 @@ describe.skipIf(!hasDatabase)('recordStudioSchemaCheck', () => {
 
     await m.recordStudioSchemaCheck(modelId, { pendingSchema: pending, deprecated: true, checkedAt: new Date() });
     expect(await audits()).toBe(1);
+  });
+});
+
+describe.skipIf(!hasDatabase)('listUnmovedSavedOutputs', () => {
+  const owner = `${userId}-saved`;
+
+  beforeAll(async () => {
+    await m.db.insert(m.user).values({ id: owner, name: 'Studio test', email: `${owner}@lunashare.test`, emailVerified: false });
+    await m.db
+      .insert(m.file)
+      .values({ id: id('saved-file'), ownerId: owner, url: 'saved.png', title: 'saved.png', size: 1, contentType: 'image/png' });
+    await m.db.insert(m.generation).values({ id: id('saved'), userId: owner, name: 'saved', endpointId: 'fake/image', formValues: {} });
+    const output = (index: number, s3Key: string) => ({
+      id: id(`saved-out-${index}`),
+      generationId: id('saved'),
+      index,
+      mediaKind: 'image' as const,
+      contentType: 'image/png',
+      s3Key,
+      sizeBytes: 1,
+      expiresAt: new Date(),
+      savedFileId: id('saved-file'),
+    });
+    await m.db.insert(m.generationOutput).values([output(0, `outputs/2026/${id('saved')}/0.png`), output(1, `${owner}/saved.png`)]);
+  });
+
+  afterAll(async () => {
+    await m.db.delete(m.generation).where(eq(m.generation.id, id('saved')));
+    await m.db.delete(m.file).where(eq(m.file.id, id('saved-file')));
+    await m.db.delete(m.user).where(eq(m.user.id, owner));
+  });
+
+  test('finds a saved Output still outside its file owner’s folder, whatever the Output path', async () => {
+    const unmoved = (await m.listUnmovedSavedOutputs(100_000)).map((row) => row.id).filter((rowId) => rowId.endsWith(runId));
+    expect(unmoved).toEqual([id('saved-out-0')]);
   });
 });

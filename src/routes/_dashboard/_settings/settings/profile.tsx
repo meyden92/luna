@@ -22,6 +22,7 @@ function SettingsProfilePage() {
         receiveEmail={settings.receiveEmail}
         bio={settings.bio}
         description={settings.description}
+        avatarMaxUploadMib={settings.avatarMaxUploadMib}
       />
     </SettingsSection>
   );

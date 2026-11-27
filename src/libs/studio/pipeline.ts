@@ -19,17 +19,18 @@ import {
   listUnmovedSavedOutputs,
   markGenerationCancelled,
   markOutputsExpired,
-  OUTPUT_KEY_PREFIX,
   type StoredOutput,
   saveOutputAsFile,
   setGenerationSubmitted,
   setOutputKey,
   updateGenerationProgress,
 } from '@/db/queries/generations';
+import { getPlatformSettings } from '@/db/queries/platform-settings';
 import {
   getActiveStudioModel,
   getActiveStudioTemplate,
   getStudioModel,
+  getStudioSettings,
   getStudioTemplate,
   type StudioModel,
   type StudioTemplate,
@@ -39,6 +40,7 @@ import { throwIfAborted } from '@/libs/abort';
 import { env } from '@/libs/env';
 import { FalError, type FalQueueStatus } from '@/libs/fal/client';
 import { fileS3Key, getDownloadSignedUrl, s3Client } from '@/libs/S3Helper';
+import { renderStoragePath } from '@/libs/storage-paths';
 import { UserFacingError } from '@/libs/user-facing-error';
 import { assertStudioEnabled, falClient, isStudioEnabled, studioWebhookTarget } from './config';
 import { estimateCost } from './cost';
@@ -67,9 +69,7 @@ import { type GenerationView, toGenerationView } from './views';
 
 /** fal keeps uploaded inputs this long. */
 const INPUT_LIFETIME_SECONDS = 24 * 60 * 60;
-/** Unsaved Outputs are deleted after this. */
-const OUTPUT_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
-const MAX_INPUT_BYTES = 100 * 1024 * 1024;
+const DAY_MS = 24 * 60 * 60 * 1000;
 /** A Generation recorded but not yet on fal after this was cut off by a restart. */
 const SUBMISSION_GRACE_MS = 10 * 60 * 1000;
 /** With webhooks on, the poller only checks Generations this old. */
@@ -226,6 +226,7 @@ async function checkFileInputs(
 ): Promise<FileInput[]> {
   const inputs: FileInput[] = [];
   const problems: { field: string; message: string }[] = [];
+  const { inputMaxMib } = await getStudioSettings();
 
   for (const field of fields) {
     const value = draft[field.name];
@@ -234,7 +235,7 @@ async function checkFileInputs(
     for (const [position, ref] of refs.entries()) {
       if (!isFileRef(ref)) continue;
       const label = field.label ?? field.name;
-      const checked = await checkFileRef(ref, userId, uploads, allowUrlRefs, referenceKeys);
+      const checked = await checkFileRef(ref, userId, uploads, allowUrlRefs, referenceKeys, inputMaxMib);
       if (typeof checked === 'string') {
         problems.push({ field: field.name, message: `${label}: ${checked}` });
         continue;
@@ -258,18 +259,20 @@ async function checkFileRef(
   uploads: Map<string, File>,
   allowUrlRefs: boolean,
   referenceKeys: Set<string>,
+  maxMib: number,
 ): Promise<string | { contentType: string | null; load: FileInput['load'] }> {
+  const tooLarge = (size: number) => size > maxMib * 1024 * 1024;
   switch (ref.source) {
     case 'upload': {
       const upload = uploads.get(ref.key);
       if (!upload) return 'the uploaded file is missing.';
-      if (upload.size > MAX_INPUT_BYTES) return 'the file is larger than 100 MB.';
+      if (tooLarge(upload.size)) return `the file is larger than ${maxMib} MB.`;
       return { contentType: upload.type, load: async () => ({ blob: upload, fileName: upload.name || 'input' }) };
     }
     case 'file': {
       const owned = await getOwnedFile(ref.fileId, userId);
       if (!owned || owned.isDeleted) return 'the file no longer exists.';
-      if (owned.size > MAX_INPUT_BYTES) return 'the file is larger than 100 MB.';
+      if (tooLarge(owned.size)) return `the file is larger than ${maxMib} MB.`;
       return {
         contentType: owned.contentType,
         load: () => readObject(fileS3Key(owned.ownerId, owned.url), owned.contentType, owned.title),
@@ -495,10 +498,14 @@ class MediaGoneError extends Error {}
 /**
  * Copies every result file to its Output key. Returns null when fal no longer
  * serves one of them, after deleting the copies already made. Any other
- * failure throws, leaving the copies: the next attempt writes the same keys.
+ * failure throws, leaving the copies: the next attempt writes the same keys,
+ * unless the Output path was changed in between.
  */
 async function storeOutputs(row: Generation, extracted: ExtractedOutput[]): Promise<StoredOutput[] | null> {
-  const settled = await Promise.allSettled(extracted.map((output, index) => storeOutput(row, output, index)));
+  const [{ studioOutputPath }, { outputLifetimeDays }] = await Promise.all([getPlatformSettings(), getStudioSettings()]);
+  const keys = extracted.map((output, index) => outputKey(studioOutputPath, row, output, index));
+  const expiresAt = new Date(Date.now() + outputLifetimeDays * DAY_MS);
+  const settled = await Promise.allSettled(extracted.map((output, index) => storeOutput(output, index, keys[index] as string, expiresAt)));
   const stored = settled.flatMap((result) => (result.status === 'fulfilled' ? [result.value] : []));
   if (stored.length === extracted.length) return stored;
 
@@ -506,23 +513,27 @@ async function storeOutputs(row: Generation, extracted: ExtractedOutput[]): Prom
   const passing = failures.find((failure) => !(failure instanceof MediaGoneError));
   if (passing) throw passing;
   // No row records these copies yet: if deleting them fails, this throws and the Generation stays open.
-  await deleteObjects(extracted.map((output, index) => outputKey(row, output, index)));
+  await deleteObjects(keys);
   return null;
 }
 
-function outputKey(row: Generation, output: ExtractedOutput, index: number): string {
-  return `${OUTPUT_KEY_PREFIX}${row.userId}/${row.id}/${index}.${outputExtension(output.contentType, output.url)}`;
+/** The date variables take the Generation's creation date, so a retried attempt writes the same keys. */
+function outputKey(template: string, row: Generation, output: ExtractedOutput, index: number): string {
+  return renderStoragePath<'studioOutputPath'>(
+    template,
+    { userId: row.userId, generationId: row.id, index, ext: outputExtension(output.contentType, output.url) },
+    row.createdAt,
+  );
 }
 
 /** Copies one result file to its key, private. */
-async function storeOutput(row: Generation, output: ExtractedOutput, index: number): Promise<StoredOutput> {
+async function storeOutput(output: ExtractedOutput, index: number, s3Key: string, expiresAt: Date): Promise<StoredOutput> {
   const response = await fetch(output.url, { signal: AbortSignal.timeout(OUTPUT_DOWNLOAD_TIMEOUT_MS) });
   if (!response.ok) {
     const message = `Downloading Output ${index} failed with ${response.status}`;
     throw isPermanentClientError(response.status) ? new MediaGoneError(message) : new Error(message);
   }
   const body = new Uint8Array(await response.arrayBuffer());
-  const s3Key = outputKey(row, output, index);
   await new Upload({
     client: s3Client,
     params: { Bucket: env.AWS_BUCKET_NAME, Key: s3Key, Body: body, ContentType: output.contentType, ACL: 'private' },
@@ -537,7 +548,7 @@ async function storeOutput(row: Generation, output: ExtractedOutput, index: numb
     height: output.height === null ? null : Math.round(output.height),
     durationSeconds: output.durationSeconds,
     // Stored even past the quota: fal has already been paid. Submitting stays blocked until there is room again.
-    expiresAt: new Date(Date.now() + OUTPUT_LIFETIME_MS),
+    expiresAt,
   };
 }
 

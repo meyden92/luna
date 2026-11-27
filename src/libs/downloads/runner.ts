@@ -3,6 +3,7 @@ import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Subprocess } from 'bun';
+import { getPlatformSettings } from '@/db/queries/platform-settings';
 import { getSourceSession } from '@/db/queries/source-sessions';
 import { decryptFieldValue } from '@/libs/encryption/field-encryption';
 import { formatSize } from '@/libs/utils';
@@ -17,8 +18,6 @@ const CAPTION_SNIPPET_LENGTH = 200;
 // ties, so a 1080p VP9 stream beats a 720p H.264 one. QuickTime and iOS can't
 // play VP9 in MP4, so `transcode` re-encodes any video that isn't H.264 afterwards.
 const FORMAT_ARGS = ['-f', 'bv*+ba/b', '-S', 'res,vcodec:h264,acodec:aac'];
-/** The per-video cap: estimated before preparing, and enforced mid-transfer by `--max-filesize`. */
-const MAX_VIDEO_BYTES = 500 * 1024 * 1024;
 
 /** The few fields of yt-dlp's `-J` output the runner reads. */
 interface YtDlpFormat {
@@ -146,9 +145,9 @@ function estimateSize(entry: YtDlpInfo): number | undefined {
   return total;
 }
 
-function tooLarge(sizeBytes: number, detail: string): DownloadError {
+function tooLarge(sizeBytes: number, limitBytes: number, detail: string): DownloadError {
   const format = (bytes: number) => formatSize(bytes, { precision: 1, trim: true });
-  return { category: 'too_large', message: `Too large (${format(sizeBytes)}, limit ${format(MAX_VIDEO_BYTES)})`, detail };
+  return { category: 'too_large', message: `Too large (${format(sizeBytes)}, limit ${format(limitBytes)})`, detail };
 }
 
 // Writes the Source's Source session, if one is set, to `<dir>/cookies.txt`,
@@ -170,6 +169,8 @@ async function run(download: Download, job: Job): Promise<void> {
   try {
     if (!source) throw new Error(`Unknown Source ${download.sourceKey}`);
 
+    // The per-video cap: estimated before preparing, and enforced mid-transfer by `--max-filesize`.
+    const maxVideoBytes = (await getPlatformSettings()).downloaderMaxVideoMib * 1024 * 1024;
     const dir = join(TEMP_ROOT, download.id);
     await mkdir(dir, { recursive: true });
     const cookieArgs = await writeCookies(dir, source.key);
@@ -207,9 +208,9 @@ async function run(download: Download, job: Job): Promise<void> {
         height: typeof entry.height === 'number' ? entry.height : undefined,
       };
       const estimate = estimateSize(entry);
-      if (estimate !== undefined && estimate > MAX_VIDEO_BYTES) {
+      if (estimate !== undefined && estimate > maxVideoBytes) {
         video.status = 'failed';
-        video.error = tooLarge(estimate, '');
+        video.error = tooLarge(estimate, maxVideoBytes, '');
       }
       return { video, playlistItem, streams: entry.requested_formats?.length || 1, transcode: !isH264(entry.vcodec) };
     });
@@ -218,7 +219,7 @@ async function run(download: Download, job: Job): Promise<void> {
     for (const item of planned) {
       if (item.video.status !== 'pending') continue;
       download.currentIndex = item.video.index;
-      await prepareVideo(download, item, source, baseArgs, job);
+      await prepareVideo(download, item, source, baseArgs, job, maxVideoBytes);
       if (signal.aborted) return;
     }
     download.currentIndex = undefined;
@@ -238,7 +239,14 @@ async function run(download: Download, job: Job): Promise<void> {
 // `failed`. `baseArgs` are the resolve step's extractor, cookie and format
 // arguments. `--max-filesize` aborts a stream that turns out to be over the cap:
 // yt-dlp then exits 0 without a file and only says so on stdout.
-async function prepareVideo(download: Download, item: Planned, source: Source, baseArgs: string[], job: Job): Promise<void> {
+async function prepareVideo(
+  download: Download,
+  item: Planned,
+  source: Source,
+  baseArgs: string[],
+  job: Job,
+  maxVideoBytes: number,
+): Promise<void> {
   const { video, playlistItem, streams } = item;
   video.status = 'preparing';
   // Each downloaded stream and the transcode, when one is expected, get an equal
@@ -254,7 +262,7 @@ async function prepareVideo(download: Download, item: Planned, source: Source, b
         ...baseArgs,
         ...(playlistItem === undefined ? [] : ['--playlist-items', String(playlistItem)]),
         '--max-filesize',
-        String(MAX_VIDEO_BYTES),
+        String(maxVideoBytes),
         '--merge-output-format',
         'mp4',
         '--newline',
@@ -284,7 +292,7 @@ async function prepareVideo(download: Download, item: Planned, source: Source, b
 
   if (oversized !== undefined) {
     video.status = 'failed';
-    video.error = tooLarge(oversized.bytes, oversized.line);
+    video.error = tooLarge(oversized.bytes, maxVideoBytes, oversized.line);
     return;
   }
   const path = videoPath(download.id, video.index);

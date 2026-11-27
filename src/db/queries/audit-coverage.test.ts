@@ -58,6 +58,7 @@ async function loadModules() {
     sourceSessions,
     studio,
     generations,
+    platformSettingsQueries,
   ] = await Promise.all([
     import('./admin'),
     import('./auth'),
@@ -74,6 +75,7 @@ async function loadModules() {
     import('./source-sessions'),
     import('./studio'),
     import('./generations'),
+    import('./platform-settings'),
   ]);
   return {
     db: client.db,
@@ -101,6 +103,7 @@ async function loadModules() {
     sourceSessions,
     studio,
     generations,
+    platformSettingsQueries,
   };
 }
 
@@ -144,6 +147,7 @@ const DELIBERATE_GAPS: Partial<Record<AuditedModel, Partial<Record<AuditAction, 
   ModerationCase: { delete: 'cases are resolved, never removed — resolveModerationCase is an UPDATE' },
   StudioSettings: { delete: 'a single row that is created on first write and only ever updated' },
   SyncExcludedPath: { update: 'patterns are added or removed, never edited' },
+  PlatformSettings: { delete: 'a single row that is created on first write and only ever updated' },
 };
 
 /** Unaudited models with no writer in any query module, so there is nothing to drive. */
@@ -174,6 +178,8 @@ const createdDenylistIds: string[] = [];
 const createdTaskIds: string[] = [];
 /** The instance's Studio settings row, set aside while the settings test writes its own. */
 let savedStudioSettings: Record<string, unknown> | undefined;
+/** The instance's platform settings row, set aside while the settings test writes its own. */
+let savedPlatformSettings: Record<string, unknown> | undefined;
 
 let startingAuditCount = 0;
 let startedAt = new Date();
@@ -258,6 +264,10 @@ afterAll(async () => {
   if (savedStudioSettings) {
     await db.delete(M.studioSettings).where(eq(M.studioSettings.id, 'default'));
     await db.insert(M.studioSettings).values(savedStudioSettings as typeof M.studioSettings.$inferInsert);
+  }
+  if (savedPlatformSettings) {
+    await db.delete(M.platformSettings).where(eq(M.platformSettings.id, 'default'));
+    await db.insert(M.platformSettings).values(savedPlatformSettings as typeof M.platformSettings.$inferInsert);
   }
   await db.delete(M.moderationCase).where(eq(M.moderationCase.fileId, fixture.fileId));
   if (createdDenylistIds.length > 0) await db.delete(M.denylistEntry).where(inArray(M.denylistEntry.id, createdDenylistIds));
@@ -589,6 +599,21 @@ describe.skipIf(!hasDatabase)('audited models: Studio configuration', () => {
     await expectAudited('StudioSettings', 'update', 'default');
 
     if (!savedStudioSettings) await db.delete(M.studioSettings).where(eq(M.studioSettings.id, 'default'));
+  });
+
+  test('PlatformSettings is audited on its first write as a create, then as updates', async () => {
+    const [existing] = await db.select().from(M.platformSettings).where(eq(M.platformSettings.id, 'default'));
+    if (existing) {
+      savedPlatformSettings = existing;
+      await db.delete(M.platformSettings).where(eq(M.platformSettings.id, 'default'));
+    }
+
+    await M.platformSettingsQueries.updatePlatformSettings({ sharexUploadConcurrency: 3 }, ownerId);
+    await expectAudited('PlatformSettings', 'create', 'default');
+    await M.platformSettingsQueries.updatePlatformSettings({ phashDistanceThreshold: 6 }, ownerId);
+    await expectAudited('PlatformSettings', 'update', 'default');
+
+    if (!savedPlatformSettings) await db.delete(M.platformSettings).where(eq(M.platformSettings.id, 'default'));
   });
 
   test('StudioBudgetOverride is audited on create, update and delete, keyed by the User', async () => {

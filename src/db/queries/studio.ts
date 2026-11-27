@@ -18,7 +18,14 @@ export type StudioTemplate = typeof studioTemplate.$inferSelect;
 const SETTINGS_ID = 'default';
 
 /** What an instance without a settings row runs with. */
-export const DEFAULT_STUDIO_SETTINGS = { defaultMonthlyBudgetUsd: null, maxActiveGenerationsPerUser: 3 } as const;
+export const DEFAULT_STUDIO_SETTINGS = {
+  defaultMonthlyBudgetUsd: null,
+  maxActiveGenerationsPerUser: 3,
+  outputLifetimeDays: 7,
+  inputMaxMib: 100,
+  templatePreviewMaxMib: 10,
+  templateReferenceMaxMib: 100,
+} as const;
 
 // ---------------------------------------------------------------------------
 // Categories, Models and Templates (audited)
@@ -292,7 +299,17 @@ export async function getStudioSettings(handle: AuditHandle = db) {
   return row ?? DEFAULT_STUDIO_SETTINGS;
 }
 
-type SettingsValues = Partial<Pick<typeof studioSettings.$inferInsert, 'defaultMonthlyBudgetUsd' | 'maxActiveGenerationsPerUser'>>;
+type SettingsValues = Partial<
+  Pick<
+    typeof studioSettings.$inferInsert,
+    | 'defaultMonthlyBudgetUsd'
+    | 'maxActiveGenerationsPerUser'
+    | 'outputLifetimeDays'
+    | 'inputMaxMib'
+    | 'templatePreviewMaxMib'
+    | 'templateReferenceMaxMib'
+  >
+>;
 
 /** Writes the single settings row, creating it on first use. */
 export async function updateStudioSettings(values: SettingsValues, userId: string | null, handle: AuditHandle = db) {

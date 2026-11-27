@@ -6,6 +6,7 @@ import {
   deleteSyncExcludedPath,
   listFilesForSync,
   listSyncExcludedPaths,
+  listSystemObjectKeys,
   softDeleteFilesAnyOwner,
 } from '@/db/queries/tasks';
 import { env } from '@/libs/env';
@@ -25,7 +26,8 @@ const DB_COMPARE_PAGE_SIZE = 1000;
 export const compareAdminSync = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .handler(async () => {
-    const isExcluded = syncExcludeMatcher((await listSyncExcludedPaths()).map((row) => row.pattern));
+    const [excludedPaths, systemKeys] = await Promise.all([listSyncExcludedPaths(), listSystemObjectKeys()]);
+    const isExcluded = syncExcludeMatcher(excludedPaths.map((row) => row.pattern));
     const s3FileMap = new Map<string, S3Entry>();
     let totalS3Size = 0;
     let token: string | undefined;
@@ -41,7 +43,7 @@ export const compareAdminSync = createServerFn({ method: 'GET' })
       );
       for (const f of (resp.Contents || []) as S3Object[]) {
         const fileName = f.Key.split('/').slice(1).join('/');
-        if (!fileName || isExcluded(f.Key)) continue;
+        if (!fileName || isExcluded(f.Key) || systemKeys.has(f.Key)) continue;
         s3FileMap.set(f.Key, {
           key: f.Key,
           fileName,

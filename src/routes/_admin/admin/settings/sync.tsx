@@ -56,7 +56,7 @@ function SyncExcludedPathsPage() {
           >
             Sync Files
           </Link>
-          .
+          . Renditions, Studio Outputs, Template images and Avatars are always left out, wherever they are stored.
         </p>
       </div>
 

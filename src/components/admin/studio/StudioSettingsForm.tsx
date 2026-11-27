@@ -7,15 +7,31 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import { queryKeys } from '@/libs/query-keys';
+import { studioSettingsSchema } from '@/schemas/studio-schema';
 import { saveStudioSettings } from '@/server/fns/admin/studio-budgets';
 import styles from './ModelList.module.css';
 import { studioSettingsQueryOptions } from './queries';
 
-/** The Studio's instance-wide limits: the default monthly Budget and how many Generations a User may run at once. */
+type FileSetting = 'outputLifetimeDays' | 'inputMaxMib' | 'templatePreviewMaxMib' | 'templateReferenceMaxMib';
+
+const FILE_SETTINGS: { name: FileSetting; label: string; help: string }[] = [
+  { name: 'outputLifetimeDays', label: 'Days an unsaved Output is kept', help: 'Applies to Outputs generated from now on.' },
+  { name: 'inputMaxMib', label: 'Maximum input file (MiB)', help: 'Uploads and Files a User sends to a Model.' },
+  { name: 'templatePreviewMaxMib', label: 'Maximum Template preview image (MiB)', help: 'Checked when a Template is saved.' },
+  { name: 'templateReferenceMaxMib', label: 'Maximum Template reference image (MiB)', help: 'Checked when a Template is saved.' },
+];
+
+/** The Studio's instance-wide limits: the default monthly Budget, how many Generations a User may run at once, and file lifetimes and sizes. */
 export function StudioSettingsForm() {
   const { data: settings } = useSuspenseQuery(studioSettingsQueryOptions);
   const [budget, setBudget] = useState(settings.defaultMonthlyBudgetUsd === null ? '' : String(settings.defaultMonthlyBudgetUsd));
   const [activeLimit, setActiveLimit] = useState(String(settings.maxActiveGenerationsPerUser));
+  const [fileValues, setFileValues] = useState<Record<FileSetting, string>>({
+    outputLifetimeDays: String(settings.outputLifetimeDays),
+    inputMaxMib: String(settings.inputMaxMib),
+    templatePreviewMaxMib: String(settings.templatePreviewMaxMib),
+    templateReferenceMaxMib: String(settings.templateReferenceMaxMib),
+  });
 
   const save = useAppMutation(saveStudioSettings, {
     successMessage: 'Studio settings saved',
@@ -27,6 +43,10 @@ export function StudioSettingsForm() {
     save.mutate({
       defaultMonthlyBudgetUsd: budget.trim() === '' ? null : Number(budget),
       maxActiveGenerationsPerUser: Number(activeLimit),
+      outputLifetimeDays: Number(fileValues.outputLifetimeDays),
+      inputMaxMib: Number(fileValues.inputMaxMib),
+      templatePreviewMaxMib: Number(fileValues.templatePreviewMaxMib),
+      templateReferenceMaxMib: Number(fileValues.templateReferenceMaxMib),
     });
   };
 
@@ -78,6 +98,26 @@ export function StudioSettingsForm() {
                 disabled={save.isPending}
               />
             </div>
+            {FILE_SETTINGS.map((field) => (
+              <div
+                key={field.name}
+                className="stack space-2"
+              >
+                <Label htmlFor={`studio-${field.name}`}>{field.label}</Label>
+                <Input
+                  id={`studio-${field.name}`}
+                  type="number"
+                  step="1"
+                  min={studioSettingsSchema.shape[field.name].minValue ?? undefined}
+                  max={studioSettingsSchema.shape[field.name].maxValue ?? undefined}
+                  required
+                  value={fileValues[field.name]}
+                  onChange={(event) => setFileValues((current) => ({ ...current, [field.name]: event.target.value }))}
+                  disabled={save.isPending}
+                />
+                <p className={styles.muted}>{field.help}</p>
+              </div>
+            ))}
             <div>
               <Button
                 type="submit"

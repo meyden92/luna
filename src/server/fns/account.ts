@@ -20,24 +20,26 @@ export const updateAvatar = createServerFn({ method: 'POST' })
   .validator(avatarSchema)
   .handler(async ({ data, context }) => {
     const [
-      { AvatarRejectedError, deleteAvatar, normalizeAvatar, uploadAvatar, AVATAR_MAX_UPLOAD_BYTES },
+      { AvatarRejectedError, deleteAvatar, normalizeAvatar, uploadAvatar },
       { getSettingsProfile, updateUserProfile },
-    ] = await Promise.all([import('@/libs/avatar'), import('@/db/queries/auth')]);
+      { getPlatformSettings },
+    ] = await Promise.all([import('@/libs/avatar'), import('@/db/queries/auth'), import('@/db/queries/platform-settings')]);
 
     const userId = userIdFromCtx(context);
+    const { avatarMaxUploadMib, avatarPath } = await getPlatformSettings();
 
     // Base64 inflates by 4/3, so the ceiling applies to the decoded bytes.
     const bytes = Buffer.from(data.image, 'base64');
-    if (bytes.byteLength > AVATAR_MAX_UPLOAD_BYTES) {
-      throw new AvatarRejectedError(avatarTooLargeMessage());
+    if (bytes.byteLength > avatarMaxUploadMib * 1024 * 1024) {
+      throw new AvatarRejectedError(avatarTooLargeMessage(avatarMaxUploadMib));
     }
 
     const previous = (await getSettingsProfile(userId))?.image;
-    const key = await uploadAvatar(await normalizeAvatar(bytes));
+    const key = await uploadAvatar(await normalizeAvatar(bytes, avatarMaxUploadMib), avatarPath);
 
     await updateUserProfile(userId, { image: key }, userId);
     // Last, so a failed delete cannot leave a User pointing at a gone object.
-    await deleteAvatar(previous);
+    await deleteAvatar(previous, avatarPath);
 
     return { image: key };
   });
@@ -45,16 +47,17 @@ export const updateAvatar = createServerFn({ method: 'POST' })
 export const removeAvatar = createServerFn({ method: 'POST' })
   .middleware(appMiddleware({ auth: 'user' }))
   .handler(async ({ context }) => {
-    const [{ deleteAvatar }, { getSettingsProfile, updateUserProfile }] = await Promise.all([
+    const [{ deleteAvatar }, { getSettingsProfile, updateUserProfile }, { getPlatformSettings }] = await Promise.all([
       import('@/libs/avatar'),
       import('@/db/queries/auth'),
+      import('@/db/queries/platform-settings'),
     ]);
 
     const userId = userIdFromCtx(context);
     const previous = (await getSettingsProfile(userId))?.image;
 
     await updateUserProfile(userId, { image: null }, userId);
-    await deleteAvatar(previous);
+    await deleteAvatar(previous, (await getPlatformSettings()).avatarPath);
 
     return { image: null };
   });

@@ -28,14 +28,16 @@ export interface SettingsOverview {
     createdAt: Date;
   }[];
   fileExtensions: { id: string; label: string; value: number; color: string }[];
+  avatarMaxUploadMib: number;
 }
 
 export const getSettingsOverview = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'user' }))
   .handler(async ({ context }): Promise<SettingsOverview> => {
-    const [{ getSettingsProfile, listOwnedUploadsInRange, listUserTokens }, { storageUsage }] = await Promise.all([
+    const [{ getSettingsProfile, listOwnedUploadsInRange, listUserTokens }, { storageUsage }, { getPlatformSettings }] = await Promise.all([
       import('@/db/queries/auth'),
       import('@/db/queries/files'),
+      import('@/db/queries/platform-settings'),
     ]);
     const userId = userIdFromCtx(context);
 
@@ -43,11 +45,12 @@ export const getSettingsOverview = createServerFn({ method: 'GET' })
     const thirtyDaysAgo = startOfDay(subDays(today, 30));
     const thirtyDaysEnd = endOfDay(today);
 
-    const [user, tokens, fileAggregate, recentFiles] = await Promise.all([
+    const [user, tokens, fileAggregate, recentFiles, { avatarMaxUploadMib }] = await Promise.all([
       getSettingsProfile(userId),
       listUserTokens(userId),
       storageUsage(userId),
       listOwnedUploadsInRange({ ownerId: userId, from: thirtyDaysAgo, to: thirtyDaysEnd }),
+      getPlatformSettings(),
     ]);
 
     if (!user) throw new Error('User not found');
@@ -106,5 +109,6 @@ export const getSettingsOverview = createServerFn({ method: 'GET' })
         createdAt: token.createdAt,
       })),
       fileExtensions,
+      avatarMaxUploadMib,
     };
   });

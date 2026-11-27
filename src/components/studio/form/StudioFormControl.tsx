@@ -5,6 +5,7 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { aspectRatioOf } from '@/libs/studio/aspect-ratio';
 import type { FormItem, StudioFormValue } from '@/libs/studio/form';
 import { sameValue } from '@/libs/studio/request';
 import { FileInput } from './FileInput';
@@ -18,6 +19,23 @@ export interface StudioFormControlProps {
   /** Ties the control to its `<label htmlFor>`. */
   id: string;
   disabled?: boolean;
+}
+
+/** An option's label, led by a frame in the shape it names when its value is an aspect ratio. */
+function optionLabel(option: { value: unknown; label: string }) {
+  const ratio = aspectRatioOf(option.value);
+  if (ratio === null) return option.label;
+  return (
+    <span className={styles.ratioOption}>
+      <span
+        className={styles.ratio}
+        aria-hidden
+      >
+        <span style={{ '--ratio': ratio } as React.CSSProperties} />
+      </span>
+      {option.label}
+    </span>
+  );
 }
 
 /**
@@ -76,7 +94,7 @@ export function StudioFormControl({ item, value, onChange, id, disabled }: Studi
         <Segmented
           id={id}
           label={item.label}
-          items={options.map((option, index) => ({ value: String(index), label: option.label, disabled }))}
+          items={options.map((option, index) => ({ value: String(index), label: optionLabel(option), disabled }))}
           value={String(selectedIndex)}
           onValueChange={(index) => onChange(options[Number(index)]?.value)}
         />
@@ -84,7 +102,7 @@ export function StudioFormControl({ item, value, onChange, id, disabled }: Studi
     case 'select':
       return (
         <Select
-          items={options.map((option, index) => ({ value: String(index), label: option.label }))}
+          items={options.map((option, index) => ({ value: String(index), label: optionLabel(option) }))}
           value={selectedIndex === -1 ? null : String(selectedIndex)}
           disabled={disabled}
           onValueChange={(index) => onChange(index === null ? undefined : options[Number(index)]?.value)}
@@ -101,7 +119,7 @@ export function StudioFormControl({ item, value, onChange, id, disabled }: Studi
                 key={option.label}
                 value={String(index)}
               >
-                {option.label}
+                {optionLabel(option)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -124,7 +142,7 @@ export function StudioFormControl({ item, value, onChange, id, disabled }: Studi
               key={option.label}
               value={String(index)}
             >
-              {option.label}
+              {optionLabel(option)}
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
@@ -155,7 +173,7 @@ export function StudioFormControl({ item, value, onChange, id, disabled }: Studi
               value={String(index)}
               className={styles.listOption}
             >
-              {option.label}
+              {optionLabel(option)}
             </ToggleGroupItem>
           ))}
         </ToggleGroup>

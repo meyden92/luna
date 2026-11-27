@@ -152,9 +152,9 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
   };
 
   /**
-   * *Add file input* or *Add user upload*: a required file Variable on the
-   * given file input, else the first, in its last slot. The Variable owns
-   * that input from then on.
+   * *Add user upload*: a required file Variable on the given file input,
+   * else the first, in its last slot. The Variable owns that input from
+   * then on.
    */
   const addFileVariable = (inputName?: string) => {
     if (!schema) return;
@@ -444,7 +444,8 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
                 <CardTitle>Variables</CardTitle>
                 <CardDescription>
                   The blanks Users fill in on top of the User input Fields. Text Variables come and go with the {'{names}'} in the fixed
-                  texts. A file input asks Users for a file and sends it to one of the model's file inputs, which it then fills on its own.
+                  texts. A user upload asks Users for a file and sends it to one of the model's file inputs. Images every run sends go on
+                  that file input's Field card, as reference images.
                 </CardDescription>
               </CardHeader>
               <CardContent className="stack space-4">
@@ -476,7 +477,7 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
                   onClick={() => addFileVariable()}
                 >
                   <FileInput />
-                  Add file input
+                  Add user upload
                 </Button>
               </CardContent>
             </Card>

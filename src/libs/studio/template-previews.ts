@@ -2,8 +2,11 @@ import { randomUUID } from 'node:crypto';
 import { CopyObjectCommand, DeleteObjectsCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { getOwnedOutput } from '@/db/queries/generations';
+import { getPlatformSettings } from '@/db/queries/platform-settings';
+import { getStudioSettings } from '@/db/queries/studio';
 import { env } from '@/libs/env';
 import { getPrivateSignedUrl, s3Client } from '@/libs/S3Helper';
+import { renderStoragePath } from '@/libs/storage-paths';
 import { UserFacingError } from '@/libs/user-facing-error';
 import type { TemplatePreview } from '@/schemas/studio-schema';
 import { mediaKindOf, outputExtension } from './outputs';
@@ -12,19 +15,20 @@ import type { FieldConfig, FileRef } from './types';
 import { referencesOf } from './variables';
 
 /**
- * A Template's preview and reference images: private objects under
- * `studio-templates/`, owned by the Template and counted against no quota.
- * Server-only.
+ * A Template's preview and reference images: private objects under the
+ * configured Template paths, owned by the Template and counted against no
+ * quota. Server-only.
  */
 
-const MAX_PREVIEW_BYTES = 10 * 1024 * 1024;
-const MAX_REFERENCE_BYTES = 100 * 1024 * 1024;
 const PREVIEW_URL_TTL_SECONDS = 3600;
+const MIB = 1024 * 1024;
 
-const previewKey = (contentType: string, name: string) => `studio-templates/${randomUUID()}.${outputExtension(contentType, name)}`;
+/** Renders a Template preview or reference path; both take the same variables. */
+const objectKey = (template: string, contentType: string, name: string) =>
+  renderStoragePath<'templatePreviewPath'>(template, { uuid: randomUUID(), ext: outputExtension(contentType, name) });
 
-async function putObject(file: File): Promise<string> {
-  const key = previewKey(file.type, file.name);
+async function putObject(file: File, template: string): Promise<string> {
+  const key = objectKey(template, file.type, file.name);
   await new Upload({
     client: s3Client,
     params: {
@@ -51,6 +55,7 @@ export async function storeTemplatePreviews(
   const keys: string[] = [];
   const created: string[] = [];
   const bucket = env.AWS_BUCKET_NAME;
+  const [{ templatePreviewPath }, { templatePreviewMaxMib }] = await Promise.all([getPlatformSettings(), getStudioSettings()]);
   try {
     for (const preview of previews) {
       if (preview.source === 'key') {
@@ -61,8 +66,9 @@ export async function storeTemplatePreviews(
       if (preview.source === 'upload') {
         const file = uploads.get(preview.key);
         if (!file?.type.startsWith('image/')) throw new UserFacingError('A preview must be an image.');
-        if (file.size > MAX_PREVIEW_BYTES) throw new UserFacingError('A preview image may be at most 10 MB.');
-        const key = await putObject(file);
+        if (file.size > templatePreviewMaxMib * MIB)
+          throw new UserFacingError(`A preview image may be at most ${templatePreviewMaxMib} MB.`);
+        const key = await putObject(file, templatePreviewPath);
         created.push(key);
         keys.push(key);
         continue;
@@ -70,7 +76,7 @@ export async function storeTemplatePreviews(
       const owned = await getOwnedOutput(preview.outputId, adminId);
       if (!owned || owned.output.expiredAt) throw new UserFacingError('This Output no longer exists.');
       if (owned.output.mediaKind !== 'image') throw new UserFacingError('A preview must be an image.');
-      const key = previewKey(owned.output.contentType, owned.output.s3Key);
+      const key = objectKey(templatePreviewPath, owned.output.contentType, owned.output.s3Key);
       await s3Client.send(
         new CopyObjectCommand({
           Bucket: bucket,
@@ -101,6 +107,7 @@ export async function storeTemplateReferences(
   { uploads, currentKeys }: { uploads: Map<string, File>; currentKeys: string[] },
 ): Promise<{ fields: FieldConfig[]; created: string[] }> {
   const created: string[] = [];
+  const [{ templateReferencePath }, { templateReferenceMaxMib }] = await Promise.all([getPlatformSettings(), getStudioSettings()]);
   const store = async (field: FieldConfig, ref: FileRef): Promise<FileRef> => {
     if (ref.source === 'template') {
       if (!currentKeys.includes(ref.key)) throw new UserFacingError('A reference image is not this Template’s.');
@@ -109,8 +116,10 @@ export async function storeTemplateReferences(
     const file = ref.source === 'upload' ? uploads.get(ref.key) : undefined;
     if (!file) throw new UserFacingError(`A reference image of ${field.name} is missing.`);
     if (mediaKindOf(file.type) !== 'image') throw new UserFacingError('A reference image must be an image.');
-    if (file.size > MAX_REFERENCE_BYTES) throw new UserFacingError('A reference image may be at most 100 MB.');
-    const key = await putObject(file);
+    if (file.size > templateReferenceMaxMib * MIB) {
+      throw new UserFacingError(`A reference image may be at most ${templateReferenceMaxMib} MB.`);
+    }
+    const key = await putObject(file, templateReferencePath);
     created.push(key);
     return { source: 'template', key };
   };

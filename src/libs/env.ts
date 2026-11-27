@@ -31,12 +31,6 @@ const envSchema = z.object({
   RENDITION_SIGNING_SECRET: z.string().min(16).optional(),
   DELIVERY_COOKIE_SECRET: z.string().min(16).optional(),
   TRUSTED_PROXY_HOPS: z.coerce.number().int().min(0).default(0),
-  MAX_SHAREX_UPLOAD_BYTES: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(90 * 1024 * 1024),
-  SHAREX_UPLOAD_CONCURRENCY: z.coerce.number().int().positive().default(2),
   // The release tag (e.g. v4.6.0) the image was built from; unset or empty in dev.
   BUILD_VERSION: z.string().optional(),
   BUILD_COMMIT: z.string().optional(),

@@ -142,3 +142,24 @@ export const syncExcludedPath = pgTable('sync_excluded_path', {
   createdBy: text('created_by').references(() => user.id, { onDelete: 'set null', onUpdate: 'cascade' }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+/** Instance-wide storage paths and limits. A single row, created on first write (see `src/db/queries/platform-settings.ts`). */
+export const platformSettings = pgTable('platform_settings', {
+  id: text('id').primaryKey(),
+  renditionPath: text('rendition_path').notNull(),
+  studioOutputPath: text('studio_output_path').notNull(),
+  templatePreviewPath: text('template_preview_path').notNull(),
+  templateReferencePath: text('template_reference_path').notNull(),
+  avatarPath: text('avatar_path').notNull(),
+  defaultStorageQuotaMib: integer('default_storage_quota_mib').notNull(),
+  downloadProxyMaxMib: integer('download_proxy_max_mib').notNull(),
+  downloaderMaxVideoMib: integer('downloader_max_video_mib').notNull(),
+  downloaderMaxPreparingPerUser: integer('downloader_max_preparing_per_user').notNull(),
+  downloaderExpiryMinutes: integer('downloader_expiry_minutes').notNull(),
+  avatarMaxUploadMib: integer('avatar_max_upload_mib').notNull(),
+  sharexMaxUploadMib: integer('sharex_max_upload_mib').notNull(),
+  sharexUploadConcurrency: integer('sharex_upload_concurrency').notNull(),
+  phashDistanceThreshold: integer('phash_distance_threshold').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});

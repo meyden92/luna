@@ -159,7 +159,7 @@ class SharexPacer {
   }
 }
 
-/** Uploads through `/api/upload/sharex`, never more than `SHAREX_UPLOAD_CONCURRENCY` (2) at once. */
+/** Uploads through `/api/upload/sharex`, never more than the ShareX upload concurrency (2 by default) at once. */
 async function uploadTwoAtATime(request: APIRequestContext, pacer: SharexPacer, uploads: GalleryUpload[]): Promise<void> {
   const queue = [...uploads];
   const lane = async () => {

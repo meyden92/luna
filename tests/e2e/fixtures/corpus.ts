@@ -10,7 +10,7 @@
  * that loads it, not three specs later with a confusing assertion.
  *
  * What is deliberately NOT here: an over-limit file. Oversize is tested at
- * runtime: the sharex limit by lowering `MAX_SHAREX_UPLOAD_BYTES` on a stack
+ * runtime: the sharex limit by lowering it in the stack's platform settings
  * (#110), the 90 MB web limit by declaring an oversized `Content-Length`.
  *
  * `mimeType` is what the browser sends for the file through

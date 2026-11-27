@@ -156,7 +156,7 @@ export const generationOutput = pgTable(
     index: integer('index').notNull(),
     mediaKind: varchar('media_kind', { length: 16 }).$type<MediaKind>().notNull(),
     contentType: text('content_type').notNull(),
-    // Private object: `studio/<userId>/<generationId>/<index>.<ext>`, or the
+    // Private object under the Output path in force when it was stored, or the
     // file's key once saved to Files.
     s3Key: text('s3_key').notNull(),
     sizeBytes: integer('size_bytes').notNull(),
@@ -182,6 +182,10 @@ export const studioSettings = pgTable('studio_settings', {
   // Null means unlimited.
   defaultMonthlyBudgetUsd: numeric('default_monthly_budget_usd', { precision: 12, scale: 2, mode: 'number' }),
   maxActiveGenerationsPerUser: integer('max_active_generations_per_user').default(3).notNull(),
+  outputLifetimeDays: integer('output_lifetime_days').default(7).notNull(),
+  inputMaxMib: integer('input_max_mib').default(100).notNull(),
+  templatePreviewMaxMib: integer('template_preview_max_mib').default(10).notNull(),
+  templateReferenceMaxMib: integer('template_reference_max_mib').default(100).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

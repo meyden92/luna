@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import sharp from 'sharp';
 import { findExactDenylistMatch, listPhashDenylistEntries, quarantineFile } from '@/db/queries/moderation';
+import { getPlatformSettings } from '@/db/queries/platform-settings';
 import type { JsonValue } from '@/db/schema/json';
 
 export type FileHashes = {
@@ -13,7 +14,6 @@ export type ModerationGateResult =
   | { allowed: true; hashes: FileHashes }
   | { allowed: false; hashes: FileHashes; matchType: 'sha256' | 'md5' | 'phash'; matchedEntryId: string; distance: number | null };
 
-const PHASH_DISTANCE_THRESHOLD = 8;
 const PHASH_PAGE_SIZE = 500;
 
 export async function computeFileHashes(buffer: Buffer | Uint8Array, contentType: string): Promise<FileHashes> {
@@ -47,13 +47,14 @@ export async function findDenylistMatchForHashes(
 
   if (!hashes.phash) return null;
 
+  const { phashDistanceThreshold } = await getPlatformSettings();
   let cursor: string | undefined;
   for (;;) {
     const candidates = await listPhashDenylistEntries({ cursor, limit: PHASH_PAGE_SIZE });
     if (candidates.length === 0) break;
     for (const candidate of candidates) {
       const distance = hammingDistance(hashes.phash, candidate.hash);
-      if (distance <= PHASH_DISTANCE_THRESHOLD) {
+      if (distance <= phashDistanceThreshold) {
         return { matchType: 'phash', matchedEntryId: candidate.id, distance };
       }
     }

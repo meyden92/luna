@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gt, inArray, isNotNull, isNull, like, lt, lte, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, inArray, isNotNull, isNull, lt, lte, notLike, or, sql } from 'drizzle-orm';
 import { evaluateQuota, StorageQuotaExceededError } from '@/libs/storage-quota';
 import { budgetRefusal } from '@/libs/studio/budget';
 import {
@@ -28,9 +28,6 @@ import { getBudgetState, getStudioSettings } from './studio';
 
 export type Generation = typeof generation.$inferSelect;
 export type GenerationOutput = typeof generationOutput.$inferSelect;
-
-/** Where Output objects live until they are saved to Files: `studio/<userId>/<generationId>/<index>.<ext>`. */
-export const OUTPUT_KEY_PREFIX = 'studio/';
 
 /** The User's own Generations, without those they deleted. */
 const ownedBy = (userId: string) => and(eq(generation.userId, userId), isNull(generation.deletedAt));
@@ -359,13 +356,15 @@ export async function setOutputKey(outputId: string, s3Key: string, handle: Audi
 /**
  * Saved Outputs still on their own object: the move to Files did not get to
  * delete it. Returns where their file's object is (`ownerId` and `url`).
+ * Files live under their owner's folder and the Output path may not start
+ * there, so a key outside that folder is one not moved yet.
  */
 export async function listUnmovedSavedOutputs(limit: number, handle: AuditHandle = db) {
   return handle
     .select({ id: generationOutput.id, s3Key: generationOutput.s3Key, fileOwnerId: file.ownerId, fileUrl: file.url })
     .from(generationOutput)
     .innerJoin(file, eq(file.id, generationOutput.savedFileId))
-    .where(like(generationOutput.s3Key, `${OUTPUT_KEY_PREFIX}%`))
+    .where(notLike(generationOutput.s3Key, sql`${file.ownerId} || '/%'`))
     .limit(limit);
 }
 

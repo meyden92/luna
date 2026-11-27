@@ -40,8 +40,22 @@ export const getStudioSettingsForAdmin = createServerFn({ method: 'GET' })
   .middleware(appMiddleware({ auth: 'admin' }))
   .handler(async () => {
     assertStudioEnabled();
-    const { defaultMonthlyBudgetUsd, maxActiveGenerationsPerUser } = await getStudioSettings();
-    return { defaultMonthlyBudgetUsd, maxActiveGenerationsPerUser };
+    const {
+      defaultMonthlyBudgetUsd,
+      maxActiveGenerationsPerUser,
+      outputLifetimeDays,
+      inputMaxMib,
+      templatePreviewMaxMib,
+      templateReferenceMaxMib,
+    } = await getStudioSettings();
+    return {
+      defaultMonthlyBudgetUsd,
+      maxActiveGenerationsPerUser,
+      outputLifetimeDays,
+      inputMaxMib,
+      templatePreviewMaxMib,
+      templateReferenceMaxMib,
+    };
   });
 
 export const saveStudioSettings = createServerFn({ method: 'POST' })

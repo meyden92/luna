@@ -1,12 +1,13 @@
+import { getPlatformSettings } from '@/db/queries/platform-settings';
+import type { PlatformSettingsValues } from '@/schemas/platform-settings-schema';
 import { cancel, discard, prepare, settle } from './runner';
 import type { Download, DownloadError, DownloadStatus, ParsedPost } from './types';
 
-/** How long a ready or failed Download keeps its files before it expires. */
-export const EXPIRY_MS = 60 * 60 * 1000;
 /** How long a Download may prepare before its process is killed and its unfinished videos fail. */
 export const PREPARATION_TIMEOUT_MS = 10 * 60 * 1000;
-/** How many of a User's Downloads prepare at once; the rest wait as `queued`. */
-export const MAX_PREPARING_PER_USER = 2;
+
+/** How many of a User's Downloads prepare at once (the rest wait as `queued`), and how long a ready or failed one keeps its files. */
+type Limits = Pick<PlatformSettingsValues, 'downloaderMaxPreparingPerUser' | 'downloaderExpiryMinutes'>;
 
 /** Statuses for which pasting the same post leads to the existing Download instead of a new one. */
 const LIVE_STATUSES: readonly DownloadStatus[] = ['queued', 'preparing', 'ready'];
@@ -22,7 +23,8 @@ const timers = new Map<string, ReturnType<typeof setTimeout>>();
  * slot. When the User already has a queued, preparing or ready Download of the
  * same post, returns that one instead, with `existing` set.
  */
-export function start(userId: string, post: ParsedPost): { download: Download; existing: boolean } {
+export async function start(userId: string, post: ParsedPost): Promise<{ download: Download; existing: boolean }> {
+  const limits = await getPlatformSettings();
   const existing = listFor(userId).find(
     (download) => download.canonicalUrl === post.canonicalUrl && LIVE_STATUSES.includes(download.status),
   );
@@ -39,7 +41,7 @@ export function start(userId: string, post: ParsedPost): { download: Download; e
     createdAt: new Date(),
   };
   downloads.set(download.id, download);
-  startQueued(userId);
+  startQueued(userId, limits);
   return { download, existing: false };
 }
 
@@ -61,25 +63,25 @@ export async function remove(userId: string, id: string): Promise<boolean> {
   downloads.delete(id);
   clearTimeout(timers.get(id));
   timers.delete(id);
-  startQueued(userId);
+  startQueued(userId, await getPlatformSettings());
   await discard(id);
   return true;
 }
 
 // Moves the User's oldest queued Downloads to `preparing` while they have free slots.
-function startQueued(userId: string): void {
+function startQueued(userId: string, limits: Limits): void {
   const own = listFor(userId);
-  let free = MAX_PREPARING_PER_USER - own.filter((download) => download.status === 'preparing').length;
+  let free = limits.downloaderMaxPreparingPerUser - own.filter((download) => download.status === 'preparing').length;
   const queued = own.filter((download) => download.status === 'queued').reverse();
   for (const download of queued.slice(0, Math.max(free, 0))) {
-    begin(download);
+    begin(download, limits);
     free--;
   }
 }
 
 // Prepares a Download under the preparation timeout. Once preparation stops,
 // schedules its expiry and frees its slot for the next queued Download.
-function begin(download: Download): void {
+function begin(download: Download, limits: Limits): void {
   download.status = 'preparing';
   let timedOut = false;
   timers.set(
@@ -95,8 +97,8 @@ function begin(download: Download): void {
     if (downloads.get(download.id) !== download) return;
     clearTimeout(timers.get(download.id));
     if (timedOut) failUnfinished(download);
-    scheduleExpiry(download);
-    startQueued(download.userId);
+    scheduleExpiry(download, limits.downloaderExpiryMinutes * 60_000);
+    startQueued(download.userId, limits);
   });
 }
 
@@ -126,17 +128,17 @@ function failUnfinished(download: Download): void {
   settle(download);
 }
 
-// A ready or failed Download expires `EXPIRY_MS` later: its files are deleted,
+// A ready or failed Download expires `expiryMs` later: its files are deleted,
 // but it stays listed as `expired` until removed or until a restart.
-function scheduleExpiry(download: Download): void {
+function scheduleExpiry(download: Download, expiryMs: number): void {
   download.readyAt = new Date();
-  download.expiresAt = new Date(download.readyAt.getTime() + EXPIRY_MS);
+  download.expiresAt = new Date(download.readyAt.getTime() + expiryMs);
   timers.set(
     download.id,
     setTimeout(() => {
       timers.delete(download.id);
       download.status = 'expired';
       void discard(download.id);
-    }, EXPIRY_MS),
+    }, expiryMs),
   );
 }

@@ -1,7 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { admin as adminPlugin, username as usernamePlugin } from 'better-auth/plugins';
 import { tanstackStartCookies } from 'better-auth/tanstack-start';
-import { auditUserCreated, authDatabaseAdapter } from '@/db/queries/auth';
+import { applyDefaultStorageQuota, auditUserCreated, authDatabaseAdapter } from '@/db/queries/auth';
 import { isValidUsername, PASSWORD_MIN_LENGTH, USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH } from '@/schemas/credentials-schema';
 import { clientIp } from '../client-ip';
 import { env } from '../env';
@@ -51,10 +51,11 @@ export const auth = betterAuth({
               error,
             });
           }
+          const storageQuotaMiB = await applyDefaultStorageQuota(user.id);
           // Better-Auth's adapter writes through Drizzle directly, so this is
           // the only place a registration can be audited (#36). writeAuditLog
           // already swallows its own failures, so it cannot break signup.
-          await auditUserCreated(user, creationActor.getStore());
+          await auditUserCreated({ ...user, storageQuotaMiB }, creationActor.getStore());
         },
       },
     },

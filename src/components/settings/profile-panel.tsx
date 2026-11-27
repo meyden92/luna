@@ -21,7 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import { authClient } from '@/libs/auth/auth-client';
 import { getAvatarUrl } from '@/libs/utils';
-import { AVATAR_MAX_UPLOAD_BYTES, avatarTooLargeMessage, changePasswordSchema } from '@/schemas/credentials-schema';
+import { avatarTooLargeMessage, changePasswordSchema } from '@/schemas/credentials-schema';
 import { removeAvatar, updateAvatar } from '@/server/fns/account';
 import { updateUserProfile } from '@/server/fns/user';
 import styles from './profile-panel.module.css';
@@ -155,6 +155,7 @@ interface ProfilePanelContentProps {
   receiveEmail: boolean;
   bio: string;
   description: string;
+  avatarMaxUploadMib: number;
 }
 
 function ProfilePanelContent({
@@ -165,6 +166,7 @@ function ProfilePanelContent({
   receiveEmail: initialReceiveEmail,
   bio: initialBio,
   description: initialDescription,
+  avatarMaxUploadMib,
 }: ProfilePanelContentProps) {
   const queryClient = useQueryClient();
   const fileInput = useRef<HTMLInputElement>(null);
@@ -218,8 +220,8 @@ function ProfilePanelContent({
 
   const onPickAvatar = async (file: File | undefined) => {
     if (!file) return;
-    if (file.size > AVATAR_MAX_UPLOAD_BYTES) {
-      toast.error(avatarTooLargeMessage());
+    if (file.size > avatarMaxUploadMib * 1024 * 1024) {
+      toast.error(avatarTooLargeMessage(avatarMaxUploadMib));
       return;
     }
 
@@ -447,10 +449,11 @@ interface ProfilePanelProps {
   receiveEmail: boolean;
   bio: string | null;
   description: string | null;
+  avatarMaxUploadMib: number;
 }
 
 /** Profile: avatar, display name, bio/description, read-only username, public-profile and marketing-email switches, and a password change. */
-export function ProfilePanel({ isProfilePublic, receiveEmail, bio, description }: ProfilePanelProps) {
+export function ProfilePanel({ isProfilePublic, receiveEmail, bio, description, avatarMaxUploadMib }: ProfilePanelProps) {
   const { data: session } = authClient.useSession();
   const user = session?.user;
   if (!user) return null;
@@ -465,6 +468,7 @@ export function ProfilePanel({ isProfilePublic, receiveEmail, bio, description }
       receiveEmail={receiveEmail}
       bio={bio ?? ''}
       description={description ?? ''}
+      avatarMaxUploadMib={avatarMaxUploadMib}
     />
   );
 }

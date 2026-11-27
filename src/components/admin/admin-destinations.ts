@@ -4,11 +4,13 @@ import {
   FolderX,
   Gauge,
   Globe,
+  HardDrive,
   LayoutTemplate,
   MapIcon,
   Settings2,
   Shapes,
   ShieldAlert,
+  SlidersHorizontal,
   Sparkles,
   User2,
   Zap,
@@ -77,6 +79,18 @@ export const adminDestinations = [
 /** `studio` entries show only while the Studio is enabled. */
 export const settingsSections = [
   {
+    name: 'Storage',
+    to: '/admin/settings/storage',
+    Icon: HardDrive,
+    description: 'Where Renditions, Studio Outputs, Template images and Avatars are stored',
+  },
+  {
+    name: 'Limits',
+    to: '/admin/settings/limits',
+    Icon: SlidersHorizontal,
+    description: 'Default storage quota, upload sizes, Downloader and moderation limits',
+  },
+  {
     name: 'Sync excluded paths',
     to: '/admin/settings/sync',
     Icon: FolderX,
@@ -86,7 +100,7 @@ export const settingsSections = [
     name: 'Studio',
     to: '/admin/settings/studio',
     Icon: Sparkles,
-    description: 'The default monthly Budget and the active Generation limit',
+    description: 'Budgets, the active Generation limit, Output lifetime and file sizes',
     studio: true,
   },
 ] as const;

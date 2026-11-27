@@ -1,19 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { getPlatformSettings } from '@/db/queries/platform-settings';
 import { checkScopedRateLimit, retryAfterSeconds } from '@/libs/api/rate-limit';
 import { validateTokenKey } from '@/libs/auth/token-auth';
-import { env } from '@/libs/env';
 import { UnauthorizedError } from '@/libs/rbac/guards';
 import { storeSharexUpload } from '@/libs/sharex-upload';
 
 const MULTIPART_OVERHEAD_BYTES = 1024 * 1024;
 let inFlightSharexUploads = 0;
 
-function getMaxUploadBytes(): number {
-  return env.MAX_SHAREX_UPLOAD_BYTES;
-}
-
-function tryAcquireUploadSlot(): boolean {
-  if (inFlightSharexUploads >= env.SHAREX_UPLOAD_CONCURRENCY) {
+function tryAcquireUploadSlot(concurrency: number): boolean {
+  if (inFlightSharexUploads >= concurrency) {
     return false;
   }
   inFlightSharexUploads += 1;
@@ -45,12 +41,14 @@ async function authenticateTokenFromForm(formData: FormData, headers: Headers) {
 }
 
 async function handle(request: Request): Promise<Response> {
+  const { sharexMaxUploadMib, sharexUploadConcurrency } = await getPlatformSettings();
+  const maxUploadBytes = sharexMaxUploadMib * 1024 * 1024;
   const contentLength = Number(request.headers.get('content-length') ?? 0);
-  if (contentLength > getMaxUploadBytes() + MULTIPART_OVERHEAD_BYTES) {
+  if (contentLength > maxUploadBytes + MULTIPART_OVERHEAD_BYTES) {
     return json({ error: 'File too large', code: 'PAYLOAD_TOO_LARGE' }, 413);
   }
 
-  if (!tryAcquireUploadSlot()) {
+  if (!tryAcquireUploadSlot(sharexUploadConcurrency)) {
     return new Response(JSON.stringify({ error: 'Server busy', code: 'SERVER_BUSY' }), {
       status: 503,
       headers: { 'Content-Type': 'application/json', 'Retry-After': '5' },
@@ -58,13 +56,13 @@ async function handle(request: Request): Promise<Response> {
   }
 
   try {
-    return await handleWithUploadSlot(request);
+    return await handleWithUploadSlot(request, maxUploadBytes);
   } finally {
     releaseUploadSlot();
   }
 }
 
-async function handleWithUploadSlot(request: Request): Promise<Response> {
+async function handleWithUploadSlot(request: Request, maxUploadBytes: number): Promise<Response> {
   let formData: FormData;
   try {
     formData = await request.formData();
@@ -96,7 +94,7 @@ async function handleWithUploadSlot(request: Request): Promise<Response> {
   if (!file) {
     return json({ error: 'Missing required fields', code: 'VALIDATION_FAILED' }, 400);
   }
-  if (file.size > getMaxUploadBytes()) {
+  if (file.size > maxUploadBytes) {
     return json({ error: 'File too large', code: 'PAYLOAD_TOO_LARGE' }, 413);
   }
 

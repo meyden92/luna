@@ -1,8 +1,9 @@
-import { randomBytes } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import sharp from 'sharp';
 
-import { AVATAR_MAX_UPLOAD_BYTES, avatarTooLargeMessage } from '@/schemas/credentials-schema';
+import { avatarTooLargeMessage } from '@/schemas/credentials-schema';
+import { matchesStoragePath, renderStoragePath } from './storage-paths';
 import { UserFacingError } from './user-facing-error';
 
 /**
@@ -22,11 +23,6 @@ async function storage() {
 }
 
 export const AVATAR_SIZE = 512;
-/** Refused before decoding, so a decompression bomb is never expanded. */
-export { AVATAR_MAX_UPLOAD_BYTES };
-
-const AVATAR_PREFIX = 'static/avatar';
-
 /** Rejected input the User can fix by choosing a different file. */
 export class AvatarRejectedError extends UserFacingError {
   constructor(message: string) {
@@ -34,10 +30,14 @@ export class AvatarRejectedError extends UserFacingError {
   }
 }
 
-/** Re-encodes to a square WebP, which also discards EXIF, GPS included. */
-export async function normalizeAvatar(input: Buffer): Promise<Buffer> {
-  if (input.byteLength > AVATAR_MAX_UPLOAD_BYTES) {
-    throw new AvatarRejectedError(avatarTooLargeMessage());
+/**
+ * Re-encodes to a square WebP, which also discards EXIF, GPS included. Input
+ * above `maxUploadMib` is refused before decoding, so a decompression bomb is
+ * never expanded.
+ */
+export async function normalizeAvatar(input: Buffer, maxUploadMib: number): Promise<Buffer> {
+  if (input.byteLength > maxUploadMib * 1024 * 1024) {
+    throw new AvatarRejectedError(avatarTooLargeMessage(maxUploadMib));
   }
 
   try {
@@ -50,9 +50,9 @@ export async function normalizeAvatar(input: Buffer): Promise<Buffer> {
   }
 }
 
-/** Stores a normalised Avatar and returns the CDN key to save on the User. */
-export async function uploadAvatar(normalized: Buffer): Promise<string> {
-  const key = `${AVATAR_PREFIX}/${randomBytes(16).toString('hex')}.webp`;
+/** Stores a normalised Avatar under the Avatar path template and returns the CDN key to save on the User. */
+export async function uploadAvatar(normalized: Buffer, pathTemplate: string): Promise<string> {
+  const key = renderStoragePath<'avatarPath'>(pathTemplate, { uuid: randomUUID().replaceAll('-', '') });
 
   const { bucket, client } = await storage();
 
@@ -78,14 +78,15 @@ export async function uploadAvatar(normalized: Buffer): Promise<string> {
 
 /**
  * Removes the object an Avatar replaced, best-effort: a stored new Avatar must
- * not fail because the old one could not be cleaned up. Anything outside the
- * Avatar prefix is left alone.
+ * not fail because the old one could not be cleaned up. A User can write their
+ * own `image`, so anything not shaped like the Avatar path template is left
+ * alone, Avatars stored under an earlier template included.
  */
-export async function deleteAvatar(previous: string | null | undefined): Promise<void> {
+export async function deleteAvatar(previous: string | null | undefined, pathTemplate: string): Promise<void> {
   if (!previous) return;
 
   const key = previous.startsWith('http') ? new URL(previous).pathname.replace(/^\//, '') : previous.replace(/^\//, '');
-  if (!key.startsWith(`${AVATAR_PREFIX}/`)) return;
+  if (!matchesStoragePath(pathTemplate, key)) return;
 
   try {
     const { bucket, client } = await storage();

@@ -4,10 +4,12 @@ import { Upload } from '@aws-sdk/lib-storage';
 import sharp from 'sharp';
 import { z } from 'zod';
 import { createRendition, findRenditionByParamHash, touchRendition } from '@/db/queries/delivery';
+import { getPlatformSettings } from '@/db/queries/platform-settings';
 import type { JsonValue } from '@/db/schema/json';
 import { deriveSigningKey } from '@/libs/crypto/signing-keys';
 import { env } from '@/libs/env';
 import { fileS3Key, s3Client } from '@/libs/S3Helper';
+import { renderStoragePath } from '@/libs/storage-paths';
 
 const formatSchema = z.enum(['avif', 'webp', 'jpeg', 'png']);
 const fitSchema = z.enum(['cover', 'contain', 'inside', 'fill', 'outside']);
@@ -115,7 +117,13 @@ export async function getOrCreateRendition({
   );
   const source = Buffer.from(await original.Body!.transformToByteArray());
   const transformed = await transformImage(source, params);
-  const s3Key = `${file.ownerId}/renditions/${file.id}/${paramHash}.${params.fmt}`;
+  const { renditionPath } = await getPlatformSettings();
+  const s3Key = renderStoragePath<'renditionPath'>(renditionPath, {
+    userId: file.ownerId,
+    fileId: file.id,
+    hash: paramHash,
+    ext: String(params.fmt),
+  });
 
   await new Upload({
     client: s3Client,

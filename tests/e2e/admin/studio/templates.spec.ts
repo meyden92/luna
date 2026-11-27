@@ -49,9 +49,10 @@ async function buildTemplate(
   await page.getByLabel('Name', { exact: true }).fill(name);
   await choose(page, page, 'Model', model.name);
 
-  // The prompt is fixed by default and takes Variables; each name gets a card, and loses it with the text.
+  // The prompt is fixed by default, still explained by fal's description, and takes Variables; each name gets a card, and loses it with the text.
   const prompt = region(page, 'Field prompt');
   await expect(prompt.getByRole('button', { name: 'Fixed value' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(prompt.getByText('What to generate.', { exact: true })).toBeVisible();
   const text = prompt.getByLabel('Value', { exact: true });
   await text.fill(`${prefix} Turn the person into {style: Anime | *Comic} {extra}, {mood}`);
   for (const variable of ['style', 'extra', 'mood']) await expect(region(page, `Variable ${variable}`)).toBeVisible();

@@ -13,11 +13,12 @@ function getEncryptionKey(): Buffer {
  * Wire format contract: `iv:authTag:ciphertext`, each segment base64-encoded, AES-256-GCM.
  * This layout must remain stable as long as encrypted rows exist in the database —
  * changing the separator, segment order, or encoding would make stored values undecryptable.
+ * `aad` is authenticated but not stored: decrypting needs the same value.
  */
-export function encryptFieldValue(plaintext: string): string {
-  const key = getEncryptionKey();
+export function encryptWithKey(plaintext: string, key: Buffer, aad?: string): string {
   const iv = randomBytes(IV_LENGTH);
   const cipher = createCipheriv(ALGORITHM, key, iv, { authTagLength: AUTH_TAG_LENGTH });
+  if (aad !== undefined) cipher.setAAD(Buffer.from(aad, 'utf8'));
 
   const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
   const authTag = cipher.getAuthTag();
@@ -25,8 +26,7 @@ export function encryptFieldValue(plaintext: string): string {
   return `${iv.toString('base64')}:${authTag.toString('base64')}:${encrypted.toString('base64')}`;
 }
 
-export function decryptFieldValue(encrypted: string): string {
-  const key = getEncryptionKey();
+export function decryptWithKey(encrypted: string, key: Buffer, aad?: string): string {
   const [ivB64, authTagB64, ciphertextB64] = encrypted.split(':');
 
   if (!ivB64 || !authTagB64 || !ciphertextB64) {
@@ -39,6 +39,15 @@ export function decryptFieldValue(encrypted: string): string {
 
   const decipher = createDecipheriv(ALGORITHM, key, iv, { authTagLength: AUTH_TAG_LENGTH });
   decipher.setAuthTag(authTag);
+  if (aad !== undefined) decipher.setAAD(Buffer.from(aad, 'utf8'));
 
   return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
+}
+
+export function encryptFieldValue(plaintext: string): string {
+  return encryptWithKey(plaintext, getEncryptionKey());
+}
+
+export function decryptFieldValue(encrypted: string): string {
+  return decryptWithKey(encrypted, getEncryptionKey());
 }

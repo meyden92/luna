@@ -163,3 +163,12 @@ export const platformSettings = pgTable('platform_settings', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+/** Vault entries, encrypted with a key derived from `FORM_FIELD_ENCRYPTION_KEY` (see `src/libs/vault/vault.ts`). */
+export const vaultEntry = pgTable('vault_entry', {
+  name: text('name').primaryKey(),
+  ciphertext: text('ciphertext').notNull(),
+  updatedBy: text('updated_by').references(() => user.id, { onDelete: 'set null', onUpdate: 'cascade' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});

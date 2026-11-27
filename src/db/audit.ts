@@ -52,6 +52,7 @@ export const AUDITED_MODELS = [
   'SourceSession',
   'SyncExcludedPath',
   'PlatformSettings',
+  'VaultEntry',
   // Studio configuration
   'StudioCategory',
   'StudioModel',
@@ -95,6 +96,8 @@ const REDACTED_FIELDS: Partial<Record<AuditedModel, string[]>> = {
   Token: ['key'],
   // A Source session's cookies: setting or clearing one is recorded, its value never is.
   SourceSession: ['encryptedValue'],
+  // A Vault entry: which one changed and when is recorded, its value never is.
+  VaultEntry: ['ciphertext'],
 };
 
 export type AuditAction = 'create' | 'update' | 'delete';

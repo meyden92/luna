@@ -1,5 +1,4 @@
 import { hkdfSync } from 'node:crypto';
-import { deleteVaultRow, listVaultRows, upsertVaultRow } from '@/db/queries/vault';
 import { decryptWithKey, encryptWithKey } from '@/libs/encryption/field-encryption';
 import { env } from '@/libs/env';
 import { setServerCdnUrlSource } from '@/libs/runtime-config';
@@ -54,6 +53,10 @@ const state = globalState[STATE_KEY];
 
 setServerCdnUrlSource(() => (state.snapshot ? getConfig('CDN_URL') : undefined));
 
+// Loaded on first use: the query module opens the database pool at import, and
+// every module that reads a Vault value imports this one.
+const vaultRows = () => import('@/db/queries/vault');
+
 function vaultKey(): Buffer {
   return Buffer.from(hkdfSync('sha256', Buffer.from(env.FORM_FIELD_ENCRYPTION_KEY, 'base64'), 'lunashare/vault/v1', 'vault-entry', 32));
 }
@@ -67,6 +70,7 @@ function envValue(name: VaultName): string | undefined {
 async function buildSnapshot(): Promise<Snapshot> {
   const key = vaultKey();
   const stored = new Map<VaultName, { value?: string; problem?: string; storedAt: Date }>();
+  const { listVaultRows } = await vaultRows();
   for (const row of await listVaultRows()) {
     if (!isVaultName(row.name)) continue;
     try {
@@ -158,11 +162,13 @@ export function isStorageConfigured(): boolean {
 export async function setVaultEntry(name: VaultName, value: string, userId: string | null): Promise<void> {
   const problem = vaultValueProblem(name, value);
   if (problem) throw new UserFacingError(`${VAULT_ENTRIES[name].label}: ${problem}`);
+  const { upsertVaultRow } = await vaultRows();
   await upsertVaultRow(name, encryptWithKey(value, vaultKey(), name), userId);
   await load();
 }
 
 export async function clearVaultEntry(name: VaultName, userId: string | null): Promise<void> {
+  const { deleteVaultRow } = await vaultRows();
   await deleteVaultRow(name, userId);
   await load();
 }

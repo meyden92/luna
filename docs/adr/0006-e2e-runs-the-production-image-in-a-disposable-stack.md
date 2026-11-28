@@ -14,8 +14,7 @@ behaviour. Running the shipped image is what makes a green run mean something:
 production-only behaviour (secure cookies, the enabled rate limiter, the Bun
 server's idle timeout, the entrypoint's migrate-then-serve) is exercised rather
 than skipped. The price is an image build on every run, which Docker's layer
-cache keeps tolerable, so the image and its cache are the one thing the teardown
-keeps.
+cache keeps tolerable, so that cache is the one thing the teardown keeps.
 
 ## Considered options
 

@@ -26,6 +26,20 @@
     right: var(--space-1);
   }
 
+  .editor {
+    --actions-height: 4rem;
+  }
+
+  /* Variables and Preview stay in view between the nav and the action bar while the Field list scrolls, from the two-column breakpoint on. */
+  @media (width >= 1280px) {
+    .sidebar {
+      position: sticky;
+      top: calc(var(--nav-height) + var(--space-6));
+      max-height: calc(100dvh - var(--nav-height) - var(--space-6) - var(--actions-height) - var(--space-6));
+      overflow-y: auto;
+    }
+  }
+
   /* Delete and Save stay in reach at the bottom of the window, however long the cards get. */
   .actions {
     position: sticky;
@@ -36,6 +50,7 @@
     align-items: center;
     justify-content: flex-end;
     gap: var(--space-3);
+    min-height: var(--actions-height);
     padding-block: var(--space-3);
     border-top: 1px solid var(--border);
     background-color: color-mix(in oklab, var(--background) 90%, transparent);

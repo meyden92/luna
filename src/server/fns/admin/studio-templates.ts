@@ -101,7 +101,6 @@ export const saveStudioTemplate = createServerFn({ method: 'POST' })
     if (!(await getStudioCategory(data.categoryId))) throw new UserFacingError('Category not found.');
     const existing = data.id ? await getTemplateRow(data.id) : undefined;
     if (data.id && !existing) throw new UserFacingError('Template not found.');
-    if (existing && existing.template.modelId !== model.id) throw new UserFacingError('The Model of a Template cannot change.');
 
     const variables = data.variables as VariableConfig[];
     const issues = validateTemplateConfig({ fields: data.fields as FieldConfig[], variables, input: model.schemaSnapshot.input });
@@ -126,6 +125,7 @@ export const saveStudioTemplate = createServerFn({ method: 'POST' })
     const { keys } = previews;
     const created = [...previews.created, ...references.created];
     const values = {
+      modelId: model.id,
       categoryId: data.categoryId,
       name: data.name,
       description: data.description?.trim() || null,
@@ -142,7 +142,7 @@ export const saveStudioTemplate = createServerFn({ method: 'POST' })
     try {
       saved = existing
         ? await updateStudioTemplate(existing.template.id, { ...values, sortOrder }, adminId)
-        : await createStudioTemplate({ ...values, modelId: model.id, createdBy: adminId, sortOrder }, adminId);
+        : await createStudioTemplate({ ...values, createdBy: adminId, sortOrder }, adminId);
     } catch (error) {
       await deleteTemplatePreviews(created);
       throw error;

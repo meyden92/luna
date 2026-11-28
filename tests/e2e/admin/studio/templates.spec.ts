@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { expect, type Locator, type Page } from '@playwright/test';
-import { generation } from '../../../../src/db/schema/studio';
+import { eq } from 'drizzle-orm';
+import { generation, studioModel, studioTemplate } from '../../../../src/db/schema/studio';
+import { templateFieldDefaults } from '../../../../src/libs/studio/template-config';
 import { test } from '../../fixtures/test';
 import type { StackEnv } from '../../stack-env';
 import { userIdOf } from '../../utils/admin-users';
@@ -201,6 +203,51 @@ test('Save as Template starts a Template from a Generation, and explains when it
   });
   await adminPage.goto(`/admin/studio/templates/new?from=${orphan}`);
   await expect(adminPage.getByRole('alert')).toHaveText('The Model of this Generation no longer exists, so it cannot become a Template.');
+});
+
+test('a saved Template moves to another Model, keeping the cards that still fit', async ({ adminPage, db, stack }) => {
+  const from = await seedStudioModel(db, stack, { label: 'Umzug edit', endpointId: 'fake/edit' });
+  const to = await seedStudioModel(db, stack, { label: 'Umzug image', endpointId: 'fake/image' });
+  const [fromRow] = await db.select().from(studioModel).where(eq(studioModel.id, from.id));
+  if (!fromRow) throw new Error(`Model ${from.id} is gone`);
+  const promptText = uniquePrefix('A {style} portrait');
+  const id = randomUUID();
+  await db.insert(studioTemplate).values({
+    id,
+    categoryId: from.categoryId,
+    modelId: from.id,
+    name: uniquePrefix('Umzug'),
+    fields: templateFieldDefaults(fromRow.fields, fromRow.schemaSnapshot.input, { prompt: promptText }),
+    variables: [
+      { name: 'style', kind: 'text', required: false, order: 0 },
+      { name: 'photo', kind: 'file', required: true, order: 1, file: { field: 'image_urls', position: 0, accept: ['image'] } },
+    ],
+  });
+
+  const page = adminPage;
+  await page.goto(`/admin/studio/templates/${id}`);
+  await untilHydrated(page.getByRole('button', { name: 'Save', exact: true }));
+
+  // Variables stay in view while the Field list scrolls.
+  await page.getByText('Preview images', { exact: true }).scrollIntoViewIfNeeded();
+  await expect(page.getByText('Details', { exact: true })).not.toBeInViewport();
+  await expect(page.getByText('Variables', { exact: true })).toBeInViewport();
+
+  // fake/image shares the prompt, lacks the image list and adds its own inputs.
+  await choose(page, page, 'Model', to.name);
+  await expect(region(page, 'Field prompt').getByLabel('Value', { exact: true })).toHaveValue(promptText);
+  await expect(region(page, 'Variable style')).toBeVisible();
+  await expect(region(page, 'Variable photo')).toHaveCount(0);
+  await expect(region(page, 'Field image_urls')).toHaveCount(0);
+  await expect(region(page, 'Field aspect_ratio')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByText('Template saved')).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel('Model', { exact: true })).toContainText(to.name);
+  await expect(region(page, 'Field prompt').getByLabel('Value', { exact: true })).toHaveValue(promptText);
+  const [saved] = await db.select().from(studioTemplate).where(eq(studioTemplate.id, id));
+  expect(saved?.modelId).toBe(to.id);
 });
 
 test('the Template admin pages are for admins only', async ({ workerPage }) => {

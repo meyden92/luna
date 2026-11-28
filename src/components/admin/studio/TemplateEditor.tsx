@@ -13,7 +13,7 @@ import { useAppMutation } from '@/hooks/use-app-mutation';
 import { useConfirmation } from '@/hooks/use-confirmation';
 import { queryKeys } from '@/libs/query-keys';
 import { fieldKind, suggestAccept } from '@/libs/studio/model-config';
-import { fileInputs, templateFieldDefaults, validateTemplateConfig } from '@/libs/studio/template-config';
+import { fileInputs, switchTemplateModel, validateTemplateConfig } from '@/libs/studio/template-config';
 import type { FieldConfig, FileRef, VariableConfig } from '@/libs/studio/types';
 import { type FileSlot, fileSlots, reconcileVariables, referencesOf, writeVariableTokens } from '@/libs/studio/variables';
 import type { listStudioCategories, listStudioModels } from '@/server/fns/admin/studio';
@@ -148,7 +148,10 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
     if (!next) return;
     setModelId(next.id);
     setCategoryId((current) => current ?? next.categoryId);
-    setConfig({ fields: templateFieldDefaults(next.fields, next.schemaSnapshot.input), variables: [] });
+    setConfig((current) => {
+      const switched = switchTemplateModel(current, next.fields, next.schemaSnapshot.input);
+      return { fields: switched.fields, variables: reconcileVariables(textsOf(switched.fields), switched.variables) };
+    });
   };
 
   /**
@@ -269,7 +272,7 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
   };
 
   return (
-    <div className="stack space-6">
+    <div className={`stack space-6 ${previewStyles.editor}`}>
       <div className={styles.header}>
         <div>
           <h1 className="type-2xl weight-bold">{draft.id ? draft.name : 'New template'}</h1>
@@ -294,7 +297,6 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
                   <Select
                     items={models.map((candidate) => ({ value: candidate.id, label: candidate.name }))}
                     value={modelId}
-                    disabled={Boolean(draft.id)}
                     onValueChange={(value) => value && chooseModel(value)}
                   >
                     <SelectTrigger id={`${id}-model`}>
@@ -438,7 +440,7 @@ export function TemplateEditor({ draft, models, categories }: { draft: TemplateD
         </div>
 
         {model && schema && (
-          <div className="stack space-6">
+          <div className={`stack space-6 ${previewStyles.sidebar}`}>
             <Card>
               <CardHeader>
                 <CardTitle>Variables</CardTitle>

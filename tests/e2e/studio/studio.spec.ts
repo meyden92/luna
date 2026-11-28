@@ -1,9 +1,11 @@
 import { GetObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { expect, type Page } from '@playwright/test';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { generation, generationOutput } from '../../../src/db/schema/studio';
+import { ACTIVE_GENERATION_STATUSES } from '../../../src/libs/studio/types';
 import type { TestDb } from '../fixtures/db';
 import { test } from '../fixtures/test';
+import { fixtureUserId, workerRole } from '../fixtures/users';
 import { MEDIA } from '../stack/fal-fake/catalog';
 import { falRequestContaining, falRequests, falUploads, releaseFalRequest } from '../utils/fal-fake';
 import { openOwnFiles, uniquePrefix, uploadOwnFiles } from '../utils/own-files';
@@ -243,29 +245,46 @@ test('a 3D model made from a picked file renders inline', async ({ workerPage, w
   await expect(historyEntry(workerPage, mesh).locator('model-viewer')).toBeVisible({ timeout: FINISH_TIMEOUT_MS });
 });
 
-test('a [slow] Generation is cancelled, and the active limit is refused inline', async ({ workerPage, db, stack }) => {
+test('a [slow] Generation is cancelled, and the active limit is refused inline', async ({ workerPage, db, stack }, testInfo) => {
   const model = await seedStudioModel(db, stack, { label: 'Slow', endpointId: 'fake/image' });
   const prompt = `${uniquePrefix('slow')} [slow]`;
 
-  await openStudio(workerPage, model);
-  for (const n of [1, 2, 3]) await generate(workerPage, `${prompt} ${n}`);
-  const entries = workerPage.getByRole('region', { name: 'History' }).getByRole('article', { name: model.name });
-  await expect(entries).toHaveCount(3);
+  // This test fills every slot itself, and the one before it on this worker may have left a Generation running.
+  const userId = await fixtureUserId(db, workerRole(testInfo.parallelIndex));
+  const active = () =>
+    db
+      .select({ id: generation.id })
+      .from(generation)
+      .where(and(eq(generation.userId, userId), inArray(generation.status, ACTIVE_GENERATION_STATUSES)));
+  await expect.poll(async () => (await active()).length, { timeout: FINISH_TIMEOUT_MS }).toBe(0);
 
-  await generate(workerPage, `${prompt} 4`);
-  await expect(workerPage.getByRole('region', { name: 'Generate' }).getByRole('alert')).toHaveText(
-    'You already have 3 Generations running. Wait for one to finish, or cancel one.',
-  );
+  try {
+    await openStudio(workerPage, model);
+    for (const n of [1, 2, 3]) await generate(workerPage, `${prompt} ${n}`);
+    const entries = workerPage.getByRole('region', { name: 'History' }).getByRole('article', { name: model.name });
+    await expect(entries).toHaveCount(3);
 
-  for (const n of [1, 2, 3]) {
-    const entry = entries.filter({ hasText: `${prompt} ${n}` });
-    await expect(entry.getByText('Running')).toBeVisible({ timeout: FINISH_TIMEOUT_MS });
-    await entry.getByRole('button', { name: 'Cancel' }).click();
-    await expect(entry.getByText('Cancelled')).toBeVisible();
+    await generate(workerPage, `${prompt} 4`);
+    await expect(workerPage.getByRole('region', { name: 'Generate' }).getByRole('alert')).toHaveText(
+      'You already have 3 Generations running. Wait for one to finish, or cancel one.',
+    );
+
+    for (const n of [1, 2, 3]) {
+      const entry = entries.filter({ hasText: `${prompt} ${n}` });
+      await expect(entry.getByText('Running')).toBeVisible({ timeout: FINISH_TIMEOUT_MS });
+      await entry.getByRole('button', { name: 'Cancel' }).click();
+      await expect(entry.getByText('Cancelled')).toBeVisible();
+    }
+    expect((await falRequests(stack)).filter((request) => String(request.input.prompt).startsWith(prompt)).every((r) => r.cancelled)).toBe(
+      true,
+    );
+  } finally {
+    // A [slow] request never finishes by itself: one left behind would hold a slot of this user for the rest of the run.
+    const open = (await falRequests(stack)).filter(
+      (request) => request.held && !request.cancelled && String(request.input.prompt).startsWith(prompt),
+    );
+    for (const request of open) await releaseFalRequest(stack, request.request_id);
   }
-  expect((await falRequests(stack)).filter((request) => String(request.input.prompt).startsWith(prompt)).every((r) => r.cancelled)).toBe(
-    true,
-  );
 });
 
 test('a [fail] Generation shows fal’s error and is retried', async ({ workerPage, db, stack }) => {

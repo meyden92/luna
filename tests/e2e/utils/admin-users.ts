@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { user } from '../../../src/db/schema/auth';
 import type { TestDb } from '../fixtures/db';
 import { clientIpHeader, type FixtureUser } from '../fixtures/users';
-import { clickUntil } from './hydration';
+import { clickUntil, untilHydrated } from './hydration';
 import { signInThroughForm } from './sign-in';
 
 /** Fills the admin users screen's "Create user" dialog (the page is on /admin/users) and waits for the confirmation toast. */
@@ -43,6 +43,25 @@ export function throwawayUser(label: string): FixtureUser {
 }
 
 /** A page in its own context and address, signed in as `account` through the login form. */
+/**
+ * An admin only this test knows, signed in on its own page: created through the dialog (`adminPage` ends up on its
+ * detail screen) and put in the Admin group there. For admin actions a per-user limit counts, such as the three
+ * active Generations: the bootstrap admin is shared by every spec running at that moment.
+ */
+export async function throwawayAdmin(adminPage: Page, browser: Browser, db: TestDb, label: string): Promise<{ page: Page; id: string }> {
+  const account = throwawayUser(label);
+  await adminPage.goto('/admin/users');
+  await createUserThroughAdmin(adminPage, account);
+  const id = await userIdOf(db, account.email);
+  await adminPage.goto(`/admin/users/${id}`);
+  const adminGroup = adminPage.getByRole('checkbox', { name: /^Admin/ });
+  await untilHydrated(adminGroup);
+  await adminGroup.check();
+  await adminPage.getByRole('button', { name: 'Save Group Assignments' }).click();
+  await expect(adminPage.getByText('User groups updated')).toBeVisible();
+  return { page: await signedInDevice(browser, account), id };
+}
+
 export async function signedInDevice(browser: Browser, account: FixtureUser): Promise<Page> {
   const context = await browser.newContext({ extraHTTPHeaders: clientIpHeader() });
   const page = await context.newPage();

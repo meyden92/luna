@@ -64,6 +64,10 @@ Around it: `throwawayUser(label)` makes credentials only that test knows (email 
 fixtures), `signedInDevice(browser, account)` returns a page for it in its own context and address, and
 `userIdOf(db, email)` finds its id.
 
+A spec whose admin starts a Generation (a test run in the Model or Template editor, a Generation to save as a Template)
+makes its own admin with `throwawayAdmin(adminPage, browser, db, label)`, which returns the admin's page and id: every user
+may have three Generations running, and the bootstrap admin is shared by all specs running at that moment.
+
 ## The gallery dataset
 
 `fixtures/gallery.ts` describes exactly what the gallery user holds, so specs assert against

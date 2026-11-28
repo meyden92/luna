@@ -2,7 +2,7 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import { eq } from 'drizzle-orm';
 import { generation } from '../../../../src/db/schema/studio';
 import { test } from '../../fixtures/test';
-import { userIdOf } from '../../utils/admin-users';
+import { throwawayAdmin } from '../../utils/admin-users';
 import { falRequestContaining } from '../../utils/fal-fake';
 import { clickUntil } from '../../utils/hydration';
 import { uniquePrefix } from '../../utils/own-files';
@@ -106,7 +106,14 @@ test('the catalog search offers the fake media Models and never the text one', a
   await expect(dialog.getByRole('button', { name: 'Choose Fake LLM' })).toHaveCount(0);
 });
 
-test('a Model added from the catalog is configured with Field cards, previewed and test-run', async ({ adminPage, db, stack }) => {
+test('a Model added from the catalog is configured with Field cards, previewed and test-run', async ({
+  adminPage: bootstrapAdminPage,
+  browser,
+  db,
+  stack,
+}) => {
+  // The test run at the end is a Generation of the admin's, so the admin is this test's own.
+  const { page: adminPage, id: adminId } = await throwawayAdmin(bootstrapAdminPage, browser, db, 'model');
   const category = uniquePrefix('Bild erstellen');
   const name = uniquePrefix('Bild');
   await createCategory(adminPage, category);
@@ -176,7 +183,7 @@ test('a Model added from the catalog is configured with Field cards, previewed a
   const sent = await falRequestContaining(stack, prompt);
   expect(sent).toMatchObject({ endpoint_id: 'fake/image', input: { prompt, aspect_ratio: '16:9', num_images: 2 } });
   const [row] = await db.select().from(generation).where(eq(generation.falRequestId, sent.request_id));
-  expect(row).toMatchObject({ userId: await userIdOf(db, stack.E2E_ADMIN_EMAIL), name, status: 'succeeded', estimatedCostUsd: 0.06 });
+  expect(row).toMatchObject({ userId: adminId, name, status: 'succeeded', estimatedCostUsd: 0.06 });
 });
 
 test('the admin index leads to the Studio hub, whose tiles lead on to the pages', async ({ adminPage }) => {

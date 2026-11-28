@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { studioTemplate } from '../../../../src/db/schema/studio';
 import { test } from '../../fixtures/test';
 import type { StackEnv } from '../../stack-env';
+import { throwawayAdmin } from '../../utils/admin-users';
 import { falRequestContaining, falUploads } from '../../utils/fal-fake';
 import { untilHydrated } from '../../utils/hydration';
 import { uniquePrefix } from '../../utils/own-files';
@@ -33,13 +34,16 @@ async function sentImages(stack: StackEnv, text: string): Promise<(string | unde
 const slots = (field: Locator) => field.getByLabel(/^Slot \d+ of image_urls$/);
 
 test('a Template sends its reference image and the User upload in the order the admin set, and removes the image with the Template', async ({
-  adminPage: page,
+  adminPage,
+  browser,
   workerPage,
   db,
   bucket,
   stack,
   corpus,
 }) => {
+  // The test run below is a Generation of the admin's, so the admin is this test's own.
+  const { page } = await throwawayAdmin(adminPage, browser, db, 'reference');
   const model = await seedStudioModel(db, stack, { label: 'Referenz', endpointId: 'fake/edit' });
   const name = uniquePrefix('Stilvorlage');
   const prefix = uniquePrefix('reference');

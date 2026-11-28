@@ -22,7 +22,8 @@ export async function createUserThroughAdmin(page: Page, user: FixtureUser): Pro
   await dialog.getByLabel('Initial password').fill(user.password);
   await dialog.getByRole('button', { name: 'Create user' }).click();
 
-  await expect(page.getByText(`${user.name} can now sign in as "${user.username}"`)).toBeVisible();
+  // While every worker loads pages, the app's one JS thread is busy and answers a write seconds late.
+  await expect(page.getByText(`${user.name} can now sign in as "${user.username}"`)).toBeVisible({ timeout: 15_000 });
   await expect(dialog).toBeHidden();
 }
 
@@ -42,7 +43,6 @@ export function throwawayUser(label: string): FixtureUser {
   };
 }
 
-/** A page in its own context and address, signed in as `account` through the login form. */
 /**
  * An admin only this test knows, signed in on its own page: created through the dialog (`adminPage` ends up on its
  * detail screen) and put in the Admin group there. For admin actions a per-user limit counts, such as the three
@@ -62,6 +62,7 @@ export async function throwawayAdmin(adminPage: Page, browser: Browser, db: Test
   return { page: await signedInDevice(browser, account), id };
 }
 
+/** A page in its own context and address, signed in as `account` through the login form. */
 export async function signedInDevice(browser: Browser, account: FixtureUser): Promise<Page> {
   const context = await browser.newContext({ extraHTTPHeaders: clientIpHeader() });
   const page = await context.newPage();

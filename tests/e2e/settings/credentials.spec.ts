@@ -3,7 +3,7 @@ import { type Browser, expect, type Page } from '@playwright/test';
 import { test } from '../fixtures/test';
 import { clientIpHeader, type FixtureUser } from '../fixtures/users';
 import { createUserThroughAdmin } from '../utils/admin-users';
-import { clickUntil } from '../utils/hydration';
+import { clickUntil, untilHydrated } from '../utils/hydration';
 import { signInThroughForm } from '../utils/sign-in';
 
 // Changing a password signs every other device out, so these specs never touch a shared fixture
@@ -44,6 +44,8 @@ async function openChangePassword(page: Page) {
 }
 
 test('changing the password: the old one is refused, the new one works, other devices are signed out', async ({ adminPage, browser }) => {
+  // A user created, four sign-ins on three devices and two password changes: more page loads than 30 s hold in a parallel run.
+  test.setTimeout(60_000);
   const user = await createOwnUser(adminPage);
   const newPassword = `new-${randomBytes(9).toString('base64url')}`;
   const thisDevice = await deviceOf(browser, user);
@@ -102,7 +104,10 @@ test('signing out ends the session', async ({ adminPage, browser }) => {
   const user = await createOwnUser(adminPage);
   const device = await deviceOf(browser, user);
 
-  await device.getByRole('button', { name: 'Account' }).click();
+  // Signing in lands on server HTML, where the menu button does nothing yet.
+  const account = device.getByRole('button', { name: 'Account' });
+  await untilHydrated(account);
+  await account.click();
   await device.getByRole('menuitem', { name: 'Log out' }).click();
   await expect(device).toHaveURL(/\/login/);
 

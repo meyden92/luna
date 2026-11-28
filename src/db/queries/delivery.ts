@@ -125,14 +125,19 @@ export type NewRendition = {
  * Stores a freshly generated rendition. Not audited: `FileRendition` is a
  * derived artifact in `UNAUDITED_MODELS` (issue #13) — it records no user
  * intent, only that the CDN resized an image someone asked to see.
+ *
+ * Two requests for the same new rendition both generate it and race on the
+ * unique `param_hash`; the later one gets the row the first stored.
  */
 export async function createRendition(values: NewRendition, handle: AuditHandle = db) {
   const [row] = await handle
     .insert(fileRendition)
     .values({ id: crypto.randomUUID(), ...values })
+    .onConflictDoNothing({ target: fileRendition.paramHash })
     .returning();
-  if (!row) throw new Error('Failed to create rendition');
-  return row;
+  const stored = row ?? (await findRenditionByParamHash(values.paramHash, handle));
+  if (!stored) throw new Error('Failed to create rendition');
+  return stored;
 }
 
 /**

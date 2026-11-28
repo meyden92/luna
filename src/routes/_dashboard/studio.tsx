@@ -28,7 +28,8 @@ function StudioPage() {
   return (
     <StudioScreen
       selection={selection}
-      onSelect={(next) => navigate({ search: next, replace: true })}
+      // The selection changes in place: without this the router puts the window back where it was, undoing the Studio's own scroll to the form.
+      onSelect={(next) => navigate({ search: next, replace: true, resetScroll: false })}
     />
   );
 }

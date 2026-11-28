@@ -104,10 +104,11 @@ test('closing returns to the list where it was', async ({ galleryPage, gallery }
   await galleryPage.goto('/dashboard');
   await expect(fileCards(galleryPage)).toHaveCount(PAGE_SIZE);
   await cardOf(galleryPage, title).scrollIntoViewIfNeeded();
+  await clickUntil(cardOf(galleryPage, title), previewOf(galleryPage, title));
+  // Read under the open Preview: a click Playwright has to retry re-aligns the card first, which scrolls the list.
   const scrollBefore = await galleryPage.evaluate(() => window.scrollY);
   expect(scrollBefore).toBeGreaterThan(0);
 
-  await clickUntil(cardOf(galleryPage, title), previewOf(galleryPage, title));
   await galleryPage.keyboard.press('ArrowRight');
   await galleryPage.keyboard.press('Escape');
   await expect(galleryPage.getByRole('dialog')).toHaveCount(0);

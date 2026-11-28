@@ -106,6 +106,7 @@ Ask of every change: which pieces must change with it? Those change in the same 
 - Working on an issue: read the full epic on GitHub, set the label to "Doing", work on a separate branch.
 - An issue describes the state when it was filed: before fixing, check whether the current code already contains the fix.
 - When done: run the e2e suite (plus a new spec where the change earns one), open a pull request, set the label to "testing", and tell the user how to test the changes.
+- When a planning round ends (spec and tickets published), commit the glossary (`CONTEXT.md`) and the new ADRs with a reference to the epic and push them straight to `main`, without a PR: the tickets name them as binding, so they must be on GitHub before anyone picks one up.
 - A bug the user reports that is unrelated to the current task becomes a new GitHub issue; the fix waits.
 - Issues and PRs reference only this repository. A reference to another repository's issue or PR creates a backlink there.
 

@@ -217,16 +217,19 @@ test('Continue with … offers only Categories that take images and attaches the
   await expect(historyEntry(workerPage, video)).toBeVisible();
 });
 
-test('audio plays and a 3D model made from a picked file renders inline', async ({ workerPage, workerRequest, db, stack, corpus }) => {
+test('audio plays inline', async ({ workerPage, db, stack }) => {
   const audio = await seedStudioModel(db, stack, { label: 'Tones', endpointId: 'fake/audio', icon: 'AudioLines' });
-  const mesh = await seedStudioModel(db, stack, { label: 'Meshes', endpointId: 'fake/3d', icon: 'Box' });
-  const prefix = uniquePrefix('studio-input');
-  const [picked] = await uploadOwnFiles(workerRequest, prefix, [corpus.file('icon-small.png')]);
 
   await openStudio(workerPage, audio);
   await generate(workerPage, uniquePrefix('a bell'));
   await expectDone(workerPage, audio);
   await expect(historyEntry(workerPage, audio).locator('audio')).toHaveAttribute('src', /.+/);
+});
+
+test('a 3D model made from a picked file renders inline', async ({ workerPage, workerRequest, db, stack, corpus }) => {
+  const mesh = await seedStudioModel(db, stack, { label: 'Meshes', endpointId: 'fake/3d', icon: 'Box' });
+  const prefix = uniquePrefix('studio-input');
+  const [picked] = await uploadOwnFiles(workerRequest, prefix, [corpus.file('icon-small.png')]);
 
   await openStudio(workerPage, mesh);
   await workerPage.getByRole('button', { name: 'Choose…' }).click();
@@ -236,7 +239,8 @@ test('audio plays and a 3D model made from a picked file renders inline', async 
   await expect(workerPage.getByText('From your Files', { exact: true })).toBeVisible();
   await workerPage.getByRole('button', { name: 'Generate' }).click();
   await expectDone(workerPage, mesh);
-  await expect(historyEntry(workerPage, mesh).locator('model-viewer')).toBeVisible();
+  // The viewer follows "Done": its script (three.js, 1 MB) loads on demand, then WebGL starts up without a GPU.
+  await expect(historyEntry(workerPage, mesh).locator('model-viewer')).toBeVisible({ timeout: FINISH_TIMEOUT_MS });
 });
 
 test('a [slow] Generation is cancelled, and the active limit is refused inline', async ({ workerPage, db, stack }) => {

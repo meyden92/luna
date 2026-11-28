@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { templateFieldDefaults, validateTemplateConfig } from './template-config';
+import { switchTemplateModel, templateFieldDefaults, validateTemplateConfig } from './template-config';
 import type { FieldConfig, JsonSchema, VariableConfig } from './types';
 
 // fake/edit's input: a prompt and a required list of 1-4 images.
@@ -134,5 +134,38 @@ describe('templateFieldDefaults', () => {
       ['image_urls', 'shown', undefined],
       ['strength', 'fixed', 0.2],
     ]);
+  });
+});
+
+describe('switchTemplateModel', () => {
+  // fake/text's input: the same prompt, a seed instead of the images and strength.
+  const textInput: JsonSchema = {
+    type: 'object',
+    properties: { seed: { type: 'integer' }, prompt: { type: 'string' } },
+    required: ['prompt'],
+  };
+  const textFields: FieldConfig[] = [
+    { name: 'seed', mode: 'shown', order: 0, value: 7 },
+    { name: 'prompt', mode: 'shown', order: 1, label: 'Prompt' },
+  ];
+  const fixedPrompt = prompt('A {style} portrait');
+
+  test('keeps the cards of shared inputs in their order, adds the new inputs as on a new Template, drops the rest', () => {
+    const { fields } = switchTemplateModel({ fields: [fixedPrompt, images, strength], variables: [] }, textFields, textInput);
+    expect(fields).toEqual([
+      { ...fixedPrompt, order: 0 },
+      { name: 'seed', mode: 'fixed', order: 1, value: 7 },
+    ]);
+  });
+
+  test('drops file Variables whose input the new Model lacks and keeps the others', () => {
+    const { variables } = switchTemplateModel({ fields: [fixedPrompt, images], variables: [style, photo] }, textFields, textInput);
+    expect(variables).toEqual([style]);
+  });
+
+  test('keeps file Variables whose input the new Model still has', () => {
+    const modelFields: FieldConfig[] = [{ name: 'image_urls', mode: 'shown', order: 0, display: 'file', accept: ['image'] }];
+    const { variables } = switchTemplateModel({ fields: [images], variables: [photo] }, modelFields, input);
+    expect(variables).toEqual([photo]);
   });
 });

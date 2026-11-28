@@ -31,6 +31,28 @@ export function templateFieldDefaults(modelFields: FieldConfig[], input: JsonSch
     });
 }
 
+/**
+ * A Template's cards on another Model: Field cards for inputs the new Model
+ * also has stay as they are, its other inputs follow as on a new Template, and
+ * file Variables whose input is gone are dropped. Text Variables are left to
+ * `reconcileVariables`; what no longer fits the new schema is
+ * `validateTemplateConfig`'s to flag.
+ */
+export function switchTemplateModel(
+  current: { fields: FieldConfig[]; variables: VariableConfig[] },
+  modelFields: FieldConfig[],
+  input: JsonSchema,
+): { fields: FieldConfig[]; variables: VariableConfig[] } {
+  const defaults = templateFieldDefaults(modelFields, input);
+  const inputs = new Set(defaults.map((field) => field.name));
+  const kept = [...current.fields].sort((a, b) => a.order - b.order).filter((field) => inputs.has(field.name));
+  const keptNames = new Set(kept.map((field) => field.name));
+  const fields = [...kept, ...defaults.filter((field) => !keptNames.has(field.name))].map((field, order) => ({ ...field, order }));
+  const fileTargets = new Set(fileInputs(input).map(({ name }) => name));
+  const variables = current.variables.filter((variable) => !variable.file || fileTargets.has(variable.file.field));
+  return { fields, variables };
+}
+
 /** The keys of the stored reference images a Template's Fields send. */
 export function templateReferenceKeys(fields: FieldConfig[]): string[] {
   return fields.flatMap((field) => referencesOf(field).flatMap((ref) => (ref.source === 'template' ? [ref.key] : [])));

@@ -100,8 +100,10 @@
     position: relative;
     isolation: isolate;
     z-index: 80;
-    min-width: var(--popup-min-width);
-    width: var(--anchor-width);
+    /* As wide as its longest option, which may say more than the trigger shows, and never narrower than the trigger. */
+    min-width: max(var(--popup-min-width), var(--anchor-width));
+    width: max-content;
+    max-width: var(--available-width);
     max-height: var(--available-height);
     overflow-x: hidden;
     overflow-y: auto;
@@ -179,12 +181,12 @@
     }
   }
 
+  /* Wraps only where the popup is capped by the viewport; otherwise the popup grows to the text. */
   .itemText {
     display: flex;
     flex: 1;
-    flex-shrink: 0;
     gap: var(--space-2);
-    white-space: nowrap;
+    min-width: 0;
   }
 
   .itemIndicator {

@@ -73,6 +73,50 @@ test('a User generates an image and sees it in the history, also at phone width'
   await expectDone(workerPage, model);
 });
 
+test('the History category filter shows a long Category name whole, clear of the checkmark, also at phone width', async ({
+  workerPage,
+  db,
+  stack,
+}) => {
+  // Longer than the filter's own "All categories", and than a phone is wide, where the name has to wrap.
+  const model = await seedStudioModel(db, stack, {
+    label: 'A Category whose name is long enough to fill a phone',
+    endpointId: 'fake/image',
+  });
+  const filter = workerPage.getByRole('combobox', { name: 'Filter by category' });
+  const options = workerPage.getByRole('listbox');
+  const option = options.getByRole('option', { name: model.categoryName });
+  const name = option.getByText(model.categoryName);
+  /** Opens the filter and returns the list's box. The list scales in, so boxes are final only once its transitions are over. */
+  const openFilter = async () => {
+    await filter.click();
+    await options.evaluate(async (list) => {
+      for (let element: Element | null = list; element; element = element.parentElement) {
+        await Promise.allSettled(element.getAnimations().map((animation) => animation.finished));
+      }
+    });
+    return (await options.boundingBox())!;
+  };
+
+  for (const width of [1280, 375]) {
+    await workerPage.setViewportSize({ width, height: 812 });
+    await openStudio(workerPage, model);
+
+    let list = await openFilter();
+    let text = (await name.boundingBox())!;
+    expect(text.x, `name inside the list at ${width} px`).toBeGreaterThanOrEqual(list.x);
+    expect(text.x + text.width, `name inside the list at ${width} px`).toBeLessThanOrEqual(list.x + list.width);
+
+    await option.click();
+    list = await openFilter();
+    await expect(option).toHaveAttribute('aria-selected', 'true');
+    text = (await name.boundingBox())!;
+    const checkmark = (await option.locator('svg').boundingBox())!;
+    expect(text.x + text.width, `name left of the checkmark at ${width} px`).toBeLessThanOrEqual(checkmark.x);
+    expect(checkmark.x + checkmark.width, `checkmark inside the list at ${width} px`).toBeLessThanOrEqual(list.x + list.width);
+  }
+});
+
 test('Again draws a new seed, and Use settings fills the form, also after the Output expired', async ({ workerPage, db, stack }) => {
   const model = await seedStudioModel(db, stack, {
     label: 'Seeded',

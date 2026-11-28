@@ -1,8 +1,18 @@
 @layer components {
-  .form {
-    display: flex;
-    flex-direction: column;
+  .form,
+  .groupBody {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-4);
+
+    & > * {
+      grid-column: 1 / -1;
+    }
+
+    /* Controls with short values share a row. */
+    & > .field:is([data-control="number"], [data-control="select"]) {
+      grid-column: auto;
+    }
   }
 
   .field {
@@ -58,9 +68,6 @@
   }
 
   .groupBody {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
     padding-top: var(--space-4);
   }
 

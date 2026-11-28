@@ -113,6 +113,26 @@ test('Again draws a new seed, and Use settings fills the form, also after the Ou
   await expect(workerPage.getByRole('region', { name: 'History' }).getByRole('article', { name: model.name })).toHaveCount(3);
 });
 
+test('Use settings brings the form back into view at phone width', async ({ workerPage, db, stack }) => {
+  const model = await seedStudioModel(db, stack, { label: 'Handy', endpointId: 'fake/image' });
+  const prompt = uniquePrefix('a tide pool');
+
+  // Short enough that the history starts below the fold.
+  await workerPage.setViewportSize({ width: 375, height: 500 });
+  await openStudio(workerPage, model);
+  await generate(workerPage, prompt);
+  await expectDone(workerPage, model);
+
+  const promptField = workerPage.getByRole('textbox', { name: 'Prompt', exact: true });
+  await promptField.fill('something else');
+  const useSettings = historyEntry(workerPage, model).getByRole('button', { name: 'Use settings' });
+  await useSettings.scrollIntoViewIfNeeded();
+  await expect(promptField).not.toBeInViewport();
+  await useSettings.click();
+  await expect(promptField).toHaveValue(prompt);
+  await expect(promptField).toBeInViewport();
+});
+
 test('Continue with … offers only Categories that take images and attaches the Output to the video Model', async ({
   workerPage,
   db,

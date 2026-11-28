@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { Sparkles } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import { StudioForm } from '@/components/studio/form/StudioForm';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import { queryKeys } from '@/libs/query-keys';
@@ -18,17 +18,21 @@ import { studioBudgetQueryOptions } from './queries';
 /**
  * The selected Model's or Template's form, and the footer with the price
  * estimate, the Budget and *Generate*. A refused submit (Budget, storage,
- * active limit, invalid input) shows its reason next to the button.
+ * active limit, invalid input) shows its reason below the button. The footer
+ * stays visible: a form taller than the card scrolls above it.
  */
 export function GeneratePanel({
   entry,
   values: given,
   onChange,
+  picker,
 }: {
   entry: StudioEntry;
   /** Null starts from the form's defaults. */
   values: StudioFormValues | null;
   onChange: (values: StudioFormValues) => void;
+  /** The control that selects another entry, shown beside the name. */
+  picker?: ReactNode;
 }) {
   const form = useMemo(() => buildStudioForm(entry), [entry]);
   const values = given ?? initialFormValues(form);
@@ -46,17 +50,21 @@ export function GeneratePanel({
   const target = entry.kind === 'model' ? { modelId: entry.id } : { templateId: entry.id };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className={styles.root}>
+      <CardHeader className={styles.header}>
         <CardTitle
           role="heading"
           aria-level={2}
         >
           {entry.name}
         </CardTitle>
-        {entry.description && <CardDescription>{entry.description}</CardDescription>}
+        <CardDescription className={styles.description}>
+          {entry.kind === 'template' ? 'Template' : 'Model'}
+          {entry.description && ` · ${entry.description}`}
+        </CardDescription>
+        {picker && <CardAction>{picker}</CardAction>}
       </CardHeader>
-      <CardContent className="stack space-4">
+      <CardContent className={styles.body}>
         {form.items.length === 0 ? (
           <p className={styles.muted}>Nothing to fill in: press Generate.</p>
         ) : (
@@ -70,8 +78,9 @@ export function GeneratePanel({
             disabled={submit.isPending}
           />
         )}
-
-        <div className={styles.footer}>
+      </CardContent>
+      <div className={styles.footer}>
+        <div className={styles.submit}>
           <div className={styles.cost}>
             {estimate !== null && <span data-testid="studio-estimate">≈ {formatUsd(estimate)}</span>}
             {budget.data && (
@@ -99,7 +108,7 @@ export function GeneratePanel({
             {refusal}
           </p>
         )}
-      </CardContent>
+      </div>
     </Card>
   );
 }

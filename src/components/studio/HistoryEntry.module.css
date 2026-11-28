@@ -3,22 +3,18 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
-    padding: var(--space-4);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xl);
-    background-color: var(--card);
-    color: var(--card-foreground);
   }
 
   .header {
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-start;
-    justify-content: space-between;
-    gap: var(--space-3);
+    gap: var(--space-2) var(--space-3);
   }
 
   .title {
     display: flex;
+    flex: 1 1 12rem;
     min-width: 0;
     flex-direction: column;
     gap: var(--space-1);
@@ -31,11 +27,18 @@
     font-variant-numeric: tabular-nums;
   }
 
+  .actions {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
   .prompt {
     display: -webkit-box;
     overflow: hidden;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2;
     color: var(--foreground-2);
     font-size: var(--text-sm);
   }
@@ -47,14 +50,23 @@
 
   .outputs {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+    align-items: start;
     gap: var(--space-3);
   }
 
+  .pending {
+    aspect-ratio: 1;
+    border-radius: var(--radius-md);
+  }
+
+  /* The viewer fills the first row; under a player the link and the actions share the next one. */
   .output {
+    position: relative;
     display: flex;
     min-width: 0;
-    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: center;
     gap: var(--space-1);
     margin: 0;
   }
@@ -64,23 +76,67 @@
     grid-column: 1 / -1;
   }
 
+  .saved {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    color: var(--muted-foreground);
+    font-size: var(--text-xs);
+
+    & svg {
+      width: var(--space-3);
+      height: var(--space-3);
+    }
+  }
+
   .outputActions {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     gap: var(--space-1);
   }
 
-  .saved {
-    padding-inline: var(--space-2);
-    color: var(--muted-foreground);
-    font-size: var(--text-xs);
+  /* On an image both lie over it, where they cannot cover a player's controls. */
+  .output:has(img) {
+    & .saved,
+    & .outputActions {
+      position: absolute;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background-color: var(--card);
+    }
+
+    & .saved {
+      top: var(--space-2);
+      left: var(--space-2);
+      color: var(--foreground-2);
+    }
+
+    & .outputActions {
+      right: var(--space-2);
+      bottom: var(--space-2);
+      padding: var(--space-1);
+      opacity: 0;
+      transition: opacity var(--duration-fast) ease;
+    }
+
+    &:hover .outputActions,
+    &:focus-within .outputActions,
+    & .outputActions:has([data-popup-open]) {
+      opacity: 1;
+    }
+
+    /* Touch screens have no hover to reveal them. */
+    @media (hover: none) {
+      & .outputActions {
+        opacity: 1;
+      }
+    }
   }
 
-  .actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-2);
+  @media (prefers-reduced-motion: reduce) {
+    .outputActions {
+      transition: none;
+    }
   }
 }

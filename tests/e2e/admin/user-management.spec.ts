@@ -4,7 +4,7 @@ import { formatSize } from '../../../src/libs/utils';
 import { test } from '../fixtures/test';
 import { clientIpHeader, type FixtureUser } from '../fixtures/users';
 import { createUserThroughAdmin, signedInDevice, throwawayUser, userIdOf } from '../utils/admin-users';
-import { clickUntil, untilHydrated } from '../utils/hydration';
+import { clickUntil, openAccountMenu, untilHydrated } from '../utils/hydration';
 import { uniquePrefix, uploadOwnFiles } from '../utils/own-files';
 import { bucketKeysContaining } from '../utils/uploads';
 
@@ -153,7 +153,7 @@ test('the Admin group opens /admin and its nav link for a user, removing it clos
 
   // The nav follows the same rule as the guard, though the user has no `admin` role.
   await device.goto('/dashboard');
-  await device.getByRole('button', { name: 'Account' }).click();
+  await openAccountMenu(device);
   await expect(device.getByRole('menuitem', { name: 'Admin' })).toBeVisible();
   await device.keyboard.press('Escape');
 

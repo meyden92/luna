@@ -124,6 +124,7 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
   rather than a timeout.
   For a form field on a page, `untilHydrated(locator)` waits until React has attached to the element, so `fill` is not
   lost to hydration.
+  `openAccountMenu(page)` opens the navigation's Account menu that way; never click its button directly after a page load.
 - `utils/files-screen.ts` reads the Files screen: `cardTitles` and `dateGroups` (what is listed, in page
   order), `loadAll(page, n)` (scrolls until n cards are loaded), `scopeRow`, `countLine`, and `asListed`
   (the page order of a sorted list: files stay together under their date heading, headings ordered by first file).

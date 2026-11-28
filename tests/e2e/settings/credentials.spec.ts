@@ -3,7 +3,7 @@ import { type Browser, expect, type Page } from '@playwright/test';
 import { test } from '../fixtures/test';
 import { clientIpHeader, type FixtureUser } from '../fixtures/users';
 import { createUserThroughAdmin } from '../utils/admin-users';
-import { clickUntil, untilHydrated } from '../utils/hydration';
+import { clickUntil, openAccountMenu } from '../utils/hydration';
 import { signInThroughForm } from '../utils/sign-in';
 
 // Changing a password signs every other device out, so these specs never touch a shared fixture
@@ -104,10 +104,7 @@ test('signing out ends the session', async ({ adminPage, browser }) => {
   const user = await createOwnUser(adminPage);
   const device = await deviceOf(browser, user);
 
-  // Signing in lands on server HTML, where the menu button does nothing yet.
-  const account = device.getByRole('button', { name: 'Account' });
-  await untilHydrated(account);
-  await account.click();
+  await openAccountMenu(device);
   await device.getByRole('menuitem', { name: 'Log out' }).click();
   await expect(device).toHaveURL(/\/login/);
 

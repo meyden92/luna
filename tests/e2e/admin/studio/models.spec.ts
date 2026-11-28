@@ -41,6 +41,8 @@ test('admins create, rename, reorder and delete Categories; a Category with Mode
 
   // Drag the second Category by its handle onto the first one's place.
   const rows = adminPage.getByTestId('studio-category');
+  // The mouse only reaches what is on screen, and the list of every spec's Categories is longer than that.
+  await secondRow.evaluate((row) => row.scrollIntoView({ block: 'center' }));
   const handle = await secondRow.getByRole('button', { name: 'Drag to reorder' }).boundingBox();
   const target = await categoryRow(adminPage, first).boundingBox();
   await adminPage.mouse.move(handle!.x + handle!.width / 2, handle!.y + handle!.height / 2);

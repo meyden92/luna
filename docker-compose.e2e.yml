@@ -52,7 +52,7 @@ services:
       context: tests/e2e/stack/fal-fake
       additional_contexts:
         corpus: tests/e2e/fixtures/files
-    image: lunashare-fal-fake:e2e
+    image: lunashare-fal-fake:${E2E_IMAGE_TAG:?}
     environment:
       # Listens on the published port itself, so the URLs it hands out work in
       # the app container (by service name) and in the browser, which maps
@@ -75,7 +75,8 @@ services:
       context: .
       args:
         BUILD_COMMIT: ${E2E_BUILD_COMMIT:-unknown}
-    image: lunashare:e2e
+    # Tagged per run: two overlapping runs must not start each other's build.
+    image: lunashare:${E2E_IMAGE_TAG:?}
     depends_on:
       postgres:
         condition: service_healthy

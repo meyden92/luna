@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Download, ExternalLink, Loader2, Save } from 'lucide-react';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useShallow } from 'zustand/react/shallow';
 import { BeautifierCanvas } from '@/components/beautifier/beautifier-canvas';
@@ -41,6 +41,8 @@ function filenameFromSource(source: BeautifierSourceFile) {
 
 export function BeautifierEditor({ source }: BeautifierEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  /** False until the source image is drawn; before that there is nothing to export. */
+  const [canvasReady, setCanvasReady] = useState(false);
   const queryClient = useQueryClient();
   const { config, savedFile, setSource, updateConfig, resetConfig, setSaving, setSavedFile } = useBeautifierStore(
     useShallow((state) => ({
@@ -91,6 +93,7 @@ export function BeautifierEditor({ source }: BeautifierEditorProps) {
 
   const handleCanvasReady = useCallback((canvas: HTMLCanvasElement | null) => {
     canvasRef.current = canvas;
+    setCanvasReady(canvas !== null);
   }, []);
 
   const handleDownload = useCallback(async () => {
@@ -148,6 +151,7 @@ export function BeautifierEditor({ source }: BeautifierEditorProps) {
             type="button"
             variant="outline"
             onClick={handleDownload}
+            disabled={!canvasReady}
           >
             <Download className={styles.buttonIcon} />
             Download
@@ -155,7 +159,7 @@ export function BeautifierEditor({ source }: BeautifierEditorProps) {
           <Button
             type="button"
             onClick={() => saveMutation.mutate()}
-            disabled={saveMutation.isPending}
+            disabled={!canvasReady || saveMutation.isPending}
           >
             {saveMutation.isPending ? <Loader2 className={styles.spinner} /> : <Save className={styles.buttonIcon} />}
             Save to gallery

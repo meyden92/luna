@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { expect, type Page } from '@playwright/test';
 import sharp from 'sharp';
 import { test } from '../fixtures/test';
+import { untilHydrated } from '../utils/hydration';
 import { uniquePrefix, uploadOwnFiles } from '../utils/own-files';
 
 // The screenshot beautifier (/beautify/<fileId>): wraps one of the user's own images in a background and frame and
@@ -66,6 +67,30 @@ test('a gallery image is beautified to a PNG of the chosen size, by download and
     width: 900,
     height: 700,
   });
+});
+
+test('Download and Save to gallery wait until the image is drawn', async ({ workerPage: page, workerRequest, corpus, stack }) => {
+  const [source] = await uploadOwnFiles(workerRequest, uniquePrefix('beautify-wait'), [corpus.file('square-food.png')]);
+
+  // Holding the image back keeps the canvas empty while the page is otherwise ready.
+  let releaseImage!: () => void;
+  const imageHeld = new Promise<void>((resolve) => {
+    releaseImage = resolve;
+  });
+  await page.route(`${stack.E2E_CDN_URL}/**`, async (route) => {
+    await imageHeld;
+    await route.continue();
+  });
+  await page.goto(`/beautify/${source!.id}`);
+  await untilHydrated(page.getByLabel('Width', { exact: true }));
+
+  const download = page.getByRole('button', { name: 'Download' });
+  const save = page.getByRole('button', { name: 'Save to gallery' });
+  await expect(download).toBeDisabled();
+  await expect(save).toBeDisabled();
+  releaseImage();
+  await expect(download).toBeEnabled();
+  await expect(save).toBeEnabled();
 });
 
 test('a file that is not an image is refused', async ({ workerPage: page, workerRequest, corpus }) => {

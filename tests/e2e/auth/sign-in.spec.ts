@@ -1,6 +1,7 @@
 import { expect } from '@playwright/test';
 import { test } from '../fixtures/test';
 import { fixtureUser, workerRole } from '../fixtures/users';
+import { openAccountMenu } from '../utils/hydration';
 import { signInThroughForm, submitLoginForm } from '../utils/sign-in';
 
 // Each test gets a fresh, signed-out context with its own `x-forwarded-for`, so
@@ -104,7 +105,7 @@ test('signing out from the navigation ends the session', async ({ page, context,
   });
   expect((await replay.post('/api/download-zip', { data: { ids: ['x'] } })).status()).toBe(404);
 
-  await page.getByRole('button', { name: 'Account' }).click();
+  await openAccountMenu(page);
   await page.getByRole('menuitem', { name: 'Log out' }).click();
 
   await expect(page).toHaveURL(/\/login$/);

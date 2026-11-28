@@ -2,6 +2,7 @@ import { expect } from '@playwright/test';
 import { test } from '../fixtures/test';
 import { fixtureUser } from '../fixtures/users';
 import { createUserThroughAdmin, signedInDevice, throwawayUser, userIdOf } from '../utils/admin-users';
+import { clickUntil } from '../utils/hydration';
 import { openOwnFiles, uniquePrefix, uploadOwnFiles } from '../utils/own-files';
 import { bucketKeysContaining } from '../utils/uploads';
 
@@ -39,8 +40,8 @@ test("an admin deletes one file of a user; it leaves that user's Files and the b
   await adminPage.goto(`/admin/users/${id}/files`);
   await expect(adminPage.getByText('(2 total files)')).toBeVisible();
   const row = adminPage.getByRole('row').filter({ hasText: doomed!.title });
-  await row.getByRole('button', { name: 'Delete file' }).click();
   const dialog = adminPage.getByRole('dialog', { name: 'Delete File' });
+  await clickUntil(row.getByRole('button', { name: 'Delete file' }), dialog);
   await dialog.getByRole('button', { name: 'Confirm' }).click();
   await expect(adminPage.getByText('File deleted successfully')).toBeVisible();
   await expect(row).toHaveCount(0);

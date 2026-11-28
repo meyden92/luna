@@ -3,8 +3,8 @@
  * the working tree, starts it in a disposable Compose stack (Postgres, RustFS,
  * the fake fal service, app), bootstraps an admin the way an operator would,
  * runs Playwright against it and removes the stack and its volumes, whether the
- * run passed, failed or was interrupted. The images and the build cache are
- * kept. See ADR 0006.
+ * run passed, failed or was interrupted. The run's own image tags go with it;
+ * the build cache is kept. See ADR 0006.
  *
  * Never reads `.env`: package.json runs this with `bun --no-env-file`, and
  * Compose gets `--env-file /dev/null`. Exits with Playwright's exit code.
@@ -30,7 +30,10 @@ const HEALTH_TIMEOUT_MS = 120_000;
 /** One run per checkout: runs share tests/e2e/.auth and test-results/, so a second one would clobber the first. */
 const LOCK_FILE = resolve(ROOT, 'tests/e2e/.run.lock');
 
-/** Carries this runner's PID, so a later sweep can tell a live stack from a leftover. */
+/**
+ * Carries this runner's PID, so a later sweep can tell a live stack from a leftover. Also the tag of the images
+ * this run builds: under a shared tag, an overlapping run's build would replace the image this one is about to start.
+ */
 const project = `${PROJECT_PREFIX}${process.pid}-${randomBytes(4).toString('hex')}`;
 
 /** The child in the foreground, so a signal can be forwarded to it. */
@@ -84,6 +87,15 @@ function ownerAlive(name: string): boolean {
   return !Number.isInteger(pid) || pid <= 0 || pidAlive(pid);
 }
 
+/** The images tagged with a run's project name; with no argument, those of every run. */
+async function runImages(tag = `${PROJECT_PREFIX}*`): Promise<string[]> {
+  const lines = await output(['docker', 'image', 'ls', '--filter', `reference=*:${tag}`, '--format', '{{.Repository}}:{{.Tag}}']);
+  return lines
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
 /** Exits if another run in this checkout is still alive; otherwise takes the lock until this process exits. */
 function lockCheckout(): void {
   try {
@@ -130,6 +142,11 @@ async function sweepLeftovers(): Promise<void> {
       log(`sweeping ${ids.length} leftover ${list[1] === 'ps' ? 'container' : list[1]}(s)`);
       await run([...remove, ...ids], { quiet: true });
     }
+  }
+  const images = (await runImages()).filter((ref) => !ownerAlive(ref.slice(ref.indexOf(':') + 1)));
+  if (images.length > 0) {
+    log(`sweeping ${images.length} leftover image(s)`);
+    await run(['docker', 'image', 'rm', ...images], { quiet: true });
   }
 }
 
@@ -181,6 +198,7 @@ const composeEnv: Record<string, string> = {
   E2E_FORM_FIELD_ENCRYPTION_KEY: formFieldEncryptionKey,
   E2E_RENDITION_SIGNING_SECRET: secret(32),
   E2E_DELIVERY_COOKIE_SECRET: secret(32),
+  E2E_IMAGE_TAG: project,
   E2E_BUILD_COMMIT: (await output(['git', 'rev-parse', 'HEAD'])).trim() || 'unknown',
 };
 
@@ -272,8 +290,10 @@ let teardown: Promise<void> | undefined;
 /** Idempotent: the main flow and a signal handler may both ask for it. */
 function tearDown(): Promise<void> {
   teardown ??= (async () => {
-    log(`teardown: removing ${project} and its volumes`);
+    log(`teardown: removing ${project}, its volumes and its images`);
     await run(compose('down', '-v', '--remove-orphans'), { env: composeEnv, quiet: true });
+    const images = await runImages(project);
+    if (images.length > 0) await run(['docker', 'image', 'rm', ...images], { quiet: true });
   })();
   return teardown;
 }
@@ -295,7 +315,7 @@ try {
   log('sweeping leftover stacks');
   await sweepLeftovers();
 
-  log(`build: lunashare:e2e and the fal fake from the working tree (project ${project})`);
+  log(`build: the app and the fal fake from the working tree, tagged ${project}`);
   await runOrThrow(compose('build', 'app', 'fal-fake'), { env: composeEnv });
 
   log('start: postgres, rustfs and fal-fake');

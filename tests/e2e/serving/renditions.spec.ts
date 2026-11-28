@@ -96,6 +96,17 @@ test.describe('a public image', () => {
 
     expect(second.body.equals(first.body)).toBe(true);
   });
+
+  test('two requests for the same new rendition at once are both served', async ({ request, gallery, db }) => {
+    const image = await servedFile(gallery, db, 'landscape-photo.jpg', { private: false });
+    // Full size as PNG takes long enough to encode that the second request arrives while the first is at work.
+    const [first, second] = await Promise.all([
+      rendition(request, image.id, 'rot=270,fmt=png'),
+      rendition(request, image.id, 'rot=270,fmt=png'),
+    ]);
+
+    expect(second.body.equals(first.body)).toBe(true);
+  });
 });
 
 test('an unknown image is 404', async ({ request }) => {

@@ -1,4 +1,4 @@
-import { expect, type Locator } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 /**
  * Clicks a control and retries until the click takes effect. Before hydration a
@@ -22,4 +22,11 @@ export async function untilHydrated(element: Locator): Promise<void> {
   await expect
     .poll(() => element.evaluate((node) => Object.keys(node).some((key) => key.startsWith('__reactProps'))), { timeout: 15_000 })
     .toBe(true);
+}
+
+/** Opens the navigation's Account menu. After a full page load its button is server HTML until React hydrates, and a click before that opens nothing. */
+export async function openAccountMenu(page: Page): Promise<void> {
+  const account = page.getByRole('button', { name: 'Account' });
+  await untilHydrated(account);
+  await account.click();
 }

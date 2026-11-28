@@ -5,7 +5,7 @@ import { generation, studioModel, studioTemplate } from '../../../../src/db/sche
 import { templateFieldDefaults } from '../../../../src/libs/studio/template-config';
 import { test } from '../../fixtures/test';
 import type { StackEnv } from '../../stack-env';
-import { userIdOf } from '../../utils/admin-users';
+import { throwawayAdmin } from '../../utils/admin-users';
 import { type FalRequestRecord, falRequestContaining, falUploads } from '../../utils/fal-fake';
 import { untilHydrated } from '../../utils/hydration';
 import { uniquePrefix } from '../../utils/own-files';
@@ -15,7 +15,8 @@ import { historyEntry, openStudio, type SeededModel, seedStudioModel } from '../
 // Variables and two file Variables feeding its image list, built in the
 // editor, test-run, then run by a User in the Studio. The fake's recorded
 // requests show what substitution sent. Models and Templates are global, so
-// every name carries a uniquePrefix.
+// every name carries a uniquePrefix. A test whose admin generates (a test run,
+// a Generation to save as a Template) brings its own admin.
 
 const FINISH_TIMEOUT_MS = 30_000;
 
@@ -124,12 +125,14 @@ async function buildTemplate(
 }
 
 test('a Template with inline Variables is built, test-run and run in the Studio with the substituted prompt and images', async ({
-  adminPage,
+  adminPage: bootstrapAdminPage,
+  browser,
   workerPage,
   db,
   stack: stackEnv,
   corpus,
 }) => {
+  const { page: adminPage } = await throwawayAdmin(bootstrapAdminPage, browser, db, 'template');
   const model = await seedStudioModel(db, stackEnv, { label: 'Bearbeiten', endpointId: 'fake/edit' });
   const name = uniquePrefix('Comicfigur');
   const prefix = uniquePrefix('template');
@@ -175,7 +178,13 @@ test('a Template with inline Variables is built, test-run and run in the Studio 
   await expect(entry.getByRole('link', { name: 'Save as Template' })).toHaveCount(0);
 });
 
-test('Save as Template starts a Template from a Generation, and explains when its Model is gone', async ({ adminPage, db, stack }) => {
+test('Save as Template starts a Template from a Generation, and explains when its Model is gone', async ({
+  adminPage: bootstrapAdminPage,
+  browser,
+  db,
+  stack,
+}) => {
+  const { page: adminPage, id: adminId } = await throwawayAdmin(bootstrapAdminPage, browser, db, 'save-as');
   const model = await seedStudioModel(db, stack, { label: 'Vorlage', endpointId: 'fake/image' });
   const prompt = uniquePrefix('a lighthouse at dusk');
   await openStudio(adminPage, model);
@@ -200,7 +209,7 @@ test('Save as Template starts a Template from a Generation, and explains when it
   const orphan = randomUUID();
   await db.insert(generation).values({
     id: orphan,
-    userId: await userIdOf(db, stack.E2E_ADMIN_EMAIL),
+    userId: adminId,
     name: uniquePrefix('Gone'),
     endpointId: 'fake/image',
     formValues: { prompt: 'gone' },

@@ -24,14 +24,14 @@ Chromium (`bun run test:e2e:install`). No `.env`, no dev database, no dev server
 `scripts/e2e/run.ts`, step by step (each step is logged with an `[e2e]` prefix):
 
 1. Refuses to start while another run in the same checkout is alive (`tests/e2e/.run.lock`): runs share `tests/e2e/.auth` and `test-results/`. Run concurrent suites from separate worktrees.
-2. Removes anything a crashed run left behind (Compose projects named `lunashare-e2e-<runner pid>-*` whose runner process is gone). Stacks of runs still in progress are left alone.
+2. Removes anything a crashed run left behind (Compose projects and images named `lunashare-e2e-<runner pid>-*` whose runner process is gone). Stacks of runs still in progress are left alone.
 3. Picks free ports and generates every secret fresh.
-4. Builds the production `Dockerfile` from the working tree as `lunashare:e2e`, and the fake fal service (`stack/fal-fake/`).
+4. Builds the production `Dockerfile` from the working tree, and the fake fal service (`stack/fal-fake/`). Both images are tagged with the run's Compose project name, so overlapping runs from separate worktrees each start their own build.
 5. Starts Postgres, RustFS and the fake (`docker-compose.e2e.yml`), creates the bucket with an anonymous-read policy.
 6. Starts the app. Its entrypoint applies the migrations, as in a deployment.
 7. Bootstraps the admin the operator's way: a User row, then `auth:set-credentials` inside the app container.
 8. Runs Playwright with the stack described in `E2E_*` env vars (`stack-env.ts`).
-9. Removes the stack and its volumes, also after a failure, Ctrl-C or SIGTERM. The image and build cache stay.
+9. Removes the stack, its volumes and its two images, also after a failure, Ctrl-C or SIGTERM. The build cache stays.
 
 The run exits with Playwright's exit code. Reports, traces, screenshots and
 videos stay in `playwright-report/` and `test-results/` after the stack is gone.
@@ -63,6 +63,10 @@ A spec that must break a user (change its password, sign it out everywhere) make
 Around it: `throwawayUser(label)` makes credentials only that test knows (email `zz-...`, sorting after the
 fixtures), `signedInDevice(browser, account)` returns a page for it in its own context and address, and
 `userIdOf(db, email)` finds its id.
+
+A spec whose admin starts a Generation (a test run in the Model or Template editor, a Generation to save as a Template)
+makes its own admin with `throwawayAdmin(adminPage, browser, db, label)`, which returns the admin's page and id: every user
+may have three Generations running, and the bootstrap admin is shared by all specs running at that moment.
 
 ## The gallery dataset
 
@@ -120,6 +124,7 @@ Import `test` from `fixtures/test.ts`, not from `@playwright/test`. It provides:
   rather than a timeout.
   For a form field on a page, `untilHydrated(locator)` waits until React has attached to the element, so `fill` is not
   lost to hydration.
+  `openAccountMenu(page)` opens the navigation's Account menu that way; never click its button directly after a page load.
 - `utils/files-screen.ts` reads the Files screen: `cardTitles` and `dateGroups` (what is listed, in page
   order), `loadAll(page, n)` (scrolls until n cards are loaded), `scopeRow`, `countLine`, and `asListed`
   (the page order of a sorted list: files stay together under their date heading, headings ordered by first file).

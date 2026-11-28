@@ -2,7 +2,7 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import { eq } from 'drizzle-orm';
 import { generation } from '../../../../src/db/schema/studio';
 import { test } from '../../fixtures/test';
-import { userIdOf } from '../../utils/admin-users';
+import { throwawayAdmin } from '../../utils/admin-users';
 import { falRequestContaining } from '../../utils/fal-fake';
 import { clickUntil } from '../../utils/hydration';
 import { uniquePrefix } from '../../utils/own-files';
@@ -41,6 +41,8 @@ test('admins create, rename, reorder and delete Categories; a Category with Mode
 
   // Drag the second Category by its handle onto the first one's place.
   const rows = adminPage.getByTestId('studio-category');
+  // The mouse only reaches what is on screen, and the list of every spec's Categories is longer than that.
+  await secondRow.evaluate((row) => row.scrollIntoView({ block: 'center' }));
   const handle = await secondRow.getByRole('button', { name: 'Drag to reorder' }).boundingBox();
   const target = await categoryRow(adminPage, first).boundingBox();
   await adminPage.mouse.move(handle!.x + handle!.width / 2, handle!.y + handle!.height / 2);
@@ -106,7 +108,14 @@ test('the catalog search offers the fake media Models and never the text one', a
   await expect(dialog.getByRole('button', { name: 'Choose Fake LLM' })).toHaveCount(0);
 });
 
-test('a Model added from the catalog is configured with Field cards, previewed and test-run', async ({ adminPage, db, stack }) => {
+test('a Model added from the catalog is configured with Field cards, previewed and test-run', async ({
+  adminPage: bootstrapAdminPage,
+  browser,
+  db,
+  stack,
+}) => {
+  // The test run at the end is a Generation of the admin's, so the admin is this test's own.
+  const { page: adminPage, id: adminId } = await throwawayAdmin(bootstrapAdminPage, browser, db, 'model');
   const category = uniquePrefix('Bild erstellen');
   const name = uniquePrefix('Bild');
   await createCategory(adminPage, category);
@@ -176,7 +185,7 @@ test('a Model added from the catalog is configured with Field cards, previewed a
   const sent = await falRequestContaining(stack, prompt);
   expect(sent).toMatchObject({ endpoint_id: 'fake/image', input: { prompt, aspect_ratio: '16:9', num_images: 2 } });
   const [row] = await db.select().from(generation).where(eq(generation.falRequestId, sent.request_id));
-  expect(row).toMatchObject({ userId: await userIdOf(db, stack.E2E_ADMIN_EMAIL), name, status: 'succeeded', estimatedCostUsd: 0.06 });
+  expect(row).toMatchObject({ userId: adminId, name, status: 'succeeded', estimatedCostUsd: 0.06 });
 });
 
 test('the admin index leads to the Studio hub, whose tiles lead on to the pages', async ({ adminPage }) => {

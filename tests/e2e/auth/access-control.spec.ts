@@ -1,6 +1,7 @@
 import { type APIResponse, expect, type Page } from '@playwright/test';
 import { test } from '../fixtures/test';
 import { fixtureUser, workerRole } from '../fixtures/users';
+import { openAccountMenu } from '../utils/hydration';
 
 /**
  * Headers the app's own client sends with a server-function call. Without a
@@ -51,7 +52,7 @@ test('a signed-out visitor opening /admin is sent to the login page', async ({ p
 
 test('the nav offers a worker user neither the Admin link nor the Downloader', async ({ workerPage }) => {
   await workerPage.goto('/dashboard');
-  await workerPage.getByRole('button', { name: 'Account' }).click();
+  await openAccountMenu(workerPage);
 
   await expect(workerPage.getByRole('menuitem', { name: 'Settings' })).toBeVisible();
   await expect(workerPage.getByRole('menuitem', { name: 'Admin' })).toHaveCount(0);
@@ -65,7 +66,7 @@ test('the nav offers a worker user neither the Admin link nor the Downloader', a
 // The bootstrap admin is a super admin without the `admin` role, like the operator account of a first run.
 test('the nav offers the bootstrap super admin the Admin link and the Downloader', async ({ adminPage }) => {
   await adminPage.goto('/dashboard');
-  await adminPage.getByRole('button', { name: 'Account' }).click();
+  await openAccountMenu(adminPage);
   await expect(adminPage.getByRole('menuitem', { name: 'Admin' })).toBeVisible();
 
   await adminPage.keyboard.press('Escape');
@@ -131,7 +132,7 @@ test.describe('anonymous API clients', () => {
     const { username, email } = fixtureUser(workerRole(testInfo.parallelIndex));
     await workerPage.goto('/dashboard');
     const urls = await serverFnRequests(workerPage, async () => {
-      await workerPage.getByRole('button', { name: 'Account' }).click();
+      await openAccountMenu(workerPage);
       await workerPage.getByRole('menuitem', { name: 'Settings' }).click();
       await expect(workerPage).toHaveURL(/\/settings/);
     });

@@ -5,7 +5,7 @@ import { user } from '../../../src/db/schema/auth';
 import { test } from '../fixtures/test';
 import { stackEnv } from '../stack-env';
 import { createUserThroughAdmin, signedInDevice, throwawayUser, userIdOf } from '../utils/admin-users';
-import { clickUntil } from '../utils/hydration';
+import { clickUntil, untilHydrated } from '../utils/hydration';
 import { uniquePrefix, uploadOwnFiles } from '../utils/own-files';
 
 // Audited admin writes show up in /admin/audit with the admin as actor and the target as record.
@@ -24,13 +24,12 @@ test('creating a user, changing its quota and deleting its file are audited with
   const userId = await userIdOf(db, account.email);
 
   await adminPage.goto(`/admin/users/${userId}`);
+  // Saved once: every save writes an audit entry, and the list below counts them.
   const input = adminPage.getByLabel('Storage Quota');
-  const toast = adminPage.getByText('Storage quota updated');
-  await expect(async () => {
-    await input.fill('0.5');
-    await adminPage.getByRole('button', { name: 'Save storage quota' }).click();
-    await expect(toast).toBeVisible({ timeout: 2_000 });
-  }).toPass({ timeout: 15_000 });
+  await untilHydrated(input);
+  await input.fill('0.5');
+  await adminPage.getByRole('button', { name: 'Save storage quota' }).click();
+  await expect(adminPage.getByText('Storage quota updated')).toBeVisible();
 
   const reset = adminPage.getByRole('dialog', { name: 'Reset password' });
   await clickUntil(adminPage.getByRole('button', { name: 'Reset password' }), reset);
@@ -41,8 +40,9 @@ test('creating a user, changing its quota and deleting its file are audited with
   const device = await signedInDevice(browser, { ...account, password: `new-${account.password}` });
   const [upload] = await uploadOwnFiles(device.request, uniquePrefix('audit'), [corpus.file('notes.txt')]);
   await adminPage.goto(`/admin/users/${userId}/files`);
-  await adminPage.getByRole('button', { name: 'Delete file' }).click();
-  await adminPage.getByRole('dialog', { name: 'Delete File' }).getByRole('button', { name: 'Confirm' }).click();
+  const confirmDelete = adminPage.getByRole('dialog', { name: 'Delete File' });
+  await clickUntil(adminPage.getByRole('button', { name: 'Delete file' }), confirmDelete);
+  await confirmDelete.getByRole('button', { name: 'Confirm' }).click();
   await expect(adminPage.getByText('File deleted successfully')).toBeVisible();
 
   // Searching a record id narrows the list to that record's entries.

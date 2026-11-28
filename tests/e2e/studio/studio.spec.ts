@@ -1,9 +1,11 @@
 import { GetObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { expect, type Page } from '@playwright/test';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { generation, generationOutput } from '../../../src/db/schema/studio';
+import { ACTIVE_GENERATION_STATUSES } from '../../../src/libs/studio/types';
 import type { TestDb } from '../fixtures/db';
 import { test } from '../fixtures/test';
+import { fixtureUserId, workerRole } from '../fixtures/users';
 import { MEDIA } from '../stack/fal-fake/catalog';
 import { falRequestContaining, falRequests, falUploads, releaseFalRequest } from '../utils/fal-fake';
 import { openOwnFiles, uniquePrefix, uploadOwnFiles } from '../utils/own-files';
@@ -71,6 +73,50 @@ test('a User generates an image and sees it in the history, also at phone width'
   await generate(workerPage, `${prompt} again`);
   await expect(historyEntry(workerPage, model)).toContainText(`${prompt} again`);
   await expectDone(workerPage, model);
+});
+
+test('the History category filter shows a long Category name whole, clear of the checkmark, also at phone width', async ({
+  workerPage,
+  db,
+  stack,
+}) => {
+  // Longer than the filter's own "All categories", and than a phone is wide, where the name has to wrap.
+  const model = await seedStudioModel(db, stack, {
+    label: 'A Category whose name is long enough to fill a phone',
+    endpointId: 'fake/image',
+  });
+  const filter = workerPage.getByRole('combobox', { name: 'Filter by category' });
+  const options = workerPage.getByRole('listbox');
+  const option = options.getByRole('option', { name: model.categoryName });
+  const name = option.getByText(model.categoryName);
+  /** Opens the filter and returns the list's box. The list scales in, so boxes are final only once its transitions are over. */
+  const openFilter = async () => {
+    await filter.click();
+    await options.evaluate(async (list) => {
+      for (let element: Element | null = list; element; element = element.parentElement) {
+        await Promise.allSettled(element.getAnimations().map((animation) => animation.finished));
+      }
+    });
+    return (await options.boundingBox())!;
+  };
+
+  for (const width of [1280, 375]) {
+    await workerPage.setViewportSize({ width, height: 812 });
+    await openStudio(workerPage, model);
+
+    let list = await openFilter();
+    let text = (await name.boundingBox())!;
+    expect(text.x, `name inside the list at ${width} px`).toBeGreaterThanOrEqual(list.x);
+    expect(text.x + text.width, `name inside the list at ${width} px`).toBeLessThanOrEqual(list.x + list.width);
+
+    await option.click();
+    list = await openFilter();
+    await expect(option).toHaveAttribute('aria-selected', 'true');
+    text = (await name.boundingBox())!;
+    const checkmark = (await option.locator('svg').boundingBox())!;
+    expect(text.x + text.width, `name left of the checkmark at ${width} px`).toBeLessThanOrEqual(checkmark.x);
+    expect(checkmark.x + checkmark.width, `checkmark inside the list at ${width} px`).toBeLessThanOrEqual(list.x + list.width);
+  }
 });
 
 test('Again draws a new seed, and Use settings fills the form, also after the Output expired', async ({ workerPage, db, stack }) => {
@@ -173,16 +219,19 @@ test('Continue with … offers only Categories that take images and attaches the
   await expect(historyEntry(workerPage, video)).toBeVisible();
 });
 
-test('audio plays and a 3D model made from a picked file renders inline', async ({ workerPage, workerRequest, db, stack, corpus }) => {
+test('audio plays inline', async ({ workerPage, db, stack }) => {
   const audio = await seedStudioModel(db, stack, { label: 'Tones', endpointId: 'fake/audio', icon: 'AudioLines' });
-  const mesh = await seedStudioModel(db, stack, { label: 'Meshes', endpointId: 'fake/3d', icon: 'Box' });
-  const prefix = uniquePrefix('studio-input');
-  const [picked] = await uploadOwnFiles(workerRequest, prefix, [corpus.file('icon-small.png')]);
 
   await openStudio(workerPage, audio);
   await generate(workerPage, uniquePrefix('a bell'));
   await expectDone(workerPage, audio);
   await expect(historyEntry(workerPage, audio).locator('audio')).toHaveAttribute('src', /.+/);
+});
+
+test('a 3D model made from a picked file renders inline', async ({ workerPage, workerRequest, db, stack, corpus }) => {
+  const mesh = await seedStudioModel(db, stack, { label: 'Meshes', endpointId: 'fake/3d', icon: 'Box' });
+  const prefix = uniquePrefix('studio-input');
+  const [picked] = await uploadOwnFiles(workerRequest, prefix, [corpus.file('icon-small.png')]);
 
   await openStudio(workerPage, mesh);
   await workerPage.getByRole('button', { name: 'Choose…' }).click();
@@ -192,32 +241,50 @@ test('audio plays and a 3D model made from a picked file renders inline', async 
   await expect(workerPage.getByText('From your Files', { exact: true })).toBeVisible();
   await workerPage.getByRole('button', { name: 'Generate' }).click();
   await expectDone(workerPage, mesh);
-  await expect(historyEntry(workerPage, mesh).locator('model-viewer')).toBeVisible();
+  // The viewer follows "Done": its script (three.js, 1 MB) loads on demand, then WebGL starts up without a GPU.
+  await expect(historyEntry(workerPage, mesh).locator('model-viewer')).toBeVisible({ timeout: FINISH_TIMEOUT_MS });
 });
 
-test('a [slow] Generation is cancelled, and the active limit is refused inline', async ({ workerPage, db, stack }) => {
+test('a [slow] Generation is cancelled, and the active limit is refused inline', async ({ workerPage, db, stack }, testInfo) => {
   const model = await seedStudioModel(db, stack, { label: 'Slow', endpointId: 'fake/image' });
   const prompt = `${uniquePrefix('slow')} [slow]`;
 
-  await openStudio(workerPage, model);
-  for (const n of [1, 2, 3]) await generate(workerPage, `${prompt} ${n}`);
-  const entries = workerPage.getByRole('region', { name: 'History' }).getByRole('article', { name: model.name });
-  await expect(entries).toHaveCount(3);
+  // This test fills every slot itself, and the one before it on this worker may have left a Generation running.
+  const userId = await fixtureUserId(db, workerRole(testInfo.parallelIndex));
+  const active = () =>
+    db
+      .select({ id: generation.id })
+      .from(generation)
+      .where(and(eq(generation.userId, userId), inArray(generation.status, ACTIVE_GENERATION_STATUSES)));
+  await expect.poll(async () => (await active()).length, { timeout: FINISH_TIMEOUT_MS }).toBe(0);
 
-  await generate(workerPage, `${prompt} 4`);
-  await expect(workerPage.getByRole('region', { name: 'Generate' }).getByRole('alert')).toHaveText(
-    'You already have 3 Generations running. Wait for one to finish, or cancel one.',
-  );
+  try {
+    await openStudio(workerPage, model);
+    for (const n of [1, 2, 3]) await generate(workerPage, `${prompt} ${n}`);
+    const entries = workerPage.getByRole('region', { name: 'History' }).getByRole('article', { name: model.name });
+    await expect(entries).toHaveCount(3);
 
-  for (const n of [1, 2, 3]) {
-    const entry = entries.filter({ hasText: `${prompt} ${n}` });
-    await expect(entry.getByText('Running')).toBeVisible({ timeout: FINISH_TIMEOUT_MS });
-    await entry.getByRole('button', { name: 'Cancel' }).click();
-    await expect(entry.getByText('Cancelled')).toBeVisible();
+    await generate(workerPage, `${prompt} 4`);
+    await expect(workerPage.getByRole('region', { name: 'Generate' }).getByRole('alert')).toHaveText(
+      'You already have 3 Generations running. Wait for one to finish, or cancel one.',
+    );
+
+    for (const n of [1, 2, 3]) {
+      const entry = entries.filter({ hasText: `${prompt} ${n}` });
+      await expect(entry.getByText('Running')).toBeVisible({ timeout: FINISH_TIMEOUT_MS });
+      await entry.getByRole('button', { name: 'Cancel' }).click();
+      await expect(entry.getByText('Cancelled')).toBeVisible();
+    }
+    expect((await falRequests(stack)).filter((request) => String(request.input.prompt).startsWith(prompt)).every((r) => r.cancelled)).toBe(
+      true,
+    );
+  } finally {
+    // A [slow] request never finishes by itself: one left behind would hold a slot of this user for the rest of the run.
+    const open = (await falRequests(stack)).filter(
+      (request) => request.held && !request.cancelled && String(request.input.prompt).startsWith(prompt),
+    );
+    for (const request of open) await releaseFalRequest(stack, request.request_id);
   }
-  expect((await falRequests(stack)).filter((request) => String(request.input.prompt).startsWith(prompt)).every((r) => r.cancelled)).toBe(
-    true,
-  );
 });
 
 test('a [fail] Generation shows fal’s error and is retried', async ({ workerPage, db, stack }) => {

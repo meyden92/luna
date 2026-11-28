@@ -84,7 +84,10 @@ function FormField({
   );
 
   return (
-    <div className={item.control === 'switch' ? styles.switchField : styles.field}>
+    <div
+      className={item.control === 'switch' ? styles.switchField : styles.field}
+      data-control={item.control}
+    >
       <Label htmlFor={id}>
         {item.label}
         {item.required && <span aria-hidden> *</span>}

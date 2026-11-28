@@ -6,6 +6,7 @@ declare const styles: {
   readonly "output": string;
   readonly "outputActions": string;
   readonly "outputs": string;
+  readonly "pending": string;
   readonly "prompt": string;
   readonly "root": string;
   readonly "saved": string;

@@ -1,7 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { formatDistanceToNow } from 'date-fns';
-import { Ban, Download, FolderInput, LayoutTemplate, RefreshCw, Repeat, SlidersHorizontal, Trash2, Wand2 } from 'lucide-react';
+import { Ban, Check, Download, FolderInput, LayoutTemplate, RefreshCw, Repeat, SlidersHorizontal, Trash2, Wand2 } from 'lucide-react';
+import type { ReactElement, ReactNode } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -13,7 +14,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAppMutation } from '@/hooks/use-app-mutation';
 import { useConfirmation } from '@/hooks/use-confirmation';
 import { queryKeys } from '@/libs/query-keys';
@@ -43,6 +46,21 @@ const STATUS_LABEL: Record<GenerationView['status'], string> = {
 };
 
 type OpenEntry = (entry: StudioEntry, values: StudioFormValues) => void;
+
+/** An icon-only control: `label` is its accessible name and its tooltip. */
+function IconAction({ label, render, children }: { label: string; render: ReactElement; children: ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        aria-label={label}
+        render={render}
+      >
+        {children}
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  );
+}
 
 /** One Generation in the history: what ran, its state and cost, its Outputs, and the actions on it. */
 export function HistoryEntry({
@@ -106,17 +124,108 @@ export function HistoryEntry({
             {expiry && ` · ${expiry}`}
           </span>
         </div>
-        <Badge variant={generation.status === 'failed' ? 'destructive' : 'secondary'}>
-          {active && <Spinner />}
-          {STATUS_LABEL[generation.status]}
-          {generation.status === 'queued' && generation.progress?.queuePosition ? ` (#${generation.progress.queuePosition + 1})` : ''}
-        </Badge>
+        {generation.status === 'succeeded' ? (
+          <span className="sr-only">{STATUS_LABEL.succeeded}</span>
+        ) : (
+          <Badge variant={generation.status === 'failed' ? 'destructive' : 'secondary'}>
+            {active && <Spinner />}
+            {STATUS_LABEL[generation.status]}
+            {generation.status === 'queued' && generation.progress?.queuePosition ? ` (#${generation.progress.queuePosition + 1})` : ''}
+          </Badge>
+        )}
+        <div className={styles.actions}>
+          {active && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={cancel.isPending}
+              onClick={() => cancel.mutate({ id: generation.id })}
+            >
+              <Ban />
+              Cancel
+            </Button>
+          )}
+          {generation.status === 'failed' && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={retry.isPending}
+              onClick={() => rerun(false)}
+            >
+              <RefreshCw />
+              Retry
+            </Button>
+          )}
+          {!active && generation.status !== 'failed' && (
+            <IconAction
+              label="Again"
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  disabled={retry.isPending}
+                  onClick={() => rerun(true)}
+                />
+              }
+            >
+              <Repeat />
+            </IconAction>
+          )}
+          <IconAction
+            label="Use settings"
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => void applySettings()}
+              />
+            }
+          >
+            <SlidersHorizontal />
+          </IconAction>
+          {isAdmin && generation.status === 'succeeded' && !generation.fromTemplate && (
+            <IconAction
+              label="Save as Template"
+              render={
+                <Link
+                  to="/admin/studio/templates/new"
+                  search={{ from: generation.id }}
+                  className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}
+                />
+              }
+            >
+              <LayoutTemplate />
+            </IconAction>
+          )}
+          {!active && (
+            <IconAction
+              label="Delete"
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  disabled={remove.isPending}
+                  onClick={() =>
+                    confirm.confirm({
+                      title: 'Delete this Generation?',
+                      description: 'Its Outputs are deleted too. Outputs saved to Files stay there.',
+                      data: null,
+                      onConfirm: () => remove.mutate({ id: generation.id }),
+                    })
+                  }
+                />
+              }
+            >
+              <Trash2 />
+            </IconAction>
+          )}
+        </div>
       </header>
 
       {generation.prompt && <p className={styles.prompt}>{generation.prompt}</p>}
       {generation.error && <p className={styles.error}>{generation.error.message}</p>}
 
-      {generation.outputs.length > 0 && (
+      {(active || generation.outputs.length > 0) && (
         <div className={styles.outputs}>
           {generation.outputs.map((output) => (
             <figure
@@ -134,86 +243,15 @@ export function HistoryEntry({
               )}
             </figure>
           ))}
+          {active && generation.outputs.length === 0 && <Skeleton className={styles.pending} />}
         </div>
       )}
-
-      <footer className={styles.actions}>
-        {active && (
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={cancel.isPending}
-            onClick={() => cancel.mutate({ id: generation.id })}
-          >
-            <Ban />
-            Cancel
-          </Button>
-        )}
-        {generation.status === 'failed' && (
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={retry.isPending}
-            onClick={() => rerun(false)}
-          >
-            <RefreshCw />
-            Retry
-          </Button>
-        )}
-        {!active && generation.status !== 'failed' && (
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={retry.isPending}
-            onClick={() => rerun(true)}
-          >
-            <Repeat />
-            Again
-          </Button>
-        )}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => void applySettings()}
-        >
-          <SlidersHorizontal />
-          Use settings
-        </Button>
-        {isAdmin && generation.status === 'succeeded' && !generation.fromTemplate && (
-          <Link
-            to="/admin/studio/templates/new"
-            search={{ from: generation.id }}
-            className={buttonVariants({ variant: 'ghost', size: 'sm' })}
-          >
-            <LayoutTemplate />
-            Save as Template
-          </Link>
-        )}
-        {!active && (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label="Delete"
-            disabled={remove.isPending}
-            onClick={() =>
-              confirm.confirm({
-                title: 'Delete this Generation?',
-                description: 'Its Outputs are deleted too. Outputs saved to Files stay there.',
-                data: null,
-                onConfirm: () => remove.mutate({ id: generation.id }),
-              })
-            }
-          >
-            <Trash2 />
-          </Button>
-        )}
-      </footer>
       <confirm.ConfirmationDialog />
     </article>
   );
 }
 
-/** Save to Files, Download and *Continue with …* for one Output. */
+/** Save to Files (or the link to the saved file), Download and *Continue with …* for one Output. */
 function OutputActions({
   generation,
   output,
@@ -243,67 +281,86 @@ function OutputActions({
   };
 
   return (
-    <figcaption className={styles.outputActions}>
-      {output.savedFileId ? (
+    <>
+      {output.savedFileId && (
         <Link
           to="/dashboard"
           search={{ file: output.savedFileId }}
           className={styles.saved}
         >
+          <Check aria-hidden />
           Saved to Files
         </Link>
-      ) : (
-        <Button
-          variant="ghost"
-          size="xs"
-          disabled={save.isPending}
-          onClick={() =>
-            save.mutate({ outputId: output.id }, { onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.storage.usage }) })
-          }
-        >
-          <FolderInput />
-          Save to Files
-        </Button>
       )}
-      <Button
-        variant="ghost"
-        size="icon-xs"
-        aria-label={`Download${label}`}
-        onClick={() => void download()}
-      >
-        <Download />
-      </Button>
-      {targets.length > 0 && (
-        <DropdownMenu>
-          <DropdownMenuTrigger
+      <figcaption className={styles.outputActions}>
+        {!output.savedFileId && (
+          <IconAction
+            label="Save to Files"
             render={
               <Button
                 variant="ghost"
-                size="xs"
+                size="icon-xs"
+                disabled={save.isPending}
+                onClick={() =>
+                  save.mutate(
+                    { outputId: output.id },
+                    { onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.storage.usage }) },
+                  )
+                }
               />
             }
           >
-            <Wand2 />
-            Continue with…
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Continue with</DropdownMenuLabel>
-              {targets.map(({ category, entry, field }) => (
-                <DropdownMenuItem
-                  key={category.id}
-                  onClick={() => {
-                    const form = buildStudioForm(entry);
-                    onOpen(entry, attachOutput(form, initialFormValues(form), field, { source: 'output', outputId: output.id }));
-                  }}
-                >
-                  {category.name}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
-    </figcaption>
+            <FolderInput />
+          </IconAction>
+        )}
+        <IconAction
+          label={`Download${label}`}
+          render={
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={() => void download()}
+            />
+          }
+        >
+          <Download />
+        </IconAction>
+        {targets.length > 0 && (
+          <DropdownMenu>
+            <IconAction
+              label="Continue with…"
+              render={
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                    />
+                  }
+                />
+              }
+            >
+              <Wand2 />
+            </IconAction>
+            <DropdownMenuContent align="end">
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Continue with</DropdownMenuLabel>
+                {targets.map(({ category, entry, field }) => (
+                  <DropdownMenuItem
+                    key={category.id}
+                    onClick={() => {
+                      const form = buildStudioForm(entry);
+                      onOpen(entry, attachOutput(form, initialFormValues(form), field, { source: 'output', outputId: output.id }));
+                    }}
+                  >
+                    {category.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </figcaption>
+    </>
   );
 }

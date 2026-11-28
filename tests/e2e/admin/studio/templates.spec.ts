@@ -140,15 +140,21 @@ test('a Template with inline Variables is built, test-run and run in the Studio 
   await adminPage.goto('/admin/studio/templates');
   await expect(adminPage.getByRole('row').filter({ hasText: name })).toContainText(model.name);
 
-  // A User runs it: Templates have their own section apart from the Model dropdown, the card shows the preview, the form only the Variables.
+  // A User runs it: the picker offers the Template with its preview next to the Model, the form shows only the Variables.
   await workerPage.goto(`/studio?category=${model.categoryId}&template=${id}`);
   await expect(workerPage.getByRole('heading', { name })).toBeVisible();
-  const templates = workerPage.getByRole('toolbar', { name: 'Templates' });
-  await expect(templates.getByRole('button', { name }).locator('img')).toBeVisible();
-  await expect(templates.getByRole('button', { name: model.name })).toHaveCount(0);
-  await expect(workerPage.getByLabel('Model', { exact: true })).toContainText('Choose a model…');
   const form = workerPage.getByRole('region', { name: 'Generate' });
   await untilHydrated(form.getByRole('button', { name: 'Generate' }));
+  const picker = workerPage.getByRole('dialog', { name: 'Choose a Model or Template' });
+  await form.getByRole('button', { name: 'Change' }).click();
+  await expect(picker.getByRole('button', { name }).locator('img')).toBeVisible();
+  await expect(picker.getByRole('button', { name })).toHaveAttribute('aria-pressed', 'true');
+  await picker.getByRole('button', { name: model.name }).click();
+  await expect(workerPage).toHaveURL(new RegExp(`model=${model.id}`));
+  await expect(workerPage.getByRole('heading', { name: model.name })).toBeVisible();
+  await form.getByRole('button', { name: 'Change' }).click();
+  await picker.getByRole('button', { name }).click();
+  await expect(workerPage.getByRole('heading', { name })).toBeVisible();
   await expect(form.getByRole('textbox', { name: 'Prompt' })).toHaveCount(0);
   await expect(form.getByRole('group', { name: 'Style' }).getByRole('button', { name: 'Comic book' })).toHaveAttribute(
     'aria-pressed',

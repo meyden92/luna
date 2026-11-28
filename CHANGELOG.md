@@ -2,6 +2,30 @@
 
 Every LunaShare release, newest first. Entries up to v4.7.0 were rewritten from their GitHub releases, or from the tag message where no release exists.
 
+## v4.9.1 (2026-11-28)
+
+**The One Where the Template Gets a New Engine and Keeps Its Interior**
+
+Long Templates were a scroll workout: edit a prompt at the bottom, scroll all the way up to check a Variable, scroll back down, repeat. And once a Template was saved, its Model was set in stone. This release fixes both, so you can finally swap a Template onto a newer endpoint without rebuilding it from scratch.
+
+### 🔧 Improved
+
+📌 **The sidebar sticks around.** In the Template editor (**Admin → Studio → Templates**), the Variables and Preview column now stays in view below the nav while you scroll through the Field cards. If it's taller than your window it scrolls on its own, and it stops above the Save bar. On screens narrower than 1280 px the columns still stack.
+
+🔁 **New Model, same Template.** The Model dropdown works on saved Templates too. Switching keeps every Field card whose input the new Model also has, prompt and `{variables}` included. Inputs the new Model adds get their defaults, and inputs it lacks disappear along with any user upload that fed them. Anything that no longer fits the new schema gets flagged on its card and blocks Save until you fix it. The same goes for new Templates, where switching the Model used to wipe everything. Heads-up: Templates aren't versioned, so **Run again** on an older Generation runs its Variable values against the Template's current Model.
+
+### 🧪 Under the hood
+
+Unit tests for the Model switch, and `admin/studio/templates.spec.ts` now covers switching the Model and the sticky sidebar.
+
+### ⬆️ Upgrade
+
+No migrations and no new environment variables.
+
+The v4.9.1 tag triggers the GHCR image build, publishes the versioned and latest tags and deploys to Coolify.
+
+Implemented in #317 (for #315).
+
 ## v4.9.0 (2026-11-27)
 
 **The One Where the Secrets Move Out of the .env and Into a Safe**

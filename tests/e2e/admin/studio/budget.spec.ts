@@ -4,7 +4,7 @@ import { test } from '../../fixtures/test';
 import { FAKE_BALANCE_USD } from '../../stack/fal-fake/catalog';
 import { createUserThroughAdmin, signedInDevice, throwawayUser, userIdOf } from '../../utils/admin-users';
 import { falRequestContaining, releaseFalRequest } from '../../utils/fal-fake';
-import { clickUntil } from '../../utils/hydration';
+import { clickUntil, untilHydrated } from '../../utils/hydration';
 import { uniquePrefix } from '../../utils/own-files';
 import { historyEntry, openStudio, type SeededModel, seedStudioModel } from '../../utils/studio';
 
@@ -30,6 +30,7 @@ async function setDefaultBudget(adminPage: Page, value: string) {
   await adminPage.goto('/admin/settings/studio');
   await expect(adminPage).toHaveTitle('Studio settings | LunaShare');
   const field = adminPage.getByLabel('Default monthly Budget (USD)');
+  await untilHydrated(field);
   await field.fill(value);
   await clickUntil(adminPage.getByRole('button', { name: 'Save settings' }), adminPage.getByText('Studio settings saved'));
   await adminPage.reload();

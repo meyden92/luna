@@ -76,6 +76,28 @@ A rule that runs on a User's files by itself — sorting, tagging or hiding them
 when something happens. Read as a sentence, stored as a chain of steps.
 _Avoid_: Flow, workflow, rule engine
 
+**Run**:
+One time an Automation acted on files: how it ended and what each of its steps
+did, including the answer to every Question. Unrelated to a Generation.
+_Avoid_: Execution, flow run, log
+
+**Question**:
+A yes-or-no question a User writes in their own words for an Automation to put
+to a file. A file passes only on a yes.
+_Avoid_: AI condition, prompt, check
+
+**Analysis**:
+What the Assistant learned from looking at one image: a description, the text in it,
+and the title and tags it gave the file. An image has at most one, replaced when
+the User has it analysed again. An image private at upload has none until the
+User asks for one.
+_Avoid_: AI description, caption, OCR, scan
+
+**Original name**:
+The filename a file arrived with, kept once an Analysis has replaced its title
+so the User can take it back.
+_Avoid_: Filename, old title
+
 ## Downloads
 
 **Download**:
@@ -158,6 +180,22 @@ The most a User may spend on Generations in one calendar month, in US dollars.
 An admin sets a default for everyone and exceptions per User, unlimited
 included. Unrelated to the storage quota.
 _Avoid_: Credits, quota, allowance, limit
+
+## Assistant
+
+**Assistant**:
+The part of LunaShare that analyses images, answers Questions and writes an
+Automation from a sentence. It never converses: a User cannot chat with it. An
+instance has no Assistant at all until an admin has given it a key and chosen
+a Spending cap.
+_Avoid_: AI, Claude, bot, chat
+
+**Spending cap**:
+The most the Assistant may spend in one calendar month across the whole
+instance, in US dollars. An admin must choose an amount or, deliberately, none.
+Once reached, the Assistant rests until the month turns. Unrelated to a Budget,
+which is per User and only the Studio's.
+_Avoid_: Budget, limit, quota, allowance
 
 ## Operations
 
